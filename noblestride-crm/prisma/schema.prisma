@@ -1,0 +1,486 @@
+// NobleStride Capital CRM — data model
+// Ported from the validated Twenty prototype (NOBLESTRIDE-CRM-SPEC.md §3/§4).
+// 6 core objects + Person (contacts), User (team), Activity (interaction log), Task.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Pothos reads this to type the GraphQL schema from Prisma models (see src/graphql/builder.ts).
+generator pothos {
+  provider = "prisma-pothos-types"
+  output   = "../src/generated/pothos-types.ts"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Controlled vocabularies (SPEC §4). Display labels are mapped in src/lib/vocab.ts.
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum Sector {
+  Agribusiness
+  FinancialServices
+  FMCG
+  Manufacturing
+  RenewableEnergy
+  Technology
+  Healthcare
+  Banking
+  RealEstate
+  Education
+  Infrastructure
+}
+
+enum InvestorType {
+  PrivateEquity
+  VentureCapital
+  DFI
+  DebtProvider
+  FamilyOffice
+  Angel
+  CorporateVC
+  GrantDonor
+}
+
+enum InvestorStatus {
+  ActivelyDeploying
+  Fundraising
+  FinalClose
+  FullyDeployed
+  Dormant
+}
+
+enum Instrument {
+  Equity
+  Debt
+  Mezzanine
+  Grant
+  Convertible
+}
+
+enum InvestmentStage {
+  PreSeed
+  Seed
+  SeriesA
+  SeriesB
+  Growth
+  MatureBuyout
+}
+
+enum Geography {
+  EastAfrica
+  WestAfrica
+  SouthernAfrica
+  SubSaharanAfrica
+  PanAfrica
+  NorthAfrica
+  FrancophoneAfrica
+  MENA
+  Europe
+  USA
+  Global
+}
+
+enum MandateStage {
+  NewLead
+  Qualification
+  PitchPresentation
+  Proposal
+  Negotiation
+  Signed
+  Lost
+}
+
+enum TransactionStage {
+  DealPreparation
+  InvestorOutreach
+  DueDiligence
+  TermSheet
+  Closing
+  ClosedWon
+  ClosedLost
+}
+
+enum EngagementStatus {
+  NotContacted
+  Contacted
+  InConversation
+  Interested
+  Passed
+  Committed
+}
+
+enum Source {
+  MondayMeeting
+  WhatsApp
+  Email
+  Verbal
+  Referral
+  Inbound
+  Outreach
+  Event
+  Website
+}
+
+enum DocStatus {
+  NotSent
+  Sent
+  Signed
+}
+
+enum DealType {
+  SeriesA
+  SeriesB
+  Growth
+  Expansion
+  AcquisitionFinance
+}
+
+enum PartnerType {
+  LawFirm
+  Auditor
+  Advisor
+  Bank
+  InvestmentBank
+  Consulting
+  Other
+}
+
+enum PartnerStatus {
+  Active
+  Preferred
+  Inactive
+}
+
+enum FounderGender {
+  Male
+  Female
+  Mixed
+}
+
+enum TaskStatus {
+  NotStarted
+  Pending
+  Ongoing
+  Done
+}
+
+// Engagement-tracker interaction types (wireframe stat cards + timeline).
+enum InteractionType {
+  Outreach
+  NDASent
+  NDASigned
+  DataRoomAccess
+  Meeting
+  Call
+  Email
+  Feedback
+  TermSheet
+  Note
+  Other
+}
+
+// Provenance: who/what created a record (AI-native pattern, à la Twenty's ACTOR type).
+enum ActorSource {
+  HUMAN
+  AGENT
+  API
+  IMPORT
+  SYSTEM
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Team & contacts
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  jobTitle    String?
+  avatarColor String? // hex for the avatar chip
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ledMandates       Mandate[]     @relation("MandateLead")
+  ownedTransactions Transaction[] @relation("TransactionOwner")
+  ownedEngagements  Engagement[]  @relation("EngagementOwner")
+  activities        Activity[]    @relation("ActivityCreatedBy")
+  assignedTasks     Task[]        @relation("TaskAssignee")
+}
+
+model Person {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String?
+  email       String?
+  phone       String?
+  jobTitle    String?
+  linkedinUrl String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  investorId String?
+  investor   Investor? @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  clientId   String?
+  client     Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  partnerId  String?
+  partner    Partner?  @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+
+  @@index([investorId])
+  @@index([clientId])
+  @@index([partnerId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Investor — the fund database (SPEC §3.1)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Investor {
+  id                  String          @id @default(cuid())
+  name                String
+  investorType        InvestorType
+  website             String?
+  status              InvestorStatus?
+  sectorFocus         Sector[]        @default([])
+  geographicFocus     Geography[]     @default([])
+  instruments         Instrument[]    @default([])
+  investmentStages    InvestmentStage[] @default([])
+  aum                 Decimal?        @db.Decimal(20, 2)
+  ticketMin           Decimal?        @db.Decimal(20, 2)
+  ticketMax           Decimal?        @db.Decimal(20, 2)
+  currency            String          @default("USD")
+  targetIrr           Float?
+  countryRestrictions String?
+  esgFocus            String?
+  decisionProcess     String? // rich text / markdown
+  notes               String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  contacts    Person[]
+  engagements Engagement[]
+  activities  Activity[]
+  tasks       Task[]
+
+  @@index([investorType])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Client — the company raising capital (SPEC §3.2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Client {
+  id                String         @id @default(cuid())
+  name              String
+  yearFounded       Int?
+  hqCity            String?
+  countries         Geography[]    @default([])
+  website           String?
+  sector            Sector[]       @default([])
+  coreProduct       String?
+  description       String?
+  founders          String?
+  founderGender     FounderGender?
+  revenueLastYear   Decimal?       @db.Decimal(20, 2)
+  revenueForecast   Decimal?       @db.Decimal(20, 2)
+  currency          String         @default("USD")
+  profitable        Boolean?
+  existingInvestors String?
+  source            Source?
+  pitchDeckUrl      String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  contacts     Person[]
+  mandates     Mandate[]
+  transactions Transaction[]
+  tasks        Task[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mandate — client-acquisition pipeline (Kanban by stage) (SPEC §3.3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Mandate {
+  id             String       @id @default(cuid())
+  name           String
+  stage          MandateStage @default(NewLead)
+  stageEnteredAt DateTime     @default(now()) // drives "days in stage"
+  dealSize       Decimal?     @db.Decimal(20, 2)
+  currency       String       @default("USD")
+  sector         Sector[]     @default([])
+  source         Source?
+  dateOpened     DateTime?
+  ndaStatus      DocStatus    @default(NotSent)
+  ndaSentDate    DateTime?
+  ndaSignedDate  DateTime?
+  eaStatus       DocStatus    @default(NotSent)
+  eaSentDate     DateTime?
+  eaSignedDate   DateTime?
+  nextAction     String?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  clientId     String
+  client       Client        @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  leadId       String?
+  lead         User?         @relation("MandateLead", fields: [leadId], references: [id], onDelete: SetNull)
+  referredById String?
+  referredBy   Partner?      @relation("PartnerReferral", fields: [referredById], references: [id], onDelete: SetNull)
+  transactions Transaction[]
+  activities   Activity[]
+  tasks        Task[]
+
+  @@index([stage])
+  @@index([clientId])
+  @@index([leadId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Transaction — fundraising-execution pipeline (Kanban by stage) (SPEC §3.4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Transaction {
+  id             String           @id @default(cuid())
+  name           String
+  stage          TransactionStage @default(DealPreparation)
+  stageEnteredAt DateTime         @default(now())
+  dealType       DealType?
+  instrument     Instrument[]     @default([])
+  targetRaise    Decimal?         @db.Decimal(20, 2)
+  currency       String           @default("USD")
+  sector         Sector[]         @default([])
+  dateOpened     DateTime?
+  closedAt       DateTime? // set when stage -> ClosedWon/ClosedLost; drives avg-time-to-close
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  clientId    String
+  client      Client       @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  mandateId   String?
+  mandate     Mandate?     @relation(fields: [mandateId], references: [id], onDelete: SetNull)
+  ownerId     String?
+  owner       User?        @relation("TransactionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  engagements Engagement[]
+  activities  Activity[]
+  tasks       Task[]
+
+  @@index([stage])
+  @@index([clientId])
+  @@index([ownerId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Engagement — join: one investor approached on one transaction (SPEC §3.5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Engagement {
+  id            String           @id @default(cuid())
+  name          String
+  status        EngagementStatus @default(NotContacted)
+  lastContact   DateTime?
+  notes         String?
+  createdSource ActorSource      @default(HUMAN)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  investorId    String
+  investor      Investor    @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  ownerId       String?
+  owner         User?       @relation("EngagementOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  activities    Activity[]
+
+  @@unique([transactionId, investorId])
+  @@index([status])
+  @@index([investorId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Partner — service providers & referral sources (SPEC §3.6)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Partner {
+  id          String        @id @default(cuid())
+  name        String
+  partnerType PartnerType?
+  profile     String?
+  status      PartnerStatus @default(Active)
+  location    String?
+  amount      Decimal?      @db.Decimal(20, 2)
+  currency    String        @default("USD")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  contacts         Person[]
+  referredMandates Mandate[] @relation("PartnerReferral")
+
+  @@index([partnerType])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Activity — interaction log powering the Engagement tracker timeline & counters
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Activity {
+  id            String          @id @default(cuid())
+  type          InteractionType
+  subject       String?
+  body          String?
+  occurredAt    DateTime        @default(now())
+  createdSource ActorSource     @default(HUMAN)
+  createdAt     DateTime        @default(now())
+
+  engagementId  String?
+  engagement    Engagement?  @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  investorId    String?
+  investor      Investor?    @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  mandateId     String?
+  mandate       Mandate?     @relation(fields: [mandateId], references: [id], onDelete: SetNull)
+  createdById   String?
+  createdBy     User?        @relation("ActivityCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([type])
+  @@index([engagementId])
+  @@index([occurredAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Task — lightweight activities reused across records (SPEC §3.7)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Task {
+  id        String     @id @default(cuid())
+  title     String
+  status    TaskStatus @default(NotStarted)
+  dueAt     DateTime?
+  body      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  assigneeId    String?
+  assignee      User?        @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  mandateId     String?
+  mandate       Mandate?     @relation(fields: [mandateId], references: [id], onDelete: SetNull)
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  investorId    String?
+  investor      Investor?    @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  clientId      String?
+  client        Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([assigneeId])
+}

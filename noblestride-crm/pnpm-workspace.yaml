@@ -1,0 +1,9 @@
+# Native deps allowed to run install/build scripts (pnpm 11 security gate).
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@tailwindcss/oxide': true
+  esbuild: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true

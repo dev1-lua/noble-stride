@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: noblestride-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: noblestride
+      POSTGRES_PASSWORD: noblestride
+      POSTGRES_DB: noblestride
+    ports:
+      # Host 5544 -> container 5432 (5544 avoids clashing with the Twenty dev Postgres on 5432).
+      - "5544:5432"
+    volumes:
+      - noblestride_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U noblestride -d noblestride"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  noblestride_pgdata:
