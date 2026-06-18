@@ -67,13 +67,16 @@ export interface KanbanColumn<T> {
   items: T[];
 }
 
+export interface StatValue { value: number; delta: number; }
+
 export interface DashboardStats {
-  activeMandates: number;
-  activeTransactions: number;
-  investorCount: number;
-  closedWonCount: number;
-  totalRevenue: number;
+  activeMandates: StatValue;
+  activeTransactions: StatValue;
+  investorsEngagedQtr: StatValue;
+  capitalRaisedYtd: StatValue;
 }
+
+export interface Insight { kind: "convert" | "attention" | "match"; title: string; detail: string; }
 
 export interface InvestorSegments {
   total: number;
