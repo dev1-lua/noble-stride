@@ -1,0 +1,97 @@
+// Investor service — single source of truth over Prisma for investor data.
+// Thin layer: Prisma calls + domain helpers only. No GraphQL, no React.
+
+import { prisma } from "@/lib/db";
+import { buildInvestorWhere } from "@/server/domain/filters";
+import { isActiveInvestorThisQuarter } from "@/server/domain/metrics";
+import type { InvestorFilter, InvestorSegments, Pagination } from "@/server/domain/types";
+
+/**
+ * List investors matching the given filter, ordered by name asc.
+ * When `page` is provided, applies offset-based pagination.
+ */
+export async function listInvestors(filter: InvestorFilter, page?: Pagination) {
+  const where = buildInvestorWhere(filter);
+
+  if (page != null) {
+    return prisma.investor.findMany({
+      where,
+      orderBy: { name: "asc" },
+      skip: (page.page - 1) * page.pageSize,
+      take: page.pageSize,
+    });
+  }
+
+  return prisma.investor.findMany({ where, orderBy: { name: "asc" } });
+}
+
+/**
+ * Count investors matching the given filter.
+ */
+export async function countInvestors(filter: InvestorFilter): Promise<number> {
+  return prisma.investor.count({ where: buildInvestorWhere(filter) });
+}
+
+/**
+ * Aggregate investor segments for the dashboard.
+ *
+ * N+1 avoidance:
+ *   - One `groupBy` call gets total + per-type counts in a single query.
+ *   - One `findMany` with `select` loads only `status` and `activities.occurredAt`
+ *     for all investors (no per-investor round-trips).
+ *   - `isActiveInvestorThisQuarter` is applied in-process over the flat result.
+ */
+export async function investorSegments(now: Date = new Date()): Promise<InvestorSegments> {
+  const [typeCounts, investors] = await Promise.all([
+    prisma.investor.groupBy({
+      by: ["investorType"],
+      _count: { _all: true },
+    }),
+    prisma.investor.findMany({
+      select: {
+        status: true,
+        activities: { select: { occurredAt: true } },
+      },
+    }),
+  ]);
+
+  // Build type-count lookup
+  const byType: Record<string, number> = {};
+  for (const row of typeCounts) {
+    byType[row.investorType] = row._count._all;
+  }
+
+  // Count active-this-quarter in-process (no N+1)
+  let activeThisQuarter = 0;
+  for (const inv of investors) {
+    const activityDates = inv.activities.map((a) => a.occurredAt);
+    if (isActiveInvestorThisQuarter({ status: inv.status, activityDates }, now)) {
+      activeThisQuarter++;
+    }
+  }
+
+  return {
+    total: investors.length,
+    activeThisQuarter,
+    privateEquity: byType["PrivateEquity"] ?? 0,
+    ventureCapital: byType["VentureCapital"] ?? 0,
+    dfi: byType["DFI"] ?? 0,
+    debtProvider: byType["DebtProvider"] ?? 0,
+  };
+}
+
+/**
+ * Fetch a single investor by id, including contacts, engagements (with
+ * their transaction), and the 20 most recent activities.
+ * Returns null when the investor does not exist.
+ */
+export async function getInvestor(id: string) {
+  return prisma.investor.findUnique({
+    where: { id },
+    include: {
+      contacts: true,
+      engagements: { include: { transaction: true } },
+      activities: { orderBy: { occurredAt: "desc" }, take: 20 },
+    },
+  });
+}

@@ -76,11 +76,12 @@ export interface DashboardStats {
 }
 
 export interface InvestorSegments {
-  activelyDeploying: number;
-  fundraising: number;
-  finalClose: number;
-  fullyDeployed: number;
-  dormant: number;
+  total: number;
+  activeThisQuarter: number;
+  privateEquity: number;
+  ventureCapital: number;
+  dfi: number;
+  debtProvider: number;
 }
 
 // ─── Partner referral input ───────────────────────────────────────────────────
