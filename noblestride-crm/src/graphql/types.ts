@@ -27,7 +27,7 @@ import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
 
 // ─── User ────────────────────────────────────────────────────────────────────
 
-builder.prismaObject("User", {
+export const UserRef = builder.prismaObject("User", {
   fields: (t) => ({
     id: t.exposeID("id"),
     name: t.exposeString("name"),
@@ -47,7 +47,7 @@ builder.prismaObject("User", {
 
 // ─── Person ──────────────────────────────────────────────────────────────────
 
-builder.prismaObject("Person", {
+export const PersonRef = builder.prismaObject("Person", {
   fields: (t) => ({
     id: t.exposeID("id"),
     firstName: t.exposeString("firstName"),
@@ -71,7 +71,7 @@ builder.prismaObject("Person", {
 
 // ─── Investor ────────────────────────────────────────────────────────────────
 
-builder.prismaObject("Investor", {
+export const InvestorRef = builder.prismaObject("Investor", {
   fields: (t) => ({
     id: t.exposeID("id"),
     name: t.exposeString("name"),
@@ -106,7 +106,7 @@ builder.prismaObject("Investor", {
 
 // ─── Client ──────────────────────────────────────────────────────────────────
 
-builder.prismaObject("Client", {
+export const ClientRef = builder.prismaObject("Client", {
   fields: (t) => ({
     id: t.exposeID("id"),
     name: t.exposeString("name"),
@@ -139,7 +139,7 @@ builder.prismaObject("Client", {
 
 // ─── Mandate ─────────────────────────────────────────────────────────────────
 
-builder.prismaObject("Mandate", {
+export const MandateRef = builder.prismaObject("Mandate", {
   fields: (t) => ({
     id: t.exposeID("id"),
     name: t.exposeString("name"),
@@ -179,7 +179,7 @@ builder.prismaObject("Mandate", {
 
 // ─── Transaction ─────────────────────────────────────────────────────────────
 
-builder.prismaObject("Transaction", {
+export const TransactionRef = builder.prismaObject("Transaction", {
   fields: (t) => ({
     id: t.exposeID("id"),
     name: t.exposeString("name"),
@@ -219,7 +219,7 @@ builder.prismaObject("Transaction", {
 
 // ─── Engagement ───────────────────────────────────────────────────────────────
 
-builder.prismaObject("Engagement", {
+export const EngagementRef = builder.prismaObject("Engagement", {
   fields: (t) => ({
     id: t.exposeID("id"),
     name: t.exposeString("name"),
@@ -243,7 +243,7 @@ builder.prismaObject("Engagement", {
 
 // ─── Partner ─────────────────────────────────────────────────────────────────
 
-builder.prismaObject("Partner", {
+export const PartnerRef = builder.prismaObject("Partner", {
   fields: (t) => ({
     id: t.exposeID("id"),
     name: t.exposeString("name"),
@@ -265,7 +265,7 @@ builder.prismaObject("Partner", {
 
 // ─── Activity ────────────────────────────────────────────────────────────────
 
-builder.prismaObject("Activity", {
+export const ActivityRef = builder.prismaObject("Activity", {
   fields: (t) => ({
     id: t.exposeID("id"),
     type: t.field({ type: InteractionTypeEnum, resolve: (a) => a.type }),
