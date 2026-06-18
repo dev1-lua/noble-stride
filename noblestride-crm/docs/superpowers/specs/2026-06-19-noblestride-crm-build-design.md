@@ -101,7 +101,7 @@ Resolvers wrap identically-named service functions. Money exposed as `Float` (US
 - Transaction *investors contacted* = `engagements.count`; *active conversations* = engagements with status ∈ {InConversation, Interested}; *days in stage* = `now − stageEnteredAt`.
 - *Avg time to close* = mean(`closedAt − dateOpened`) over Transactions in ClosedWon.
 - Dashboard *Active Mandates* = mandates not in {Signed, Lost}; *Active Transactions* = transactions not in {ClosedWon, ClosedLost}; *Investors Engaged (qtr)* = distinct investors with an engagement/activity this quarter; *Capital Raised YTD* = Σ `targetRaise` of ClosedWon transactions closed this year.
-- Investor segments = counts by type (PE, VC, DFI, Debt Provider) + total + active-this-quarter (status ActivelyDeploying or recent activity).
+- Investor segments = counts by type (PE, VC, DFI, Debt Provider) + total + active-this-quarter (status = ActivelyDeploying OR the investor has any Activity dated within the current calendar quarter).
 - Partner referrals: *referred* = `referredMandates.count`; *active* = referred mandates with a non-closed transaction; *closed* = referred transactions ClosedWon; *revenue* = Σ their `targetRaise`.
 
 ## 7. Design system (dark-green brand)
