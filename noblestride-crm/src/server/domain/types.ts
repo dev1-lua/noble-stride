@@ -3,13 +3,24 @@
 
 import type {
   InvestorStatus,
+  InvestorType,
+  Sector,
+  Geography,
   MandateStage,
   TransactionStage,
   EngagementStatus,
 } from "@prisma/client";
 
 // ─── Re-export enum types so callers can import from one place ───────────────
-export type { InvestorStatus, MandateStage, TransactionStage, EngagementStatus };
+export type {
+  InvestorStatus,
+  InvestorType,
+  Sector,
+  Geography,
+  MandateStage,
+  TransactionStage,
+  EngagementStatus,
+};
 
 // ─── Pipeline constants ──────────────────────────────────────────────────────
 
@@ -34,7 +45,12 @@ export const ACTIVE_CONVERSATION_STATUSES: EngagementStatus[] = [
 // ─── Filter / pagination types ───────────────────────────────────────────────
 
 export interface InvestorFilter {
+  investorType?: InvestorType | null;
+  sector?: Sector | null;
+  geography?: Geography | null;
   status?: InvestorStatus | null;
+  ticketMin?: number | null;
+  ticketMax?: number | null;
   search?: string | null;
 }
 
