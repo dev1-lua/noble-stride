@@ -17,6 +17,7 @@ import {
   MandateStage,
   PartnerStatus,
   PartnerType,
+  Prisma,
   Sector,
   Source,
   TaskStatus,
@@ -32,7 +33,7 @@ export const builder = new SchemaBuilder<{
   };
 }>({
   plugins: [PrismaPlugin],
-  prisma: { client: prisma },
+  prisma: { client: prisma, dmmf: Prisma.dmmf },
 });
 
 builder.queryType({});
