@@ -9,6 +9,9 @@ import {
 } from "@/server/domain/types";
 import type { KanbanColumn, TransactionStage } from "@/server/domain/types";
 import type { Prisma } from "@prisma/client";
+import { transactionCreateSchema, transactionUpdateSchema, type TransactionCreateInput, type TransactionUpdateInput } from "@/lib/schemas/transaction";
+import { actorSource, CrudError } from "./crud";
+import type { Actor } from "@/graphql/context";
 
 // ─── Filter type ─────────────────────────────────────────────────────────────
 
@@ -117,4 +120,24 @@ export async function setTransactionStage(id: string, stage: TransactionStage) {
     where: { id },
     data: { stage, stageEnteredAt: new Date(), closedAt },
   });
+}
+
+// ─── CRUD ─────────────────────────────────────────────────────────────────────
+
+export async function createTransaction(input: TransactionCreateInput, actor: Actor) {
+  const data = transactionCreateSchema.parse(input);
+  return prisma.transaction.create({ data: { ...data, createdSource: actorSource(actor) } });
+}
+
+export async function updateTransaction(id: string, input: TransactionUpdateInput) {
+  const data = transactionUpdateSchema.parse(input);
+  return prisma.transaction.update({ where: { id }, data });
+}
+
+export async function deleteTransaction(id: string) {
+  const engagements = await prisma.engagement.count({ where: { transactionId: id } });
+  if (engagements > 0) {
+    throw new CrudError(`Cannot delete: ${engagements} engagement(s) reference this transaction.`);
+  }
+  return prisma.transaction.delete({ where: { id } });
 }
