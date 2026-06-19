@@ -5,6 +5,7 @@ import Link from "next/link";
 import { listPartners, partnerReferralStats } from "@/server/services/partners";
 import { StatCard, Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
+import { PartnerFormDrawer } from "@/components/crm/partner-form-drawer";
 
 export default async function PartnersPage() {
   const [stats, partners] = await Promise.all([
@@ -21,11 +22,16 @@ export default async function PartnersPage() {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-zinc-900">Partners</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Referral partners, advisors, and deal sources
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900">Partners</h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            Referral partners, advisors, and deal sources
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <PartnerFormDrawer mode="create" />
+        </div>
       </div>
 
       {/* Counters strip — 4 tiles */}

@@ -10,9 +10,12 @@ import { KanbanBoard } from "@/components/crm/kanban-board";
 import { Button } from "@/components/ui";
 import type { KanbanColumnDTO } from "@/components/crm/kanban-board";
 import type { MandateCardDTO } from "@/components/crm/kanban-card";
+import { relationOptions } from "@/server/services/relation-options";
+import { MandateFormDrawer } from "@/components/crm/mandate-form-drawer";
 
 export default async function MandatesPage() {
   const rawColumns = await mandatesByStage();
+  const rel = await relationOptions();
   const now = new Date();
 
   // ── Derive stat tile values on the server ─────────────────────────────────
@@ -81,9 +84,7 @@ export default async function MandatesPage() {
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>
-          <Button variant="primary" size="sm" disabled>
-            + New Lead
-          </Button>
+          <MandateFormDrawer mode="create" clients={rel.clients} users={rel.users} partners={rel.partners} />
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import type { InvestorType, Sector, Geography, InvestorStatus } from "@prisma/cl
 import { SegmentRow } from "@/components/crm/segment-row";
 import { FilterBar } from "@/components/crm/filter-bar";
 import { RecordTable } from "@/components/crm/record-table";
+import { InvestorFormDrawer } from "@/components/crm/investor-form-drawer";
 
 // Next 16: searchParams is a Promise
 interface PageProps {
@@ -42,22 +43,8 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
             {segments.total} investors across all sectors and geographies
           </p>
         </div>
-        {/* Presentational action buttons (seams for future import/export) */}
         <div className="flex gap-2">
-          <button
-            type="button"
-            disabled
-            className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-400 cursor-not-allowed"
-          >
-            Import
-          </button>
-          <button
-            type="button"
-            disabled
-            className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-400 cursor-not-allowed"
-          >
-            Export
-          </button>
+          <InvestorFormDrawer mode="create" />
         </div>
       </div>
 

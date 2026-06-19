@@ -12,8 +12,11 @@ import { KanbanBoard } from "@/components/crm/kanban-board";
 import { Button } from "@/components/ui";
 import type { KanbanColumnDTO } from "@/components/crm/kanban-board";
 import type { TransactionCardDTO } from "@/components/crm/kanban-card";
+import { relationOptions } from "@/server/services/relation-options";
+import { TransactionFormDrawer } from "@/components/crm/transaction-form-drawer";
 
 export default async function TransactionsPage() {
+  const rel = await relationOptions();
   // Parallel fetch: board data + dashboard KPI stats
   const [rawColumns, stats] = await Promise.all([
     transactionsByStage(),
@@ -89,9 +92,7 @@ export default async function TransactionsPage() {
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>
-          <Button variant="primary" size="sm" disabled>
-            + New Transaction
-          </Button>
+          <TransactionFormDrawer mode="create" clients={rel.clients} users={rel.users} mandates={rel.mandates} />
         </div>
       </div>
 
