@@ -1,0 +1,252 @@
+// transactions/[id]/page.tsx — Transaction detail page.
+// Server Component: fetches transaction with all relations, renders detail + restage control.
+
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { getTransaction } from "@/server/services/transactions";
+import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
+import { formatDate, daysAgoLabel } from "@/lib/format";
+import { formatMoney } from "@/lib/money";
+import { label, options } from "@/lib/vocab";
+import { RestageSelect } from "@/components/crm/restage-select";
+
+// Next 16: params is a Promise
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function TransactionDetailPage({ params }: PageProps) {
+  const { id } = await params;
+  const transaction = await getTransaction(id);
+
+  if (!transaction) notFound();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const txn = transaction as any;
+
+  const clientName: string = txn.client?.name ?? txn.name;
+  const ownerName: string | null = txn.owner?.name ?? null;
+  const ownerColor: string | null = txn.owner?.avatarColor ?? null;
+  const mandateName: string | null = txn.mandate?.name ?? null;
+  const sectors: string[] = txn.sector ?? [];
+  const instruments: string[] = txn.instrument ?? [];
+  const targetRaiseNum = txn.targetRaise != null ? Number(txn.targetRaise) : null;
+  const dealTypeName = txn.dealType ? label("DealType", txn.dealType) : null;
+
+  const stageOptions = options("TransactionStage");
+
+  return (
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-sm text-zinc-500">
+        <Link href="/transactions" className="hover:text-zinc-700 transition-colors">
+          Transactions
+        </Link>
+        <span>/</span>
+        <span className="text-zinc-900 font-medium">{clientName}</span>
+      </nav>
+
+      {/* Header */}
+      <div className="flex items-start gap-4">
+        <Avatar name={clientName} size="lg" />
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{clientName}</h1>
+            <Chip value={txn.stage} group="TransactionStage" />
+          </div>
+          {dealTypeName && (
+            <p className="mt-1 text-sm text-zinc-500">{dealTypeName}</p>
+          )}
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="secondary" size="sm" disabled>
+            Match Investors
+          </Button>
+          <Button variant="secondary" size="sm" disabled>
+            Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Restage control + key facts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Key facts */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-zinc-900">Deal Facts</h2>
+          </CardHeader>
+          <CardBody>
+            <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
+              {/* Sector */}
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Sector</dt>
+                <dd className="mt-1 flex flex-wrap gap-1">
+                  {sectors.length > 0
+                    ? sectors.map((s) => <Chip key={s} value={s} group="Sector" />)
+                    : <span className="text-sm text-zinc-400">—</span>}
+                </dd>
+              </div>
+
+              {/* Instruments */}
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Instrument</dt>
+                <dd className="mt-1 flex flex-wrap gap-1">
+                  {instruments.length > 0
+                    ? instruments.map((inst) => <Chip key={inst} value={inst} group="Instrument" />)
+                    : <span className="text-sm text-zinc-400">—</span>}
+                </dd>
+              </div>
+
+              {/* Target raise */}
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Target Raise</dt>
+                <dd className="mt-1 text-sm font-bold text-zinc-900">
+                  {targetRaiseNum != null ? formatMoney(targetRaiseNum) : "—"}
+                </dd>
+              </div>
+
+              {/* Owner */}
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Owner</dt>
+                <dd className="mt-1 flex items-center gap-2">
+                  {ownerName ? (
+                    <>
+                      <Avatar name={ownerName} color={ownerColor ?? undefined} size="sm" />
+                      <span className="text-sm font-medium text-zinc-900">{ownerName}</span>
+                    </>
+                  ) : (
+                    <span className="text-sm text-zinc-400">—</span>
+                  )}
+                </dd>
+              </div>
+
+              {/* Mandate link */}
+              {mandateName && (
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Mandate</dt>
+                  <dd className="mt-1 text-sm font-medium text-zinc-900">{mandateName}</dd>
+                </div>
+              )}
+
+              {/* Date opened */}
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Opened</dt>
+                <dd className="mt-1 text-sm text-zinc-900">{formatDate(txn.dateOpened) || "—"}</dd>
+              </div>
+
+              {/* Closed at */}
+              {txn.closedAt && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Closed</dt>
+                  <dd className="mt-1 text-sm text-zinc-900">{formatDate(txn.closedAt)}</dd>
+                </div>
+              )}
+
+              {/* Stage since */}
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Stage Since</dt>
+                <dd className="mt-1 text-sm text-zinc-900">{formatDate(txn.stageEnteredAt)}</dd>
+              </div>
+
+              {/* Notes */}
+              {txn.notes && (
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Notes</dt>
+                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{txn.notes}</dd>
+                </div>
+              )}
+            </dl>
+          </CardBody>
+        </Card>
+
+        {/* Restage panel */}
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-zinc-900">Stage</h2>
+          </CardHeader>
+          <CardBody>
+            <RestageSelect
+              kind="transaction"
+              id={txn.id}
+              currentStage={txn.stage}
+              stageOptions={stageOptions}
+            />
+            <p className="mt-3 text-xs text-zinc-400">
+              Changing stage immediately persists to the database and resets the stage timer.
+            </p>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Engagements */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Investor Engagements
+            {txn.engagements?.length > 0 && (
+              <Badge tone="neutral" className="ml-2">{txn.engagements.length}</Badge>
+            )}
+          </h2>
+        </CardHeader>
+        <CardBody>
+          {!txn.engagements || txn.engagements.length === 0 ? (
+            <p className="text-sm text-zinc-400">No investor engagements recorded.</p>
+          ) : (
+            <ul className="divide-y divide-zinc-100">
+              {txn.engagements.map((eng: { id: string; investor: { id: string; name: string }; status: string; notes?: string | null }) => (
+                <li key={eng.id} className="py-3 flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar name={eng.investor.name} size="sm" />
+                    <div className="min-w-0">
+                      <Link
+                        href={`/investors/${eng.investor.id}`}
+                        className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors"
+                      >
+                        {eng.investor.name}
+                      </Link>
+                      {eng.notes && (
+                        <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{eng.notes}</p>
+                      )}
+                    </div>
+                  </div>
+                  <Chip value={eng.status} group="EngagementStatus" />
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* Activity timeline */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-sm font-semibold text-zinc-900">Recent Activity</h2>
+        </CardHeader>
+        <CardBody>
+          {!txn.activities || txn.activities.length === 0 ? (
+            <p className="text-sm text-zinc-400">No activity recorded.</p>
+          ) : (
+            <ul className="space-y-3">
+              {txn.activities.map((a: { id: string; type: string; subject?: string | null; occurredAt: Date }) => (
+                <li key={a.id} className="flex items-start gap-3">
+                  <span className="mt-1.5 h-2 w-2 rounded-full bg-accent flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-medium text-zinc-700">
+                        {label("InteractionType", a.type)}
+                      </span>
+                      {a.subject && (
+                        <span className="text-sm text-zinc-900 truncate">{a.subject}</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-0.5">{daysAgoLabel(a.occurredAt)}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
+    </div>
+  );
+}
