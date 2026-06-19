@@ -9,6 +9,7 @@ export { StatCard } from "./stat-card";
 export { AnimatedStatCard } from "./animated-stat-card";
 export { CountUp } from "./count-up";
 export { Reveal, Stagger, StaggerItem, EASE } from "./motion";
+export { Drawer } from "./drawer";
 export { Table, THead, TBody, Tr, Th, Td } from "./table";
 export { Input } from "./input";
 export type { InputProps } from "./input";
