@@ -6,7 +6,7 @@ import Link from "next/link";
 import { getMandate } from "@/server/services/mandates";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/format";
-import { label, options } from "@/lib/vocab";
+import { options } from "@/lib/vocab";
 import { RestageSelect } from "@/components/crm/restage-select";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
