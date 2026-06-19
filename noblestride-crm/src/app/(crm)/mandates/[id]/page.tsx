@@ -10,6 +10,7 @@ import { options } from "@/lib/vocab";
 import { RestageSelect } from "@/components/crm/restage-select";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
+import { FindProspectsButton } from "@/components/crm/find-prospects-button";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -57,6 +58,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
           )}
         </div>
         <div className="flex shrink-0 gap-2">
+          <FindProspectsButton mandateId={m.id} />
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>

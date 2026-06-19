@@ -11,6 +11,7 @@ import { label, options } from "@/lib/vocab";
 import { RestageSelect } from "@/components/crm/restage-select";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
+import { MatchInvestorsButton } from "@/components/crm/match-investors-button";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -61,9 +62,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           )}
         </div>
         <div className="flex shrink-0 gap-2">
-          <Button variant="secondary" size="sm" disabled>
-            Match Investors
-          </Button>
+          <MatchInvestorsButton transactionId={txn.id} />
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>
