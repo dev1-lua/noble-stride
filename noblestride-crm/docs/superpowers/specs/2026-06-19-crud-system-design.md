@@ -73,16 +73,17 @@ directly — see `docs/agents/03-creating-tools.md`).
    create/update mutations. One component serves create (empty) and edit (prefilled `initial`).
 
 ### Wiring
-- **List pages** (mandates, transactions, investors, partners): enable the disabled
-  "+ New" button → opens the create drawer. The RSC page loads relation `SelectOption[]`
-  (clients, users, partners, mandates) and passes them down — the existing
+- **List pages** (mandates, transactions, investors, partners, **clients**): enable the
+  disabled "+ New" button → opens the create drawer. The RSC page loads relation
+  `SelectOption[]` (clients, users, partners, mandates) and passes them down — the existing
   `LogEngagementDialog` pattern.
+- **New clients list page** — Client has no list page today (only `/clients/[id]`). Add
+  `src/app/(crm)/clients/page.tsx` mirroring the existing investors/partners list pattern
+  (RSC + `record-table` + `filter-bar`) with a "+ New Client" button. Suggested columns:
+  name, sector, HQ city, last-year revenue, mandate count. Mandate/Transaction Client
+  pickers select existing clients (users create a client from this list first).
 - **Detail pages** (all five): add **Edit** (prefilled drawer) and **Delete**
   (DeleteConfirm). After a successful delete, `router.push(listRoute)` + refresh.
-- **Client entry point (open item, see §8):** Client has **no list page** today, so its
-  create is surfaced via a "+ New Client" affordance inside the Client relation picker in
-  the Mandate/Transaction drawers (create-and-select inline) and Edit/Delete on the client
-  detail page.
 
 ## 3. Data flow
 
@@ -152,12 +153,13 @@ transitions remain the responsibility of the existing `updateMandateStage` /
 - **Auth:** unchanged — mutations stay open like the existing three. `ctx.actor` is read for
   provenance only, not enforcement. (Production gating is a separate pass.)
 
-## 8. Open item for review
+## 8. Clients list page (resolved)
 
-**Client has no list page.** The agreed scope was "all five list entities," but Client is
-reachable only via `/clients/[id]`. This spec surfaces Client create via the relation picker
-(create-and-select) + detail Edit/Delete, and does **not** add a clients list page. If a
-browseable clients list is wanted, that's a small add — flag it during spec review.
+Client had no list page (only `/clients/[id]`). Resolved during review: **add a clients
+list page** so Client gets the same "+ New" treatment as the other four (see §2 Wiring).
+New file `src/app/(crm)/clients/page.tsx`, RSC, mirroring the investors/partners list
+pattern (`record-table` + `filter-bar`), columns name / sector / HQ city / last-year
+revenue / mandate count, with a "+ New Client" button opening the create drawer.
 
 ## 9. Testing
 
@@ -181,5 +183,6 @@ Vitest is configured (`src/server/__tests__`, `src/graphql/__tests__`, `src/lib/
 - `src/components/ui/{drawer.tsx,fields.tsx,use-entity-form.ts}` + barrel export in `index.ts`.
 - `src/components/crm/delete-confirm.tsx`.
 - `src/components/crm/{mandate,transaction,investor,client,partner}-form-drawer.tsx`.
+- `src/app/(crm)/clients/page.tsx` — **new** clients list page with "+ New Client".
 - List pages (mandates/transactions/investors/partners) — enable "+ New".
 - Detail pages (all five) — add Edit/Delete; load relation options.
