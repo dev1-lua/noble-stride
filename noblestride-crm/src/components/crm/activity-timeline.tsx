@@ -1,0 +1,59 @@
+// activity-timeline.tsx — Shared server component for rendering activity lists.
+// Server Component: no "use client". Receives pre-mapped ActivityTimelineItem[].
+
+import { Card, CardHeader, CardBody } from "@/components/ui";
+import { label } from "@/lib/vocab";
+import { daysAgoLabel } from "@/lib/format";
+
+export interface ActivityTimelineItem {
+  id: string;
+  type: string;            // InteractionType enum value
+  subject?: string | null;
+  occurredAt: Date;
+  context?: string | null; // optional secondary line e.g. "Akili Kids · Acme Capital"
+}
+
+export function ActivityTimeline({
+  activities,
+  title = "Recent Activity",
+  emptyText = "No activity recorded.",
+}: {
+  activities: ActivityTimelineItem[];
+  title?: string;
+  emptyText?: string;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
+      </CardHeader>
+      <CardBody>
+        {activities.length === 0 ? (
+          <p className="text-sm text-zinc-400">{emptyText}</p>
+        ) : (
+          <ul className="space-y-3">
+            {activities.map((a) => (
+              <li key={a.id} className="flex items-start gap-3">
+                <span className="mt-1.5 h-2 w-2 rounded-full bg-accent flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-medium text-zinc-700">
+                      {label("InteractionType", a.type)}
+                    </span>
+                    {a.subject && (
+                      <span className="text-sm text-zinc-900 truncate">{a.subject}</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-0.5">{daysAgoLabel(a.occurredAt)}</p>
+                  {a.context && (
+                    <p className="text-xs text-zinc-400 mt-0.5">{a.context}</p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
