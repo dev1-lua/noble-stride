@@ -8,6 +8,8 @@ import { Avatar, Chip, Card, CardHeader, CardBody, Badge } from "@/components/ui
 import { formatMoney } from "@/lib/money";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
+import { InvestorFormDrawer } from "@/components/crm/investor-form-drawer";
+import { DeleteConfirm } from "@/components/crm/delete-confirm";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -19,6 +21,27 @@ export default async function InvestorDetailPage({ params }: PageProps) {
   const investor = await getInvestor(id);
 
   if (!investor) notFound();
+
+  const initial = {
+    id: investor.id,
+    name: investor.name,
+    investorType: investor.investorType ?? "",
+    website: investor.website ?? "",
+    status: investor.status ?? "",
+    sectorFocus: (investor.sectorFocus ?? []) as string[],
+    geographicFocus: (investor.geographicFocus ?? []) as string[],
+    instruments: (investor.instruments ?? []) as string[],
+    investmentStages: (investor.investmentStages ?? []) as string[],
+    aum: investor.aum == null ? undefined : Number(investor.aum),
+    ticketMin: investor.ticketMin == null ? undefined : Number(investor.ticketMin),
+    ticketMax: investor.ticketMax == null ? undefined : Number(investor.ticketMax),
+    targetIrr: investor.targetIrr == null ? undefined : Number(investor.targetIrr),
+    countryRestrictions: investor.countryRestrictions ?? "",
+    esgFocus: investor.esgFocus ?? "",
+    decisionProcess: investor.decisionProcess ?? "",
+    notes: investor.notes ?? "",
+  };
+  const DELETE_INVESTOR = `mutation DeleteInvestor($id: ID!) { deleteInvestor(id: $id) { id } }`;
 
   // Decimal → number conversions (guard nulls)
   const ticketMin = investor.ticketMin == null ? null : Number(investor.ticketMin);
@@ -66,6 +89,10 @@ export default async function InvestorDetailPage({ params }: PageProps) {
               {investor.website}
             </a>
           )}
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <InvestorFormDrawer mode="edit" initial={initial} />
+          <DeleteConfirm mutation={DELETE_INVESTOR} recordId={investor.id} entityLabel="investor" redirectTo="/investors" />
         </div>
       </div>
 

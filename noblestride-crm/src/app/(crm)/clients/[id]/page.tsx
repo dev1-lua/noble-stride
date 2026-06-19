@@ -8,6 +8,8 @@ import { getClient } from "@/server/services/clients";
 import { Chip, Card, CardHeader, CardBody, Avatar, Badge } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
 import { label } from "@/lib/vocab";
+import { ClientFormDrawer } from "@/components/crm/client-form-drawer";
+import { DeleteConfirm } from "@/components/crm/delete-confirm";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -28,6 +30,27 @@ export default async function ClientDetailPage({ params }: PageProps) {
 
   const sectors: string[] = c.sector ?? [];
   const countries: string[] = c.countries ?? [];
+
+  const initial = {
+    id: client.id,
+    name: client.name,
+    yearFounded: c.yearFounded == null ? undefined : Number(c.yearFounded),
+    hqCity: c.hqCity ?? "",
+    countries: countries,
+    website: c.website ?? "",
+    sector: sectors,
+    coreProduct: c.coreProduct ?? "",
+    description: c.description ?? "",
+    founders: c.founders ?? "",
+    founderGender: c.founderGender ?? "",
+    revenueLastYear: c.revenueLastYear == null ? undefined : Number(c.revenueLastYear),
+    revenueForecast: c.revenueForecast == null ? undefined : Number(c.revenueForecast),
+    profitable: c.profitable ?? false,
+    existingInvestors: c.existingInvestors ?? "",
+    source: c.source ?? "",
+    pitchDeckUrl: c.pitchDeckUrl ?? "",
+  };
+  const DELETE_CLIENT = `mutation DeleteClient($id: ID!) { deleteClient(id: $id) { id } }`;
 
   return (
     <div className="space-y-6">
@@ -50,6 +73,10 @@ export default async function ClientDetailPage({ params }: PageProps) {
               </a>
             )}
           </div>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <ClientFormDrawer mode="edit" initial={initial} />
+          <DeleteConfirm mutation={DELETE_CLIENT} recordId={client.id} entityLabel="client" redirectTo="/clients" />
         </div>
       </div>
 

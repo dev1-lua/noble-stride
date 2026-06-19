@@ -4,6 +4,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getMandate } from "@/server/services/mandates";
+import { relationOptions } from "@/server/services/relation-options";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { options } from "@/lib/vocab";
@@ -11,6 +12,8 @@ import { RestageSelect } from "@/components/crm/restage-select";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { FindProspectsButton } from "@/components/crm/find-prospects-button";
+import { MandateFormDrawer } from "@/components/crm/mandate-form-drawer";
+import { DeleteConfirm } from "@/components/crm/delete-confirm";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -23,8 +26,28 @@ export default async function MandateDetailPage({ params }: PageProps) {
 
   if (!mandate) notFound();
 
+  const rel = await relationOptions();
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const m = mandate as any;
+
+  const toDate = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : "");
+  const initial = {
+    id: m.id,
+    name: m.name,
+    clientId: m.clientId ?? "",
+    leadId: m.leadId ?? "",
+    referredById: m.referredById ?? "",
+    dealSize: m.dealSize == null ? undefined : Number(m.dealSize),
+    sector: (m.sector ?? []) as string[],
+    source: m.source ?? "",
+    dateOpened: toDate(m.dateOpened),
+    ndaStatus: m.ndaStatus ?? "",
+    eaStatus: m.eaStatus ?? "",
+    nextAction: m.nextAction ?? "",
+    notes: m.notes ?? "",
+  };
+  const DELETE_MANDATE = `mutation DeleteMandate($id: ID!) { deleteMandate(id: $id) { id } }`;
 
   const clientName: string = m.client?.name ?? m.name;
   const leadName: string | null = m.lead?.name ?? null;
@@ -62,6 +85,8 @@ export default async function MandateDetailPage({ params }: PageProps) {
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>
+          <MandateFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} partners={rel.partners} />
+          <DeleteConfirm mutation={DELETE_MANDATE} recordId={m.id} entityLabel="mandate" redirectTo="/mandates" />
         </div>
       </div>
 

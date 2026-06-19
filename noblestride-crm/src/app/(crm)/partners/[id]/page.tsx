@@ -7,6 +7,8 @@ import { getPartner } from "@/server/services/partners";
 import { Chip, Card, CardHeader, CardBody, Avatar, Badge } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
 import { label } from "@/lib/vocab";
+import { PartnerFormDrawer } from "@/components/crm/partner-form-drawer";
+import { DeleteConfirm } from "@/components/crm/delete-confirm";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -18,6 +20,17 @@ export default async function PartnerDetailPage({ params }: PageProps) {
   const partner = await getPartner(id);
 
   if (!partner) notFound();
+
+  const initial = {
+    id: partner.id,
+    name: partner.name,
+    partnerType: partner.partnerType ?? "",
+    profile: partner.profile ?? "",
+    status: partner.status ?? "",
+    location: partner.location ?? "",
+    amount: partner.amount == null ? undefined : Number(partner.amount),
+  };
+  const DELETE_PARTNER = `mutation DeletePartner($id: ID!) { deletePartner(id: $id) { id } }`;
 
   const amount = partner.amount != null ? Number(partner.amount) : null;
 
@@ -46,6 +59,10 @@ export default async function PartnerDetailPage({ params }: PageProps) {
           {partner.location && (
             <p className="mt-1 text-sm text-zinc-500">{partner.location}</p>
           )}
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <PartnerFormDrawer mode="edit" initial={initial} />
+          <DeleteConfirm mutation={DELETE_PARTNER} recordId={partner.id} entityLabel="partner" redirectTo="/partners" />
         </div>
       </div>
 

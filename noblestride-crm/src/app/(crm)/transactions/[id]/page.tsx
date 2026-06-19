@@ -4,6 +4,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTransaction } from "@/server/services/transactions";
+import { relationOptions } from "@/server/services/relation-options";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
@@ -12,6 +13,8 @@ import { RestageSelect } from "@/components/crm/restage-select";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { MatchInvestorsButton } from "@/components/crm/match-investors-button";
+import { TransactionFormDrawer } from "@/components/crm/transaction-form-drawer";
+import { DeleteConfirm } from "@/components/crm/delete-confirm";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -24,8 +27,25 @@ export default async function TransactionDetailPage({ params }: PageProps) {
 
   if (!transaction) notFound();
 
+  const rel = await relationOptions();
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const txn = transaction as any;
+
+  const toDate = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : "");
+  const initial = {
+    id: txn.id,
+    name: txn.name,
+    clientId: txn.clientId ?? "",
+    mandateId: txn.mandateId ?? "",
+    ownerId: txn.ownerId ?? "",
+    dealType: txn.dealType ?? "",
+    instrument: (txn.instrument ?? []) as string[],
+    targetRaise: txn.targetRaise == null ? undefined : Number(txn.targetRaise),
+    sector: (txn.sector ?? []) as string[],
+    dateOpened: toDate(txn.dateOpened),
+  };
+  const DELETE_TRANSACTION = `mutation DeleteTransaction($id: ID!) { deleteTransaction(id: $id) { id } }`;
 
   const clientName: string = txn.client?.name ?? txn.name;
   const ownerName: string | null = txn.owner?.name ?? null;
@@ -66,6 +86,8 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>
+          <TransactionFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} mandates={rel.mandates} />
+          <DeleteConfirm mutation={DELETE_TRANSACTION} recordId={txn.id} entityLabel="transaction" redirectTo="/transactions" />
         </div>
       </div>
 
