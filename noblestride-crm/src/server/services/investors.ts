@@ -5,6 +5,9 @@ import { prisma } from "@/lib/db";
 import { buildInvestorWhere } from "@/server/domain/filters";
 import { isActiveInvestorThisQuarter } from "@/server/domain/metrics";
 import type { InvestorFilter, InvestorSegments, Pagination } from "@/server/domain/types";
+import { investorCreateSchema, investorUpdateSchema, type InvestorCreateInput, type InvestorUpdateInput } from "@/lib/schemas/investor";
+import { actorSource, CrudError } from "./crud";
+import type { Actor } from "@/graphql/context";
 
 /**
  * List investors matching the given filter, ordered by name asc.
@@ -94,4 +97,22 @@ export async function getInvestor(id: string) {
       activities: { orderBy: { occurredAt: "desc" }, take: 20 },
     },
   });
+}
+
+export async function createInvestor(input: InvestorCreateInput, actor: Actor) {
+  const data = investorCreateSchema.parse(input);
+  return prisma.investor.create({ data: { ...data, createdSource: actorSource(actor) } });
+}
+
+export async function updateInvestor(id: string, input: InvestorUpdateInput) {
+  const data = investorUpdateSchema.parse(input);
+  return prisma.investor.update({ where: { id }, data });
+}
+
+export async function deleteInvestor(id: string) {
+  const engagements = await prisma.engagement.count({ where: { investorId: id } });
+  if (engagements > 0) {
+    throw new CrudError(`Cannot delete: ${engagements} engagement(s) reference this investor.`);
+  }
+  return prisma.investor.delete({ where: { id } });
 }
