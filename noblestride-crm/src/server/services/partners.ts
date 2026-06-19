@@ -5,6 +5,9 @@ import { prisma } from "@/lib/db";
 import { partnerReferralRollup } from "@/server/domain/metrics";
 import type { PartnerReferralInput } from "@/server/domain/types";
 import type { PartnerType, PartnerStatus } from "@prisma/client";
+import { partnerCreateSchema, partnerUpdateSchema, type PartnerCreateInput, type PartnerUpdateInput } from "@/lib/schemas/partner";
+import { actorSource, CrudError } from "./crud";
+import type { Actor } from "@/graphql/context";
 
 // ─── Filter type ─────────────────────────────────────────────────────────────
 
@@ -123,4 +126,24 @@ export async function partnerReferralStats(): Promise<PartnerReferralStats> {
     conversionRate: totalDealsReferred > 0 ? totalClosed / totalDealsReferred : 0,
     byPartner,
   };
+}
+
+// ─── CRUD ─────────────────────────────────────────────────────────────────────
+
+export async function createPartner(input: PartnerCreateInput, actor: Actor) {
+  const data = partnerCreateSchema.parse(input);
+  return prisma.partner.create({ data: { ...data, createdSource: actorSource(actor) } });
+}
+
+export async function updatePartner(id: string, input: PartnerUpdateInput) {
+  const data = partnerUpdateSchema.parse(input);
+  return prisma.partner.update({ where: { id }, data });
+}
+
+export async function deletePartner(id: string) {
+  const referred = await prisma.mandate.count({ where: { referredById: id } });
+  if (referred > 0) {
+    throw new CrudError(`Cannot delete: ${referred} mandate(s) were referred by this partner.`);
+  }
+  return prisma.partner.delete({ where: { id } });
 }
