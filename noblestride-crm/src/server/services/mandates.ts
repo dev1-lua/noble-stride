@@ -5,6 +5,9 @@ import { prisma } from "@/lib/db";
 import { LABELS, label } from "@/lib/vocab";
 import type { KanbanColumn, MandateStage } from "@/server/domain/types";
 import type { Mandate } from "@prisma/client";
+import { mandateCreateSchema, mandateUpdateSchema, type MandateCreateInput, type MandateUpdateInput } from "@/lib/schemas/mandate";
+import { actorSource, CrudError } from "./crud";
+import type { Actor } from "@/graphql/context";
 
 // ─── Filter type ─────────────────────────────────────────────────────────────
 
@@ -81,4 +84,24 @@ export async function setMandateStage(id: string, stage: MandateStage): Promise<
     where: { id },
     data: { stage, stageEnteredAt: new Date() },
   });
+}
+
+// ─── CRUD operations ──────────────────────────────────────────────────────────
+
+export async function createMandate(input: MandateCreateInput, actor: Actor) {
+  const data = mandateCreateSchema.parse(input);
+  return prisma.mandate.create({ data: { ...data, createdSource: actorSource(actor) } });
+}
+
+export async function updateMandate(id: string, input: MandateUpdateInput) {
+  const data = mandateUpdateSchema.parse(input);
+  return prisma.mandate.update({ where: { id }, data });
+}
+
+export async function deleteMandate(id: string) {
+  const transactions = await prisma.transaction.count({ where: { mandateId: id } });
+  if (transactions > 0) {
+    throw new CrudError(`Cannot delete: ${transactions} transaction(s) reference this mandate.`);
+  }
+  return prisma.mandate.delete({ where: { id } });
 }
