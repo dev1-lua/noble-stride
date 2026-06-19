@@ -3,6 +3,7 @@
 
 import "./types";
 import "./queries";
+import "./inputs";
 import "./mutations";
 import { builder } from "./builder";
 
