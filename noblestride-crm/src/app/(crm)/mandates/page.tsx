@@ -4,33 +4,26 @@
 
 import { mandatesByStage } from "@/server/services/mandates";
 import { daysInStage } from "@/server/domain/metrics";
+import { ACTIVE_MANDATE_STAGES } from "@/server/domain/types";
 import { StatRow } from "@/components/crm/stat-row";
 import { KanbanBoard } from "@/components/crm/kanban-board";
 import { Button } from "@/components/ui";
 import type { KanbanColumnDTO } from "@/components/crm/kanban-board";
 import type { MandateCardDTO } from "@/components/crm/kanban-card";
 
-// Stages that count as "active leads"
-const ACTIVE_LEAD_STAGES = new Set([
-  "NewLead",
-  "Qualification",
-  "PitchPresentation",
-  "Proposal",
-  "Negotiation",
-]);
-
 export default async function MandatesPage() {
   const rawColumns = await mandatesByStage();
   const now = new Date();
 
   // ── Derive stat tile values on the server ─────────────────────────────────
+  const activeLeadStages = new Set<string>(ACTIVE_MANDATE_STAGES);
   let activeLeads = 0;
   let inProposal = 0;
   let signedMandates = 0;
   let lostMandates = 0;
 
   for (const col of rawColumns) {
-    if (ACTIVE_LEAD_STAGES.has(col.stage)) activeLeads += col.items.length;
+    if (activeLeadStages.has(col.stage)) activeLeads += col.items.length;
     if (col.stage === "Proposal") inProposal = col.items.length;
     if (col.stage === "Signed") signedMandates = col.items.length;
     if (col.stage === "Lost") lostMandates = col.items.length;
