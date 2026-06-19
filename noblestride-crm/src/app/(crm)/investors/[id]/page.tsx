@@ -6,8 +6,8 @@ import Link from "next/link";
 import { getInvestor } from "@/server/services/investors";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
-import { daysAgoLabel } from "@/lib/format";
-import { label } from "@/lib/vocab";
+import { ActivityTimeline } from "@/components/crm/activity-timeline";
+import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -215,37 +215,14 @@ export default async function InvestorDetailPage({ params }: PageProps) {
         </CardBody>
       </Card>
 
-      {/* Activity list (inline — Task 15 will refactor to ActivityTimeline) */}
-      <Card>
-        <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">Recent Activity</h2>
-        </CardHeader>
-        <CardBody>
-          {investor.activities.length === 0 ? (
-            <p className="text-sm text-zinc-400">No activity recorded.</p>
-          ) : (
-            <ul className="space-y-3">
-              {investor.activities.map((a) => (
-                <li key={a.id} className="flex items-start gap-3">
-                  {/* Activity type dot */}
-                  <span className="mt-1.5 h-2 w-2 rounded-full bg-accent flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-medium text-zinc-700">
-                        {label("InteractionType", a.type)}
-                      </span>
-                      {a.subject && (
-                        <span className="text-sm text-zinc-900 truncate">{a.subject}</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-zinc-400 mt-0.5">{daysAgoLabel(a.occurredAt)}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
+      <ActivityTimeline
+        activities={investor.activities.map((a): ActivityTimelineItem => ({
+          id: a.id,
+          type: a.type,
+          subject: a.subject,
+          occurredAt: a.occurredAt,
+        }))}
+      />
     </div>
   );
 }

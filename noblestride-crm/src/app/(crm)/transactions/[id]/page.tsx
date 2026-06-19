@@ -5,10 +5,12 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTransaction } from "@/server/services/transactions";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
-import { formatDate, daysAgoLabel } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
 import { label, options } from "@/lib/vocab";
 import { RestageSelect } from "@/components/crm/restage-select";
+import { ActivityTimeline } from "@/components/crm/activity-timeline";
+import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -217,36 +219,14 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         </CardBody>
       </Card>
 
-      {/* Activity timeline */}
-      <Card>
-        <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">Recent Activity</h2>
-        </CardHeader>
-        <CardBody>
-          {!txn.activities || txn.activities.length === 0 ? (
-            <p className="text-sm text-zinc-400">No activity recorded.</p>
-          ) : (
-            <ul className="space-y-3">
-              {txn.activities.map((a: { id: string; type: string; subject?: string | null; occurredAt: Date }) => (
-                <li key={a.id} className="flex items-start gap-3">
-                  <span className="mt-1.5 h-2 w-2 rounded-full bg-accent flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-medium text-zinc-700">
-                        {label("InteractionType", a.type)}
-                      </span>
-                      {a.subject && (
-                        <span className="text-sm text-zinc-900 truncate">{a.subject}</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-zinc-400 mt-0.5">{daysAgoLabel(a.occurredAt)}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
+      <ActivityTimeline
+        activities={(txn.activities ?? []).map((a: { id: string; type: string; subject?: string | null; occurredAt: Date }): ActivityTimelineItem => ({
+          id: a.id,
+          type: a.type,
+          subject: a.subject,
+          occurredAt: a.occurredAt,
+        }))}
+      />
     </div>
   );
 }
