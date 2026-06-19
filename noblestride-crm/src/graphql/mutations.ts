@@ -5,6 +5,12 @@ import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum } 
 import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement } from "@/server/services/engagements";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput } from "./inputs";
+import { createInvestor, updateInvestor, deleteInvestor } from "@/server/services/investors";
+import { createClient, updateClient, deleteClient } from "@/server/services/clients";
+import { createMandate, updateMandate, deleteMandate } from "@/server/services/mandates";
+import { createTransaction, updateTransaction, deleteTransaction } from "@/server/services/transactions";
+import { createPartner, updatePartner, deletePartner } from "@/server/services/partners";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -48,5 +54,90 @@ builder.mutationFields((t) => ({
         subject: args.subject ?? undefined,
         body: args.body ?? undefined,
       }),
+  }),
+
+  // ── Investor ──
+  createInvestor: t.prismaField({
+    type: "Investor", nullable: false,
+    args: { input: t.arg({ type: InvestorInput, required: true }) },
+    resolve: (_q, _r, args, ctx) => createInvestor(args.input as never, ctx.actor),
+  }),
+  updateInvestor: t.prismaField({
+    type: "Investor", nullable: false,
+    args: { id: t.arg.id({ required: true }), input: t.arg({ type: InvestorInput, required: true }) },
+    resolve: (_q, _r, args) => updateInvestor(args.id, args.input as never),
+  }),
+  deleteInvestor: t.prismaField({
+    type: "Investor", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args) => deleteInvestor(args.id),
+  }),
+
+  // ── Client ──
+  createClient: t.prismaField({
+    type: "Client", nullable: false,
+    args: { input: t.arg({ type: ClientInput, required: true }) },
+    resolve: (_q, _r, args, ctx) => createClient(args.input as never, ctx.actor),
+  }),
+  updateClient: t.prismaField({
+    type: "Client", nullable: false,
+    args: { id: t.arg.id({ required: true }), input: t.arg({ type: ClientInput, required: true }) },
+    resolve: (_q, _r, args) => updateClient(args.id, args.input as never),
+  }),
+  deleteClient: t.prismaField({
+    type: "Client", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args) => deleteClient(args.id),
+  }),
+
+  // ── Mandate ──
+  createMandate: t.prismaField({
+    type: "Mandate", nullable: false,
+    args: { input: t.arg({ type: MandateInput, required: true }) },
+    resolve: (_q, _r, args, ctx) => createMandate(args.input as never, ctx.actor),
+  }),
+  updateMandate: t.prismaField({
+    type: "Mandate", nullable: false,
+    args: { id: t.arg.id({ required: true }), input: t.arg({ type: MandateInput, required: true }) },
+    resolve: (_q, _r, args) => updateMandate(args.id, args.input as never),
+  }),
+  deleteMandate: t.prismaField({
+    type: "Mandate", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args) => deleteMandate(args.id),
+  }),
+
+  // ── Transaction ──
+  createTransaction: t.prismaField({
+    type: "Transaction", nullable: false,
+    args: { input: t.arg({ type: TransactionInput, required: true }) },
+    resolve: (_q, _r, args, ctx) => createTransaction(args.input as never, ctx.actor),
+  }),
+  updateTransaction: t.prismaField({
+    type: "Transaction", nullable: false,
+    args: { id: t.arg.id({ required: true }), input: t.arg({ type: TransactionInput, required: true }) },
+    resolve: (_q, _r, args) => updateTransaction(args.id, args.input as never),
+  }),
+  deleteTransaction: t.prismaField({
+    type: "Transaction", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args) => deleteTransaction(args.id),
+  }),
+
+  // ── Partner ──
+  createPartner: t.prismaField({
+    type: "Partner", nullable: false,
+    args: { input: t.arg({ type: PartnerInput, required: true }) },
+    resolve: (_q, _r, args, ctx) => createPartner(args.input as never, ctx.actor),
+  }),
+  updatePartner: t.prismaField({
+    type: "Partner", nullable: false,
+    args: { id: t.arg.id({ required: true }), input: t.arg({ type: PartnerInput, required: true }) },
+    resolve: (_q, _r, args) => updatePartner(args.id, args.input as never),
+  }),
+  deletePartner: t.prismaField({
+    type: "Partner", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args) => deletePartner(args.id),
   }),
 }));

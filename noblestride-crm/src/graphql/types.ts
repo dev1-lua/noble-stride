@@ -93,6 +93,7 @@ export const InvestorRef = builder.prismaObject("Investor", {
     esgFocus: t.exposeString("esgFocus", { nullable: true }),
     decisionProcess: t.exposeString("decisionProcess", { nullable: true }),
     notes: t.exposeString("notes", { nullable: true }),
+    createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (i) => i.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (i) => i.updatedAt }),
     // Relations — tasks excluded per brief
@@ -128,6 +129,7 @@ export const ClientRef = builder.prismaObject("Client", {
     existingInvestors: t.exposeString("existingInvestors", { nullable: true }),
     source: t.field({ type: SourceEnum, nullable: true, resolve: (c) => c.source }),
     pitchDeckUrl: t.exposeString("pitchDeckUrl", { nullable: true }),
+    createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (c) => c.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (c) => c.updatedAt }),
     // Relations — tasks excluded per brief
@@ -162,6 +164,7 @@ export const MandateRef = builder.prismaObject("Mandate", {
     eaSignedDate: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.eaSignedDate }),
     nextAction: t.exposeString("nextAction", { nullable: true }),
     notes: t.exposeString("notes", { nullable: true }),
+    createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (m) => m.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (m) => m.updatedAt }),
     // FK scalars
@@ -194,6 +197,7 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     sector: t.field({ type: [SectorEnum], resolve: (tx) => tx.sector }),
     dateOpened: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.dateOpened }),
     closedAt: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.closedAt }),
+    createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (tx) => tx.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (tx) => tx.updatedAt }),
     // FK scalars
@@ -254,6 +258,7 @@ export const PartnerRef = builder.prismaObject("Partner", {
     // Money
     amount: t.float({ nullable: true, resolve: (p) => (p.amount == null ? null : Number(p.amount)) }),
     currency: t.exposeString("currency"),
+    createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (p) => p.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (p) => p.updatedAt }),
     // Relations
