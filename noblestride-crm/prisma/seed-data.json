@@ -1,0 +1,3090 @@
+{
+  "users": [
+    {
+      "name": "Amos",
+      "email": "amos@noblestride.capital",
+      "jobTitle": "Managing Director",
+      "avatarColor": "#1f6f54"
+    },
+    {
+      "name": "Ken W",
+      "email": "ken@noblestride.capital",
+      "jobTitle": "Partner",
+      "avatarColor": "#2a7d5f"
+    },
+    {
+      "name": "Duncan M",
+      "email": "duncan@noblestride.capital",
+      "jobTitle": "Deal Lead",
+      "avatarColor": "#0f766e"
+    },
+    {
+      "name": "Brenda C",
+      "email": "brenda@noblestride.capital",
+      "jobTitle": "Deal Lead",
+      "avatarColor": "#15803d"
+    },
+    {
+      "name": "Brian B",
+      "email": "brian@noblestride.capital",
+      "jobTitle": "Deal Lead",
+      "avatarColor": "#166534"
+    },
+    {
+      "name": "Cliff N",
+      "email": "cliff@noblestride.capital",
+      "jobTitle": "Deal Lead",
+      "avatarColor": "#047857"
+    },
+    {
+      "name": "James",
+      "email": "james@noblestride.capital",
+      "jobTitle": "Deal Lead",
+      "avatarColor": "#065f46"
+    },
+    {
+      "name": "Evans W",
+      "email": "evans@noblestride.capital",
+      "jobTitle": "Associate",
+      "avatarColor": "#0d9488"
+    },
+    {
+      "name": "Sheilla W",
+      "email": "sheilla@noblestride.capital",
+      "jobTitle": "Associate",
+      "avatarColor": "#3f6212"
+    },
+    {
+      "name": "Susan B",
+      "email": "susan@noblestride.capital",
+      "jobTitle": "Associate",
+      "avatarColor": "#4d7c0f"
+    },
+    {
+      "name": "Irine M",
+      "email": "irine@noblestride.capital",
+      "jobTitle": "Analyst",
+      "avatarColor": "#5b8a72"
+    },
+    {
+      "name": "Joel M",
+      "email": "joel@noblestride.capital",
+      "jobTitle": "Analyst",
+      "avatarColor": "#2c5f4f"
+    },
+    {
+      "name": "Ivy N",
+      "email": "ivy@noblestride.capital",
+      "jobTitle": "Analyst",
+      "avatarColor": "#1a5c3a"
+    },
+    {
+      "name": "Solomon O",
+      "email": "solomon@noblestride.capital",
+      "jobTitle": "Analyst",
+      "avatarColor": "#357960"
+    }
+  ],
+  "investors": [
+    {
+      "name": "IFC",
+      "website": null,
+      "investorType": "DFI",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Healthcare",
+        "FinancialServices",
+        "Education",
+        "FMCG"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Debt",
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Catherine",
+          "lastName": "Miriti",
+          "email": "cmiriti@ifc.org",
+          "phone": null,
+          "jobTitle": "Microfinace and banking- Deceased"
+        },
+        {
+          "firstName": "Angela",
+          "lastName": "Lumanau",
+          "email": "alumanau@ifc.org",
+          "phone": null,
+          "jobTitle": "Financial services- Equity head"
+        },
+        {
+          "firstName": "Olivia",
+          "lastName": "Falanga",
+          "email": null,
+          "phone": null,
+          "jobTitle": "IFC Financial instititutions South Africa"
+        },
+        {
+          "firstName": "Adeola",
+          "lastName": "Damilola",
+          "email": "aadebiyi@ifc.org",
+          "phone": null,
+          "jobTitle": "Adebiyi"
+        }
+      ]
+    },
+    {
+      "name": "responsAbility",
+      "website": "www.responsAbility.com",
+      "investorType": "PrivateEquity",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Agribusiness",
+        "RenewableEnergy",
+        "FinancialServices"
+      ],
+      "geographicFocus": [
+        "Global"
+      ],
+      "instruments": [
+        "Equity",
+        "Debt"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Michael",
+          "lastName": "Carlo",
+          "email": "michael.fabbroni@responsability.com",
+          "phone": "+254 732 355001",
+          "jobTitle": "Head of Financial institutions"
+        },
+        {
+          "firstName": "Andrew",
+          "lastName": "Mwangi",
+          "email": "andrew.mwangi@responsability.com",
+          "phone": "+254 739 964 092 S ra_mwangi",
+          "jobTitle": "Agriculture - LEFT TO INCOFIN"
+        },
+        {
+          "firstName": "Peter",
+          "lastName": "Page",
+          "email": "peter.page@responsability.com",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "I&P",
+      "website": "www.ietp.com",
+      "investorType": "PrivateEquity",
+      "status": "Fundraising",
+      "sectorFocus": [
+        "FinancialServices"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Jeremy",
+          "lastName": "Hajdenberg",
+          "email": "j.hajdenberg@ietp.com",
+          "phone": "Tel : +33 1 58 18 57 12 Mob : +33 6 13 68 23 34 Skype : jeremyhajdenberg",
+          "jobTitle": "Chief Investment Officer in charge in EA"
+        },
+        {
+          "firstName": "Shino",
+          "lastName": "Grivel",
+          "email": "s.grivel@ietp.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Jean-Michel",
+          "lastName": "Severino",
+          "email": null,
+          "phone": null,
+          "jobTitle": "CEO"
+        },
+        {
+          "firstName": "Sandrine",
+          "lastName": null,
+          "email": null,
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "IncoFin",
+      "website": "www.incofin.com",
+      "investorType": "PrivateEquity",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "RenewableEnergy"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity",
+        "Debt"
+      ],
+      "ticketMin": 3000000.0,
+      "ticketMax": 900000000.0,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Kevin",
+          "lastName": "Kamemba",
+          "email": "Kevin.Kamemba@incofin.com",
+          "phone": "+254 (0) 720 851 714 Baobab Suite, 3rd Floor, Riverside Green Office Park, Skype: kamemba.kevin",
+          "jobTitle": "Private Equity Manager Africa-LEFT to World Women Fund"
+        },
+        {
+          "firstName": "Valerica",
+          "lastName": "Voinea",
+          "email": "Valerica.Voinea@incofin.com",
+          "phone": null,
+          "jobTitle": "Legal"
+        },
+        {
+          "firstName": "Calvin",
+          "lastName": "Gachukia",
+          "email": "calvin.gachukia@incofin.com",
+          "phone": null,
+          "jobTitle": "at"
+        },
+        {
+          "firstName": "Emma",
+          "lastName": "Zawadi",
+          "email": "Emma.Awich@incofin.com",
+          "phone": null,
+          "jobTitle": "Associate Investment Manager – Agrofinance"
+        }
+      ]
+    },
+    {
+      "name": "Norfund",
+      "website": "www.norfund.no",
+      "investorType": "DFI",
+      "status": "FinalClose",
+      "sectorFocus": [
+        "Agribusiness",
+        "RenewableEnergy",
+        "FinancialServices"
+      ],
+      "geographicFocus": [
+        "PanAfrica"
+      ],
+      "instruments": [
+        "Debt",
+        "Equity"
+      ],
+      "ticketMin": 4000000.0,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Erik",
+          "lastName": "Sandersen",
+          "email": null,
+          "phone": null,
+          "jobTitle": "head of Financial institutions in Norfund"
+        },
+        {
+          "firstName": "Elin",
+          "lastName": "Ersdal",
+          "email": "Elin.Ersdal@norfund.no",
+          "phone": null,
+          "jobTitle": "Agriculture investment director"
+        },
+        {
+          "firstName": "Kjartan",
+          "lastName": "Stigen",
+          "email": "Kjartan.Stigen@norfund.no",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Sarah",
+          "lastName": "Masila",
+          "email": "sarah.masila@norfund.no",
+          "phone": null,
+          "jobTitle": "financial insititions"
+        }
+      ]
+    },
+    {
+      "name": "Bio invest Belgian Investment Company for Developing Countries SA/NV – BIO",
+      "website": "www.bio-invest.be",
+      "investorType": "DFI",
+      "status": "FullyDeployed",
+      "sectorFocus": [
+        "FinancialServices"
+      ],
+      "geographicFocus": [
+        "PanAfrica"
+      ],
+      "instruments": [
+        "Debt",
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Alexis",
+          "lastName": "Losseau",
+          "email": "Alexis.Losseau@bio-invest.be",
+          "phone": ": +32 (0)2 7789906",
+          "jobTitle": "LEFT"
+        },
+        {
+          "firstName": "Olivier",
+          "lastName": "Toussaint",
+          "email": null,
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Maximilien",
+          "lastName": "d’Harcourt",
+          "email": "Maximilien.dHarcourt@bio-invest.be",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Nada",
+          "lastName": "Shall",
+          "email": "Nada.Shall@bio-invest.be",
+          "phone": null,
+          "jobTitle": "Head Kenyan Office"
+        }
+      ]
+    },
+    {
+      "name": "OIKOCREDIT",
+      "website": "ea.oikocredit.coop/kenya",
+      "investorType": "DFI",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "FinancialServices"
+      ],
+      "geographicFocus": [
+        "EastAfrica",
+        "PanAfrica"
+      ],
+      "instruments": [
+        "Debt",
+        "Equity"
+      ],
+      "ticketMin": 10000000.0,
+      "ticketMax": 20000000.0,
+      "notes": "Oikocredit does offer loans ranging from USD 200,000 to USD 10 Million depending on the needs of the company. This would need to be no more than one third of the company's loan portfolio.",
+      "contacts": [
+        {
+          "firstName": "Tom",
+          "lastName": "Keleher",
+          "email": "tkeleher@oikocredit.org",
+          "phone": null,
+          "jobTitle": "Equity D. Director"
+        },
+        {
+          "firstName": "Anthony",
+          "lastName": "Gichini",
+          "email": "agichini@oikocredit.org",
+          "phone": null,
+          "jobTitle": "Equities"
+        },
+        {
+          "firstName": "Lewis",
+          "lastName": "Nyaga",
+          "email": "lnyaga@oikocredit.org",
+          "phone": null,
+          "jobTitle": "Financial instititions team"
+        },
+        {
+          "firstName": "Caroline",
+          "lastName": "Kishara",
+          "email": "ckishara@oikocredit.org",
+          "phone": null,
+          "jobTitle": "Debt"
+        }
+      ]
+    },
+    {
+      "name": "Afrexim",
+      "website": null,
+      "investorType": "PrivateEquity",
+      "status": "Dormant",
+      "sectorFocus": [
+        "Banking"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Sarah",
+          "lastName": "Siliya",
+          "email": "ssiliya@afreximbank.com",
+          "phone": null,
+          "jobTitle": "Rene Awambeng Gwen Mwaba Intong Eric Monchu Rose Njoki Chege"
+        },
+        {
+          "firstName": "Intong",
+          "lastName": "Eric",
+          "email": null,
+          "phone": null,
+          "jobTitle": "Monchu"
+        },
+        {
+          "firstName": "Osahon",
+          "lastName": "Akpata",
+          "email": "oakpata@afreximbank.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Nafal",
+          "lastName": "HASSANI-MOHAMED",
+          "email": null,
+          "phone": null,
+          "jobTitle": "Infrastructure & Debt Structuring Expert | Project Finance &"
+        }
+      ]
+    },
+    {
+      "name": "BlueOrchard Finance S.A. lueOrchard Finance Ltd Member of the Schroders Group",
+      "website": "www.blueorchard.com",
+      "investorType": "PrivateEquity",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "FinancialServices",
+        "Technology",
+        "Banking"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": 5000000.0,
+      "ticketMax": 10000000.0,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Magdalena",
+          "lastName": "Zatorska",
+          "email": "magdalena.zatorska@blueorchard.com",
+          "phone": "+41765715761 I Skype: magdalena.blueorchard",
+          "jobTitle": "VP Private Equity"
+        },
+        {
+          "firstName": "Maxime",
+          "lastName": "Bouan",
+          "email": "Maxime.Bouan@blueorchard.com",
+          "phone": null,
+          "jobTitle": "Head of Africa"
+        },
+        {
+          "firstName": "Reemt",
+          "lastName": "Behrens",
+          "email": null,
+          "phone": null,
+          "jobTitle": "Senior Investment Officer Africa"
+        },
+        {
+          "firstName": "Patrick",
+          "lastName": "Scheurle",
+          "email": null,
+          "phone": null,
+          "jobTitle": "CEO"
+        }
+      ]
+    },
+    {
+      "name": "SIMA -Social Investment Managers & Advisors -SIMA Funds",
+      "website": "simafunds.com",
+      "investorType": "PrivateEquity",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Agribusiness",
+        "Healthcare",
+        "RenewableEnergy",
+        "FinancialServices",
+        "RealEstate",
+        "Education",
+        "Infrastructure"
+      ],
+      "geographicFocus": [
+        "EastAfrica",
+        "PanAfrica"
+      ],
+      "instruments": [
+        "Equity",
+        "Debt"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": "At SIMA, we are currently working with Solar companies and MFIs. Our product is senior debt for a period of 3years. Education and Affordable Housing. Financial Services responsible MFIs invested in SUMAC and MUSONI",
+      "contacts": [
+        {
+          "firstName": "Xavier",
+          "lastName": "Pierluca",
+          "email": "Xavier@simafunds.com",
+          "phone": null,
+          "jobTitle": "VP Europe"
+        },
+        {
+          "firstName": "Brian",
+          "lastName": "McConnell",
+          "email": "Brian@simafunds.com",
+          "phone": null,
+          "jobTitle": "VP Africa - LEFT"
+        },
+        {
+          "firstName": "Ahadd",
+          "lastName": "Akbar",
+          "email": "ahadd@simafunds.com",
+          "phone": "+92 334 0312766",
+          "jobTitle": "Investment Associate"
+        },
+        {
+          "firstName": "Mekala",
+          "lastName": "Sai",
+          "email": "sai@simafunds.com",
+          "phone": null,
+          "jobTitle": "Saketh"
+        }
+      ]
+    },
+    {
+      "name": "Finnish Fund for Industrial Cooperation Ltd. (FINNFUND)",
+      "website": "www.finnfund.fi",
+      "investorType": "DFI",
+      "status": "Fundraising",
+      "sectorFocus": [
+        "Agribusiness"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Debt",
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Pentikäinen",
+          "lastName": "Markus",
+          "email": "Markus.Pentikainen@finnfund.fi",
+          "phone": "+358 50 339 7726",
+          "jobTitle": "CIO"
+        },
+        {
+          "firstName": "Matero",
+          "lastName": "Jari",
+          "email": "jari.matero@finnfund.fi",
+          "phone": "M. +358 40 523 2815 F. +358 9 3484 3346 S. jari_matero",
+          "jobTitle": "Senior Investment Manager\nAgribusiness & Renewable Energy an"
+        },
+        {
+          "firstName": "Johanna",
+          "lastName": "Raehalme",
+          "email": "johanna.raehalme@finnfund.fi",
+          "phone": "+358 44 033 1110",
+          "jobTitle": "Head of Nairobi Office"
+        },
+        {
+          "firstName": "Valtter.louhivuori",
+          "lastName": null,
+          "email": "valtter.louhivuori@finnfund.fi",
+          "phone": null,
+          "jobTitle": "Pipeline Development Nairobi Office"
+        }
+      ]
+    },
+    {
+      "name": "Grassroots Business Fund",
+      "website": "www.gbfund.org",
+      "investorType": "DebtProvider",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Agribusiness",
+        "Infrastructure"
+      ],
+      "geographicFocus": [
+        "EastAfrica"
+      ],
+      "instruments": [
+        "Debt"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": "I should mention that the current fund is fully committed; however, we are still interested in speaking with potential targets who are looking for funding around June/July 2017 as we should have new capital by then. Not focusing on MFI. Good target Anchor Foods and KK foods . Lilian Mramba | Regional Director, Africa\nGrassroots Business Fund | www.gbfund.org \nWestern Heights, 3rd Floor, Karuna Road, Westlands, Nairobi, Kenya\nP: + 254 717 071 038 | F: +1(202)986-4729 | S: lilian.mramba_GBF | E: lmramba@gbfund.org",
+      "contacts": [
+        {
+          "firstName": "Lilian",
+          "lastName": "Mramba",
+          "email": "lmramba@gbfund.org",
+          "phone": "+ 254 717 071 038 S: lilian.mramba_GBF",
+          "jobTitle": "Regional Director, Africa"
+        },
+        {
+          "firstName": "Darshan",
+          "lastName": "Dhakan",
+          "email": "ddhakan@gbfund.org",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Stephen",
+          "lastName": "Muchiri",
+          "email": "smuchiri@gbfund.org",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Jaime",
+          "lastName": "Ramirez",
+          "email": "jramirez@gbfund.org",
+          "phone": null,
+          "jobTitle": "CHIEF INVESTMENT OFFICER - WASHINGTON DC"
+        }
+      ]
+    },
+    {
+      "name": "Microvest Fund",
+      "website": "microvestfund.com",
+      "investorType": "DebtProvider",
+      "status": "FinalClose",
+      "sectorFocus": [
+        "Agribusiness",
+        "FinancialServices"
+      ],
+      "geographicFocus": [
+        "PanAfrica"
+      ],
+      "instruments": [
+        "Debt"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Renee",
+          "lastName": "Della",
+          "email": "rdella.ratta@microvestfund.com",
+          "phone": null,
+          "jobTitle": "Ratta Investment Officer"
+        },
+        {
+          "firstName": "Frederic",
+          "lastName": "Mille",
+          "email": "fmille@microvestfund.com",
+          "phone": null,
+          "jobTitle": "LEFT to Advans"
+        },
+        {
+          "firstName": "Thomas",
+          "lastName": "Ferre",
+          "email": "tferre@microvestfund.com",
+          "phone": null,
+          "jobTitle": "LEFT"
+        },
+        {
+          "firstName": "ANDREAS",
+          "lastName": "EICHIN",
+          "email": null,
+          "phone": null,
+          "jobTitle": "Director of Credit"
+        }
+      ]
+    },
+    {
+      "name": "INVESTEC- Investment Principal, Africa Private Equity Investec Asset Management",
+      "website": "www.investecassetmanagement.com",
+      "investorType": "PrivateEquity",
+      "status": "FullyDeployed",
+      "sectorFocus": [
+        "FinancialServices",
+        "FMCG"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Brian.Irvine",
+          "lastName": null,
+          "email": "Brian.Irvine@investec.co.za",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Dawood",
+          "lastName": "Mndebele'",
+          "email": "Dawood.Mndebele@investec.co.za",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Chetan",
+          "lastName": "Jeeva'",
+          "email": "Chetan.Jeeva@investec.co.za",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Gerben",
+          "lastName": "Dijkstra",
+          "email": "gerben.dijkstra@investecmail.com",
+          "phone": "+27 21 416 1916",
+          "jobTitle": "Investment Principal Africa"
+        }
+      ]
+    },
+    {
+      "name": "changed emails to firstname.intialof2ndname@lightrock.com",
+      "website": null,
+      "investorType": "PrivateEquity",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Agribusiness",
+        "Healthcare",
+        "RenewableEnergy",
+        "FinancialServices",
+        "Education"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": 10000000.0,
+      "ticketMax": 30000000.0,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Camila",
+          "lastName": "Almeida",
+          "email": "camila.almeida@lgtimpact.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Ruth",
+          "lastName": "Wanjiru",
+          "email": "ruthwanjiru2005@gmail.com",
+          "phone": null,
+          "jobTitle": "Hospital Expert for LGT- Moved to Zoscales"
+        },
+        {
+          "firstName": "Peterson",
+          "lastName": "Mutahi",
+          "email": "peterson.mutahi@lgtimpact.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Oliver",
+          "lastName": "Karius",
+          "email": null,
+          "phone": null,
+          "jobTitle": "CEO"
+        }
+      ]
+    },
+    {
+      "name": "AGRI-VIE INVESTMENT ADVISORS (PTY) LIMITED",
+      "website": "http://agrivie.com",
+      "investorType": "PrivateEquity",
+      "status": "Dormant",
+      "sectorFocus": [
+        "Agribusiness"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Denham",
+          "lastName": "Wiercx",
+          "email": "denhamw@agrivie.com",
+          "phone": "www.agrivie.com | Cape Town, South Africa | Nairobi, Kenya | Ebene, Mauritius Tel: +27 (0) 21 913 8950 | +27 (0) 21 913 5662 | Tel: +254 (0) 732 188 600 Mobile: +27 84 299 4017 | Skype: Denham.wiercx",
+          "jobTitle": null
+        },
+        {
+          "firstName": "John",
+          "lastName": "Gitahi",
+          "email": "johng@exeocapital.com",
+          "phone": "+254 71 700 6388",
+          "jobTitle": null
+        },
+        {
+          "firstName": "Avril",
+          "lastName": "Stassen",
+          "email": "avrils@agrivie.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Tania",
+          "lastName": "Brand-Kriegler",
+          "email": "taniabk@exeocapital.com",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Abraaj Group",
+      "website": "www.abraaj.com",
+      "investorType": "DFI",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Healthcare",
+        "Education"
+      ],
+      "geographicFocus": [
+        "EastAfrica",
+        "PanAfrica"
+      ],
+      "instruments": [
+        "Debt",
+        "Equity"
+      ],
+      "ticketMin": 340000000.0,
+      "ticketMax": 600000000.0,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Ashish",
+          "lastName": "Patel",
+          "email": "ashish.patel@abraaj.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Dipna",
+          "lastName": "Shah",
+          "email": "dipna.shah@abraaj.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Niels",
+          "lastName": "Bormans",
+          "email": "niels.bormans@abraaj.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Jacob",
+          "lastName": "Kholi",
+          "email": "Jacob.kholi@abraaj.com",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "DOBEquity",
+      "website": "www.dobequity.nl",
+      "investorType": "PrivateEquity",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "FinancialServices"
+      ],
+      "geographicFocus": [
+        "EastAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Ralph",
+          "lastName": "Jansen",
+          "email": "Ralph@dobequity.nl",
+          "phone": "+254714486351",
+          "jobTitle": "LEFT TO FMO"
+        },
+        {
+          "firstName": "Saskia",
+          "lastName": "Van",
+          "email": "Saskia@dobequity.nl",
+          "phone": "+ 254 708758817 Kenya Tanzania The Netherlands",
+          "jobTitle": "der Mast"
+        },
+        {
+          "firstName": "Anne",
+          "lastName": "Nyawira",
+          "email": "Anne@dobequity.nl",
+          "phone": null,
+          "jobTitle": "Investment Manager AGRI- Left"
+        },
+        {
+          "firstName": "Coen",
+          "lastName": null,
+          "email": "coen@dobtree.nl",
+          "phone": null,
+          "jobTitle": "Boevé"
+        }
+      ]
+    },
+    {
+      "name": "Abler Nordic Formerly Norwegian Microfinance initiative NMI",
+      "website": "www.nmimicro.no",
+      "investorType": "DFI",
+      "status": "Fundraising",
+      "sectorFocus": [
+        "Agribusiness",
+        "FinancialServices"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Debt",
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": "Tease Daraja MFB and SpeedCapital",
+      "contacts": [
+        {
+          "firstName": "Njord",
+          "lastName": "Andrewes",
+          "email": "na@nmimicro.no",
+          "phone": null,
+          "jobTitle": "Investment Manager- left to Accion"
+        },
+        {
+          "firstName": "Godfrey",
+          "lastName": "Kaindoh",
+          "email": "GK@nmimicro.no",
+          "phone": "Cell: +254 720 592 595 Office : +254 20 4207000 skype: kaindohgodfrey",
+          "jobTitle": "Investment  Manager Kenya"
+        },
+        {
+          "firstName": "Joshua",
+          "lastName": "Siranjofu",
+          "email": "js@nmimicro.no",
+          "phone": null,
+          "jobTitle": "Investment Associate"
+        },
+        {
+          "firstName": "Gathu",
+          "lastName": "Chege",
+          "email": "GC@nmimicro.no",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "MCE Social Capital",
+      "website": "mcesocap.org",
+      "investorType": "PrivateEquity",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Agribusiness",
+        "RenewableEnergy",
+        "FinancialServices",
+        "Infrastructure"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity",
+        "Debt"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Fabrizio",
+          "lastName": "Cometto'",
+          "email": "fcometto@mcesocap.org",
+          "phone": "+1 202-549-2069 skype: comettof",
+          "jobTitle": "Portfolio Manager West Africa- LEFT TO UNCDF"
+        },
+        {
+          "firstName": "Yves",
+          "lastName": "Mafolo",
+          "email": "ymafolo@mcesocap.org",
+          "phone": null,
+          "jobTitle": "New employee"
+        },
+        {
+          "firstName": "Elisabeth",
+          "lastName": "Chasia",
+          "email": "echasia@mcesocap.org",
+          "phone": "+1 415 230-4330 x110",
+          "jobTitle": "Portfolio Manager East Africa - left"
+        },
+        {
+          "firstName": "Carolyn",
+          "lastName": "Han",
+          "email": "chan@mcesocap.org",
+          "phone": null,
+          "jobTitle": "Africa Market"
+        }
+      ]
+    },
+    {
+      "name": "Phatisa",
+      "website": "www.phatisa.com",
+      "investorType": "PrivateEquity",
+      "status": "FinalClose",
+      "sectorFocus": [
+        "RealEstate"
+      ],
+      "geographicFocus": [
+        "PanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Founding",
+          "lastName": "Partiner",
+          "email": null,
+          "phone": null,
+          "jobTitle": "Stuart Bradley"
+        },
+        {
+          "firstName": "Fund",
+          "lastName": null,
+          "email": "okomboli@phatisa.com",
+          "phone": null,
+          "jobTitle": "partner E.Africa Okomboli Ongpong'a"
+        },
+        {
+          "firstName": "Founding",
+          "lastName": "partners",
+          "email": null,
+          "phone": null,
+          "jobTitle": "Jan Van Merwe"
+        },
+        {
+          "firstName": "Gwennaël",
+          "lastName": "Bouin'",
+          "email": "gwennaelbouin@phatisa.com",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Symbiotics",
+      "website": null,
+      "investorType": "PrivateEquity",
+      "status": "FullyDeployed",
+      "sectorFocus": [
+        "FinancialServices"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Ryan",
+          "lastName": "Andersen",
+          "email": "ryan.andersen@symbioticsgroup.com",
+          "phone": "Symbiotics SA Rue de la Synagogue 31 1204 Geneva, Switzerland tel: +41 (0)22 338 15 40 4 Loop Street, Studio 502 8001 Cape Town, South Africa tel: (+)27 21 425 5119",
+          "jobTitle": "Giles Savelli Jerome"
+        },
+        {
+          "firstName": "Lea",
+          "lastName": "Guillaumot",
+          "email": "lea.guillaumot@symbioticsgroup.com",
+          "phone": null,
+          "jobTitle": "Investment  Advisor - LEFT SYMBIOTICS"
+        },
+        {
+          "firstName": "Frances",
+          "lastName": "Rousseau",
+          "email": "Frances.Rousseau@symbioticsgroup.com",
+          "phone": null,
+          "jobTitle": "Investment Analyst, Sub Saharan Africa\nSymbiotics Informatio"
+        },
+        {
+          "firstName": "Felipe",
+          "lastName": "Martin",
+          "email": "Felipe.Martin@symbioticsgroup.com",
+          "phone": null,
+          "jobTitle": "MFIs-East Africa Focused"
+        }
+      ]
+    },
+    {
+      "name": "Agora Microfinance Partners LLP",
+      "website": "www.agoramicrofinance.com",
+      "investorType": "DebtProvider",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Agribusiness",
+        "FinancialServices",
+        "Technology"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Debt"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Rebecca",
+          "lastName": "McKenzie",
+          "email": "rebecca@agoramicrofinance.com",
+          "phone": null,
+          "jobTitle": "LEFT TO"
+        },
+        {
+          "firstName": "Tanmay",
+          "lastName": "Chetan",
+          "email": "Tanmay@agoramicrofinance.com",
+          "phone": "The Busworks, 39-41 North Road, London N7 9DP | T: +44 207 224 0597 | DD: +44 203 805 2975",
+          "jobTitle": "Managing Partner Tanmay Chetan \nChief Executive Officer | Ag"
+        },
+        {
+          "firstName": "Jitske",
+          "lastName": "Cnossen",
+          "email": "jitske@agoramicrofinance.com",
+          "phone": null,
+          "jobTitle": "COO"
+        },
+        {
+          "firstName": "Roanna",
+          "lastName": "Peat",
+          "email": "roanna@agoramicrofinance.com",
+          "phone": null,
+          "jobTitle": "CFO - Agora Microfinance N.V"
+        }
+      ]
+    },
+    {
+      "name": "Energy Access Ventures rebranded to E3",
+      "website": "www.eavafrica.com",
+      "investorType": "VentureCapital",
+      "status": "Dormant",
+      "sectorFocus": [
+        "RenewableEnergy"
+      ],
+      "geographicFocus": [
+        "EastAfrica",
+        "WestAfrica",
+        "PanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": 2000000.0,
+      "ticketMax": 600000000.0,
+      "notes": "we are only interested in Energy Access related opportunities. Got Investments in PEG Ghana worth USD 2Mn",
+      "contacts": [
+        {
+          "firstName": "Michael",
+          "lastName": null,
+          "email": null,
+          "phone": null,
+          "jobTitle": "H Gera"
+        },
+        {
+          "firstName": "Ravi",
+          "lastName": "Sikand",
+          "email": "ravi@eavafrica.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Emmanuel",
+          "lastName": "Beau",
+          "email": null,
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Paras",
+          "lastName": "Patel",
+          "email": "paras@e3-cap.com",
+          "phone": null,
+          "jobTitle": "Managing Partner"
+        }
+      ]
+    },
+    {
+      "name": "Vantage Capital",
+      "website": "www.vantagecapital.co.za",
+      "investorType": "DebtProvider",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Agribusiness",
+        "Healthcare",
+        "FinancialServices",
+        "Technology",
+        "RealEstate",
+        "Manufacturing",
+        "Education",
+        "FMCG"
+      ],
+      "geographicFocus": [
+        "SouthernAfrica"
+      ],
+      "instruments": [
+        "Debt",
+        "Mezzanine"
+      ],
+      "ticketMin": 5000000.0,
+      "ticketMax": 20000000.0,
+      "notes": "Already in talks for potential investment opportunties via Noblestride Capital. Vantage Capital\n3 Melrose Boulevard, Ground Floor \nMelrose Arch, Johannesburg, South Africa, 2076\nTel: +27-11-530-9131\nFax: +27-11-530-9101\nMobile: +27-71-219-6421\nEmail: diana@vantagemezzanine.com\nWebsite: www.vantagecapital.co.za\nAuthorised Financial Services Provider",
+      "contacts": [
+        {
+          "firstName": "Diana",
+          "lastName": "Njuguna",
+          "email": "diana@vantagemezzanine.com",
+          "phone": "+27712196421",
+          "jobTitle": "LEFT"
+        },
+        {
+          "firstName": "Hugo",
+          "lastName": "van",
+          "email": "Hugo@vantagemezzanine.com",
+          "phone": "+27 84 601 7961",
+          "jobTitle": "den Heever-Senior Associate"
+        },
+        {
+          "firstName": "Roshal",
+          "lastName": "Ramdenee",
+          "email": "roshal@vantagemezzanine.com",
+          "phone": null,
+          "jobTitle": "Works with Roshal"
+        },
+        {
+          "firstName": "Nishay",
+          "lastName": "Vithal",
+          "email": "Nishay@vantagemezzanine.com",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Triodos",
+      "website": null,
+      "investorType": "DebtProvider",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "FinancialServices"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Debt"
+      ],
+      "ticketMin": 2000000.0,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Tim",
+          "lastName": "Crijns",
+          "email": "tim.crijns@triodos.nl",
+          "phone": null,
+          "jobTitle": "fund manager of Triodos Fair Share Fund"
+        },
+        {
+          "firstName": "Johannes",
+          "lastName": "Reinking",
+          "email": null,
+          "phone": null,
+          "jobTitle": "Analyst at Triodos Investment Management"
+        },
+        {
+          "firstName": "Caspar",
+          "lastName": "Sprokel",
+          "email": "caspar.sprokel@triodos.nl",
+          "phone": null,
+          "jobTitle": "Head of Equity at Triodos"
+        },
+        {
+          "firstName": "Femke",
+          "lastName": "Bos",
+          "email": "femke.bos@triodos.nl",
+          "phone": null,
+          "jobTitle": "fund manager Triodos Microfinance Fund- Left"
+        }
+      ]
+    },
+    {
+      "name": "Enko Capital Management LLP 1 Knightsbridge Green, London, SW1X 7QA",
+      "website": "enkocapital.com",
+      "investorType": "PrivateEquity",
+      "status": "Fundraising",
+      "sectorFocus": [
+        "Agribusiness",
+        "FinancialServices",
+        "Manufacturing",
+        "FMCG"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": 5000000.0,
+      "ticketMax": 12000000.0,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Ralph",
+          "lastName": "Gilchrist",
+          "email": "Ralph.Gilchrist@enkocapital.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Elvis",
+          "lastName": "Havyarimana",
+          "email": "elvis.havyarimana@enkocapital.com",
+          "phone": "+250 722 989 892 | +250 792 573 787",
+          "jobTitle": "Investment Associate ENKO Capital Rwanda"
+        },
+        {
+          "firstName": "Solange",
+          "lastName": "Bamezon",
+          "email": "Solange.Bamezon@enkocapital.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Saad",
+          "lastName": "Sheikh",
+          "email": "saad.sheikh@enkocapital.com",
+          "phone": "'+44 20 7881 0038 +44 776 642 7637",
+          "jobTitle": "Saad Sheikh joins Enko Capital as Partner, Head of Private C"
+        }
+      ]
+    },
+    {
+      "name": "Fanisi",
+      "website": "www.fanisi.com",
+      "investorType": "DFI",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Agribusiness",
+        "Healthcare",
+        "RenewableEnergy",
+        "Education",
+        "FMCG"
+      ],
+      "geographicFocus": [
+        "EastAfrica"
+      ],
+      "instruments": [
+        "Debt",
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Asif",
+          "lastName": "Noorani",
+          "email": "asif.noorani@fanisi.com",
+          "phone": "+254703113755",
+          "jobTitle": "Associate deal sourcing - LEFT to I&P"
+        },
+        {
+          "firstName": "Ayisi",
+          "lastName": "makatiani",
+          "email": "ayisi.makatiani@fanisi.com",
+          "phone": "+254722510245",
+          "jobTitle": "Managing Partner"
+        },
+        {
+          "firstName": "Tony",
+          "lastName": "Wainaina",
+          "email": "Tony.Wainaina@fanisi.com",
+          "phone": null,
+          "jobTitle": "Managing Partner"
+        },
+        {
+          "firstName": "MARTIN",
+          "lastName": "KARIUKI",
+          "email": null,
+          "phone": null,
+          "jobTitle": "PRINCIPAL PORTFOLIO OPERATIONS"
+        }
+      ]
+    },
+    {
+      "name": "Gulf Capital",
+      "website": "www.gulfcapital.com",
+      "investorType": "DebtProvider",
+      "status": "FinalClose",
+      "sectorFocus": [
+        "Healthcare",
+        "FinancialServices",
+        "Education",
+        "FMCG"
+      ],
+      "geographicFocus": [
+        "EastAfrica",
+        "Global",
+        "MENA",
+        "PanAfrica"
+      ],
+      "instruments": [
+        "Debt",
+        "Mezzanine",
+        "Convertible"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": "We are interested in looking at the FMCG, Healthcare and Education space as well in Kenya/East Africa",
+      "contacts": [
+        {
+          "firstName": "Fidaa",
+          "lastName": "Haddad",
+          "email": "fhaddad@gulfcapital.com",
+          "phone": null,
+          "jobTitle": "MD"
+        },
+        {
+          "firstName": "Jamel",
+          "lastName": "Larbi",
+          "email": "jLarbi@gulfcapital.com",
+          "phone": "T. +971 4 436 6820",
+          "jobTitle": "Vice President"
+        },
+        {
+          "firstName": "Walid",
+          "lastName": "Cherif",
+          "email": "wcherif@gulfcapital.com",
+          "phone": "+971 4 436 6801",
+          "jobTitle": "Senior MD"
+        },
+        {
+          "firstName": "Elizabeth",
+          "lastName": "Donaghy",
+          "email": "edonaghy@gulfcapital.com",
+          "phone": "'+971 4 436 6808",
+          "jobTitle": "Investor Relations"
+        }
+      ]
+    },
+    {
+      "name": "Uqalo Capital",
+      "website": "uqalo.com",
+      "investorType": "PrivateEquity",
+      "status": "FullyDeployed",
+      "sectorFocus": [
+        "FinancialServices",
+        "FMCG"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Giles",
+          "lastName": "Hefer",
+          "email": "giles@uqalo.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Megan",
+          "lastName": "Edmonds",
+          "email": "megan@uqalo.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Sebastian",
+          "lastName": "McKinlay",
+          "email": "smsmckinlay@gmail.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Philp",
+          "lastName": "Baum",
+          "email": null,
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "34 Lombard Road London SW11 3RF",
+      "website": null,
+      "investorType": "PrivateEquity",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Agribusiness"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Saad",
+          "lastName": "Sheikh",
+          "email": "Saad.sheikh@tlgcapital.com",
+          "phone": "TLG Capital Investments Ltd 34 Lombard Rd, Falcon Wharf, London, SW11 3RF Office +44 207 499 9591 Mobile +44 778 533 2225 saad.sheikh@tlgcapital.com Skype: saad.s.sheikh",
+          "jobTitle": "Looks after investments in east Africa - LEFT TO ENKO"
+        },
+        {
+          "firstName": "Matthew",
+          "lastName": "Kyeyune",
+          "email": "matthew.kyeyune@betheladvisors.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Auraib",
+          "lastName": "Zahid",
+          "email": "auraib.zahid@tlgcapital.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Eddie",
+          "lastName": "Katongole",
+          "email": "eddie.katongole@tlgcapital.com",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "MEDU Capital",
+      "website": "www.meducapital.co.za",
+      "investorType": "PrivateEquity",
+      "status": "Dormant",
+      "sectorFocus": [
+        "Manufacturing",
+        "Infrastructure"
+      ],
+      "geographicFocus": [
+        "PanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Ernest",
+          "lastName": "January",
+          "email": "ejanuary@meducapital.co.za",
+          "phone": "+27 11 268 9140",
+          "jobTitle": null
+        },
+        {
+          "firstName": "Nhlanganiso",
+          "lastName": "Mkwanazi",
+          "email": "nmkwanazi@meducapital.co.za",
+          "phone": "+27 11 268 9140",
+          "jobTitle": null
+        },
+        {
+          "firstName": "Sandile",
+          "lastName": "Buthelezi",
+          "email": "sandile_3@hotmail.com",
+          "phone": "+27 74 375 4814",
+          "jobTitle": "CA- Principal"
+        },
+        {
+          "firstName": "Siyabonga",
+          "lastName": "Nhlumayo",
+          "email": "SNhlumayo@meducapital.co.za",
+          "phone": "+27 11 268 9140",
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Fates Group",
+      "website": "https://fatesgroup.com/en/leadership.html",
+      "investorType": "VentureCapital",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "RenewableEnergy",
+        "FinancialServices"
+      ],
+      "geographicFocus": [
+        "Global"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Adrian",
+          "lastName": "Tiwari",
+          "email": "ast@mmast.org",
+          "phone": "+971507086166 '+260961046347",
+          "jobTitle": "and Gilbert Armenta"
+        },
+        {
+          "firstName": "Alex",
+          "lastName": "Kruger",
+          "email": "akruger@zala-group.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Moris",
+          "lastName": "Gonzalez",
+          "email": "mgonzalez@zala-group.com",
+          "phone": "+1-954-901-1286",
+          "jobTitle": "Controller Zala Group"
+        },
+        {
+          "firstName": "Gilbert",
+          "lastName": "Armenta",
+          "email": "garmenta@fatesgroup.com",
+          "phone": null,
+          "jobTitle": "CEO and Founder"
+        }
+      ]
+    },
+    {
+      "name": "Imara Holdings",
+      "website": "www.imara.com",
+      "investorType": "PrivateEquity",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "RenewableEnergy"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Hector",
+          "lastName": "Fleming",
+          "email": "Hector.Fleming@imara.com",
+          "phone": null,
+          "jobTitle": "Executive Director"
+        },
+        {
+          "firstName": "Anthony",
+          "lastName": "Lopes",
+          "email": "Anthony.Lopes-Pinto@imara.com",
+          "phone": "+27 11 550 6000",
+          "jobTitle": "LEFT TO FORM HIS OWN"
+        },
+        {
+          "firstName": "Fleming",
+          "lastName": "Wulfsohn",
+          "email": null,
+          "phone": null,
+          "jobTitle": "Founder"
+        },
+        {
+          "firstName": "Brighton",
+          "lastName": "Jena",
+          "email": "Brighton.Jena@imara.com",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Okavango Capital Partners",
+      "website": "www.okavango-capital.com",
+      "investorType": "PrivateEquity",
+      "status": "Fundraising",
+      "sectorFocus": [
+        "FinancialServices"
+      ],
+      "geographicFocus": [
+        "SubSaharanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Josep",
+          "lastName": "Oriol",
+          "email": "j.oriol@okavango-capital.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "judith",
+          "lastName": "Minoo",
+          "email": "J.Minoo@okavango-capital.com",
+          "phone": "+254718596287",
+          "jobTitle": "Investment Analyst"
+        },
+        {
+          "firstName": "Caroline",
+          "lastName": "Chepkwony",
+          "email": "c.chepkwony@okavango-capital.com",
+          "phone": null,
+          "jobTitle": "Senior Investmetn Manager and CFO"
+        },
+        {
+          "firstName": "Caroline",
+          "lastName": "Njoki",
+          "email": "c.njoki@okavango-capital.com",
+          "phone": null,
+          "jobTitle": "Impact and Operations"
+        }
+      ]
+    },
+    {
+      "name": "Spear Capital",
+      "website": "www.spearcapital.co.za",
+      "investorType": "PrivateEquity",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Technology",
+        "FMCG"
+      ],
+      "geographicFocus": [
+        "EastAfrica",
+        "SouthernAfrica",
+        "PanAfrica"
+      ],
+      "instruments": [
+        "Equity",
+        "Debt"
+      ],
+      "ticketMin": 10000000.0,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Martin",
+          "lastName": "Soderberg",
+          "email": "mso@spearcapital.co.za",
+          "phone": "+27 82 9528628 +263 77 4818895 +47 411 88996",
+          "jobTitle": "Partner"
+        },
+        {
+          "firstName": "Bryan",
+          "lastName": "Turner",
+          "email": "btu@spearcapital.com",
+          "phone": null,
+          "jobTitle": "Partner"
+        },
+        {
+          "firstName": "Jessica",
+          "lastName": "Blake",
+          "email": "jbl@spearcapital.com",
+          "phone": "+27 608 590 637",
+          "jobTitle": "Senior associate"
+        },
+        {
+          "firstName": "Tapiwa",
+          "lastName": null,
+          "email": "tac@spearcapital.co.za",
+          "phone": "[mobile Zimbabwe] +263 713 420488 [skype] Tapiwa Chiwaridzo",
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "TBL Mirror Fund BV",
+      "website": "www.tblmirrorfund.com",
+      "investorType": "PrivateEquity",
+      "status": "FinalClose",
+      "sectorFocus": [
+        "Healthcare",
+        "FinancialServices",
+        "Technology",
+        "FMCG",
+        "Infrastructure"
+      ],
+      "geographicFocus": [
+        "EastAfrica",
+        "WestAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": 620000.0,
+      "ticketMax": 4340000.0,
+      "notes": "Kenya: KenCall EPZ LTD, Meridian Medical Centre, Software Technologies LTD, Research Solutions, Highlands Mineral Water Ltd, TKM Maestro Ltd, Cellulant, Neo Amadiva (Nairobi beauty salon chain)                                                Uganda: International Medical Group",
+      "contacts": [
+        {
+          "firstName": "Karen",
+          "lastName": "Serem",
+          "email": null,
+          "phone": null,
+          "jobTitle": "LEFT"
+        },
+        {
+          "firstName": "Eline",
+          "lastName": "Blaauboer",
+          "email": "blaaubboer@tblmirrorfund.com",
+          "phone": null,
+          "jobTitle": "Investment Director"
+        },
+        {
+          "firstName": "Jacco",
+          "lastName": "Brink",
+          "email": null,
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Activa Capital",
+      "website": "www.activa.co.za",
+      "investorType": "PrivateEquity",
+      "status": "FullyDeployed",
+      "sectorFocus": [
+        "Agribusiness"
+      ],
+      "geographicFocus": [
+        "EastAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": "Connect him to Nathan of Apex Oil via Noblestride. Connect him with the Ugandan Business",
+      "contacts": [
+        {
+          "firstName": "Geert",
+          "lastName": "Doyer",
+          "email": "geert@activa.co.za",
+          "phone": "086 608 7423",
+          "jobTitle": "Cofounder"
+        },
+        {
+          "firstName": "Paul",
+          "lastName": "Pretorius",
+          "email": null,
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Aldwych Capital Partners (\"Aldwych\")",
+      "website": "www.aldwychcapital.com",
+      "investorType": "PrivateEquity",
+      "status": "ActivelyDeploying",
+      "sectorFocus": [
+        "Agribusiness",
+        "RenewableEnergy",
+        "FinancialServices",
+        "Banking",
+        "Infrastructure"
+      ],
+      "geographicFocus": [
+        "PanAfrica"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Stephen",
+          "lastName": "Murray",
+          "email": "smurray@acpfn.com",
+          "phone": "T: +1 212.864.0081 M +1 202.236.0549",
+          "jobTitle": "Co-Head Africa"
+        },
+        {
+          "firstName": "James",
+          "lastName": "Avery",
+          "email": "javery@acpfn.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Emily",
+          "lastName": "Wong",
+          "email": "ewong@acpfn.com",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Global Capital Management Ltd-K.S.C.C. (“ A wholly-owned Private Equity subsidiary of Global Invesment House K.S.C.C)",
+      "website": "www.gmfa.com         www.globalinv.net",
+      "investorType": "VentureCapital",
+      "status": "Dormant",
+      "sectorFocus": [
+        "Healthcare",
+        "RenewableEnergy",
+        "FinancialServices",
+        "Technology",
+        "RealEstate",
+        "Manufacturing",
+        "Education",
+        "FMCG",
+        "Infrastructure"
+      ],
+      "geographicFocus": [
+        "Global",
+        "MENA"
+      ],
+      "instruments": [
+        "Equity"
+      ],
+      "ticketMin": null,
+      "ticketMax": null,
+      "notes": null,
+      "contacts": [
+        {
+          "firstName": "Zakir",
+          "lastName": null,
+          "email": "zrizvi@global.com.kw",
+          "phone": "+965 2295 1213 +965 979 4 6670",
+          "jobTitle": "Senior Director      Zakir H. Rizvi"
+        },
+        {
+          "firstName": "Sulaiman",
+          "lastName": null,
+          "email": "rnakani@global.com.kw",
+          "phone": null,
+          "jobTitle": "M Al-Rubaie"
+        }
+      ]
+    }
+  ],
+  "partners": [
+    {
+      "name": "Bowmans (Coulson Harney)",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": "Global paint manufacturer KansaiPlascon vs Sadolin Paints. KQ debt restructuring",
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Wathingira",
+          "lastName": "Gituro",
+          "email": "wathingira.gituro@bowmanslaw.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "John",
+          "lastName": "Kihia",
+          "email": "john.kihia@bowmanslaw.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Cornelius",
+          "lastName": "Kigera",
+          "email": "cornelius.kigera@bowmanslaw.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Paras",
+          "lastName": "Shah",
+          "email": "paras.shah@bowmanslaw.com",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Anjarwalla & Khanna",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": "CDC acquisition of ARM, Kuramo vs TransCentury",
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Atiq",
+          "lastName": "Anjarwalla",
+          "email": "aanjarwalla@ach-legal.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Shellomith",
+          "lastName": null,
+          "email": "SWI@africalegalnetwork.com",
+          "phone": null,
+          "jobTitle": "Partner"
+        },
+        {
+          "firstName": "Edward",
+          "lastName": "Macharia",
+          "email": "emacharia@ach-legal.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Mungai",
+          "lastName": "James",
+          "email": "mjn@africalegalnetwork.com",
+          "phone": null,
+          "jobTitle": "Njenga"
+        }
+      ]
+    },
+    {
+      "name": "Kaplan & Stratton",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": "Pioneer Food Group acquistion of 49% stake in weetabix. Kenol Kobil reoganisation. Best regards\n\nVictor Njenga | Kaplan&Stratton\nAssociate\nP.O. Box 40111 - 00100 Nairobi, Kenya \nT | +254 20 5145200 | +254 722 205782/3 | +254 733 699012/3\nE | VNjenga@kapstrat.com \nwww.kaplanstratton.com",
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "AMAR",
+          "lastName": "GREWAL-THETHY",
+          "email": "AmarGT@kapstrat.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Aditya",
+          "lastName": "Shah",
+          "email": null,
+          "phone": null,
+          "jobTitle": "Wokrd on VCB Termsheet"
+        },
+        {
+          "firstName": "Gakuru",
+          "lastName": "Anthony",
+          "email": "agakuru@kapstrat.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Karau",
+          "lastName": "Ritar",
+          "email": "rkarau@kapstrat.com",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Hamilton Harrison & Mathews- HHM",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": "Acted for Africa logistics Properties on a USD 60Mn equity capital raise",
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Abira",
+          "lastName": "Thomas",
+          "email": "tabira@hhm.co.ke",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Chepngetich",
+          "lastName": "Sharon",
+          "email": "schepngetich@hhm.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Brian",
+          "lastName": "muchiri",
+          "email": "bmuchiri@hhm.co.ke",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Andrew",
+          "lastName": "Mugambi",
+          "email": "amugambi@hhm.co.ke",
+          "phone": null,
+          "jobTitle": "Partner"
+        }
+      ]
+    },
+    {
+      "name": "KN Law LLP",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": "Acting for Centum on Food and Bev Transaction",
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Kevin",
+          "lastName": "Mutulis",
+          "email": "kmutulis@kn.co.ke",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Mugambi",
+          "lastName": "Nandi",
+          "email": "Nandi@kn.co.ke",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Johnson",
+          "lastName": "Kariuki",
+          "email": "jkariuki@kn.co.ke",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Patrick",
+          "lastName": "Murimi",
+          "email": "pmurimi@kn.co.ke",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Kampala Associated Advocates",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": "partner",
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Zulaika",
+          "lastName": "Mirembe",
+          "email": null,
+          "phone": null,
+          "jobTitle": "Partner"
+        },
+        {
+          "firstName": "Patricia",
+          "lastName": "Kamugisha",
+          "email": null,
+          "phone": null,
+          "jobTitle": "Associate Partner"
+        },
+        {
+          "firstName": "Mercy",
+          "lastName": "Makabayi",
+          "email": null,
+          "phone": null,
+          "jobTitle": "senior associate"
+        },
+        {
+          "firstName": "Charlotte",
+          "lastName": "Ahabwe",
+          "email": null,
+          "phone": null,
+          "jobTitle": "senior associate"
+        }
+      ]
+    },
+    {
+      "name": "Formerly Augentius UK",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": null,
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Vikash",
+          "lastName": "Chumun",
+          "email": "Vikash.Chumun@iqeq.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Rehma",
+          "lastName": "Imrith",
+          "email": "Rehma.Imrith@iqeq.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Business",
+          "lastName": "Implementation",
+          "email": "BusinessImplementationTeamMU@iqeq.com",
+          "phone": null,
+          "jobTitle": "Team MU'"
+        },
+        {
+          "firstName": "Mokshadda",
+          "lastName": "Heeramun'",
+          "email": "Mokshadda.Heeramun@iqeq.com",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "G&A Advocates LLP",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": "Formerly of Ashitiva Advocates",
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Nelson",
+          "lastName": "Karumba",
+          "email": "nkarumba@gallp.co.ke",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Sylvia",
+          "lastName": "Kithinji",
+          "email": "skithinji@gallp.co.ke",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Stephen",
+          "lastName": "Gachau",
+          "email": "sgachau@gallp.co.ke",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Iseme, Kamau and Maema Advocates IKM",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": "Championed IFC's USD 35Mn investment in Britam, KCB's USD 10Mn rights issue",
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Annet",
+          "lastName": "Ochieng",
+          "email": "aochieng@ikm.co.ke",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "David",
+          "lastName": "Lekerai",
+          "email": "dlekerai@ikm.co.ke",
+          "phone": null,
+          "jobTitle": "Partner"
+        },
+        {
+          "firstName": "Ngina",
+          "lastName": "Mbwele",
+          "email": "nmbwele@ikm.co.ke",
+          "phone": null,
+          "jobTitle": "Associate"
+        }
+      ]
+    },
+    {
+      "name": "African Legal Network",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": null,
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Mokeira",
+          "lastName": "Gladys",
+          "email": "gmm@africalegalnetwork.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Ngumy",
+          "lastName": "Daniel",
+          "email": "dng@africalegalnetwork.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Shin",
+          "lastName": "Geunhak",
+          "email": "sg@africalegalnetwork.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Kyomuhendo",
+          "lastName": "Winnie",
+          "email": "wkyomuhendo@sebalulule.co.ug",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Clyde and Co",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": null,
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Alex",
+          "lastName": "Devereux",
+          "email": "Alex.Devereux@clydeco.com",
+          "phone": null,
+          "jobTitle": "Clyde & Co \nMobile: +254 769 670 687 | MSTeams: +255 768 983"
+        },
+        {
+          "firstName": "Peter.Kasanda",
+          "lastName": null,
+          "email": "Peter.Kasanda@clydeco.co.tz",
+          "phone": null,
+          "jobTitle": "Managing Partner"
+        },
+        {
+          "firstName": "Imani.Mselle",
+          "lastName": null,
+          "email": "Imani.Mselle@clydeco.co.tz",
+          "phone": null,
+          "jobTitle": "Senior Associate"
+        },
+        {
+          "firstName": "eliya.nkerebuka",
+          "lastName": null,
+          "email": "eliya.nkerebuka@clydeco.co.tz",
+          "phone": null,
+          "jobTitle": "Tax Manager"
+        }
+      ]
+    },
+    {
+      "name": "DLA Piper",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": null,
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Calvin",
+          "lastName": "Mitali",
+          "email": "calvin.mitali@equityjurist.com",
+          "phone": null,
+          "jobTitle": "Partner"
+        },
+        {
+          "firstName": "Gertrude",
+          "lastName": "Wamala",
+          "email": "gwkarugaba@sebalulule.co.ug",
+          "phone": null,
+          "jobTitle": "Partner"
+        },
+        {
+          "firstName": "Dylan",
+          "lastName": "Kennett",
+          "email": "dylan.kennett@dlapiper.com",
+          "phone": null,
+          "jobTitle": "Associate"
+        },
+        {
+          "firstName": "Nicholas",
+          "lastName": "Ecimu",
+          "email": "necimu@sebalulue.co.ug",
+          "phone": null,
+          "jobTitle": "Partner"
+        }
+      ]
+    },
+    {
+      "name": "ENS AFRICA",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": null,
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Mahesh",
+          "lastName": null,
+          "email": "macharya@ensafrica.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Anthony",
+          "lastName": null,
+          "email": "agakuru@ensafrica.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Phillip",
+          "lastName": "Karugaba",
+          "email": "pkarugaba@ENSafrica.com",
+          "phone": null,
+          "jobTitle": "Partner Uganda"
+        },
+        {
+          "firstName": "Anita",
+          "lastName": "Kenyangi",
+          "email": "akenyangi@ENSafrica.com",
+          "phone": null,
+          "jobTitle": "Associate Uganda"
+        }
+      ]
+    },
+    {
+      "name": "HHM also trading as Dentons",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": null,
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Njau",
+          "lastName": "Andrew",
+          "email": "Andrew.Njau@dentons.com",
+          "phone": null,
+          "jobTitle": "Associate"
+        },
+        {
+          "firstName": "Wangoru",
+          "lastName": "Maina",
+          "email": "wangoru.maina@dentons.com",
+          "phone": null,
+          "jobTitle": null
+        },
+        {
+          "firstName": "Okaalet",
+          "lastName": "junior",
+          "email": "Peter.Okaaletjr@dentons.com",
+          "phone": null,
+          "jobTitle": "Peter"
+        },
+        {
+          "firstName": "Lijembe",
+          "lastName": "Lorene",
+          "email": "Lorene.Lijembe@dentons.com",
+          "phone": null,
+          "jobTitle": null
+        }
+      ]
+    },
+    {
+      "name": "Mboya Wangong'u & Waiyaki",
+      "partnerType": "LawFirm",
+      "status": "Active",
+      "location": "Nairobi, Kenya",
+      "profile": "Advised ABSA Barclays on the establishment of ETF and secondary listing  of Gold Bullion Debentures on the NSE. Acted for Fusion capital on its REITs",
+      "amount": null,
+      "contacts": [
+        {
+          "firstName": "Godwin",
+          "lastName": "Wangong'u",
+          "email": "gwangongu@lexgroupafrica.com",
+          "phone": null,
+          "jobTitle": "Corporate Partner"
+        },
+        {
+          "firstName": "CG",
+          "lastName": "Mbugua",
+          "email": "cgmbugua@lexgroupafrica.com",
+          "phone": null,
+          "jobTitle": "Corporate Partner"
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "name": "Atilla Poultry Farm",
+      "sector": [
+        "Agribusiness"
+      ],
+      "countries": [
+        "EastAfrica"
+      ],
+      "mandate": {
+        "name": "Atilla Poultry Farm – Capital Raise",
+        "stage": "Signed",
+        "dateOpened": "2024-11-28T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2025-01-14T00:00:00.000Z",
+        "ndaSignedDate": "2025-01-20T00:00:00.000Z",
+        "eaStatus": "Signed",
+        "eaSentDate": "2025-01-14T00:00:00.000Z",
+        "eaSignedDate": "2025-01-20T00:00:00.000Z",
+        "leadName": "Duncan",
+        "source": null,
+        "nextAction": "Kick off the transaction",
+        "notes": "Eric Gichohi"
+      }
+    },
+    {
+      "name": "Bid Apartments",
+      "sector": [
+        "RealEstate"
+      ],
+      "countries": [
+        "EastAfrica"
+      ],
+      "mandate": {
+        "name": "Bid Apartments – Capital Raise",
+        "stage": "Signed",
+        "dateOpened": "2024-07-01T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2024-07-01T00:00:00.000Z",
+        "ndaSignedDate": "2024-07-01T00:00:00.000Z",
+        "eaStatus": "Signed",
+        "eaSentDate": "2024-07-01T00:00:00.000Z",
+        "eaSignedDate": "2024-07-02T00:00:00.000Z",
+        "leadName": "Ken",
+        "source": null,
+        "nextAction": "Kick off the transaction",
+        "notes": "Valuation"
+      }
+    },
+    {
+      "name": "CESP Africa",
+      "sector": [
+        "FinancialServices"
+      ],
+      "countries": [
+        "EastAfrica",
+        "SouthernAfrica"
+      ],
+      "mandate": {
+        "name": "CESP Africa – Capital Raise",
+        "stage": "Signed",
+        "dateOpened": "2024-11-28T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2024-11-28T00:00:00.000Z",
+        "ndaSignedDate": "2025-02-20T00:00:00.000Z",
+        "eaStatus": "Signed",
+        "eaSentDate": "2025-02-18T00:00:00.000Z",
+        "eaSignedDate": "2025-02-20T00:00:00.000Z",
+        "leadName": "Amos",
+        "source": null,
+        "nextAction": "Kick off the transaction",
+        "notes": "Christopher gathini"
+      }
+    },
+    {
+      "name": "Camino Ruiz",
+      "sector": [
+        "RenewableEnergy"
+      ],
+      "countries": [
+        "PanAfrica"
+      ],
+      "mandate": {
+        "name": "Camino Ruiz – Capital Raise",
+        "stage": "Signed",
+        "dateOpened": "2024-03-08T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2024-03-08T00:00:00.000Z",
+        "ndaSignedDate": "2024-03-10T00:00:00.000Z",
+        "eaStatus": "Signed",
+        "eaSentDate": "2024-03-18T00:00:00.000Z",
+        "eaSignedDate": "2024-03-25T00:00:00.000Z",
+        "leadName": "Amos",
+        "source": null,
+        "nextAction": "Kick off the transaction",
+        "notes": "Prepare Engagement Contract"
+      }
+    },
+    {
+      "name": "City Health Hospital (Prodigy)",
+      "sector": [
+        "Healthcare"
+      ],
+      "countries": [
+        "EastAfrica",
+        "WestAfrica"
+      ],
+      "mandate": {
+        "name": "City Health Hospital (Prodigy) – Capital Raise",
+        "stage": "Signed",
+        "dateOpened": "2024-11-27T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2024-11-26T00:00:00.000Z",
+        "ndaSignedDate": "2024-12-04T00:00:00.000Z",
+        "eaStatus": "Signed",
+        "eaSentDate": "2024-11-26T00:00:00.000Z",
+        "eaSignedDate": "2024-12-04T00:00:00.000Z",
+        "leadName": "Amos",
+        "source": null,
+        "nextAction": "Kick off the transaction",
+        "notes": "Dr Wahome karanja"
+      }
+    },
+    {
+      "name": "Chipori Ltd (Sabor A' Mexico)",
+      "sector": [
+        "Agribusiness"
+      ],
+      "countries": [
+        "EastAfrica"
+      ],
+      "mandate": {
+        "name": "Chipori Ltd (Sabor A' Mexico) – Capital Raise",
+        "stage": "Negotiation",
+        "dateOpened": "2025-02-17T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2025-02-17T00:00:00.000Z",
+        "ndaSignedDate": "2025-02-17T00:00:00.000Z",
+        "eaStatus": "Sent",
+        "eaSentDate": "2025-02-17T00:00:00.000Z",
+        "eaSignedDate": null,
+        "leadName": "Brenda",
+        "source": "Referral",
+        "nextAction": "Finalise engagement terms",
+        "notes": "Sale of restaurant at the Hub — Source/Referee: Awori Alima"
+      }
+    },
+    {
+      "name": "Mwendo delivery Limited",
+      "sector": [
+        "Infrastructure"
+      ],
+      "countries": [
+        "EastAfrica"
+      ],
+      "mandate": {
+        "name": "Mwendo delivery Limited – Capital Raise",
+        "stage": "Negotiation",
+        "dateOpened": "2024-10-03T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2024-10-11T00:00:00.000Z",
+        "ndaSignedDate": "2024-10-11T00:00:00.000Z",
+        "eaStatus": "Sent",
+        "eaSentDate": "2024-10-11T00:00:00.000Z",
+        "eaSignedDate": null,
+        "leadName": "Brenda",
+        "source": null,
+        "nextAction": "Finalise engagement terms",
+        "notes": "Go slow"
+      }
+    },
+    {
+      "name": "Study Buddy",
+      "sector": [
+        "Education"
+      ],
+      "countries": [
+        "EastAfrica",
+        "SouthernAfrica"
+      ],
+      "mandate": {
+        "name": "Study Buddy – Capital Raise",
+        "stage": "Negotiation",
+        "dateOpened": "2024-08-01T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2024-08-01T00:00:00.000Z",
+        "ndaSignedDate": "2024-08-09T00:00:00.000Z",
+        "eaStatus": "Sent",
+        "eaSentDate": "2024-08-12T00:00:00.000Z",
+        "eaSignedDate": null,
+        "leadName": "Brenda",
+        "source": null,
+        "nextAction": "Finalise engagement terms",
+        "notes": "Faith"
+      }
+    },
+    {
+      "name": "Akili Kids",
+      "sector": [
+        "Education"
+      ],
+      "countries": [
+        "PanAfrica"
+      ],
+      "mandate": {
+        "name": "Akili Kids – Capital Raise",
+        "stage": "Proposal",
+        "dateOpened": "2024-11-13T00:00:00.000Z",
+        "ndaStatus": "Sent",
+        "ndaSentDate": "2025-02-13T00:00:00.000Z",
+        "ndaSignedDate": null,
+        "eaStatus": "Sent",
+        "eaSentDate": "2025-02-13T00:00:00.000Z",
+        "eaSignedDate": null,
+        "leadName": "Evans",
+        "source": null,
+        "nextAction": "Follow up on engagement agreement",
+        "notes": "Jeff Schon"
+      }
+    },
+    {
+      "name": "Muhindi Mweusi Supermarket",
+      "sector": [
+        "FMCG"
+      ],
+      "countries": [
+        "EastAfrica",
+        "WestAfrica"
+      ],
+      "mandate": {
+        "name": "Muhindi Mweusi Supermarket – Capital Raise",
+        "stage": "Proposal",
+        "dateOpened": "2024-12-27T00:00:00.000Z",
+        "ndaStatus": "Sent",
+        "ndaSentDate": "2024-12-15T00:00:00.000Z",
+        "ndaSignedDate": null,
+        "eaStatus": "Sent",
+        "eaSentDate": "2025-01-25T00:00:00.000Z",
+        "eaSignedDate": null,
+        "leadName": "Amos",
+        "source": null,
+        "nextAction": "Follow up on engagement agreement",
+        "notes": "Reminder sent"
+      }
+    },
+    {
+      "name": "Dr Arunga's Eye Hospital",
+      "sector": [
+        "Healthcare"
+      ],
+      "countries": [
+        "EastAfrica"
+      ],
+      "mandate": {
+        "name": "Dr Arunga's Eye Hospital – Capital Raise",
+        "stage": "PitchPresentation",
+        "dateOpened": "2024-10-18T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2024-10-21T00:00:00.000Z",
+        "ndaSignedDate": "2024-10-27T00:00:00.000Z",
+        "eaStatus": "NotSent",
+        "eaSentDate": null,
+        "eaSignedDate": null,
+        "leadName": "Sheilla",
+        "source": null,
+        "nextAction": "Prepare and deliver pitch",
+        "notes": "Potential client"
+      }
+    },
+    {
+      "name": "Ewaka",
+      "sector": [
+        "Healthcare"
+      ],
+      "countries": [
+        "EastAfrica"
+      ],
+      "mandate": {
+        "name": "Ewaka – Capital Raise",
+        "stage": "PitchPresentation",
+        "dateOpened": "2024-02-05T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2024-02-05T00:00:00.000Z",
+        "ndaSignedDate": "2024-02-06T00:00:00.000Z",
+        "eaStatus": "NotSent",
+        "eaSentDate": null,
+        "eaSignedDate": null,
+        "leadName": "Amos",
+        "source": null,
+        "nextAction": "Prepare and deliver pitch",
+        "notes": "Client went quiet"
+      }
+    },
+    {
+      "name": "Farmacie Limited",
+      "sector": [
+        "Agribusiness",
+        "Healthcare"
+      ],
+      "countries": [
+        "EastAfrica",
+        "SouthernAfrica"
+      ],
+      "mandate": {
+        "name": "Farmacie Limited – Capital Raise",
+        "stage": "PitchPresentation",
+        "dateOpened": "2024-05-21T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2024-05-21T00:00:00.000Z",
+        "ndaSignedDate": "2024-05-30T00:00:00.000Z",
+        "eaStatus": "NotSent",
+        "eaSentDate": null,
+        "eaSignedDate": null,
+        "leadName": "James",
+        "source": null,
+        "nextAction": "Prepare and deliver pitch",
+        "notes": "Went quiet (Business Plan)"
+      }
+    },
+    {
+      "name": "Arinifu",
+      "sector": [
+        "RenewableEnergy"
+      ],
+      "countries": [
+        "PanAfrica"
+      ],
+      "mandate": {
+        "name": "Arinifu – Capital Raise",
+        "stage": "Qualification",
+        "dateOpened": "2025-01-03T00:00:00.000Z",
+        "ndaStatus": "Sent",
+        "ndaSentDate": "2024-12-20T00:00:00.000Z",
+        "ndaSignedDate": null,
+        "eaStatus": "NotSent",
+        "eaSentDate": null,
+        "eaSignedDate": null,
+        "leadName": "James",
+        "source": null,
+        "nextAction": "Send NDA for signature",
+        "notes": "Follow up on the meeting"
+      }
+    },
+    {
+      "name": "Bicross Heart Solutions",
+      "sector": [
+        "Healthcare"
+      ],
+      "countries": [
+        "EastAfrica",
+        "WestAfrica"
+      ],
+      "mandate": {
+        "name": "Bicross Heart Solutions – Capital Raise",
+        "stage": "Qualification",
+        "dateOpened": "2024-12-11T00:00:00.000Z",
+        "ndaStatus": "Sent",
+        "ndaSentDate": "2024-12-11T00:00:00.000Z",
+        "ndaSignedDate": null,
+        "eaStatus": "NotSent",
+        "eaSentDate": null,
+        "eaSignedDate": null,
+        "leadName": "Cliff",
+        "source": null,
+        "nextAction": "Send NDA for signature",
+        "notes": "Reminder sent"
+      }
+    },
+    {
+      "name": "Danjade",
+      "sector": [
+        "Agribusiness"
+      ],
+      "countries": [
+        "EastAfrica"
+      ],
+      "mandate": {
+        "name": "Danjade – Capital Raise",
+        "stage": "Qualification",
+        "dateOpened": "2024-09-06T00:00:00.000Z",
+        "ndaStatus": "Sent",
+        "ndaSentDate": "2024-09-06T00:00:00.000Z",
+        "ndaSignedDate": null,
+        "eaStatus": "NotSent",
+        "eaSentDate": null,
+        "eaSignedDate": null,
+        "leadName": "Cliff",
+        "source": null,
+        "nextAction": "Send NDA for signature",
+        "notes": "Follow up williom ogeto"
+      }
+    },
+    {
+      "name": "A G Energies",
+      "sector": [
+        "RenewableEnergy"
+      ],
+      "countries": [
+        "EastAfrica"
+      ],
+      "mandate": {
+        "name": "A G Energies – Capital Raise",
+        "stage": "NewLead",
+        "dateOpened": "2024-10-07T00:00:00.000Z",
+        "ndaStatus": "NotSent",
+        "ndaSentDate": null,
+        "ndaSignedDate": null,
+        "eaStatus": "NotSent",
+        "eaSentDate": null,
+        "eaSignedDate": null,
+        "leadName": "Cliff",
+        "source": null,
+        "nextAction": "Schedule introductory call",
+        "notes": "Lavoc collaboration"
+      }
+    },
+    {
+      "name": "Deccan College",
+      "sector": [
+        "Education"
+      ],
+      "countries": [
+        "EastAfrica",
+        "SouthernAfrica"
+      ],
+      "mandate": {
+        "name": "Deccan College – Capital Raise",
+        "stage": "NewLead",
+        "dateOpened": "2025-01-27T00:00:00.000Z",
+        "ndaStatus": "NotSent",
+        "ndaSentDate": null,
+        "ndaSignedDate": null,
+        "eaStatus": "NotSent",
+        "eaSentDate": null,
+        "eaSignedDate": null,
+        "leadName": "Amos",
+        "source": "Referral",
+        "nextAction": "Schedule introductory call",
+        "notes": "on hold — Source/Referee: Truly Accountants TZ"
+      }
+    },
+    {
+      "name": "Eco foods and Cereals Uganda",
+      "sector": [
+        "Agribusiness"
+      ],
+      "countries": [
+        "EastAfrica"
+      ],
+      "mandate": {
+        "name": "Eco foods and Cereals Uganda – Capital Raise",
+        "stage": "Lost",
+        "dateOpened": "2024-09-11T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2024-10-02T00:00:00.000Z",
+        "ndaSignedDate": "2024-10-14T00:00:00.000Z",
+        "eaStatus": "Sent",
+        "eaSentDate": "2024-10-23T00:00:00.000Z",
+        "eaSignedDate": null,
+        "leadName": "Brian",
+        "source": "Referral",
+        "nextAction": "Archive — revisit next cycle",
+        "notes": "Follow up with Arnold — Source/Referee: Startup"
+      }
+    },
+    {
+      "name": "Jeen Mata Microfinance",
+      "sector": [
+        "FinancialServices"
+      ],
+      "countries": [
+        "EastAfrica",
+        "WestAfrica"
+      ],
+      "mandate": {
+        "name": "Jeen Mata Microfinance – Capital Raise",
+        "stage": "Lost",
+        "dateOpened": "2024-09-04T00:00:00.000Z",
+        "ndaStatus": "Signed",
+        "ndaSentDate": "2024-09-04T00:00:00.000Z",
+        "ndaSignedDate": "2024-09-09T00:00:00.000Z",
+        "eaStatus": "Sent",
+        "eaSentDate": "2024-09-11T00:00:00.000Z",
+        "eaSignedDate": null,
+        "leadName": "Cliff",
+        "source": "Referral",
+        "nextAction": "Archive — revisit next cycle",
+        "notes": "Sheilla — Source/Referee: To small"
+      }
+    }
+  ]
+}
