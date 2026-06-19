@@ -38,6 +38,10 @@ const ROUTE_META: Record<string, PageMeta> = {
     title: "Partners",
     subtitle: "Referral partners and advisors",
   },
+  "/clients": {
+    title: "Clients",
+    subtitle: "Portfolio company profile",
+  },
 };
 
 function derivePageMeta(pathname: string): PageMeta {
