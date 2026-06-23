@@ -1,6 +1,11 @@
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
 
+// CRM pages read live data from Postgres per request — never prerender them at
+// build time (that needs the DB at build and would freeze data into static HTML).
+// Set on the layout so it cascades to every (crm)/* route.
+export const dynamic = "force-dynamic";
+
 export default function CRMLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden">
