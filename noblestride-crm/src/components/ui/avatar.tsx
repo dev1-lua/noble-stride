@@ -8,17 +8,18 @@ export function initials(name: string): string {
   return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
 }
 
-/** Deterministic background color from a name (cycles through a palette). */
+/**
+ * Deterministic monogram styling from a name. Soft, cohesive cool-tinted family
+ * (light bg + colored initials) — not saturated rainbow circles. Returns both the
+ * background and the matching text color as one class string.
+ */
 function deriveColor(name: string): string {
   const COLORS = [
-    "bg-emerald-600",
-    "bg-sky-600",
-    "bg-violet-600",
-    "bg-amber-600",
-    "bg-rose-600",
-    "bg-cyan-600",
-    "bg-indigo-600",
-    "bg-teal-600",
+    "bg-emerald-100 text-emerald-700",
+    "bg-teal-100 text-teal-700",
+    "bg-sky-100 text-sky-700",
+    "bg-indigo-100 text-indigo-700",
+    "bg-slate-100 text-slate-600",
   ];
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
@@ -46,13 +47,17 @@ interface AvatarProps {
 export function Avatar({ name, color, size = "md", className }: AvatarProps) {
   const abbr = initials(name);
   const isHex = color && (color.startsWith("#") || color.startsWith("rgb"));
+  // An explicit color override is assumed saturated → white text. The default
+  // derived monogram carries its own (colored) text class.
+  const useWhiteText = Boolean(color);
   const bgClass = isHex ? undefined : (color ?? deriveColor(name));
 
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-full font-semibold text-white select-none flex-shrink-0",
+        "inline-flex items-center justify-center rounded-full font-semibold select-none flex-shrink-0 ring-1 ring-inset ring-black/[0.06]",
         SIZE[size],
+        useWhiteText && "text-white",
         !isHex && bgClass,
         className
       )}

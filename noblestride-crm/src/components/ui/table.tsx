@@ -34,7 +34,7 @@ interface THeadProps extends React.HTMLAttributes<HTMLTableSectionElement> {
 
 export function THead({ children, className, ...props }: THeadProps) {
   return (
-    <thead className={cn("border-b border-zinc-200 bg-zinc-50", className)} {...props}>
+    <thead className={cn("border-b border-zinc-200 bg-zinc-50/70", className)} {...props}>
       {children}
     </thead>
   );
@@ -72,7 +72,7 @@ export function Th({ children, className, ...props }: ThProps) {
   return (
     <th
       className={cn(
-        "px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wide whitespace-nowrap",
+        "px-4 py-2.5 text-left text-[11px] font-semibold text-zinc-400 uppercase tracking-wider whitespace-nowrap",
         className
       )}
       {...props}
@@ -89,7 +89,7 @@ interface TdProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
 export function Td({ children, className, ...props }: TdProps) {
   return (
     <td
-      className={cn("px-4 py-3 text-zinc-700 align-middle", className)}
+      className={cn("px-4 py-3.5 text-zinc-700 align-middle", className)}
       {...props}
     >
       {children}

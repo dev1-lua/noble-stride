@@ -1,18 +1,57 @@
-// pipeline-chart.tsx — Inline SVG/CSS chart components for the Dashboard.
-// NO chart library — React-19 compatible. Pure presentational (no hooks).
+"use client";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// pipeline-chart.tsx — animated, premium SVG/CSS charts for the Dashboard.
+// Motion-driven draw-in. Cohesive teal→emerald palette (no rainbow).
 
-const STAGE_COLORS = [
-  "#10b981", // emerald-500
-  "#14b8a6", // teal-500
-  "#0ea5e9", // sky-500
-  "#6366f1", // indigo-500
-  "#8b5cf6", // violet-500
-  "#a78bfa", // violet-400
-  "#f59e0b", // amber-500
-  "#f97316", // orange-500
-];
+import { motion } from "motion/react";
+import { EASE } from "@/components/ui/motion";
+
+// ─── Palette ────────────────────────────────────────────────────────────────
+// Stays within one teal→emerald family (no rainbow), but each step is chosen so
+// adjacent stages contrast in BOTH lightness and hue — early stages deepen
+// through teal, later stages shift to emerald and deepen again. Terminal stages
+// are special-cased: "won/signed" culminates in the deepest emerald, "lost" is
+// a quiet slate. Crisp white dividers between bar segments do the rest.
+
+const RAMP = ["#5eead4", "#14b8a6", "#0f766e", "#10b981", "#047857"];
+const WON = "#065f46"; // emerald-800 — deepest culmination
+const LOST = "#94a3b8"; // slate-400 — present but quiet
+
+function stageColor(stage: string, rampIndex: number): string {
+  const s = stage.toLowerCase();
+  if (s.includes("lost")) return LOST;
+  if (s.includes("signed") || s.includes("won")) return WON;
+  return RAMP[Math.min(rampIndex, RAMP.length - 1)];
+}
+
+const ACTIVE_COLOR = "#14b8a6"; // teal-500
+const CLOSED_COLOR = "#059669"; // emerald-600
+
+// ─── Smooth path (Catmull-Rom → cubic bezier) ────────────────────────────────
+
+interface Pt {
+  x: number;
+  y: number;
+}
+
+function smoothPath(pts: Pt[]): string {
+  if (pts.length === 0) return "";
+  if (pts.length === 1) return `M${pts[0].x},${pts[0].y}`;
+  const t = 0.18; // tension
+  let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] ?? p2;
+    const c1x = p1.x + (p2.x - p0.x) * t;
+    const c1y = p1.y + (p2.y - p0.y) * t;
+    const c2x = p2.x - (p3.x - p1.x) * t;
+    const c2y = p2.y - (p3.y - p1.y) * t;
+    d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
 
 // ─── DealPipelineTrendChart ───────────────────────────────────────────────────
 
@@ -22,78 +61,57 @@ interface TrendPoint {
   closed: number;
 }
 
-interface DealPipelineTrendChartProps {
-  data: TrendPoint[];
-}
-
-export function DealPipelineTrendChart({ data }: DealPipelineTrendChartProps) {
+export function DealPipelineTrendChart({ data }: { data: TrendPoint[] }) {
   const W = 520;
-  const H = 180;
-  const PAD_LEFT = 36;
-  const PAD_RIGHT = 16;
-  const PAD_TOP = 16;
-  const PAD_BOTTOM = 32;
+  const H = 200;
+  const PAD_LEFT = 32;
+  const PAD_RIGHT = 14;
+  const PAD_TOP = 14;
+  const PAD_BOTTOM = 30;
 
   const plotW = W - PAD_LEFT - PAD_RIGHT;
   const plotH = H - PAD_TOP - PAD_BOTTOM;
 
-  const allVals = data.flatMap((d) => [d.active, d.closed]);
-  const maxVal = Math.max(...allVals, 1);
+  const maxVal = Math.max(...data.flatMap((d) => [d.active, d.closed]), 1);
   const n = data.length;
 
-  function xPos(i: number) {
-    return PAD_LEFT + (i / Math.max(n - 1, 1)) * plotW;
-  }
+  const xPos = (i: number) => PAD_LEFT + (i / Math.max(n - 1, 1)) * plotW;
+  const yPos = (v: number) => PAD_TOP + plotH - (v / maxVal) * plotH;
 
-  function yPos(v: number) {
-    return PAD_TOP + plotH - (v / maxVal) * plotH;
-  }
+  const activePts = data.map((d, i) => ({ x: xPos(i), y: yPos(d.active) }));
+  const closedPts = data.map((d, i) => ({ x: xPos(i), y: yPos(d.closed) }));
 
-  // Build SVG path strings
-  function buildPath(vals: number[]) {
-    return vals
-      .map((v, i) => `${i === 0 ? "M" : "L"}${xPos(i).toFixed(1)},${yPos(v).toFixed(1)}`)
-      .join(" ");
-  }
+  const baseline = PAD_TOP + plotH;
+  const areaFrom = (pts: Pt[]) =>
+    `${smoothPath(pts)} L${xPos(n - 1).toFixed(1)},${baseline} L${xPos(0).toFixed(1)},${baseline} Z`;
 
-  function buildArea(vals: number[]) {
-    const baseline = PAD_TOP + plotH;
-    const path = vals
-      .map((v, i) => `${i === 0 ? "M" : "L"}${xPos(i).toFixed(1)},${yPos(v).toFixed(1)}`)
-      .join(" ");
-    const closeRight = ` L${xPos(n - 1).toFixed(1)},${baseline}`;
-    const closeLeft = ` L${xPos(0).toFixed(1)},${baseline} Z`;
-    return path + closeRight + closeLeft;
-  }
-
-  const activePath = buildPath(data.map((d) => d.active));
-  const closedPath = buildPath(data.map((d) => d.closed));
-  const activeArea = buildArea(data.map((d) => d.active));
-  const closedArea = buildArea(data.map((d) => d.closed));
-
-  // Y-axis grid lines (3 levels: 0, half, max)
   const yTicks = [0, Math.round(maxVal / 2), maxVal];
 
   return (
     <div className="w-full">
       {/* Legend */}
-      <div className="flex items-center gap-4 mb-3">
-        <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-4 rounded-sm bg-teal-500 opacity-80 inline-block" />
-          <span className="text-xs text-zinc-500">Active</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-4 rounded-sm bg-emerald-300 opacity-80 inline-block" />
-          <span className="text-xs text-zinc-500">Closed</span>
-        </div>
+      <div className="mb-3 flex items-center gap-5">
+        <LegendDot color={ACTIVE_COLOR} label="Active" />
+        <LegendDot color={CLOSED_COLOR} label="Closed" />
       </div>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"
-        style={{ height: 180 }}
+        style={{ height: 200 }}
         aria-label="Deal pipeline trend chart"
       >
+        <defs>
+          <linearGradient id="ns-active-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={ACTIVE_COLOR} stopOpacity="0.22" />
+            <stop offset="100%" stopColor={ACTIVE_COLOR} stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="ns-closed-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={CLOSED_COLOR} stopOpacity="0.16" />
+            <stop offset="100%" stopColor={CLOSED_COLOR} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
         {/* Grid lines */}
         {yTicks.map((tick) => {
           const y = yPos(tick);
@@ -104,49 +122,86 @@ export function DealPipelineTrendChart({ data }: DealPipelineTrendChartProps) {
                 y1={y}
                 x2={W - PAD_RIGHT}
                 y2={y}
-                stroke="#e4e4e7"
+                stroke="#eef0f2"
                 strokeWidth="1"
-                strokeDasharray="4 3"
               />
-              <text x={PAD_LEFT - 4} y={y + 4} textAnchor="end" fontSize="10" fill="#a1a1aa">
+              <text x={PAD_LEFT - 6} y={y + 3.5} textAnchor="end" fontSize="9.5" fill="#a1a1aa">
                 {tick}
               </text>
             </g>
           );
         })}
 
-        {/* Closed area (bottom, lighter) */}
-        <path d={closedArea} fill="#6ee7b7" fillOpacity="0.35" />
-        {/* Active area (on top, stronger) */}
-        <path d={activeArea} fill="#14b8a6" fillOpacity="0.25" />
+        {/* Areas (fade in) */}
+        <motion.path
+          d={areaFrom(closedPts)}
+          fill="url(#ns-closed-fill)"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.5, ease: EASE }}
+        />
+        <motion.path
+          d={areaFrom(activePts)}
+          fill="url(#ns-active-fill)"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.55, ease: EASE }}
+        />
 
-        {/* Closed line */}
-        <path d={closedPath} fill="none" stroke="#6ee7b7" strokeWidth="2" strokeLinejoin="round" />
-        {/* Active line */}
-        <path d={activePath} fill="none" stroke="#0d9488" strokeWidth="2.5" strokeLinejoin="round" />
+        {/* Lines (draw in) */}
+        <motion.path
+          d={smoothPath(closedPts)}
+          fill="none"
+          stroke={CLOSED_COLOR}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 1.1, ease: EASE }}
+        />
+        <motion.path
+          d={smoothPath(activePts)}
+          fill="none"
+          stroke={ACTIVE_COLOR}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 1.1, ease: EASE }}
+        />
 
-        {/* Data dots */}
+        {/* Dots (pop in last) */}
         {data.map((d, i) => (
-          <g key={i}>
-            <circle cx={xPos(i)} cy={yPos(d.active)} r="3" fill="#0d9488" />
-            <circle cx={xPos(i)} cy={yPos(d.closed)} r="2.5" fill="#6ee7b7" />
-          </g>
+          <motion.g
+            key={i}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.9 + i * 0.05, ease: EASE }}
+            style={{ transformOrigin: `${xPos(i)}px ${yPos(d.active)}px` }}
+          >
+            <circle cx={xPos(i)} cy={yPos(d.closed)} r="3" fill="#fff" stroke={CLOSED_COLOR} strokeWidth="1.5" />
+            <circle cx={xPos(i)} cy={yPos(d.active)} r="3.5" fill="#fff" stroke={ACTIVE_COLOR} strokeWidth="2" />
+          </motion.g>
         ))}
 
-        {/* X-axis month labels */}
+        {/* X-axis labels */}
         {data.map((d, i) => (
-          <text
-            key={i}
-            x={xPos(i)}
-            y={H - 6}
-            textAnchor="middle"
-            fontSize="10"
-            fill="#a1a1aa"
-          >
+          <text key={i} x={xPos(i)} y={H - 6} textAnchor="middle" fontSize="9.5" fill="#a1a1aa">
             {d.month}
           </text>
         ))}
       </svg>
+    </div>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+      <span className="text-xs text-zinc-500">{label}</span>
     </div>
   );
 }
@@ -159,65 +214,70 @@ interface StageCount {
   count: number;
 }
 
-interface PipelineOverviewChartProps {
-  mandatesByStage: StageCount[];
-  transactionsByStage: StageCount[];
-}
-
-function StageGroupChart({
-  heading,
-  stages,
-}: {
-  heading: string;
-  stages: StageCount[];
-}) {
+function StageGroupChart({ heading, stages }: { heading: string; stages: StageCount[] }) {
   const total = stages.reduce((sum, s) => sum + s.count, 0);
   const nonZero = stages.filter((s) => s.count > 0);
 
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 mb-2">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
         {heading}
       </p>
 
-      {/* Stacked horizontal bar */}
-      <div className="flex h-5 w-full overflow-hidden rounded-full bg-zinc-100 mb-3">
+      {/* Stacked bar — wipes in left→right via clip-path */}
+      <div className="mb-3 h-2.5 w-full overflow-hidden rounded-full bg-zinc-100">
         {total === 0 ? (
-          <div className="h-full w-full rounded-full bg-zinc-200" />
+          <div className="h-full w-full bg-zinc-200" />
         ) : (
-          stages.map((s, i) => {
-            if (s.count === 0) return null;
-            const pct = (s.count / total) * 100;
-            return (
-              <div
-                key={s.stage}
-                style={{
-                  width: `${pct}%`,
-                  backgroundColor: STAGE_COLORS[i % STAGE_COLORS.length],
-                }}
-                title={`${s.label}: ${s.count}`}
-              />
-            );
-          })
+          <motion.div
+            className="flex h-full w-full"
+            initial={{ clipPath: "inset(0 100% 0 0)" }}
+            whileInView={{ clipPath: "inset(0 0% 0 0)" }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.9, ease: EASE }}
+          >
+            {(() => {
+              // Index of the last non-zero stage — every segment before it gets a
+              // hairline white divider on its right edge so adjacent shades read as
+              // distinct blocks (box-border keeps the divider inside the width).
+              const lastVisible = stages.reduce((acc, s, i) => (s.count > 0 ? i : acc), -1);
+              return stages.map((s, i) => {
+                if (s.count === 0) return null;
+                return (
+                  <div
+                    key={s.stage}
+                    className="box-border"
+                    style={{
+                      width: `${(s.count / total) * 100}%`,
+                      backgroundColor: stageColor(s.stage, i),
+                      borderRight: i < lastVisible ? "2px solid #fff" : undefined,
+                    }}
+                    title={`${s.label}: ${s.count}`}
+                  />
+                );
+              });
+            })()}
+          </motion.div>
         )}
       </div>
 
-      {/* Legend grid */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3">
-        {(nonZero.length > 0 ? nonZero : stages.slice(0, 3)).map((s, i) => {
+      {/* Legend grid — each entry is a discrete tile so dot · label · count read
+          as one separated unit and never crowd the neighbouring column. */}
+      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+        {(nonZero.length > 0 ? nonZero : stages.slice(0, 3)).map((s) => {
           const colorIdx = stages.findIndex((orig) => orig.stage === s.stage);
           return (
-            <div key={s.stage} className="flex items-center gap-1.5 min-w-0">
+            <div
+              key={s.stage}
+              className="flex min-w-0 items-center gap-1.5 rounded-md bg-zinc-50 px-2 py-1.5"
+              title={`${s.label}: ${s.count}`}
+            >
               <span
-                className="h-2 w-2 flex-shrink-0 rounded-full"
-                style={{
-                  backgroundColor: STAGE_COLORS[(colorIdx >= 0 ? colorIdx : i) % STAGE_COLORS.length],
-                }}
+                className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                style={{ backgroundColor: stageColor(s.stage, colorIdx) }}
               />
-              <span className="text-xs text-zinc-600 truncate">
-                {s.label}
-              </span>
-              <span className="text-xs font-semibold text-zinc-900 ml-auto flex-shrink-0">
+              <span className="truncate text-xs text-zinc-600">{s.label}</span>
+              <span className="ml-auto flex-shrink-0 border-l border-zinc-200 pl-1.5 text-xs font-semibold tabular-nums text-zinc-900">
                 {s.count}
               </span>
             </div>
@@ -231,7 +291,10 @@ function StageGroupChart({
 export function PipelineOverviewChart({
   mandatesByStage,
   transactionsByStage,
-}: PipelineOverviewChartProps) {
+}: {
+  mandatesByStage: StageCount[];
+  transactionsByStage: StageCount[];
+}) {
   return (
     <div className="space-y-6">
       <StageGroupChart heading="Mandates Pipeline" stages={mandatesByStage} />

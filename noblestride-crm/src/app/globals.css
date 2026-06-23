@@ -11,8 +11,55 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
 body {
   font-family: var(--font-sans);
-  background: #fafafa;
   color: #18181b;
+  /* Near-white with two whisper-soft emerald glows top-left/right for depth */
+  background-color: #f7faf9;
+  background-image:
+    radial-gradient(900px 520px at 100% -8%, rgba(16, 185, 129, 0.05), transparent 60%),
+    radial-gradient(820px 480px at -8% 0%, rgba(13, 148, 136, 0.045), transparent 55%);
+  background-attachment: fixed;
+}
+
+/* Emerald-tinted text selection */
+::selection {
+  background: rgba(16, 185, 129, 0.18);
+  color: #064e3b;
+}
+
+/* Refined, unobtrusive scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d8 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #d4d4d8;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #a1a1aa;
+}
+
+/* Honor reduced-motion globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
