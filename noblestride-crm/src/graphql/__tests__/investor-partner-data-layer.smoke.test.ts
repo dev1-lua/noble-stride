@@ -34,4 +34,12 @@ describe("investor/partner data layer schema", () => {
     expect(fields).toContain("internalOnly");
     expect(fields).toContain("advisorType");
   });
+
+  it("exposes person primary/SSA flags", async () => {
+    const { schema } = await import("@/graphql/schema");
+    const p = schema.getTypeMap()["Person"] as { getFields?: () => Record<string, unknown> };
+    const fields = Object.keys(p.getFields?.() ?? {});
+    expect(fields).toContain("isPrimaryContact");
+    expect(fields).toContain("isSSAContact");
+  });
 });

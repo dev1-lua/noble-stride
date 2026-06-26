@@ -339,6 +339,9 @@ model Person {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  isPrimaryContact Boolean   @default(false)
+  isSSAContact     Boolean   @default(false)
+
   investorId String?
   investor   Investor? @relation(fields: [investorId], references: [id], onDelete: SetNull)
   clientId   String?

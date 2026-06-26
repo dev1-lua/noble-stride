@@ -68,6 +68,8 @@ export const PersonRef = builder.prismaObject("Person", {
     phone: t.exposeString("phone", { nullable: true }),
     jobTitle: t.exposeString("jobTitle", { nullable: true }),
     linkedinUrl: t.exposeString("linkedinUrl", { nullable: true }),
+    isPrimaryContact: t.exposeBoolean("isPrimaryContact"),
+    isSSAContact: t.exposeBoolean("isSSAContact"),
     createdAt: t.field({ type: "DateTime", resolve: (p) => p.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (p) => p.updatedAt }),
     // FK scalars
