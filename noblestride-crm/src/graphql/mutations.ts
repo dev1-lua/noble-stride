@@ -6,13 +6,14 @@ import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor } from "@/server/services/investors";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
 import { createMandate, updateMandate, deleteMandate } from "@/server/services/mandates";
 import { createTransaction, updateTransaction, deleteTransaction } from "@/server/services/transactions";
 import { createPartner, updatePartner, deletePartner } from "@/server/services/partners";
 import { createServiceProvider, updateServiceProvider, deleteServiceProvider } from "@/server/services/service-providers";
+import { createDocument, updateDocument, deleteDocument } from "@/server/services/documents";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -158,6 +159,23 @@ builder.mutationFields((t) => ({
     type: "ServiceProvider", nullable: false,
     args: { id: t.arg.id({ required: true }) },
     resolve: (_q, _r, args) => deleteServiceProvider(args.id),
+  }),
+
+  // ── Document ──
+  createDocument: t.prismaField({
+    type: "Document", nullable: false,
+    args: { input: t.arg({ type: DocumentInput, required: true }) },
+    resolve: (_q, _r, args, ctx) => createDocument(args.input as never, ctx.actor),
+  }),
+  updateDocument: t.prismaField({
+    type: "Document", nullable: false,
+    args: { id: t.arg.id({ required: true }), input: t.arg({ type: DocumentInput, required: true }) },
+    resolve: (_q, _r, args) => updateDocument(args.id, args.input as never),
+  }),
+  deleteDocument: t.prismaField({
+    type: "Document", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args) => deleteDocument(args.id),
   }),
 
   // ── Engagement ──

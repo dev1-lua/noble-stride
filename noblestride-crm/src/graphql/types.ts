@@ -26,6 +26,9 @@ import {
   InteractionTypeEnum,
   ActorSourceEnum,
   ServiceProviderTypeEnum,
+  DocumentTypeEnum,
+  DocumentAccessLevelEnum,
+  DocumentStatusEnum,
 } from "./builder";
 import { daysInStage } from "@/server/domain/metrics";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
@@ -334,5 +337,32 @@ export const ActivityRef = builder.prismaObject("Activity", {
     investor: t.relation("investor", { nullable: true }),
     mandate: t.relation("mandate", { nullable: true }),
     createdBy: t.relation("createdBy", { nullable: true }),
+  }),
+});
+
+// ─── Document ────────────────────────────────────────────────────────────────
+
+export const DocumentRef = builder.prismaObject("Document", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    name: t.exposeString("name"),
+    type: t.field({ type: DocumentTypeEnum, resolve: (d) => d.type }),
+    version: t.exposeString("version", { nullable: true }),
+    accessLevel: t.field({ type: DocumentAccessLevelEnum, resolve: (d) => d.accessLevel }),
+    status: t.field({ type: DocumentStatusEnum, nullable: true, resolve: (d) => d.status }),
+    fileUrl: t.exposeString("fileUrl", { nullable: true }),
+    uploadedAt: t.field({ type: "DateTime", resolve: (d) => d.uploadedAt }),
+    createdSource: t.field({ type: ActorSourceEnum, resolve: (d) => d.createdSource }),
+    createdAt: t.field({ type: "DateTime", resolve: (d) => d.createdAt }),
+    // FK scalars
+    uploadedById: t.exposeString("uploadedById", { nullable: true }),
+    transactionId: t.exposeString("transactionId", { nullable: true }),
+    clientId: t.exposeString("clientId", { nullable: true }),
+    investorId: t.exposeString("investorId", { nullable: true }),
+    // Relations
+    uploadedBy: t.relation("uploadedBy", { nullable: true }),
+    transaction: t.relation("transaction", { nullable: true }),
+    client: t.relation("client", { nullable: true }),
+    investor: t.relation("investor", { nullable: true }),
   }),
 });

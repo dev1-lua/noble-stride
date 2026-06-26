@@ -10,6 +10,7 @@ import {
   FounderGenderEnum,
   EngagementStageEnum, InterestLevelEnum, NdaTypeEnum, DisbursementStatusEnum,
   ServiceProviderTypeEnum,
+  DocumentTypeEnum, DocumentAccessLevelEnum, DocumentStatusEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -116,6 +117,21 @@ export const ServiceProviderInput = builder.inputType("ServiceProviderInput", {
     fee: t.float({ required: false }),
     currency: t.string({ required: false }),
     status: t.string({ required: false }),
+  }),
+});
+
+export const DocumentInput = builder.inputType("DocumentInput", {
+  fields: (t) => ({
+    name: t.string({ required: true }),
+    type: t.field({ type: DocumentTypeEnum, required: true }),
+    version: t.string({ required: false }),
+    accessLevel: t.field({ type: DocumentAccessLevelEnum, required: false }),
+    status: t.field({ type: DocumentStatusEnum, required: false }),
+    fileUrl: t.string({ required: false }),
+    uploadedById: t.id({ required: false }),
+    transactionId: t.id({ required: false }),
+    clientId: t.id({ required: false }),
+    investorId: t.id({ required: false }),
   }),
 });
 
