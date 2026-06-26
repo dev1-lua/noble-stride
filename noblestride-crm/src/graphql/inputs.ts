@@ -11,6 +11,7 @@ import {
   EngagementStageEnum, InterestLevelEnum, NdaTypeEnum, DisbursementStatusEnum,
   ServiceProviderTypeEnum,
   DocumentTypeEnum, DocumentAccessLevelEnum, DocumentStatusEnum,
+  InvestorEngagementClassificationEnum, InvestorNdaStatusEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -32,6 +33,22 @@ export const InvestorInput = builder.inputType("InvestorInput", {
     esgFocus: t.string({ required: false }),
     decisionProcess: t.string({ required: false }),
     notes: t.string({ required: false }),
+    // Task 5: engagement classification, NDA status, profile fields
+    engagementClassification: t.field({ type: InvestorEngagementClassificationEnum, required: false }),
+    ndaStatus: t.field({ type: InvestorNdaStatusEnum, required: false }),
+    shareholdingPreference: t.string({ required: false }),
+    minRevenue: t.float({ required: false }),
+    minEbitda: t.float({ required: false }),
+    minLoanBook: t.float({ required: false }),
+    pricingPreference: t.string({ required: false }),
+    remainingInvestmentPeriod: t.string({ required: false }),
+    ddRequirements: t.string({ required: false }),
+    icApprovalProcess: t.string({ required: false }),
+    trackRecord: t.string({ required: false }),
+    investmentMandate: t.string({ required: false }),
+    nextActionDate: t.field({ type: "DateTime", required: false }),
+    feedback: t.string({ required: false }),
+    ssaRegionContactId: t.id({ required: false }),
   }),
 });
 

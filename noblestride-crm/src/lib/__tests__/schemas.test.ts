@@ -20,6 +20,20 @@ describe("entity create schemas", () => {
     expect(r.success).toBe(false);
   });
 
+  it("investor: Task-5 fields survive Zod parse (not stripped)", () => {
+    const r = investorCreateSchema.safeParse({
+      name: "Test Fund",
+      investorType: "PrivateEquity",
+      engagementClassification: "Greylisted",
+      minRevenue: 5,
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.engagementClassification).toBe("Greylisted");
+      expect(r.data.minRevenue).toBe(5);
+    }
+  });
+
   it("mandate: requires name and clientId", () => {
     expect(mandateCreateSchema.safeParse({ name: "M" }).success).toBe(false);
     expect(mandateCreateSchema.safeParse({ name: "M", clientId: "c1" }).success).toBe(true);

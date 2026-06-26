@@ -29,6 +29,8 @@ import {
   DocumentTypeEnum,
   DocumentAccessLevelEnum,
   DocumentStatusEnum,
+  InvestorEngagementClassificationEnum,
+  InvestorNdaStatusEnum,
 } from "./builder";
 import { daysInStage } from "@/server/domain/metrics";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
@@ -101,6 +103,23 @@ export const InvestorRef = builder.prismaObject("Investor", {
     esgFocus: t.exposeString("esgFocus", { nullable: true }),
     decisionProcess: t.exposeString("decisionProcess", { nullable: true }),
     notes: t.exposeString("notes", { nullable: true }),
+    // Task 5: engagement classification, NDA status, profile fields
+    engagementClassification: t.field({ type: InvestorEngagementClassificationEnum, resolve: (i) => i.engagementClassification }),
+    ndaStatus: t.field({ type: InvestorNdaStatusEnum, resolve: (i) => i.ndaStatus }),
+    shareholdingPreference: t.exposeString("shareholdingPreference", { nullable: true }),
+    minRevenue: t.float({ nullable: true, resolve: (i) => (i.minRevenue == null ? null : Number(i.minRevenue)) }),
+    minEbitda: t.float({ nullable: true, resolve: (i) => (i.minEbitda == null ? null : Number(i.minEbitda)) }),
+    minLoanBook: t.float({ nullable: true, resolve: (i) => (i.minLoanBook == null ? null : Number(i.minLoanBook)) }),
+    pricingPreference: t.exposeString("pricingPreference", { nullable: true }),
+    remainingInvestmentPeriod: t.exposeString("remainingInvestmentPeriod", { nullable: true }),
+    ddRequirements: t.exposeString("ddRequirements", { nullable: true }),
+    icApprovalProcess: t.exposeString("icApprovalProcess", { nullable: true }),
+    trackRecord: t.exposeString("trackRecord", { nullable: true }),
+    investmentMandate: t.exposeString("investmentMandate", { nullable: true }),
+    nextActionDate: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.nextActionDate }),
+    feedback: t.exposeString("feedback", { nullable: true }),
+    ssaRegionContactId: t.exposeString("ssaRegionContactId", { nullable: true }),
+    ssaRegionContact: t.relation("ssaRegionContact", { nullable: true }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (i) => i.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (i) => i.updatedAt }),

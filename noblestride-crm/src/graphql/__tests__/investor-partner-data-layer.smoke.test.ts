@@ -17,4 +17,12 @@ describe("investor/partner data layer schema", () => {
     const doc = schema.getTypeMap()["Document"] as { getFields?: () => Record<string, unknown> };
     expect(Object.keys(doc.getFields?.() ?? {})).toContain("accessLevel");
   });
+
+  it("exposes investor classification + ndaStatus", async () => {
+    const { schema } = await import("@/graphql/schema");
+    const inv = schema.getTypeMap()["Investor"] as { getFields?: () => Record<string, unknown> };
+    const fields = Object.keys(inv.getFields?.() ?? {});
+    expect(fields).toContain("engagementClassification");
+    expect(fields).toContain("ndaStatus");
+  });
 });

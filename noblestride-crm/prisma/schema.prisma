@@ -346,6 +346,8 @@ model Person {
   partnerId  String?
   partner    Partner?  @relation(fields: [partnerId], references: [id], onDelete: SetNull)
 
+  ssaForInvestors Investor[] @relation("InvestorSsaContact")
+
   @@index([investorId])
   @@index([clientId])
   @@index([partnerId])
@@ -374,6 +376,23 @@ model Investor {
   esgFocus            String?
   decisionProcess     String? // rich text / markdown
   notes               String?
+  // Task 5: engagement classification, NDA status, profile fields
+  engagementClassification InvestorEngagementClassification @default(Active)
+  ndaStatus                InvestorNdaStatus                @default(None)
+  shareholdingPreference   String?
+  minRevenue               Decimal?  @db.Decimal(20, 2)
+  minEbitda                Decimal?  @db.Decimal(20, 2)
+  minLoanBook              Decimal?  @db.Decimal(20, 2)
+  pricingPreference        String?
+  remainingInvestmentPeriod String?
+  ddRequirements           String?
+  icApprovalProcess        String?
+  trackRecord              String?
+  investmentMandate        String?
+  nextActionDate           DateTime?
+  feedback                 String?
+  ssaRegionContactId       String?
+  ssaRegionContact         Person?   @relation("InvestorSsaContact", fields: [ssaRegionContactId], references: [id], onDelete: SetNull)
   createdSource       ActorSource     @default(HUMAN)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
@@ -386,6 +405,7 @@ model Investor {
 
   @@index([investorType])
   @@index([status])
+  @@index([engagementClassification])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
