@@ -12,6 +12,7 @@ import {
   ServiceProviderTypeEnum,
   DocumentTypeEnum, DocumentAccessLevelEnum, DocumentStatusEnum,
   InvestorEngagementClassificationEnum, InvestorNdaStatusEnum,
+  AdvisorTypeEnum, PartnerAgreementStatusEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -120,6 +121,15 @@ export const PartnerInput = builder.inputType("PartnerInput", {
     location: t.string({ required: false }),
     amount: t.float({ required: false }),
     currency: t.string({ required: false }),
+    // Task 6: advisor type, fee-sharing, partner agreement, internal-only, direct contact
+    advisorType: t.field({ type: AdvisorTypeEnum, required: false }),
+    organization: t.string({ required: false }),
+    email: t.string({ required: false }),
+    phone: t.string({ required: false }),
+    feeSharingAgreement: t.boolean({ required: false }),
+    feeSharingTerms: t.string({ required: false }),
+    partnerAgreementStatus: t.field({ type: PartnerAgreementStatusEnum, required: false }),
+    internalOnly: t.boolean({ required: false }),
   }),
 });
 

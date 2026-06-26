@@ -31,6 +31,8 @@ import {
   DocumentStatusEnum,
   InvestorEngagementClassificationEnum,
   InvestorNdaStatusEnum,
+  AdvisorTypeEnum,
+  PartnerAgreementStatusEnum,
 } from "./builder";
 import { daysInStage } from "@/server/domain/metrics";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
@@ -300,6 +302,15 @@ export const PartnerRef = builder.prismaObject("Partner", {
     // Money
     amount: t.float({ nullable: true, resolve: (p) => (p.amount == null ? null : Number(p.amount)) }),
     currency: t.exposeString("currency"),
+    // Task 6: advisor type, fee-sharing, partner agreement, internal-only, direct contact
+    advisorType: t.field({ type: AdvisorTypeEnum, nullable: true, resolve: (p) => p.advisorType }),
+    organization: t.exposeString("organization", { nullable: true }),
+    email: t.exposeString("email", { nullable: true }),
+    phone: t.exposeString("phone", { nullable: true }),
+    feeSharingAgreement: t.exposeBoolean("feeSharingAgreement"),
+    feeSharingTerms: t.exposeString("feeSharingTerms", { nullable: true }),
+    partnerAgreementStatus: t.field({ type: PartnerAgreementStatusEnum, resolve: (p) => p.partnerAgreementStatus }),
+    internalOnly: t.exposeBoolean("internalOnly"),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (p) => p.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (p) => p.updatedAt }),

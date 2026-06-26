@@ -575,7 +575,16 @@ model Partner {
   status      PartnerStatus @default(Active)
   location    String?
   amount      Decimal?      @db.Decimal(20, 2)
-  currency      String        @default("USD")
+  currency               String                 @default("USD")
+  // Task 6: advisor type, fee-sharing, partner agreement, internal-only, direct contact
+  advisorType            AdvisorType?
+  organization           String?
+  email                  String?
+  phone                  String?
+  feeSharingAgreement    Boolean                @default(false)
+  feeSharingTerms        String?
+  partnerAgreementStatus PartnerAgreementStatus @default(None)
+  internalOnly           Boolean                @default(true)
   createdSource ActorSource   @default(HUMAN)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -585,6 +594,7 @@ model Partner {
 
   @@index([partnerType])
   @@index([status])
+  @@index([advisorType])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

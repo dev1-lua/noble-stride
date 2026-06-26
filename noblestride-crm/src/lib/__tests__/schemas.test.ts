@@ -70,6 +70,31 @@ describe("entity create schemas", () => {
     expect(partnerCreateSchema.safeParse({ name: "Bowmans" }).success).toBe(true);
   });
 
+  it("partner: Task-6 fields survive Zod parse (not stripped)", () => {
+    const r = partnerCreateSchema.safeParse({
+      name: "Apex Advisory",
+      advisorType: "TransactionAdvisor",
+      organization: "Apex Group",
+      email: "contact@apex.com",
+      phone: "+27 11 000 0000",
+      feeSharingAgreement: true,
+      feeSharingTerms: "2% of deal value",
+      partnerAgreementStatus: "Signed",
+      internalOnly: false,
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.advisorType).toBe("TransactionAdvisor");
+      expect(r.data.organization).toBe("Apex Group");
+      expect(r.data.email).toBe("contact@apex.com");
+      expect(r.data.phone).toBe("+27 11 000 0000");
+      expect(r.data.feeSharingAgreement).toBe(true);
+      expect(r.data.feeSharingTerms).toBe("2% of deal value");
+      expect(r.data.partnerAgreementStatus).toBe("Signed");
+      expect(r.data.internalOnly).toBe(false);
+    }
+  });
+
   it("serviceProvider: accepts name + type", () => {
     expect(serviceProviderCreateSchema.safeParse({ name: "Bowmans", type: "LawFirm" }).success).toBe(true);
   });

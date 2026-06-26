@@ -25,4 +25,13 @@ describe("investor/partner data layer schema", () => {
     expect(fields).toContain("engagementClassification");
     expect(fields).toContain("ndaStatus");
   });
+
+  it("exposes partner fee-sharing + internalOnly", async () => {
+    const { schema } = await import("@/graphql/schema");
+    const p = schema.getTypeMap()["Partner"] as { getFields?: () => Record<string, unknown> };
+    const fields = Object.keys(p.getFields?.() ?? {});
+    expect(fields).toContain("feeSharingAgreement");
+    expect(fields).toContain("internalOnly");
+    expect(fields).toContain("advisorType");
+  });
 });
