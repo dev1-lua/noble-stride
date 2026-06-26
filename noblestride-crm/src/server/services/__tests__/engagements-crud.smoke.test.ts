@@ -39,31 +39,26 @@ async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
 describe("engagements-crud partial-update merge (smoke)", () => {
   it("recomputes amountPending against the persisted total when only amountDisbursed changes", async () => {
     const ran = await withDb(async () => {
-      // Need a transaction + investor to satisfy the engagement FKs; skip if none.
-      const [txn, inv] = await Promise.all([
-        prisma.transaction.findFirst({ select: { id: true } }),
-        prisma.investor.findFirst({ select: { id: true } }),
-      ]);
-      if (txn == null || inv == null) {
-        console.log("No transaction/investor in DB — skipping merge assertion");
+      // Need a seeded transaction to satisfy the engagement FK; skip if none.
+      // Transactions are never deleted by any test, so findFirst is stable.
+      const txn = await prisma.transaction.findFirst({ select: { id: true } });
+      if (txn == null) {
+        console.log("No transaction in DB — skipping merge assertion");
         return null;
       }
 
-      // Avoid colliding with the @@unique([transactionId, investorId]) on seed data.
-      const existingPair = await prisma.engagement.findUnique({
-        where: { transactionId_investorId: { transactionId: txn.id, investorId: inv.id } },
-        select: { id: true },
+      // Create a dedicated throwaway investor so this test is self-contained and
+      // never races with investors-crud.smoke.test.ts deleting a transient investor.
+      const inv = await prisma.investor.create({
+        data: { name: "__merge_test_investor__", investorType: "VentureCapital" },
       });
-      if (existingPair != null) {
-        console.log("Engagement already exists for first txn/investor pair — skipping merge assertion");
-        return null;
-      }
 
-      const created = await createEngagement(
-        { transactionId: txn.id, investorId: inv.id, totalAmount: 10, amountDisbursed: 4 },
-        { type: "HUMAN" },
-      );
+      let created: Awaited<ReturnType<typeof createEngagement>> | null = null;
       try {
+        created = await createEngagement(
+          { transactionId: txn.id, investorId: inv.id, totalAmount: 10, amountDisbursed: 4 },
+          { type: "HUMAN" },
+        );
         expect(Number(created.totalAmount)).toBe(10);
         expect(Number(created.amountPending)).toBe(6);
 
@@ -73,7 +68,11 @@ describe("engagements-crud partial-update merge (smoke)", () => {
         expect(Number(updated.amountDisbursed)).toBe(7);
         expect(Number(updated.amountPending)).toBe(3);
       } finally {
-        await prisma.engagement.delete({ where: { id: created.id } });
+        // Delete engagement first (FK), then the dedicated investor.
+        if (created != null) {
+          await prisma.engagement.delete({ where: { id: created.id } });
+        }
+        await prisma.investor.delete({ where: { id: inv.id } });
       }
       return true;
     });
