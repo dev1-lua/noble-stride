@@ -56,6 +56,8 @@ describe("graphql schema", () => {
     expect(mutationFields).toContain("updateMandateStage");
     expect(mutationFields).toContain("updateTransactionStage");
     expect(mutationFields).toContain("logEngagement");
+    expect(mutationFields).toContain("createEngagement");
+    expect(mutationFields).toContain("updateEngagement");
   });
 
   it("dashboardStats service resolves correctly (DB-guarded)", async () => {
