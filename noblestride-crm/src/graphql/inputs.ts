@@ -9,6 +9,7 @@ import {
   GeographyEnum, SourceEnum, DocStatusEnum, DealTypeEnum, PartnerTypeEnum, PartnerStatusEnum,
   FounderGenderEnum,
   EngagementStageEnum, InterestLevelEnum, NdaTypeEnum, DisbursementStatusEnum,
+  ServiceProviderTypeEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -101,6 +102,20 @@ export const PartnerInput = builder.inputType("PartnerInput", {
     location: t.string({ required: false }),
     amount: t.float({ required: false }),
     currency: t.string({ required: false }),
+  }),
+});
+
+export const ServiceProviderInput = builder.inputType("ServiceProviderInput", {
+  fields: (t) => ({
+    name: t.string({ required: true }),
+    type: t.field({ type: ServiceProviderTypeEnum, required: false }),
+    contactPerson: t.string({ required: false }),
+    email: t.string({ required: false }),
+    phone: t.string({ required: false }),
+    profile: t.string({ required: false }),
+    fee: t.float({ required: false }),
+    currency: t.string({ required: false }),
+    status: t.string({ required: false }),
   }),
 });
 

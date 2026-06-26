@@ -6,12 +6,13 @@ import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor } from "@/server/services/investors";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
 import { createMandate, updateMandate, deleteMandate } from "@/server/services/mandates";
 import { createTransaction, updateTransaction, deleteTransaction } from "@/server/services/transactions";
 import { createPartner, updatePartner, deletePartner } from "@/server/services/partners";
+import { createServiceProvider, updateServiceProvider, deleteServiceProvider } from "@/server/services/service-providers";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -140,6 +141,23 @@ builder.mutationFields((t) => ({
     type: "Partner", nullable: false,
     args: { id: t.arg.id({ required: true }) },
     resolve: (_q, _r, args) => deletePartner(args.id),
+  }),
+
+  // ── ServiceProvider ──
+  createServiceProvider: t.prismaField({
+    type: "ServiceProvider", nullable: false,
+    args: { input: t.arg({ type: ServiceProviderInput, required: true }) },
+    resolve: (_q, _r, args, ctx) => createServiceProvider(args.input as never, ctx.actor),
+  }),
+  updateServiceProvider: t.prismaField({
+    type: "ServiceProvider", nullable: false,
+    args: { id: t.arg.id({ required: true }), input: t.arg({ type: ServiceProviderInput, required: true }) },
+    resolve: (_q, _r, args) => updateServiceProvider(args.id, args.input as never),
+  }),
+  deleteServiceProvider: t.prismaField({
+    type: "ServiceProvider", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args) => deleteServiceProvider(args.id),
   }),
 
   // ── Engagement ──

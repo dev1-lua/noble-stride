@@ -486,9 +486,10 @@ model Transaction {
   mandate     Mandate?     @relation(fields: [mandateId], references: [id], onDelete: SetNull)
   ownerId     String?
   owner       User?        @relation("TransactionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  engagements Engagement[]
-  activities  Activity[]
-  tasks       Task[]
+  engagements      Engagement[]
+  activities       Activity[]
+  tasks            Task[]
+  serviceProviders ServiceProvider[] @relation("TransactionServiceProviders")
 
   @@index([stage])
   @@index([clientId])
@@ -617,4 +618,28 @@ model Task {
 
   @@index([status])
   @@index([assigneeId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ServiceProvider — transaction-level service providers (SPEC §3.7)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ServiceProvider {
+  id            String              @id @default(cuid())
+  name          String
+  type          ServiceProviderType
+  contactPerson String?
+  email         String?
+  phone         String?
+  profile       String?
+  fee           Decimal?            @db.Decimal(20, 2)
+  currency      String              @default("USD")
+  status        String?
+  createdSource ActorSource         @default(HUMAN)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  engagedOn     Transaction[]       @relation("TransactionServiceProviders")
+
+  @@index([type])
 }

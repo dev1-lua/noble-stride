@@ -25,6 +25,7 @@ import {
   FounderGenderEnum,
   InteractionTypeEnum,
   ActorSourceEnum,
+  ServiceProviderTypeEnum,
 } from "./builder";
 import { daysInStage } from "@/server/domain/metrics";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
@@ -214,6 +215,7 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     owner: t.relation("owner", { nullable: true }),
     engagements: t.relation("engagements"),
     activities: t.relation("activities"),
+    serviceProviders: t.relation("serviceProviders"),
     // Derived counts
     investorsContacted: t.relationCount("engagements"),
     activeConversations: t.int({
@@ -283,6 +285,29 @@ export const PartnerRef = builder.prismaObject("Partner", {
     contacts: t.relation("contacts"),
     referredMandates: t.relation("referredMandates"),
     referredMandateCount: t.relationCount("referredMandates"),
+  }),
+});
+
+// ─── ServiceProvider ─────────────────────────────────────────────────────────
+
+export const ServiceProviderRef = builder.prismaObject("ServiceProvider", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    name: t.exposeString("name"),
+    type: t.field({ type: ServiceProviderTypeEnum, resolve: (sp) => sp.type }),
+    contactPerson: t.exposeString("contactPerson", { nullable: true }),
+    email: t.exposeString("email", { nullable: true }),
+    phone: t.exposeString("phone", { nullable: true }),
+    profile: t.exposeString("profile", { nullable: true }),
+    // Money (Decimal → Float)
+    fee: t.float({ nullable: true, resolve: (sp) => (sp.fee == null ? null : Number(sp.fee)) }),
+    currency: t.exposeString("currency"),
+    status: t.exposeString("status", { nullable: true }),
+    createdSource: t.field({ type: ActorSourceEnum, resolve: (sp) => sp.createdSource }),
+    createdAt: t.field({ type: "DateTime", resolve: (sp) => sp.createdAt }),
+    updatedAt: t.field({ type: "DateTime", resolve: (sp) => sp.updatedAt }),
+    // Relations
+    engagedOn: t.relation("engagedOn"),
   }),
 });
 
