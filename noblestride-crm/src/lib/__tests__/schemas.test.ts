@@ -21,16 +21,43 @@ describe("entity create schemas", () => {
   });
 
   it("investor: Task-5 fields survive Zod parse (not stripped)", () => {
+    const nextAction = new Date("2026-09-01T00:00:00.000Z");
     const r = investorCreateSchema.safeParse({
       name: "Test Fund",
       investorType: "PrivateEquity",
       engagementClassification: "Greylisted",
+      ndaStatus: "ClosedNDA",
       minRevenue: 5,
+      minEbitda: 2,
+      minLoanBook: 100,
+      shareholdingPreference: "Minority",
+      pricingPreference: "Discount to NAV",
+      remainingInvestmentPeriod: "3 years",
+      ddRequirements: "Big 4 audit",
+      icApprovalProcess: "Two-stage IC",
+      trackRecord: "10 exits",
+      investmentMandate: "SSA growth equity",
+      feedback: "Strong interest",
+      nextActionDate: nextAction,
+      ssaRegionContactId: "person_123",
     });
     expect(r.success).toBe(true);
     if (r.success) {
       expect(r.data.engagementClassification).toBe("Greylisted");
+      expect(r.data.ndaStatus).toBe("ClosedNDA");
       expect(r.data.minRevenue).toBe(5);
+      expect(r.data.minEbitda).toBe(2);
+      expect(r.data.minLoanBook).toBe(100);
+      expect(r.data.shareholdingPreference).toBe("Minority");
+      expect(r.data.pricingPreference).toBe("Discount to NAV");
+      expect(r.data.remainingInvestmentPeriod).toBe("3 years");
+      expect(r.data.ddRequirements).toBe("Big 4 audit");
+      expect(r.data.icApprovalProcess).toBe("Two-stage IC");
+      expect(r.data.trackRecord).toBe("10 exits");
+      expect(r.data.investmentMandate).toBe("SSA growth equity");
+      expect(r.data.feedback).toBe("Strong interest");
+      expect(r.data.nextActionDate).toEqual(nextAction);
+      expect(r.data.ssaRegionContactId).toBe("person_123");
     }
   });
 
