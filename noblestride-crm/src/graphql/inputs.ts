@@ -8,6 +8,7 @@ import {
   SectorEnum, InvestorTypeEnum, InvestorStatusEnum, InstrumentEnum, InvestmentStageEnum,
   GeographyEnum, SourceEnum, DocStatusEnum, DealTypeEnum, PartnerTypeEnum, PartnerStatusEnum,
   FounderGenderEnum,
+  EngagementStageEnum, InterestLevelEnum, NdaTypeEnum, DisbursementStatusEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -100,5 +101,25 @@ export const PartnerInput = builder.inputType("PartnerInput", {
     location: t.string({ required: false }),
     amount: t.float({ required: false }),
     currency: t.string({ required: false }),
+  }),
+});
+
+export const EngagementInput = builder.inputType("EngagementInput", {
+  fields: (t) => ({
+    transactionId: t.id({ required: true }),
+    investorId: t.id({ required: true }),
+    name: t.string({ required: false }),
+    engagementStage: t.field({ type: EngagementStageEnum, required: false }),
+    interestLevel: t.field({ type: InterestLevelEnum, required: false }),
+    ndaType: t.field({ type: NdaTypeEnum, required: false }),
+    termSheetIssued: t.boolean({ required: false }),
+    termSheetDate: t.field({ type: "DateTime", required: false }),
+    totalAmount: t.float({ required: false }),
+    amountDisbursed: t.float({ required: false }),
+    disbursementStatus: t.field({ type: DisbursementStatusEnum, required: false }),
+    dateReceived: t.field({ type: "DateTime", required: false }),
+    probability: t.int({ required: false }),
+    feedback: t.string({ required: false }),
+    notes: t.string({ required: false }),
   }),
 });

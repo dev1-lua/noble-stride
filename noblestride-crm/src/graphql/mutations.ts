@@ -5,7 +5,8 @@ import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum } 
 import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement } from "@/server/services/engagements";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput } from "./inputs";
+import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor } from "@/server/services/investors";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
 import { createMandate, updateMandate, deleteMandate } from "@/server/services/mandates";
@@ -139,5 +140,17 @@ builder.mutationFields((t) => ({
     type: "Partner", nullable: false,
     args: { id: t.arg.id({ required: true }) },
     resolve: (_q, _r, args) => deletePartner(args.id),
+  }),
+
+  // ── Engagement ──
+  createEngagement: t.prismaField({
+    type: "Engagement", nullable: false,
+    args: { input: t.arg({ type: EngagementInput, required: true }) },
+    resolve: (_q, _r, args, ctx) => createEngagement(args.input as never, ctx.actor),
+  }),
+  updateEngagement: t.prismaField({
+    type: "Engagement", nullable: false,
+    args: { id: t.arg.id({ required: true }), input: t.arg({ type: EngagementInput, required: true }) },
+    resolve: (_q, _r, args) => updateEngagement(args.id, args.input as never),
   }),
 }));

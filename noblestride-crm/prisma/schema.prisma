@@ -509,6 +509,21 @@ model Engagement {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
+  engagementStage    EngagementStage     @default(Shared)
+  interestLevel      InterestLevel?
+  ndaType            NdaType?
+  termSheetIssued    Boolean             @default(false)
+  termSheetDate      DateTime?
+  totalAmount        Decimal?            @db.Decimal(20, 2)
+  amountDisbursed    Decimal?            @db.Decimal(20, 2)
+  amountPending      Decimal?            @db.Decimal(20, 2)
+  disbursementStatus DisbursementStatus?
+  dateReceived       DateTime?
+  year               Int?
+  quarter            Int?
+  probability        Int?
+  feedback           String?
+
   transactionId String
   transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   investorId    String
@@ -520,6 +535,7 @@ model Engagement {
   @@unique([transactionId, investorId])
   @@index([status])
   @@index([investorId])
+  @@index([engagementStage])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
