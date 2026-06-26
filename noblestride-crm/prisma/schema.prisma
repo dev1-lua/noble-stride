@@ -33,6 +33,14 @@ enum Sector {
   RealEstate
   Education
   Infrastructure
+  Aviation
+  Construction
+  Hospitality
+  Leasing
+  MediaEntertainment
+  Services
+  TransportLogistics
+  WaterSanitation
 }
 
 enum InvestorType {
@@ -44,6 +52,8 @@ enum InvestorType {
   Angel
   CorporateVC
   GrantDonor
+  Corporate
+  Individual
 }
 
 enum InvestorStatus {
@@ -191,6 +201,109 @@ enum ActorSource {
   API
   IMPORT
   SYSTEM
+}
+
+enum EngagementStage {
+  Shared
+  TeaserSent
+  NDASigned
+  IMShared
+  VDRAccess
+  Meeting
+  InfoRequest
+  DueDiligence
+  TermSheet
+  Offer
+  Invested
+  Declined
+}
+
+enum InterestLevel {
+  Low
+  Medium
+  High
+}
+
+enum NdaType {
+  Open
+  Closed
+}
+
+enum DisbursementStatus {
+  Disbursed
+  Ongoing
+  FellOff
+  Dropped
+}
+
+enum InvestorEngagementClassification {
+  Active
+  Inactive
+  OnHold
+  Excluded
+  Greylisted
+}
+
+enum InvestorNdaStatus {
+  None
+  OpenNDA
+  ClosedNDA
+}
+
+enum AdvisorType {
+  Lawyer
+  Investor
+  Consultant
+  TransactionAdvisor
+  AdvisoryFirm
+  Other
+}
+
+enum ServiceProviderType {
+  LawFirm
+  Audit
+  Tax
+  ESG
+  Technical
+  Other
+}
+
+enum DocumentType {
+  NDA
+  EngagementContract
+  Teaser
+  IM
+  FinancialModel
+  Valuation
+  PitchDeck
+  AuditedAccounts
+  CR12
+  TermSheet
+  LoanAgreement
+  SPA
+  SHA
+  Other
+}
+
+enum DocumentAccessLevel {
+  Internal
+  ClientShared
+  InvestorShared
+  VDR
+}
+
+enum DocumentStatus {
+  Draft
+  UnderReview
+  Approved
+  Shared
+  Executed
+}
+
+enum PartnerAgreementStatus {
+  None
+  Sent
+  Signed
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

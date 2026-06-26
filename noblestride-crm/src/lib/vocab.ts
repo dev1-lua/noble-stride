@@ -14,6 +14,14 @@ export const LABELS: Record<string, Record<string, string>> = {
     RealEstate: "Real Estate",
     Education: "Education",
     Infrastructure: "Infrastructure",
+    Aviation: "Aviation",
+    Construction: "Construction",
+    Hospitality: "Hospitality",
+    Leasing: "Leasing",
+    MediaEntertainment: "Media & Entertainment",
+    Services: "Services",
+    TransportLogistics: "Transport & Logistics",
+    WaterSanitation: "Water & Sanitation",
   },
   InvestorType: {
     PrivateEquity: "Private Equity",
@@ -24,6 +32,8 @@ export const LABELS: Record<string, Record<string, string>> = {
     Angel: "Angel",
     CorporateVC: "Corporate VC",
     GrantDonor: "Grant / Donor",
+    Corporate: "Corporate",
+    Individual: "Individual",
   },
   InvestorStatus: {
     ActivelyDeploying: "Actively Deploying",
@@ -143,6 +153,27 @@ export const LABELS: Record<string, Record<string, string>> = {
     Note: "Note",
     Other: "Other",
   },
+  EngagementStage: {
+    Shared: "Shared", TeaserSent: "Teaser Sent", NDASigned: "NDA Signed",
+    IMShared: "IM Shared", VDRAccess: "VDR Access", Meeting: "Meeting",
+    InfoRequest: "Info Request", DueDiligence: "Due Diligence",
+    TermSheet: "Term Sheet", Offer: "Offer", Invested: "Invested", Declined: "Declined",
+  },
+  InterestLevel: { Low: "Low", Medium: "Medium", High: "High" },
+  NdaType: { Open: "Open", Closed: "Closed" },
+  DisbursementStatus: { Disbursed: "Disbursed", Ongoing: "Ongoing", FellOff: "Fell Off", Dropped: "Dropped" },
+  InvestorEngagementClassification: { Active: "Active", Inactive: "Inactive", OnHold: "On Hold", Excluded: "Excluded", Greylisted: "Greylisted" },
+  InvestorNdaStatus: { None: "None", OpenNDA: "Open NDA", ClosedNDA: "Closed NDA" },
+  AdvisorType: { Lawyer: "Lawyer", Investor: "Investor", Consultant: "Consultant", TransactionAdvisor: "Transaction Advisor", AdvisoryFirm: "Advisory Firm", Other: "Other" },
+  ServiceProviderType: { LawFirm: "Law Firm", Audit: "Audit (Big 4)", Tax: "Tax", ESG: "ESG", Technical: "Technical", Other: "Other" },
+  DocumentType: {
+    NDA: "NDA", EngagementContract: "Engagement Contract", Teaser: "Teaser", IM: "Information Memorandum",
+    FinancialModel: "Financial Model", Valuation: "Valuation", PitchDeck: "Pitch Deck", AuditedAccounts: "Audited Accounts",
+    CR12: "CR12", TermSheet: "Term Sheet", LoanAgreement: "Loan Agreement", SPA: "SPA", SHA: "SHA", Other: "Other",
+  },
+  DocumentAccessLevel: { Internal: "Internal", ClientShared: "Client-Shared", InvestorShared: "Investor-Shared", VDR: "VDR" },
+  DocumentStatus: { Draft: "Draft", UnderReview: "Under Review", Approved: "Approved", Shared: "Shared", Executed: "Executed" },
+  PartnerAgreementStatus: { None: "None", Sent: "Sent", Signed: "Signed" },
 };
 
 /** Human label for an enum value; falls back to the raw value. */
