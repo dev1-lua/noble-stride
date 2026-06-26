@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { investorCreateSchema } from "@/lib/schemas/investor";
 import { mandateCreateSchema } from "@/lib/schemas/mandate";
 import { partnerCreateSchema } from "@/lib/schemas/partner";
+import { serviceProviderCreateSchema } from "@/lib/schemas/service-provider";
 
 describe("entity create schemas", () => {
   it("investor: accepts a minimal valid payload", () => {
@@ -26,5 +27,21 @@ describe("entity create schemas", () => {
 
   it("partner: accepts name only", () => {
     expect(partnerCreateSchema.safeParse({ name: "Bowmans" }).success).toBe(true);
+  });
+
+  it("serviceProvider: accepts name + type", () => {
+    expect(serviceProviderCreateSchema.safeParse({ name: "Bowmans", type: "LawFirm" }).success).toBe(true);
+  });
+
+  it("serviceProvider: rejects blank name", () => {
+    expect(serviceProviderCreateSchema.safeParse({ name: "  ", type: "LawFirm" }).success).toBe(false);
+  });
+
+  it("serviceProvider: rejects a bad enum", () => {
+    expect(serviceProviderCreateSchema.safeParse({ name: "X", type: "NotAType" }).success).toBe(false);
+  });
+
+  it("serviceProvider: rejects a negative fee", () => {
+    expect(serviceProviderCreateSchema.safeParse({ name: "X", type: "LawFirm", fee: -1 }).success).toBe(false);
   });
 });
