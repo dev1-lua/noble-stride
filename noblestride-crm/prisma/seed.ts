@@ -11,11 +11,25 @@ import type {
   TransactionStage,
   DealType,
   EngagementStatus,
+  EngagementStage,
+  InterestLevel,
+  DisbursementStatus,
+  InvestorEngagementClassification,
+  InvestorNdaStatus,
+  AdvisorType,
+  PartnerAgreementStatus,
+  ServiceProviderType,
+  DocumentType,
+  DocumentAccessLevel,
+  DocumentStatus,
   PartnerType,
   PartnerStatus,
   InteractionType,
   ActorSource,
 } from "@prisma/client";
+// tsx does not reliably resolve the `@/` tsconfig alias in this seed script,
+// so import the disbursement helpers via a relative path (single source of truth).
+import { amountPending, deriveYearQuarter } from "../src/server/domain/disbursement";
 import seedData from "./seed-data.json";
 
 const prisma = new PrismaClient();
@@ -85,12 +99,67 @@ const STAGE_RANK: Partial<Record<MandateStage, number>> = {
   PitchPresentation: 3,
 };
 
+// ─── Engagement: legacy status → engagementStage (Task-2 decision) ────────────
+// Keeps the new 12-stage funnel consistent with the legacy `status` already set.
+const STATUS_TO_STAGE: Record<EngagementStatus, EngagementStage> = {
+  Committed: "Invested",
+  Passed: "Declined",
+  Interested: "TermSheet",
+  InConversation: "DueDiligence",
+  Contacted: "TeaserSent",
+  NotContacted: "Shared",
+};
+
+// Interest level spread keyed by the per-transaction engagement slot (0–4).
+const INTEREST_BY_SLOT: (InterestLevel | null)[] = [
+  "High", "High", "Medium", "Low", null,
+];
+
+// ─── Per-investor engagement classification (§3.1) ────────────────────────────
+// Index-keyed across seedData.investors (40 rows). Mostly Active, with one
+// Excluded, one Greylisted, plus a couple Inactive/OnHold for realism.
+function classificationFor(idx: number): InvestorEngagementClassification {
+  if (idx === 3) return "Excluded";
+  if (idx === 7) return "Greylisted";
+  if (idx % 11 === 5) return "Inactive";
+  if (idx % 13 === 9) return "OnHold";
+  return "Active";
+}
+
+// NDA status spread for investors (§3.1, realism only).
+function ndaStatusFor(idx: number): InvestorNdaStatus {
+  if (idx % 3 === 0) return "ClosedNDA";
+  if (idx % 3 === 1) return "OpenNDA";
+  return "None";
+}
+
+// ─── Partner fee-sharing / advisor derivation (§3.6) ──────────────────────────
+const ADVISOR_TYPES: AdvisorType[] = [
+  "TransactionAdvisor", "AdvisoryFirm", "Lawyer", "Consultant", "Investor",
+];
+function advisorTypeFor(idx: number): AdvisorType {
+  return ADVISOR_TYPES[idx % ADVISOR_TYPES.length];
+}
+// Partners 0 and 2 referred ClosedWon deals → fee-sharing; add 1 and 4 for spread.
+const FEE_SHARING_PARTNER_IDX = new Set([0, 1, 2, 4]);
+const FEE_SHARING_TERMS = [
+  "30% of NobleStride advisory success fee on closed transactions.",
+  "20% origination fee share, payable on financial close.",
+  "25% of advisory fee for referred mandates; capped at USD 250k.",
+  "Tiered 15–25% based on deal size; settled within 30 days of close.",
+];
+
 async function main() {
   // ─────────────────────────────────────────────────────────────────────────
   // §1  IDEMPOTENCY — delete child → parent
   // ─────────────────────────────────────────────────────────────────────────
+  // Documents FK to transactions/clients/investors/users — delete first.
+  await prisma.document.deleteMany();
   await prisma.activity.deleteMany();
   await prisma.engagement.deleteMany();
+  // ServiceProvider ↔ Transaction is an implicit M:N; its join rows clear
+  // automatically, but remove the providers themselves before transactions.
+  await prisma.serviceProvider.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.mandate.deleteMany();
   await prisma.person.deleteMany();
@@ -126,7 +195,8 @@ async function main() {
     ticketMax: number | null;
   }> = [];
 
-  for (const inv of seedData.investors) {
+  for (let invIdx = 0; invIdx < seedData.investors.length; invIdx++) {
+    const inv = seedData.investors[invIdx];
     const created = await prisma.investor.create({
       data: {
         name: inv.name,
@@ -138,6 +208,8 @@ async function main() {
         instruments: inv.instruments as Instrument[],
         ticketMin: inv.ticketMin ?? null,
         ticketMax: inv.ticketMax ?? null,
+        engagementClassification: classificationFor(invIdx),
+        ndaStatus: ndaStatusFor(invIdx),
         notes: inv.notes ?? null,
         contacts: {
           create: inv.contacts.map((c) => ({
@@ -162,7 +234,9 @@ async function main() {
   // PARTNERS
   const partners: Array<{ id: string }> = [];
 
-  for (const p of seedData.partners) {
+  for (let pIdx = 0; pIdx < seedData.partners.length; pIdx++) {
+    const p = seedData.partners[pIdx];
+    const feeSharing = FEE_SHARING_PARTNER_IDX.has(pIdx);
     const created = await prisma.partner.create({
       data: {
         name: p.name,
@@ -171,6 +245,17 @@ async function main() {
         location: p.location ?? null,
         profile: p.profile ?? null,
         amount: p.amount ?? null,
+        advisorType: advisorTypeFor(pIdx),
+        feeSharingAgreement: feeSharing,
+        feeSharingTerms: feeSharing
+          ? FEE_SHARING_TERMS[pIdx % FEE_SHARING_TERMS.length]
+          : null,
+        partnerAgreementStatus: (feeSharing
+          ? "Signed"
+          : pIdx % 3 === 1
+            ? "Sent"
+            : "None") as PartnerAgreementStatus,
+        internalOnly: true,
         contacts: {
           create: p.contacts.map((c) => ({
             firstName: c.firstName,
@@ -378,6 +463,56 @@ async function main() {
       const label2 = DEAL_TYPE_LABEL[DEAL_TYPE[ti]];
       const txnName = `${clientName2} – ${label2}`;
 
+      const engagementStage = STATUS_TO_STAGE[status];
+      const interestLevel = INTEREST_BY_SLOT[j];
+
+      // Disbursement: populate for committed/invested engagements (the money
+      // is flowing) and a couple of mid-funnel ones marked Ongoing. Leaves the
+      // rest null so the funnel shows a realistic mix.
+      let disbursement:
+        | {
+            totalAmount: number;
+            amountDisbursed: number | null;
+            amountPending: number | null;
+            disbursementStatus: DisbursementStatus;
+            dateReceived: Date;
+            year: number;
+            quarter: number;
+          }
+        | null = null;
+
+      if (status === "Committed") {
+        // Committed → fully or partially disbursed.
+        const total = (3 + ((ti + j) % 6)) * 1_000_000;
+        const fullyDisbursed = j % 2 === 0;
+        const disbursed = fullyDisbursed ? total : Math.round(total * 0.6);
+        const dateReceived = daysAgo(40 + ti * 3 + j);
+        const { year, quarter } = deriveYearQuarter(dateReceived);
+        disbursement = {
+          totalAmount: total,
+          amountDisbursed: disbursed,
+          amountPending: amountPending(total, disbursed),
+          disbursementStatus: fullyDisbursed ? "Disbursed" : "Ongoing",
+          dateReceived,
+          year,
+          quarter,
+        };
+      } else if (status === "Interested" && j === 2) {
+        // A mid-funnel commitment that later fell off (term sheet, no funds).
+        const total = (2 + (ti % 4)) * 1_000_000;
+        const dateReceived = daysAgo(55 + ti * 2);
+        const { year, quarter } = deriveYearQuarter(dateReceived);
+        disbursement = {
+          totalAmount: total,
+          amountDisbursed: null,
+          amountPending: amountPending(total, null),
+          disbursementStatus: "FellOff",
+          dateReceived,
+          year,
+          quarter,
+        };
+      }
+
       const created = await prisma.engagement.create({
         data: {
           name: `${seedData.investors[(ti * 5 + j) % investors.length].name} – ${txnName}`,
@@ -385,6 +520,15 @@ async function main() {
           investorId: inv.id,
           ownerId: t.ownerId ?? null,
           status,
+          engagementStage,
+          interestLevel,
+          totalAmount: disbursement?.totalAmount ?? null,
+          amountDisbursed: disbursement?.amountDisbursed ?? null,
+          amountPending: disbursement?.amountPending ?? null,
+          disbursementStatus: disbursement?.disbursementStatus ?? null,
+          dateReceived: disbursement?.dateReceived ?? null,
+          year: disbursement?.year ?? null,
+          quarter: disbursement?.quarter ?? null,
           lastContact: daysAgo(3 + j * 2 + ti),
           createdSource: "HUMAN" as ActorSource,
         },
@@ -395,6 +539,131 @@ async function main() {
         investorId: inv.id,
       });
     }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // §6b  SERVICE PROVIDERS (SPEC §3.7) — law / audit / tax advisers
+  // Link a couple to the first transactions via the M:N relation.
+  // ─────────────────────────────────────────────────────────────────────────
+  const firstTxnId = transactions[0]?.id;
+  const secondTxnId = transactions[1]?.id;
+
+  await prisma.serviceProvider.create({
+    data: {
+      name: "Bowmans (Coulson Harney LLP)",
+      type: "LawFirm" as ServiceProviderType,
+      contactPerson: "Richard Harney",
+      email: "richard.harney@bowmanslaw.com",
+      phone: "+254 20 289 9000",
+      profile: "Pan-African legal counsel — transaction structuring & SPA/SHA drafting.",
+      fee: 85_000,
+      currency: "USD",
+      status: "Engaged",
+      ...(firstTxnId ? { engagedOn: { connect: [{ id: firstTxnId }] } } : {}),
+    },
+  });
+  await prisma.serviceProvider.create({
+    data: {
+      name: "KPMG East Africa",
+      type: "Audit" as ServiceProviderType,
+      contactPerson: "Sheel Gill",
+      email: "sheelgill@kpmg.co.ke",
+      phone: "+254 20 280 6000",
+      profile: "Financial & vendor due diligence; audited accounts review.",
+      fee: 60_000,
+      currency: "USD",
+      status: "Engaged",
+      ...(secondTxnId ? { engagedOn: { connect: [{ id: secondTxnId }] } } : {}),
+    },
+  });
+  await prisma.serviceProvider.create({
+    data: {
+      name: "Deloitte Tax Advisory",
+      type: "Tax" as ServiceProviderType,
+      contactPerson: "Fred Omondi",
+      email: "fomondi@deloitte.co.ke",
+      phone: "+254 20 423 0000",
+      profile: "Tax structuring & withholding-tax opinion for cross-border flows.",
+      fee: 35_000,
+      currency: "USD",
+      status: "Proposed",
+      ...(firstTxnId ? { engagedOn: { connect: [{ id: firstTxnId }] } } : {}),
+    },
+  });
+  await prisma.serviceProvider.create({
+    data: {
+      name: "Africa ESG Partners",
+      type: "ESG" as ServiceProviderType,
+      contactPerson: "Lillian Mwangi",
+      email: "lillian@africaesg.com",
+      phone: "+254 711 000 000",
+      profile: "Environmental & social impact assessment; IFC Performance Standards.",
+      fee: 28_000,
+      currency: "USD",
+      status: "Proposed",
+    },
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // §6c  DOCUMENTS (SPEC §3.8) — metadata across a couple of deals.
+  // createMany cannot nest relations, so use the scalar transactionId FK.
+  // ─────────────────────────────────────────────────────────────────────────
+  const amosId = usersByFirst.get("amos") ?? null;
+  if (firstTxnId && secondTxnId) {
+    await prisma.document.createMany({
+      data: [
+        {
+          name: "Mutual NDA — NobleStride / Counterparty",
+          type: "NDA" as DocumentType,
+          version: "v1.0",
+          accessLevel: "InvestorShared" as DocumentAccessLevel,
+          status: "Executed" as DocumentStatus,
+          fileUrl: "https://vdr.noblestride.capital/docs/nda-001.pdf",
+          uploadedById: amosId,
+          transactionId: firstTxnId,
+        },
+        {
+          name: "Engagement Contract — Advisory Mandate",
+          type: "EngagementContract" as DocumentType,
+          version: "v2.1",
+          accessLevel: "Internal" as DocumentAccessLevel,
+          status: "Executed" as DocumentStatus,
+          fileUrl: "https://vdr.noblestride.capital/docs/ea-001.pdf",
+          uploadedById: amosId,
+          transactionId: firstTxnId,
+        },
+        {
+          name: "Teaser — One-Pager (Blind)",
+          type: "Teaser" as DocumentType,
+          version: "v1.3",
+          accessLevel: "ClientShared" as DocumentAccessLevel,
+          status: "Approved" as DocumentStatus,
+          fileUrl: "https://vdr.noblestride.capital/docs/teaser-001.pdf",
+          uploadedById: amosId,
+          transactionId: firstTxnId,
+        },
+        {
+          name: "Information Memorandum",
+          type: "IM" as DocumentType,
+          version: "v0.9",
+          accessLevel: "VDR" as DocumentAccessLevel,
+          status: "UnderReview" as DocumentStatus,
+          fileUrl: "https://vdr.noblestride.capital/docs/im-001.pdf",
+          uploadedById: amosId,
+          transactionId: secondTxnId,
+        },
+        {
+          name: "Term Sheet — Lead Investor",
+          type: "TermSheet" as DocumentType,
+          version: "v1.0",
+          accessLevel: "InvestorShared" as DocumentAccessLevel,
+          status: "Draft" as DocumentStatus,
+          fileUrl: "https://vdr.noblestride.capital/docs/ts-001.pdf",
+          uploadedById: amosId,
+          transactionId: secondTxnId,
+        },
+      ],
+    });
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -487,21 +756,47 @@ async function main() {
   // §8  SUMMARY
   // ─────────────────────────────────────────────────────────────────────────
 
-  const [uCount, iCount, cCount, pCount, peCount, mCount, tCount, eCount, aCount] =
-    await Promise.all([
-      prisma.user.count(),
-      prisma.investor.count(),
-      prisma.client.count(),
-      prisma.partner.count(),
-      prisma.person.count(),
-      prisma.mandate.count(),
-      prisma.transaction.count(),
-      prisma.engagement.count(),
-      prisma.activity.count(),
-    ]);
+  const [
+    uCount,
+    iCount,
+    cCount,
+    pCount,
+    peCount,
+    mCount,
+    tCount,
+    eCount,
+    aCount,
+    spCount,
+    docCount,
+    stagedCount,
+    disbursedCount,
+    exclGreyCount,
+    feeShareCount,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.investor.count(),
+    prisma.client.count(),
+    prisma.partner.count(),
+    prisma.person.count(),
+    prisma.mandate.count(),
+    prisma.transaction.count(),
+    prisma.engagement.count(),
+    prisma.activity.count(),
+    prisma.serviceProvider.count(),
+    prisma.document.count(),
+    prisma.engagement.count({ where: { engagementStage: { not: "Shared" } } }),
+    prisma.engagement.count({ where: { amountDisbursed: { not: null } } }),
+    prisma.investor.count({
+      where: { engagementClassification: { in: ["Excluded", "Greylisted"] } },
+    }),
+    prisma.partner.count({ where: { feeSharingAgreement: true } }),
+  ]);
 
   console.log(
-    `Seeded: ${uCount} users, ${iCount} investors, ${cCount} clients, ${pCount} partners, ${peCount} persons, ${mCount} mandates, ${tCount} transactions, ${eCount} engagements, ${aCount} activities`
+    `Seeded: ${uCount} users, ${iCount} investors, ${cCount} clients, ${pCount} partners, ${peCount} persons, ${mCount} mandates, ${tCount} transactions, ${eCount} engagements, ${aCount} activities, ${spCount} service providers, ${docCount} documents`
+  );
+  console.log(
+    `Backfill: ${stagedCount} engagements with non-Shared stage, ${disbursedCount} with amountDisbursed, ${exclGreyCount} excluded/greylisted investors, ${feeShareCount} fee-sharing partners`
   );
 }
 
