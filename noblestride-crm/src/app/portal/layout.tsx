@@ -1,20 +1,65 @@
 // portal/layout.tsx — external portal shell (design spec §5.3–§5.4, §6).
 // Deliberately separate from the internal CRM shell: no sidebar, no internal
 // nav — external roles only ever see what the visibility engine projects.
+// The amber banner is the demo lens: it names who you're viewing as (with
+// classification, so an empty portal for a Greylisted fund is self-explaining)
+// and lets you hop to another investor/partner inline.
 import Link from "next/link";
+import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
+import { label } from "@/lib/vocab";
+import { PortalSwitcher } from "@/components/portal/portal-switcher";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const vp = await getViewpoint();
 
+  const [investors, partners] = await Promise.all([
+    prisma.investor.findMany({
+      select: { id: true, name: true, engagementClassification: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.partner.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+  ]);
+
+  const investorOptions = investors.map((i) => ({
+    id: i.id,
+    name: i.name,
+    hint: label("InvestorEngagementClassification", i.engagementClassification),
+  }));
+  const partnerOptions = partners.map((p) => ({ id: p.id, name: p.name }));
+
+  const current =
+    vp.role === "investor"
+      ? investorOptions.find((i) => i.id === vp.recordId)
+      : vp.role === "partner"
+        ? partnerOptions.find((p) => p.id === vp.recordId)
+        : undefined;
+  const hint = current && "hint" in current ? (current as { hint?: string }).hint : undefined;
+
   return (
     <div className="min-h-screen bg-zinc-50">
-      <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-sm text-amber-800 flex items-center justify-between">
-        <span>
-          Viewing as <span className="font-semibold capitalize">{vp.role}</span> — external portal
-          view, gated by engagement stage
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-800">
+        <span className="inline-flex flex-wrap items-center gap-2">
+          <span>
+            Viewing as{" "}
+            {vp.role === "investor" || vp.role === "partner" ? (
+              <PortalSwitcher
+                role={vp.role}
+                recordId={vp.recordId ?? ""}
+                investors={investorOptions}
+                partners={partnerOptions}
+              />
+            ) : (
+              <span className="font-semibold capitalize">{vp.role}</span>
+            )}
+          </span>
+          {hint && hint !== "Active" && (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold">
+              {hint} — this fund is blocked from all deal visibility
+            </span>
+          )}
         </span>
         <Link
           href="/api/viewpoint?role=admin"
