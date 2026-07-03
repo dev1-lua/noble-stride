@@ -307,6 +307,38 @@ enum PartnerAgreementStatus {
   Signed
 }
 
+// CAK / COMESA competition-approval lifecycle (SPEC §3.2)
+enum RegulatoryStatus {
+  NotStarted
+  Filed
+  Approved
+  NotRequired
+}
+
+// §6.2 due-diligence workstreams
+enum DDTrack {
+  Financial
+  Tax
+  Commercial
+  ESG
+  Legal
+}
+
+enum DDStatus {
+  NotStarted
+  InProgress
+  Complete
+  Flagged
+  NotApplicable
+}
+
+// §7.2 in-org roles (demo lens, not auth)
+enum OrgRole {
+  Admin
+  DealLead
+  TeamMember
+}
+
 // "Sectors and Milestones" doc — fixed milestones for investors (14 steps + post-deal).
 enum MilestoneKey {
   TeaserReview // Receipt and review of the teaser
@@ -337,12 +369,14 @@ model User {
   jobTitle    String?
   avatarColor String? // hex for the avatar chip
   isActive    Boolean  @default(true)
+  role        OrgRole  @default(Admin) // §7.2 in-org role (demo lens)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   ledMandates       Mandate[]     @relation("MandateLead")
   ownedTransactions Transaction[] @relation("TransactionOwner")
   ownedEngagements  Engagement[]  @relation("EngagementOwner")
+  ddTracks          DueDiligenceTrack[] @relation("DDTrackOwner")
   activities        Activity[]    @relation("ActivityCreatedBy")
   assignedTasks     Task[]        @relation("TaskAssignee")
   documents         Document[]    @relation("DocumentUploadedBy")
@@ -465,6 +499,13 @@ model Client {
   existingInvestors String?
   source            Source?
   pitchDeckUrl      String?
+  // §3.1 financial + impact fields
+  projectCodename   String?
+  ebitda            Decimal?       @db.Decimal(20, 2)
+  existingDebt      Decimal?       @db.Decimal(20, 2)
+  totalAssets       Decimal?       @db.Decimal(20, 2)
+  womenLed          Boolean        @default(false)
+  youthLed          Boolean        @default(false)
   createdSource     ActorSource    @default(HUMAN)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
@@ -537,6 +578,12 @@ model Transaction {
   successFeeAmount       Decimal?  @db.Decimal(20, 2)
   successFeeInvoicedDate DateTime?
   successFeePaidDate     DateTime?
+  // §3.2 IC approvals + CAK/COMESA regulatory tracking (deal-level, internal-only)
+  icFirstApprovalDate   DateTime?
+  icSecondApprovalDate  DateTime?
+  cakComesaStatus       RegulatoryStatus @default(NotStarted)
+  cakComesaFiledDate    DateTime?
+  cakComesaApprovedDate DateTime?
   createdSource  ActorSource      @default(HUMAN)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -552,6 +599,7 @@ model Transaction {
   tasks            Task[]
   serviceProviders ServiceProvider[] @relation("TransactionServiceProviders")
   documents        Document[]
+  ddTracks         DueDiligenceTrack[]
 
   @@index([stage])
   @@index([clientId])
@@ -618,6 +666,32 @@ model EngagementMilestone {
 
   @@unique([engagementId, key])
   @@index([engagementId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DueDiligenceTrack — deal-level DD workstreams (SPEC §6.2): financial / tax /
+// commercial / ESG / legal. INTERNAL ONLY — never projected to the portal.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model DueDiligenceTrack {
+  id          String    @id @default(cuid())
+  track       DDTrack
+  status      DDStatus  @default(NotStarted)
+  startedAt   DateTime?
+  completedAt DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  transactionId     String
+  transaction       Transaction      @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  ownerId           String?
+  owner             User?            @relation("DDTrackOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  serviceProviderId String?
+  serviceProvider   ServiceProvider? @relation("DDTrackProvider", fields: [serviceProviderId], references: [id], onDelete: SetNull)
+
+  @@unique([transactionId, track])
+  @@index([transactionId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -731,6 +805,7 @@ model ServiceProvider {
   updatedAt     DateTime            @updatedAt
 
   engagedOn     Transaction[]       @relation("TransactionServiceProviders")
+  ddTracks      DueDiligenceTrack[] @relation("DDTrackProvider")
 
   @@index([type])
 }
