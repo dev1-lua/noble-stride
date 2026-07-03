@@ -35,6 +35,15 @@ export const investorCreateSchema = z.object({
   nextActionDate: z.date().optional(),
   feedback: z.string().trim().optional(),
   ssaRegionContactId: z.string().trim().optional(),
+  // "Data collected from potential investors" doc §3–§7
+  notableInvestments: z.string().trim().optional(),
+  portfolioComposition: z.string().trim().optional(),
+  caseStudies: z.string().trim().optional(),
+  reinvestmentPolicy: z.string().trim().optional(),
+  teamComposition: z.string().trim().optional(),
+  collaborationTerms: z.string().trim().optional(),
+  impactMetrics: z.string().trim().optional(),
+  reputationalRisks: z.string().trim().optional(),
 });
 export const investorUpdateSchema = investorCreateSchema.partial();
 export type InvestorCreateInput = z.infer<typeof investorCreateSchema>;

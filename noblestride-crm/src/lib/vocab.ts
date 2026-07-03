@@ -174,6 +174,14 @@ export const LABELS: Record<string, Record<string, string>> = {
   DocumentAccessLevel: { Internal: "Internal", ClientShared: "Client-Shared", InvestorShared: "Investor-Shared", VDR: "VDR" },
   DocumentStatus: { Draft: "Draft", UnderReview: "Under Review", Approved: "Approved", Shared: "Shared", Executed: "Executed" },
   PartnerAgreementStatus: { None: "None", Sent: "Sent", Signed: "Signed" },
+  MilestoneKey: {
+    TeaserReview: "Teaser Review", NdaExecuted: "NDA Executed", ExpressionOfInterest: "EOI / LOI",
+    DataRoomAccess: "Data Room Access", PreliminaryDD: "Preliminary DD", ICPaperPrepared: "IC Paper",
+    FirstICApproval: "First IC Approval", NonBindingTermSheet: "Non-binding Term Sheet",
+    TermSheetExecuted: "Term Sheet Executed", OnsiteDD: "Onsite DD", SecondICApproval: "Second IC Approval",
+    BindingOffer: "Binding Offer", DefinitiveAgreements: "Definitive Agreements",
+    CompetitionApproval: "Competition Approval (CAK/COMESA)", SuccessFeePaid: "Success Fee Paid",
+  },
 };
 
 /** Human label for an enum value; falls back to the raw value. */

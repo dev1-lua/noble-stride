@@ -307,6 +307,25 @@ enum PartnerAgreementStatus {
   Signed
 }
 
+// "Sectors and Milestones" doc — fixed milestones for investors (14 steps + post-deal).
+enum MilestoneKey {
+  TeaserReview // Receipt and review of the teaser
+  NdaExecuted // Execution of the NDA
+  ExpressionOfInterest // EOI / LOI / email confirming interest
+  DataRoomAccess
+  PreliminaryDD // desktop due diligence
+  ICPaperPrepared // internal IC paper
+  FirstICApproval
+  NonBindingTermSheet
+  TermSheetExecuted
+  OnsiteDD // financial / tax / commercial / ESG / legal
+  SecondICApproval
+  BindingOffer
+  DefinitiveAgreements // loan agreement or SPA/SHA
+  CompetitionApproval // CAK / COMESA notification
+  SuccessFeePaid // post-deal
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Team & contacts
 // ─────────────────────────────────────────────────────────────────────────────
@@ -397,6 +416,15 @@ model Investor {
   investmentMandate        String?
   nextActionDate           DateTime?
   feedback                 String?
+  // "Data collected from potential investors" doc §3–§7 (fund self-service profile)
+  notableInvestments   String? // §3 deals closed, exits achieved
+  portfolioComposition String? // §3 sector, size, performance
+  caseStudies          String? // §3 deals similar to the NobleStride pipeline
+  reinvestmentPolicy   String? // §4
+  teamComposition      String? // §6 key personnel for deal evaluation
+  collaborationTerms   String? // §6 NDA, exclusivity
+  impactMetrics        String? // §7 social/environmental outcomes prioritized
+  reputationalRisks    String? // §7 controversial sectors or geographies
   ssaRegionContactId       String?
   ssaRegionContact         Person?   @relation("InvestorSsaContact", fields: [ssaRegionContactId], references: [id], onDelete: SetNull)
   createdSource       ActorSource     @default(HUMAN)
@@ -566,11 +594,30 @@ model Engagement {
   ownerId       String?
   owner         User?       @relation("EngagementOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   activities    Activity[]
+  milestones    EngagementMilestone[]
 
   @@unique([transactionId, investorId])
   @@index([status])
   @@index([investorId])
   @@index([engagementStage])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EngagementMilestone — the fixed investor milestone checklist per engagement
+// ("Sectors and Milestones" doc). A row exists when a milestone is reached.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EngagementMilestone {
+  id           String       @id @default(cuid())
+  engagementId String
+  engagement   Engagement   @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  key          MilestoneKey
+  completedAt  DateTime     @default(now())
+  notes        String?
+  createdSource ActorSource @default(HUMAN)
+
+  @@unique([engagementId, key])
+  @@index([engagementId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
