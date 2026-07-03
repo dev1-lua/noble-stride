@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { loadPartnerPortalData } from "@/server/visibility";
+import { referralFunnel } from "@/server/partner-portal";
 import { getViewpoint } from "@/server/viewpoint";
 import { label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
@@ -16,6 +17,33 @@ export default async function PartnerPortalPage() {
   const view = await loadPartnerPortalData(prisma, vp.recordId);
   const { profile, referredDeals } = view;
   const converted = referredDeals.filter((d) => d.converted).length;
+  const funnel = referralFunnel(referredDeals);
+  const funnelSegments = [
+    {
+      key: "introduced",
+      title: "Introduced",
+      count: funnel.introduced,
+      cls: "border-zinc-200 bg-zinc-50 text-zinc-700",
+    },
+    {
+      key: "inProgress",
+      title: "In Progress",
+      count: funnel.inProgress,
+      cls: "border-sky-200 bg-sky-50 text-sky-700",
+    },
+    {
+      key: "signed",
+      title: "Signed",
+      count: funnel.signed,
+      cls: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    },
+    {
+      key: "lost",
+      title: "Lost",
+      count: funnel.lost,
+      cls: "border-rose-200 bg-rose-50 text-rose-600",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -61,6 +89,40 @@ export default async function PartnerPortalPage() {
           </p>
         )}
       </section>
+
+      {/* Referral conversion funnel: introduced → in progress → signed / lost */}
+      <section className="rounded-xl border border-zinc-200 bg-white p-5">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          Referral Funnel
+        </h2>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+          {funnelSegments.map((seg, i) => (
+            <div key={seg.key} className="flex flex-1 items-center gap-2">
+              {i > 0 && <span className="hidden text-zinc-300 sm:block">→</span>}
+              <div className={"flex-1 rounded-lg border px-3 py-2.5 " + seg.cls}>
+                <div className="text-lg font-bold">{seg.count}</div>
+                <div className="text-[11px] font-medium uppercase tracking-wide">{seg.title}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Expected fee on conversion (fee-share lifecycle, spec §3.6) */}
+      {profile.feeSharingAgreement && (
+        <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+            Expected Fee
+          </h2>
+          <p className="mt-1 text-sm text-emerald-900">
+            <span className="font-semibold">
+              {funnel.signed} signed referral{funnel.signed === 1 ? "" : "s"}
+            </span>
+            {profile.feeSharingTerms ? <> — {profile.feeSharingTerms}</> : null}. Fee-sharing is
+            settled by NobleStride on conversion of each referred mandate.
+          </p>
+        </section>
+      )}
 
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-xl border border-zinc-200 bg-white p-4">

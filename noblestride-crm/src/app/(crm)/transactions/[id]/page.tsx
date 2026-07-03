@@ -14,6 +14,8 @@ import { RestageSelect } from "@/components/crm/restage-select";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { MatchInvestorsButton } from "@/components/crm/match-investors-button";
+import { PrepMilestones } from "@/components/crm/prep-milestones";
+import { PREP_MILESTONES } from "@/lib/milestones";
 import { TransactionFormDrawer } from "@/components/crm/transaction-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
 
@@ -259,6 +261,26 @@ export default async function TransactionDetailPage({ params }: PageProps) {
               ))}
             </ul>
           )}
+        </CardBody>
+      </Card>
+
+      {/* Deal preparation checklist — derived from the document register */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Deal Preparation
+            <Badge tone="neutral" className="ml-2">
+              {PREP_MILESTONES.filter((m) => documents.some((d) => d.type === m.docType)).length}
+              /{PREP_MILESTONES.length}
+            </Badge>
+          </h2>
+        </CardHeader>
+        <CardBody>
+          <PrepMilestones docTypes={documents.map((d) => d.type)} />
+          <p className="mt-3 text-xs text-zinc-400">
+            Derived from the document register: a milestone is complete once a document of the
+            matching type is linked to this transaction.
+          </p>
         </CardBody>
       </Card>
 
