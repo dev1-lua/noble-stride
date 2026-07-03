@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import {
   ActorSource,
   AdvisorType,
+  DDStatus,
+  DDTrack,
   DealType,
   DisbursementStatus,
   DocStatus,
@@ -25,10 +27,12 @@ import {
   InvestorType,
   MandateStage,
   NdaType,
+  OrgRole,
   PartnerAgreementStatus,
   PartnerStatus,
   PartnerType,
   Prisma,
+  RegulatoryStatus,
   Sector,
   ServiceProviderType,
   Source,
@@ -87,3 +91,7 @@ export const DocumentTypeEnum = builder.enumType(DocumentType, { name: "Document
 export const DocumentAccessLevelEnum = builder.enumType(DocumentAccessLevel, { name: "DocumentAccessLevel" });
 export const DocumentStatusEnum = builder.enumType(DocumentStatus, { name: "DocumentStatus" });
 export const PartnerAgreementStatusEnum = builder.enumType(PartnerAgreementStatus, { name: "PartnerAgreementStatus" });
+export const RegulatoryStatusEnum = builder.enumType(RegulatoryStatus, { name: "RegulatoryStatus" });
+export const DDTrackEnum = builder.enumType(DDTrack, { name: "DDTrack" });
+export const DDStatusEnum = builder.enumType(DDStatus, { name: "DDStatus" });
+export const OrgRoleEnum = builder.enumType(OrgRole, { name: "OrgRole" });

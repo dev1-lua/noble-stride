@@ -19,6 +19,13 @@ export const clientCreateSchema = z.object({
   existingInvestors: z.string().trim().optional(),
   source: z.nativeEnum(Source).optional(),
   pitchDeckUrl: z.string().trim().optional(),
+  // §3.1 financial + impact fields (EBITDA may legitimately be negative)
+  projectCodename: z.string().trim().optional(),
+  ebitda: z.number().optional(),
+  existingDebt: z.number().nonnegative().optional(),
+  totalAssets: z.number().nonnegative().optional(),
+  womenLed: z.boolean().optional(),
+  youthLed: z.boolean().optional(),
 });
 export const clientUpdateSchema = clientCreateSchema.partial();
 export type ClientCreateInput = z.infer<typeof clientCreateSchema>;

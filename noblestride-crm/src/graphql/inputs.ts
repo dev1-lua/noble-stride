@@ -13,6 +13,7 @@ import {
   DocumentTypeEnum, DocumentAccessLevelEnum, DocumentStatusEnum,
   InvestorEngagementClassificationEnum, InvestorNdaStatusEnum,
   AdvisorTypeEnum, PartnerAgreementStatusEnum,
+  RegulatoryStatusEnum, DDTrackEnum, DDStatusEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -80,6 +81,13 @@ export const ClientInput = builder.inputType("ClientInput", {
     existingInvestors: t.string({ required: false }),
     source: t.field({ type: SourceEnum, required: false }),
     pitchDeckUrl: t.string({ required: false }),
+    // §3.1 financial + impact fields
+    projectCodename: t.string({ required: false }),
+    ebitda: t.float({ required: false }),
+    existingDebt: t.float({ required: false }),
+    totalAssets: t.float({ required: false }),
+    womenLed: t.boolean({ required: false }),
+    youthLed: t.boolean({ required: false }),
   }),
 });
 
@@ -120,6 +128,12 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     successFeeAmount: t.float({ required: false }),
     successFeeInvoicedDate: t.field({ type: "DateTime", required: false }),
     successFeePaidDate: t.field({ type: "DateTime", required: false }),
+    // §3.2 IC approvals + CAK/COMESA regulatory tracking
+    icFirstApprovalDate: t.field({ type: "DateTime", required: false }),
+    icSecondApprovalDate: t.field({ type: "DateTime", required: false }),
+    cakComesaStatus: t.field({ type: RegulatoryStatusEnum, required: false }),
+    cakComesaFiledDate: t.field({ type: "DateTime", required: false }),
+    cakComesaApprovedDate: t.field({ type: "DateTime", required: false }),
   }),
 });
 
@@ -194,6 +208,19 @@ export const EngagementInput = builder.inputType("EngagementInput", {
     dateReceived: t.field({ type: "DateTime", required: false }),
     probability: t.int({ required: false }),
     feedback: t.string({ required: false }),
+    notes: t.string({ required: false }),
+  }),
+});
+
+export const DueDiligenceTrackInput = builder.inputType("DueDiligenceTrackInput", {
+  fields: (t) => ({
+    transactionId: t.id({ required: true }),
+    track: t.field({ type: DDTrackEnum, required: true }),
+    status: t.field({ type: DDStatusEnum, required: false }),
+    ownerId: t.id({ required: false }),
+    serviceProviderId: t.id({ required: false }),
+    startedAt: t.field({ type: "DateTime", required: false }),
+    completedAt: t.field({ type: "DateTime", required: false }),
     notes: t.string({ required: false }),
   }),
 });
