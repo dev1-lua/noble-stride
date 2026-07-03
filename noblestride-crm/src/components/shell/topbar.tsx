@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Search, Bell } from "lucide-react";
 import { Avatar } from "@/components/ui";
 import { AskBar } from "./ask-bar";
+import { ViewpointSwitcher, type ViewpointOption } from "./viewpoint-switcher";
 import { cn } from "@/lib/cn";
 
 // ─── Route → title/subtitle map ──────────────────────────────────────────────
@@ -42,6 +43,14 @@ const ROUTE_META: Record<string, PageMeta> = {
     title: "Clients",
     subtitle: "Portfolio company profile",
   },
+  "/documents": {
+    title: "Documents",
+    subtitle: "Deal documents, access levels and review status",
+  },
+  "/access-matrix": {
+    title: "Access Matrix",
+    subtitle: "Who sees what inside NobleStride",
+  },
 };
 
 function derivePageMeta(pathname: string): PageMeta {
@@ -60,7 +69,13 @@ function derivePageMeta(pathname: string): PageMeta {
 
 // ─── Topbar ──────────────────────────────────────────────────────────────────
 
-export function Topbar() {
+export function Topbar({
+  investors = [],
+  partners = [],
+}: {
+  investors?: ViewpointOption[];
+  partners?: ViewpointOption[];
+}) {
   const pathname = usePathname();
   const { title, subtitle } = derivePageMeta(pathname);
 
@@ -81,6 +96,9 @@ export function Topbar() {
 
       {/* Right controls */}
       <div className="flex flex-shrink-0 items-center gap-3">
+        {/* View-as switcher (demo lens, spec §6) */}
+        <ViewpointSwitcher investors={investors} partners={partners} />
+
         {/* Search */}
         <div className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5">
           <Search className="h-3.5 w-3.5 text-zinc-400 flex-shrink-0" />

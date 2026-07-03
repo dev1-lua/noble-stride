@@ -14,6 +14,7 @@ import {
   Search,
   FileText,
   Activity,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -28,7 +29,9 @@ const MAIN_NAV = [
   { href: "/transactions", label: "Transactions", Icon: TrendingUp },
   { href: "/investors", label: "Investors", Icon: Users },
   { href: "/engagement", label: "Engagement", Icon: MessageSquare },
+  { href: "/documents", label: "Documents", Icon: FileText },
   { href: "/partners", label: "Partners", Icon: Building2 },
+  { href: "/access-matrix", label: "Access Matrix", Icon: ShieldCheck },
 ];
 
 const AGENT_CARDS = [
