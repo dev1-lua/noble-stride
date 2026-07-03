@@ -1,12 +1,12 @@
 // GraphQL mutations for the NobleStride Capital CRM.
 // Thin resolvers — each is a one-line call to the matching service.
 
-import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum } from "./builder";
+import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum, DDTrackEnum } from "./builder";
 import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, DueDiligenceTrackInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor } from "@/server/services/investors";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
 import { createMandate, updateMandate, deleteMandate } from "@/server/services/mandates";
@@ -14,6 +14,7 @@ import { createTransaction, updateTransaction, deleteTransaction } from "@/serve
 import { createPartner, updatePartner, deletePartner } from "@/server/services/partners";
 import { createServiceProvider, updateServiceProvider, deleteServiceProvider } from "@/server/services/service-providers";
 import { createDocument, updateDocument, deleteDocument } from "@/server/services/documents";
+import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -188,5 +189,17 @@ builder.mutationFields((t) => ({
     type: "Engagement", nullable: false,
     args: { id: t.arg.id({ required: true }), input: t.arg({ type: EngagementInput, required: true }) },
     resolve: (_q, _r, args) => updateEngagement(args.id, args.input as never),
+  }),
+
+  // ── DueDiligenceTrack ──
+  upsertDueDiligenceTrack: t.prismaField({
+    type: "DueDiligenceTrack", nullable: false,
+    args: { input: t.arg({ type: DueDiligenceTrackInput, required: true }) },
+    resolve: (_q, _r, args) => upsertDDTrack(args.input as never),
+  }),
+  deleteDueDiligenceTrack: t.prismaField({
+    type: "DueDiligenceTrack", nullable: false,
+    args: { transactionId: t.arg.id({ required: true }), track: t.arg({ type: DDTrackEnum, required: true }) },
+    resolve: (_q, _r, args) => deleteDDTrack(String(args.transactionId), args.track),
   }),
 }));

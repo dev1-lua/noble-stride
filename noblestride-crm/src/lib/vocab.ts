@@ -182,6 +182,10 @@ export const LABELS: Record<string, Record<string, string>> = {
     BindingOffer: "Binding Offer", DefinitiveAgreements: "Definitive Agreements",
     CompetitionApproval: "Competition Approval (CAK/COMESA)", SuccessFeePaid: "Success Fee Paid",
   },
+  RegulatoryStatus: { NotStarted: "Not Started", Filed: "Filed", Approved: "Approved", NotRequired: "Not Required" },
+  DDTrack: { Financial: "Financial", Tax: "Tax", Commercial: "Commercial", ESG: "ESG", Legal: "Legal" },
+  DDStatus: { NotStarted: "Not Started", InProgress: "In Progress", Complete: "Complete", Flagged: "Flagged", NotApplicable: "N/A" },
+  OrgRole: { Admin: "Admin", DealLead: "Deal Lead", TeamMember: "Team Member" },
 };
 
 /** Human label for an enum value; falls back to the raw value. */
@@ -248,4 +252,12 @@ export const STATUS_DOT: Record<string, string> = {
   None: "bg-slate-300",
   OpenNDA: "bg-sky-500",
   ClosedNDA: "bg-emerald-500",
+  // RegulatoryStatus / DDStatus (Approved shared above)
+  NotStarted: "bg-slate-300",
+  Filed: "bg-sky-500",
+  NotRequired: "bg-slate-400",
+  InProgress: "bg-amber-500",
+  Complete: "bg-emerald-600",
+  Flagged: "bg-rose-500",
+  NotApplicable: "bg-slate-400",
 };
