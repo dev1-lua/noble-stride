@@ -196,4 +196,41 @@ One divergence worth naming to the client: **referral/partner tracking (row 13) 
 
 ---
 
-*Supersedes `noblestride-crm/docs/GAP-ANALYSIS-vs-SOW.md` (2026-06-26, stale — predates the 2026-07-03 session). Section 10 sources: text extracted from both PDFs via pypdf, read in full; build claims spot-verified against `prisma/schema.prisma`.*
+## 11. Demoing the build — UI walkthrough mapped to the documents
+
+How to show everything that's built, in the order it lands best, with each stop tied back to the master table (section 10, "row N"), the signed SOW (**SOW-S**), and the concept note (**CN**).
+
+**Run it first** (BS "How to run"): `docker compose up -d` (Postgres on 5544) → `npm run dev` → http://localhost:3000. If reseeding: `npm run seed`, then `npm run import:real`, `npx tsx scripts/plant-portal-data.ts`, `npx tsx scripts/seed-milestones.ts`.
+
+### 11.1 Internal CRM (Admin lens)
+
+| Stop | Where in the UI | What to show | Maps to |
+|---|---|---|---|
+| 1 | `/dashboard` | Live KPIs over the real dataset | Row 17 dashboards · SOW-S §08 p.5 |
+| 2 | `/mandates` | The real client pipeline (A G Energies, Danjade, Farmacie…) — 106 mandates imported from their own Engagement Contract tracker | Rows 1, 19 · SOW-S §05 p.4 "Excel trackers"; CN p.1 "historical data" |
+| 3 | `/engagement` | 12-stage investor-deal board (Shared → … → Invested/Declined) with restage controls + **disbursement table** (total/disbursed/pending) | Row 12 · SOW-S §02 p.2 Investor Tracker, §03 p.3 |
+| 4 | A transaction detail page | **Deal Preparation checklist** (teaser / model / IM / valuation / business plan) + success-fee fields | Row 10 · SOW-S §04 p.3; SOW-INT §6.1 |
+| 5 | `/documents` | Register with type, version, **access level (Internal / Client-shared / Investor-shared / VDR)**, status, and the review chain (reviewer → MD approver → client review) | Rows 1, 7 (the built half) · SOW-INT §3.9; SOW-S §05 p.4 |
+| 6 | `/tasks` | 387 real tasks from their WhatsApp tracker — and honestly note it's view-only (the gap in row 16) | Rows 16, 19 · SOW-S §03 p.3 |
+| 7 | `/access-matrix` | The in-org who-sees-what grid — present it as the *specification* of §7 RBAC, since enforcement isn't built (row 18) | Row 18 · SOW-S §03 p.2, §06 p.4 |
+
+### 11.2 External lenses (the star of the demo)
+
+The topbar **eye icon** is the viewpoint switcher — Admin / Investor / Partner with a record picker. This is the demo affordance for everything in SOW-S §07 and the CN's investor-platform vision.
+
+| Stop | Where in the UI | What to show | Maps to |
+|---|---|---|---|
+| 8 | Switch to **Investor → Lightrock** | Portal banner names the fund + classification; **Opportunities** tab shows tier-badged, matching deals only | Rows 2, 14 · SOW-S §07 pp.4–5; CN p.1 login-and-browse ask |
+| 9 | **My Pipeline** tab | Own engagements with the 15-step milestone steppers (teaser review → NDA → EOI → … → CAK/COMESA → success fee) | Rows 5, 12 · SOW-S §02, §04; CN pp.8–9 deal-review flow |
+| 10 | **Fund Profile** tab | Investor edits their own criteria (7 sections from their own "Data collected from potential investors" doc) and **saves** — server-side cookie means they can never act as another fund | Row 11 · SOW-S §02 p.2; CN pp.1–2 "2000+ funds… investment criteria" |
+| 11 | A deal page → **Express Interest** | Write-back: engagement upserted + an Activity the internal team sees — then switch back to Admin and show it landed | Row 5 · CN p.9 EOI ask; SOW-S §04 |
+| 12 | Switch to a **Greylisted** fund | The banner explains the deliberately empty portal — confidentiality *working*, not broken | Row 14 · SOW-S §06 p.4 "Excluded or greylisted investors do not receive opportunity visibility" |
+| 13 | Switch to **Partner → DLA Piper** | Referral funnel (Introduced → In Progress → Signed/Lost) + expected-fee card; **Submit Referral** creates a real Mandate → switch to Admin `/mandates` and show it in New Lead | Row 13 · SOW-S §02 p.2 referral workstream (note: not in CN at all — good talking point) |
+
+### 11.3 What the UI can't show (say it before they ask)
+
+Per rows 3, 6, 7, 8, 9, 21 — no real login/2FA, no e-signature, no file storage or watermarked VDR, no Teams/Read.ai, no template library, no invoice generation. The clean framing: everything **behind** the login exists and is tested (270/270); the login itself, files, and integrations are the next phase — and rows 3/6/7/8/9/21 of the master table show most of those were never in the signed Phase-1 scope anyway.
+
+---
+
+*Supersedes `noblestride-crm/docs/GAP-ANALYSIS-vs-SOW.md` (2026-06-26, stale — predates the 2026-07-03 session). Section 10 sources: text extracted from both PDFs via pypdf, read in full; build claims spot-verified against `prisma/schema.prisma`. Section 11 routes and demo flow per BS ("Demo script", "How to run").*
