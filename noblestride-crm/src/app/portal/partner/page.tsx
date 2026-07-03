@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { loadPartnerPortalData } from "@/server/visibility";
-import { referralFunnel } from "@/server/partner-portal";
+import { referralFunnel, referralsByStage } from "@/server/partner-portal";
 import { getViewpoint } from "@/server/viewpoint";
 import { label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
@@ -18,6 +18,10 @@ export default async function PartnerPortalPage() {
   const { profile, referredDeals } = view;
   const converted = referredDeals.filter((d) => d.converted).length;
   const funnel = referralFunnel(referredDeals);
+  const stageRows = referralsByStage(
+    referredDeals.map((d) => ({ stage: d.stage, dealSize: d.dealSize })),
+  );
+  const maxStageCount = Math.max(...stageRows.map((r) => r.count), 1);
   const funnelSegments = [
     {
       key: "introduced",
@@ -107,6 +111,43 @@ export default async function PartnerPortalPage() {
           ))}
         </div>
       </section>
+
+      {/* Referrals by stage (§13): count + total deal size per pipeline stage */}
+      {stageRows.length > 0 && (
+        <section className="rounded-xl border border-zinc-200 bg-white p-5">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            Referrals by Stage
+          </h2>
+          <div className="mt-3 space-y-2">
+            {stageRows.map((row) => (
+              <div key={row.stage} className="flex items-center gap-3">
+                <span className="w-32 shrink-0 text-xs text-zinc-600">
+                  {label("MandateStage", row.stage)}
+                </span>
+                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-zinc-100">
+                  <div
+                    className={
+                      "h-full rounded-full " +
+                      (row.stage === "Signed"
+                        ? "bg-emerald-600"
+                        : row.stage === "Lost"
+                          ? "bg-slate-300"
+                          : "bg-teal-500")
+                    }
+                    style={{ width: `${(row.count / maxStageCount) * 100}%` }}
+                  />
+                </div>
+                <span className="w-6 text-right text-xs font-semibold tabular-nums text-zinc-900">
+                  {row.count}
+                </span>
+                <span className="w-16 text-right text-xs text-zinc-500">
+                  {row.totalSize > 0 ? formatMoney(row.totalSize) : "—"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Expected fee on conversion (fee-share lifecycle, spec §3.6) */}
       {profile.feeSharingAgreement && (
