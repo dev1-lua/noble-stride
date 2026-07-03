@@ -109,6 +109,9 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     currency: t.string({ required: false }),
     sector: t.field({ type: [SectorEnum], required: false }),
     dateOpened: t.field({ type: "DateTime", required: false }),
+    successFeeAmount: t.float({ required: false }),
+    successFeeInvoicedDate: t.field({ type: "DateTime", required: false }),
+    successFeePaidDate: t.field({ type: "DateTime", required: false }),
   }),
 });
 
@@ -156,6 +159,11 @@ export const DocumentInput = builder.inputType("DocumentInput", {
     status: t.field({ type: DocumentStatusEnum, required: false }),
     fileUrl: t.string({ required: false }),
     uploadedById: t.id({ required: false }),
+    reviewerId: t.id({ required: false }),
+    reviewedAt: t.field({ type: "DateTime", required: false }),
+    approverId: t.id({ required: false }),
+    approvedAt: t.field({ type: "DateTime", required: false }),
+    clientReviewedAt: t.field({ type: "DateTime", required: false }),
     transactionId: t.id({ required: false }),
     clientId: t.id({ required: false }),
     investorId: t.id({ required: false }),

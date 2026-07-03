@@ -12,6 +12,9 @@ export const transactionCreateSchema = z.object({
   currency: z.string().trim().min(1).optional(),
   sector: z.array(z.nativeEnum(Sector)).optional(),
   dateOpened: z.coerce.date().optional(),
+  successFeeAmount: z.number().nonnegative().optional(),
+  successFeeInvoicedDate: z.coerce.date().optional(),
+  successFeePaidDate: z.coerce.date().optional(),
 });
 export const transactionUpdateSchema = transactionCreateSchema.partial();
 export type TransactionCreateInput = z.infer<typeof transactionCreateSchema>;

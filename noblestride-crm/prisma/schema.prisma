@@ -282,6 +282,7 @@ enum DocumentType {
   LoanAgreement
   SPA
   SHA
+  BusinessPlan
   Other
 }
 
@@ -326,6 +327,8 @@ model User {
   activities        Activity[]    @relation("ActivityCreatedBy")
   assignedTasks     Task[]        @relation("TaskAssignee")
   documents         Document[]    @relation("DocumentUploadedBy")
+  reviewedDocuments Document[]    @relation("DocumentReviewer")
+  approvedDocuments Document[]    @relation("DocumentApprover")
 }
 
 model Person {
@@ -502,6 +505,10 @@ model Transaction {
   sector         Sector[]         @default([])
   dateOpened     DateTime?
   closedAt       DateTime? // set when stage -> ClosedWon/ClosedLost; drives avg-time-to-close
+  // Success fee (workflow doc Stage 4): invoiced on close per the engagement contract
+  successFeeAmount       Decimal?  @db.Decimal(20, 2)
+  successFeeInvoicedDate DateTime?
+  successFeePaidDate     DateTime?
   createdSource  ActorSource      @default(HUMAN)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -697,6 +704,14 @@ model Document {
   uploadedById  String?
   uploadedBy    User?               @relation("DocumentUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
   uploadedAt    DateTime            @default(now())
+  // Review chain (workflow doc Stage 2): peer review -> MD approval -> client review
+  reviewerId       String?
+  reviewer         User?     @relation("DocumentReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewedAt       DateTime?
+  approverId       String?
+  approver         User?     @relation("DocumentApprover", fields: [approverId], references: [id], onDelete: SetNull)
+  approvedAt       DateTime?
+  clientReviewedAt DateTime?
   transactionId String?
   transaction   Transaction?        @relation(fields: [transactionId], references: [id], onDelete: SetNull)
   clientId      String?
