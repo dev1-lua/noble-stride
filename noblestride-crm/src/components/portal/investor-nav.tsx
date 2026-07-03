@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/portal/investor", label: "Opportunities" },
   { href: "/portal/investor/pipeline", label: "My Pipeline" },
+  { href: "/portal/investor/dashboard", label: "Dashboard" },
   { href: "/portal/investor/profile", label: "Fund Profile" },
 ] as const;
 

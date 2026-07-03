@@ -47,8 +47,10 @@ export {
 export {
   loadInvestorPortalData,
   loadInvestorPipeline,
+  loadInvestorDashboard,
   loadOwnEngagementForDeal,
   loadPartnerPortalData,
   type InvestorPortalData,
   type InvestorPipelineItem,
+  type InvestorDashboardData,
 } from "./load";
