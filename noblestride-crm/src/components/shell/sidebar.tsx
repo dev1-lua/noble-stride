@@ -15,6 +15,7 @@ import {
   FileText,
   Activity,
   ShieldCheck,
+  ListChecks,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -30,6 +31,7 @@ const MAIN_NAV = [
   { href: "/investors", label: "Investors", Icon: Users },
   { href: "/engagement", label: "Engagement", Icon: MessageSquare },
   { href: "/documents", label: "Documents", Icon: FileText },
+  { href: "/tasks", label: "Tasks", Icon: ListChecks },
   { href: "/partners", label: "Partners", Icon: Building2 },
   { href: "/access-matrix", label: "Access Matrix", Icon: ShieldCheck },
 ];

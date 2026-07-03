@@ -15,6 +15,7 @@
     "migrate": "prisma migrate dev",
     "generate": "prisma generate",
     "seed": "tsx prisma/seed.ts",
+    "import:real": "python3 scripts/parse-real-data.py && tsx scripts/import-real-data.ts",
     "codegen": "graphql-codegen --config codegen.ts",
     "postinstall": "prisma generate"
   },

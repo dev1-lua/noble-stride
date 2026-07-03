@@ -51,6 +51,10 @@ const ROUTE_META: Record<string, PageMeta> = {
     title: "Access Matrix",
     subtitle: "Who sees what inside NobleStride",
   },
+  "/tasks": {
+    title: "Tasks",
+    subtitle: "Team action points and deadlines",
+  },
 };
 
 function derivePageMeta(pathname: string): PageMeta {
