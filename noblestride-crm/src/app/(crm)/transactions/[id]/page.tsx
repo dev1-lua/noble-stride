@@ -22,6 +22,8 @@ import { PrepMilestones } from "@/components/crm/prep-milestones";
 import { PREP_MILESTONES } from "@/lib/milestones";
 import { TransactionFormDrawer } from "@/components/crm/transaction-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
+import { getOrgLens } from "@/server/rbac/context";
+import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -30,6 +32,7 @@ interface PageProps {
 
 export default async function TransactionDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const lens = await getOrgLens();
   const transaction = await getTransaction(id);
 
   if (!transaction) notFound();
@@ -82,6 +85,10 @@ export default async function TransactionDetailPage({ params }: PageProps) {
   });
   const DELETE_TRANSACTION = `mutation DeleteTransaction($id: ID!) { deleteTransaction(id: $id) { id } }`;
 
+  // §7.2 lens: Deal Leads edit only their own transactions; only Admin deletes.
+  const mayEdit = canUpdateRecord(lens.orgRole, "Transactions", lens.userId, { ownerId: txn.ownerId });
+  const mayDelete = canDeleteRecord(lens.orgRole, "Transactions");
+
   const clientName: string = txn.client?.name ?? txn.name;
   const ownerName: string | null = txn.owner?.name ?? null;
   const ownerColor: string | null = txn.owner?.avatarColor ?? null;
@@ -121,8 +128,12 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>
-          <TransactionFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} mandates={rel.mandates} />
-          <DeleteConfirm mutation={DELETE_TRANSACTION} recordId={txn.id} entityLabel="transaction" redirectTo="/transactions" />
+          {mayEdit && (
+            <TransactionFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} mandates={rel.mandates} />
+          )}
+          {mayDelete && (
+            <DeleteConfirm mutation={DELETE_TRANSACTION} recordId={txn.id} entityLabel="transaction" redirectTo="/transactions" />
+          )}
         </div>
       </div>
 
@@ -269,15 +280,24 @@ export default async function TransactionDetailPage({ params }: PageProps) {
             <h2 className="text-sm font-semibold text-zinc-900">Stage</h2>
           </CardHeader>
           <CardBody>
-            <RestageSelect
-              kind="transaction"
-              id={txn.id}
-              currentStage={txn.stage}
-              stageOptions={stageOptions}
-            />
-            <p className="mt-3 text-xs text-zinc-400">
-              Changing stage immediately persists to the database and resets the stage timer.
-            </p>
+            {mayEdit ? (
+              <>
+                <RestageSelect
+                  kind="transaction"
+                  id={txn.id}
+                  currentStage={txn.stage}
+                  stageOptions={stageOptions}
+                />
+                <p className="mt-3 text-xs text-zinc-400">
+                  Changing stage immediately persists to the database and resets the stage timer.
+                </p>
+              </>
+            ) : (
+              <>
+                <Chip value={txn.stage} group="TransactionStage" />
+                <p className="mt-3 text-xs text-zinc-400">Read-only in current view.</p>
+              </>
+            )}
           </CardBody>
         </Card>
       </div>
@@ -352,12 +372,23 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           </h2>
         </CardHeader>
         <CardBody>
-          <DDTracksPanel
-            transactionId={txn.id}
-            tracks={ddRows}
-            users={rel.users.map((u: { value: string; label: string }) => ({ id: u.value, name: u.label }))}
-            serviceProviders={serviceProviders.map((p) => ({ id: p.id, name: p.name }))}
-          />
+          {mayEdit ? (
+            <DDTracksPanel
+              transactionId={txn.id}
+              tracks={ddRows}
+              users={rel.users.map((u: { value: string; label: string }) => ({ id: u.value, name: u.label }))}
+              serviceProviders={serviceProviders.map((p) => ({ id: p.id, name: p.name }))}
+            />
+          ) : (
+            <ul className="divide-y divide-zinc-100">
+              {ddRows.map((row) => (
+                <li key={row.track} className="flex items-center justify-between gap-4 py-2.5">
+                  <span className="text-sm font-medium text-zinc-900">{label("DDTrack", row.track)}</span>
+                  <Chip value={row.status} group="DDStatus" />
+                </li>
+              ))}
+            </ul>
+          )}
           <p className="mt-3 text-xs text-zinc-400">
             Deal-level workstreams (financial / tax / commercial / ESG / legal). Internal only —
             never shared with investors or partners.

@@ -10,6 +10,8 @@ import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { InvestorFormDrawer } from "@/components/crm/investor-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
+import { getOrgLens } from "@/server/rbac/context";
+import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -18,6 +20,7 @@ interface PageProps {
 
 export default async function InvestorDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const lens = await getOrgLens();
   const investor = await getInvestor(id);
 
   if (!investor) notFound();
@@ -99,8 +102,12 @@ export default async function InvestorDetailPage({ params }: PageProps) {
           )}
         </div>
         <div className="flex shrink-0 gap-2">
-          <InvestorFormDrawer mode="edit" initial={initial} />
-          <DeleteConfirm mutation={DELETE_INVESTOR} recordId={investor.id} entityLabel="investor" redirectTo="/investors" />
+          {canUpdateRecord(lens.orgRole, "Investors", lens.userId, {}) && (
+            <InvestorFormDrawer mode="edit" initial={initial} />
+          )}
+          {canDeleteRecord(lens.orgRole, "Investors") && (
+            <DeleteConfirm mutation={DELETE_INVESTOR} recordId={investor.id} entityLabel="investor" redirectTo="/investors" />
+          )}
         </div>
       </div>
 

@@ -10,6 +10,8 @@ import { formatMoney } from "@/lib/money";
 import { label } from "@/lib/vocab";
 import { ClientFormDrawer } from "@/components/crm/client-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
+import { getOrgLens } from "@/server/rbac/context";
+import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -18,6 +20,7 @@ interface PageProps {
 
 export default async function ClientDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const lens = await getOrgLens();
   const client = await getClient(id);
 
   if (!client) notFound();
@@ -96,8 +99,12 @@ export default async function ClientDetailPage({ params }: PageProps) {
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
-          <ClientFormDrawer mode="edit" initial={initial} />
-          <DeleteConfirm mutation={DELETE_CLIENT} recordId={client.id} entityLabel="client" redirectTo="/clients" />
+          {canUpdateRecord(lens.orgRole, "Clients", lens.userId, {}) && (
+            <ClientFormDrawer mode="edit" initial={initial} />
+          )}
+          {canDeleteRecord(lens.orgRole, "Clients") && (
+            <DeleteConfirm mutation={DELETE_CLIENT} recordId={client.id} entityLabel="client" redirectTo="/clients" />
+          )}
         </div>
       </div>
 

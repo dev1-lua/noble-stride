@@ -6,8 +6,11 @@ import { listPartners, partnerReferralStats } from "@/server/services/partners";
 import { StatCard, Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
 import { PartnerFormDrawer } from "@/components/crm/partner-form-drawer";
+import { getOrgLens } from "@/server/rbac/context";
+import { can } from "@/server/rbac/matrix";
 
 export default async function PartnersPage() {
+  const lens = await getOrgLens();
   const [stats, partners] = await Promise.all([
     partnerReferralStats(),
     listPartners(),
@@ -30,7 +33,7 @@ export default async function PartnersPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <PartnerFormDrawer mode="create" />
+          {can(lens.orgRole, "Partners", "C") && <PartnerFormDrawer mode="create" />}
         </div>
       </div>
 

@@ -9,6 +9,8 @@ import { formatMoney } from "@/lib/money";
 import { label } from "@/lib/vocab";
 import { PartnerFormDrawer } from "@/components/crm/partner-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
+import { getOrgLens } from "@/server/rbac/context";
+import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -17,6 +19,7 @@ interface PageProps {
 
 export default async function PartnerDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const lens = await getOrgLens();
   const partner = await getPartner(id);
 
   if (!partner) notFound();
@@ -70,8 +73,12 @@ export default async function PartnerDetailPage({ params }: PageProps) {
           )}
         </div>
         <div className="flex shrink-0 gap-2">
-          <PartnerFormDrawer mode="edit" initial={initial} />
-          <DeleteConfirm mutation={DELETE_PARTNER} recordId={partner.id} entityLabel="partner" redirectTo="/partners" />
+          {canUpdateRecord(lens.orgRole, "Partners", lens.userId, {}) && (
+            <PartnerFormDrawer mode="edit" initial={initial} />
+          )}
+          {canDeleteRecord(lens.orgRole, "Partners") && (
+            <DeleteConfirm mutation={DELETE_PARTNER} recordId={partner.id} entityLabel="partner" redirectTo="/partners" />
+          )}
         </div>
       </div>
 

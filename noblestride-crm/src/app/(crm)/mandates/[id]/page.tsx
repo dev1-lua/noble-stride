@@ -14,6 +14,8 @@ import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { FindProspectsButton } from "@/components/crm/find-prospects-button";
 import { MandateFormDrawer } from "@/components/crm/mandate-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
+import { getOrgLens } from "@/server/rbac/context";
+import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -48,6 +50,11 @@ export default async function MandateDetailPage({ params }: PageProps) {
     notes: m.notes ?? "",
   };
   const DELETE_MANDATE = `mutation DeleteMandate($id: ID!) { deleteMandate(id: $id) { id } }`;
+
+  // §7.2 lens: Deal Leads edit only mandates they lead; only Admin deletes.
+  const lens = await getOrgLens();
+  const mayEdit = canUpdateRecord(lens.orgRole, "Mandates", lens.userId, { leadId: m.leadId });
+  const mayDelete = canDeleteRecord(lens.orgRole, "Mandates");
 
   const clientName: string = m.client?.name ?? m.name;
   const leadName: string | null = m.lead?.name ?? null;
@@ -85,8 +92,12 @@ export default async function MandateDetailPage({ params }: PageProps) {
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>
-          <MandateFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} partners={rel.partners} />
-          <DeleteConfirm mutation={DELETE_MANDATE} recordId={m.id} entityLabel="mandate" redirectTo="/mandates" />
+          {mayEdit && (
+            <MandateFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} partners={rel.partners} />
+          )}
+          {mayDelete && (
+            <DeleteConfirm mutation={DELETE_MANDATE} recordId={m.id} entityLabel="mandate" redirectTo="/mandates" />
+          )}
         </div>
       </div>
 
@@ -169,15 +180,24 @@ export default async function MandateDetailPage({ params }: PageProps) {
             <h2 className="text-sm font-semibold text-zinc-900">Stage</h2>
           </CardHeader>
           <CardBody>
-            <RestageSelect
-              kind="mandate"
-              id={m.id}
-              currentStage={m.stage}
-              stageOptions={stageOptions}
-            />
-            <p className="mt-3 text-xs text-zinc-400">
-              Changing stage immediately persists to the database and resets the stage timer.
-            </p>
+            {mayEdit ? (
+              <>
+                <RestageSelect
+                  kind="mandate"
+                  id={m.id}
+                  currentStage={m.stage}
+                  stageOptions={stageOptions}
+                />
+                <p className="mt-3 text-xs text-zinc-400">
+                  Changing stage immediately persists to the database and resets the stage timer.
+                </p>
+              </>
+            ) : (
+              <>
+                <Chip value={m.stage} group="MandateStage" />
+                <p className="mt-3 text-xs text-zinc-400">Read-only in current view.</p>
+              </>
+            )}
           </CardBody>
         </Card>
       </div>

@@ -22,6 +22,8 @@ export interface EngagementCardDTO {
   ndaType: string | null;
   termSheetIssued: boolean;
   probability: number | null;
+  /** §7.2 lens: computed server-side via canUpdateRecord (own-scope aware). */
+  canRestage: boolean;
 }
 
 export interface EngagementStageColumnDTO {
@@ -94,14 +96,18 @@ function EngagementStageCard({
         )}
       </div>
 
-      {/* Restage control */}
-      <EngagementRestageSelect
-        id={card.id}
-        transactionId={card.transactionId}
-        investorId={card.investorId}
-        currentStage={stage}
-        stageOptions={stageOptions}
-      />
+      {/* Restage control — hidden when the active org-role lens can't update this row */}
+      {card.canRestage ? (
+        <EngagementRestageSelect
+          id={card.id}
+          transactionId={card.transactionId}
+          investorId={card.investorId}
+          currentStage={stage}
+          stageOptions={stageOptions}
+        />
+      ) : (
+        <p className="text-[11px] text-zinc-400">Read-only in current view</p>
+      )}
     </div>
   );
 }

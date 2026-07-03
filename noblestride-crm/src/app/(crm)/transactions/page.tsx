@@ -14,8 +14,11 @@ import type { KanbanColumnDTO } from "@/components/crm/kanban-board";
 import type { TransactionCardDTO } from "@/components/crm/kanban-card";
 import { relationOptions } from "@/server/services/relation-options";
 import { TransactionFormDrawer } from "@/components/crm/transaction-form-drawer";
+import { getOrgLens } from "@/server/rbac/context";
+import { can } from "@/server/rbac/matrix";
 
 export default async function TransactionsPage() {
+  const lens = await getOrgLens();
   const rel = await relationOptions();
   // Parallel fetch: board data + dashboard KPI stats
   const [rawColumns, stats] = await Promise.all([
@@ -92,7 +95,9 @@ export default async function TransactionsPage() {
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>
-          <TransactionFormDrawer mode="create" clients={rel.clients} users={rel.users} mandates={rel.mandates} />
+          {can(lens.orgRole, "Transactions", "C") && (
+            <TransactionFormDrawer mode="create" clients={rel.clients} users={rel.users} mandates={rel.mandates} />
+          )}
         </div>
       </div>
 
@@ -144,7 +149,7 @@ export default async function TransactionsPage() {
       </div>
 
       {/* Kanban board (client component — handles DnD + mutation) */}
-      <KanbanBoard kind="transaction" columns={columns} />
+      <KanbanBoard kind="transaction" columns={columns} readOnly={!can(lens.orgRole, "Transactions", "U")} />
     </div>
   );
 }

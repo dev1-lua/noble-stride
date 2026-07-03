@@ -11,8 +11,11 @@ import { listUsers } from "@/server/services/users";
 import { StatCard, Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { DocumentFormDrawer } from "@/components/crm/document-form-drawer";
+import { getOrgLens } from "@/server/rbac/context";
+import { can } from "@/server/rbac/matrix";
 
 export default async function DocumentsPage() {
+  const lens = await getOrgLens();
   const [documents, transactions, clients, investors, users] = await Promise.all([
     listDocuments(),
     listTransactions(),
@@ -43,13 +46,15 @@ export default async function DocumentsPage() {
             Deal documents, versions, and review status
           </p>
         </div>
-        <DocumentFormDrawer
-          mode="create"
-          transactions={txnOptions}
-          clients={clientOptions}
-          investors={invOptions}
-          users={userOptions}
-        />
+        {can(lens.orgRole, "Documents", "C") && (
+          <DocumentFormDrawer
+            mode="create"
+            transactions={txnOptions}
+            clients={clientOptions}
+            investors={invOptions}
+            users={userOptions}
+          />
+        )}
       </div>
 
       {/* Counters strip — 4 tiles */}

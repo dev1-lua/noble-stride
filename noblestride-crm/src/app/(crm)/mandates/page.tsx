@@ -12,8 +12,11 @@ import type { KanbanColumnDTO } from "@/components/crm/kanban-board";
 import type { MandateCardDTO } from "@/components/crm/kanban-card";
 import { relationOptions } from "@/server/services/relation-options";
 import { MandateFormDrawer } from "@/components/crm/mandate-form-drawer";
+import { getOrgLens } from "@/server/rbac/context";
+import { can } from "@/server/rbac/matrix";
 
 export default async function MandatesPage() {
+  const lens = await getOrgLens();
   const rawColumns = await mandatesByStage();
   const rel = await relationOptions();
   const now = new Date();
@@ -84,7 +87,9 @@ export default async function MandatesPage() {
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>
-          <MandateFormDrawer mode="create" clients={rel.clients} users={rel.users} partners={rel.partners} />
+          {can(lens.orgRole, "Mandates", "C") && (
+            <MandateFormDrawer mode="create" clients={rel.clients} users={rel.users} partners={rel.partners} />
+          )}
         </div>
       </div>
 
@@ -120,7 +125,7 @@ export default async function MandatesPage() {
       </div>
 
       {/* Kanban board (client component — handles DnD + mutation) */}
-      <KanbanBoard kind="mandate" columns={columns} />
+      <KanbanBoard kind="mandate" columns={columns} readOnly={!can(lens.orgRole, "Mandates", "U")} />
     </div>
   );
 }
