@@ -40,6 +40,11 @@ export {
   type DecimalLike,
 } from "./project";
 export {
+  applyOpportunityFilters,
+  parseOpportunityFilters,
+  type OpportunityFilters,
+} from "./filters";
+export {
   loadInvestorPortalData,
   loadInvestorPipeline,
   loadOwnEngagementForDeal,

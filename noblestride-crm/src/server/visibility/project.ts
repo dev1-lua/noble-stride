@@ -92,7 +92,15 @@ export interface DealClientInput {
   revenueLastYear?: DecimalLike | null;
   revenueForecast?: DecimalLike | null;
   profitable?: boolean | null;
+  /** §3.1 impact flags — companyProfile group, visible at all tiers. */
+  womenLed?: boolean;
+  youthLed?: boolean;
   contacts?: PersonInput[];
+  // Present on loaded records but NEVER projected at any tier (they belong to
+  // the fullFinancials group, which stays internal for now):
+  ebitda?: DecimalLike | null;
+  existingDebt?: DecimalLike | null;
+  totalAssets?: DecimalLike | null;
 }
 
 /** A transaction loaded with its relations, as the portal loaders fetch it. */
@@ -113,6 +121,12 @@ export interface DealInput {
   serviceProviders?: unknown[];
   activities?: unknown[];
   owner?: unknown;
+  ddTracks?: unknown[];
+  icFirstApprovalDate?: unknown;
+  icSecondApprovalDate?: unknown;
+  cakComesaStatus?: unknown;
+  cakComesaFiledDate?: unknown;
+  cakComesaApprovedDate?: unknown;
 }
 
 // ─── Projected (external-safe) shapes ────────────────────────────────────────
@@ -145,6 +159,8 @@ export interface ProjectedDeal {
     hqCity: string | null;
     countries: Geography[];
     yearFounded: number | null;
+    womenLed: boolean;
+    youthLed: boolean;
   };
   dealTypeTicket: {
     dealType: DealType | null;
@@ -231,6 +247,8 @@ export function projectDealForInvestor(deal: DealInput, tier: Tier): ProjectedDe
       hqCity: client?.hqCity ?? null,
       countries: client?.countries ?? [],
       yearFounded: client?.yearFounded ?? null,
+      womenLed: client?.womenLed ?? false,
+      youthLed: client?.youthLed ?? false,
     },
     dealTypeTicket: {
       dealType: deal.dealType ?? null,

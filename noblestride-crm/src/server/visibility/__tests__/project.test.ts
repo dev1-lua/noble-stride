@@ -5,7 +5,7 @@ import {
   GENERIC_CONTACT_LINE,
 } from "@/server/visibility/project";
 import type { Tier } from "@/server/visibility/tiers";
-import { FORBIDDEN_STRINGS, makeDealFixture } from "./fixtures";
+import { CAK_SENTINEL, FORBIDDEN_STRINGS, makeDealFixture } from "./fixtures";
 
 const VISIBLE_TIERS: Exclude<Tier, "NONE">[] = ["PRE_INTEREST", "AFTER_NDA", "DD"];
 
@@ -104,6 +104,25 @@ describe("projectDealForInvestor — tier gating (§5.2)", () => {
         // No engagement objects at all — not even the investor's own (feedback/offers are internal).
         expect(json).not.toContain("eng-own");
         expect(json).not.toContain("eng-other");
+        // §3.2/§6.2 hard rules: DD tracks, IC approvals and CAK/COMESA never
+        // leave the building — not even the field names.
+        expect(json).not.toContain("ddTrack");
+        expect(json).not.toContain("icFirstApproval");
+        expect(json).not.toContain("icSecondApproval");
+        expect(json).not.toContain(CAK_SENTINEL);
+        // fullFinancials stays internal at every tier for now:
+        expect(json).not.toContain("1500000"); // ebitda
+        expect(json).not.toContain("900000"); // existingDebt
+      });
+    }
+  });
+
+  describe("impact flags surface at every tier (§3.1, companyProfile group)", () => {
+    for (const tier of VISIBLE_TIERS) {
+      it(`womenLed/youthLed visible @ ${tier}`, () => {
+        const p = projectDealForInvestor(makeDealFixture(), tier);
+        expect(p?.companyProfile.womenLed).toBe(true);
+        expect(p?.companyProfile.youthLed).toBe(false);
       });
     }
   });

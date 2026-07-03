@@ -9,6 +9,7 @@ import type {
   TransactionStage,
 } from "@prisma/client";
 import { investorTier, isBlockedClassification, type Tier } from "./tiers";
+import { applyOpportunityFilters, type OpportunityFilters } from "./filters";
 import {
   discoverableDealsForInvestor,
   projectDealForInvestor,
@@ -37,10 +38,13 @@ export interface InvestorPortalData {
  * Deal set = deals the investor is engaged on (at their engagement tier)
  * ∪ discovery matches (at PRE_INTEREST). Blocked classifications and
  * Declined engagements project to nothing, so they simply drop out.
+ * Optional filters (§11.1) intersect that candidate set — they can only
+ * narrow it, never widen it.
  */
 export async function loadInvestorPortalData(
   prisma: PrismaClient,
   investorId: string,
+  filters: OpportunityFilters = {},
 ): Promise<InvestorPortalData> {
   const investor = await prisma.investor.findUniqueOrThrow({
     where: { id: investorId },
@@ -59,6 +63,7 @@ export async function loadInvestorPortalData(
 
   const engagementByTxn = new Map(investor.engagements.map((e) => [e.transactionId, e]));
   const discoverableIds = new Set(discoverableDealsForInvestor(investor, deals).map((d) => d.id));
+  const filteredIds = new Set(applyOpportunityFilters(deals, filters).map((d) => d.id));
 
   const projected: ProjectedDeal[] = [];
   for (const deal of deals) {
@@ -66,6 +71,8 @@ export async function loadInvestorPortalData(
     // Engaged deals are always candidates (tier gates them); otherwise the
     // deal must match the investor's discovery filters.
     if (!engagement && !discoverableIds.has(deal.id)) continue;
+    // §11.1 interactive filters narrow the candidate set, never widen it.
+    if (!filteredIds.has(deal.id)) continue;
     const projection = projectDealForInvestor(deal, investorTier(investor, engagement));
     if (projection) projected.push(projection);
   }
