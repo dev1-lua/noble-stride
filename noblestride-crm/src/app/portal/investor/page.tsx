@@ -4,19 +4,26 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { loadInvestorPortalData } from "@/server/visibility";
+import { loadInvestorPortalData, parseOpportunityFilters } from "@/server/visibility";
 import { getViewpoint } from "@/server/viewpoint";
 import { label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
 import { TierBadge } from "@/components/portal/tier-badge";
+import { OpportunityFilters } from "@/components/portal/opportunity-filters";
 
 export const dynamic = "force-dynamic";
 
-export default async function InvestorPortalPage() {
+export default async function InvestorPortalPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const vp = await getViewpoint();
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
-  const { investor, deals } = await loadInvestorPortalData(prisma, vp.recordId);
+  const filters = parseOpportunityFilters(await searchParams);
+  const filtering = Object.keys(filters).length > 0;
+  const { investor, deals } = await loadInvestorPortalData(prisma, vp.recordId, filters);
 
   return (
     <div className="space-y-6">
@@ -28,11 +35,22 @@ export default async function InvestorPortalPage() {
         </p>
       </div>
 
+      <OpportunityFilters />
+      <p className="text-xs text-zinc-400">
+        {deals.length} opportunit{deals.length === 1 ? "y" : "ies"} match
+      </p>
+
       {deals.length === 0 ? (
         <div className="rounded-xl border border-zinc-200 bg-white px-6 py-16 text-center">
-          <p className="text-sm font-medium text-zinc-600">No opportunities available right now.</p>
+          <p className="text-sm font-medium text-zinc-600">
+            {filtering
+              ? "No opportunities match your filters."
+              : "No opportunities available right now."}
+          </p>
           <p className="mt-1 text-sm text-zinc-400">
-            Please contact your NobleStride advisor for more information.
+            {filtering
+              ? "Try widening or clearing the filters above."
+              : "Please contact your NobleStride advisor for more information."}
           </p>
         </div>
       ) : (
@@ -51,6 +69,16 @@ export default async function InvestorPortalPage() {
               </div>
               <div className="mt-1 text-sm text-zinc-500">{deal.companyProfile.clientName}</div>
               <div className="mt-3 flex flex-wrap gap-1.5">
+                {deal.companyProfile.womenLed && (
+                  <span className="rounded-full bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">
+                    Women-led
+                  </span>
+                )}
+                {deal.companyProfile.youthLed && (
+                  <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
+                    Youth-led
+                  </span>
+                )}
                 {deal.companyProfile.sector.slice(0, 3).map((s) => (
                   <span
                     key={s}
