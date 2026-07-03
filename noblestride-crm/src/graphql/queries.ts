@@ -21,6 +21,7 @@ import {
   EngagementRef,
   PartnerRef,
   ActivityRef,
+  DocumentRef,
 } from "./types";
 import type { StatValue, DashboardStats, InvestorSegments, Insight } from "@/server/domain/types";
 import type { InvestorMatch } from "@/server/domain/ranking";
@@ -43,6 +44,7 @@ import {
   getTransaction,
 } from "@/server/services/transactions";
 import { engagementsByDeal, getEngagement } from "@/server/services/engagements";
+import { listDocuments, getDocument } from "@/server/services/documents";
 import { listPartners, getPartner, partnerReferralStats } from "@/server/services/partners";
 import { dashboardStats, pipelineOverview, dealPipelineTrend } from "@/server/services/dashboard";
 import { aiOverviewInsights, aiMatchInvestors, aiFindProspects, aiAsk } from "@/server/services/ai";
@@ -238,6 +240,7 @@ void InvestorRef;
 void ClientRef;
 void PartnerRef;
 void ActivityRef;
+void DocumentRef;
 
 // ── Query fields ──────────────────────────────────────────────────────────────
 
@@ -420,6 +423,33 @@ builder.queryFields((t) => ({
       id: t.arg.id({ required: true }),
     },
     resolve: (_query, _root, args) => getPartner(args.id),
+  }),
+
+  // 16b. documents(transactionId, clientId, investorId): [Document]
+  documents: t.prismaField({
+    type: ["Document"],
+    nullable: false,
+    args: {
+      transactionId: t.arg.id({ required: false }),
+      clientId: t.arg.id({ required: false }),
+      investorId: t.arg.id({ required: false }),
+    },
+    resolve: (_query, _root, args) =>
+      listDocuments({
+        transactionId: args.transactionId ?? undefined,
+        clientId: args.clientId ?? undefined,
+        investorId: args.investorId ?? undefined,
+      }),
+  }),
+
+  // 16c. document(id: ID!): Document (nullable)
+  document: t.prismaField({
+    type: "Document",
+    nullable: true,
+    args: {
+      id: t.arg.id({ required: true }),
+    },
+    resolve: (_query, _root, args) => getDocument(args.id),
   }),
 
   // 17. partnerReferralStats: PartnerReferralStats

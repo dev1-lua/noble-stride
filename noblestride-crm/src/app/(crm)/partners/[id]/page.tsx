@@ -29,6 +29,11 @@ export default async function PartnerDetailPage({ params }: PageProps) {
     status: partner.status ?? "",
     location: partner.location ?? "",
     amount: partner.amount == null ? undefined : Number(partner.amount),
+    advisorType: partner.advisorType ?? "",
+    feeSharingAgreement: partner.feeSharingAgreement,
+    feeSharingTerms: partner.feeSharingTerms ?? "",
+    partnerAgreementStatus: partner.partnerAgreementStatus ?? "",
+    internalOnly: partner.internalOnly,
   };
   const DELETE_PARTNER = `mutation DeletePartner($id: ID!) { deletePartner(id: $id) { id } }`;
 
@@ -54,7 +59,11 @@ export default async function PartnerDetailPage({ params }: PageProps) {
             {partner.partnerType && (
               <Chip value={partner.partnerType} group="PartnerType" />
             )}
+            {partner.advisorType && (
+              <Chip value={partner.advisorType} group="AdvisorType" />
+            )}
             <Chip value={partner.status} group="PartnerStatus" />
+            {partner.internalOnly && <Badge tone="neutral">Internal Only</Badge>}
           </div>
           {partner.location && (
             <p className="mt-1 text-sm text-zinc-500">{partner.location}</p>
@@ -79,6 +88,25 @@ export default async function PartnerDetailPage({ params }: PageProps) {
                 <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(amount)}</dd>
               </div>
             )}
+
+            {/* Fee sharing */}
+            <div>
+              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Fee Sharing</dt>
+              <dd className="mt-1 text-sm font-semibold text-zinc-900">
+                {partner.feeSharingAgreement ? "Yes" : "No"}
+              </dd>
+              {partner.feeSharingAgreement && partner.feeSharingTerms && (
+                <p className="mt-0.5 text-xs text-zinc-500 whitespace-pre-line">{partner.feeSharingTerms}</p>
+              )}
+            </div>
+
+            {/* Partner agreement status */}
+            <div>
+              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Partner Agreement</dt>
+              <dd className="mt-1">
+                <Chip value={partner.partnerAgreementStatus} group="PartnerAgreementStatus" />
+              </dd>
+            </div>
 
             {partner.profile && (
               <div className="sm:col-span-2 lg:col-span-3">

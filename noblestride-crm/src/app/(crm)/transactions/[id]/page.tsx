@@ -4,6 +4,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTransaction } from "@/server/services/transactions";
+import { listDocuments } from "@/server/services/documents";
 import { relationOptions } from "@/server/services/relation-options";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/format";
@@ -27,7 +28,10 @@ export default async function TransactionDetailPage({ params }: PageProps) {
 
   if (!transaction) notFound();
 
-  const rel = await relationOptions();
+  const [rel, documents] = await Promise.all([
+    relationOptions(),
+    listDocuments({ transactionId: id }),
+  ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const txn = transaction as any;
@@ -44,6 +48,9 @@ export default async function TransactionDetailPage({ params }: PageProps) {
     targetRaise: txn.targetRaise == null ? undefined : Number(txn.targetRaise),
     sector: (txn.sector ?? []) as string[],
     dateOpened: toDate(txn.dateOpened),
+    successFeeAmount: txn.successFeeAmount == null ? undefined : Number(txn.successFeeAmount),
+    successFeeInvoicedDate: toDate(txn.successFeeInvoicedDate),
+    successFeePaidDate: toDate(txn.successFeePaidDate),
   };
   const DELETE_TRANSACTION = `mutation DeleteTransaction($id: ID!) { deleteTransaction(id: $id) { id } }`;
 
@@ -171,6 +178,21 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                 <dd className="mt-1 text-sm text-zinc-900">{formatDate(txn.stageEnteredAt)}</dd>
               </div>
 
+              {/* Success fee */}
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Success Fee</dt>
+                <dd className="mt-1 text-sm font-bold text-zinc-900">
+                  {txn.successFeeAmount != null ? formatMoney(Number(txn.successFeeAmount)) : "—"}
+                </dd>
+                {(txn.successFeeInvoicedDate || txn.successFeePaidDate) && (
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    {txn.successFeeInvoicedDate && <>Invoiced {formatDate(txn.successFeeInvoicedDate)}</>}
+                    {txn.successFeeInvoicedDate && txn.successFeePaidDate && " · "}
+                    {txn.successFeePaidDate && <>Paid {formatDate(txn.successFeePaidDate)}</>}
+                  </p>
+                )}
+              </div>
+
               {/* Notes */}
               {txn.notes && (
                 <div className="sm:col-span-2">
@@ -233,6 +255,54 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                     </div>
                   </div>
                   <Chip value={eng.status} group="EngagementStatus" />
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* Documents */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Documents
+            {documents.length > 0 && (
+              <Badge tone="neutral" className="ml-2">{documents.length}</Badge>
+            )}
+          </h2>
+        </CardHeader>
+        <CardBody>
+          {documents.length === 0 ? (
+            <p className="text-sm text-zinc-400">No documents linked to this transaction.</p>
+          ) : (
+            <ul className="divide-y divide-zinc-100">
+              {documents.map((doc) => (
+                <li key={doc.id} className="py-3 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    {doc.fileUrl ? (
+                      <a
+                        href={doc.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors truncate block"
+                      >
+                        {doc.name}
+                      </a>
+                    ) : (
+                      <p className="text-sm font-medium text-zinc-900 truncate">{doc.name}</p>
+                    )}
+                    <p className="mt-0.5 text-xs text-zinc-500">
+                      {doc.version ? `${doc.version} · ` : ""}
+                      Uploaded {formatDate(doc.uploadedAt)}
+                      {doc.uploadedBy?.name ? ` by ${doc.uploadedBy.name}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Chip value={doc.type} group="DocumentType" />
+                    <Chip value={doc.accessLevel} group="DocumentAccessLevel" />
+                    {doc.status && <Chip value={doc.status} group="DocumentStatus" />}
+                  </div>
                 </li>
               ))}
             </ul>

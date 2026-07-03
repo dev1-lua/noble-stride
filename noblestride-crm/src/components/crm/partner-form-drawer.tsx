@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui";
 import { Drawer } from "@/components/ui/drawer";
-import { TextField, TextAreaField, MoneyField, SelectField } from "@/components/ui/fields";
+import { TextField, TextAreaField, MoneyField, SelectField, CheckboxField } from "@/components/ui/fields";
 import { useEntityForm } from "@/components/ui/use-entity-form";
 import { partnerCreateSchema, partnerUpdateSchema } from "@/lib/schemas/partner";
 import { options } from "@/lib/vocab";
@@ -13,6 +13,7 @@ const UPDATE = `mutation UpdatePartner($id: ID!, $input: PartnerInput!) { update
 
 const EMPTY: Record<string, unknown> = {
   name: "", partnerType: "", profile: "", status: "", location: "", amount: undefined, currency: "",
+  advisorType: "", feeSharingAgreement: false, feeSharingTerms: "", partnerAgreementStatus: "", internalOnly: true,
 };
 
 export function PartnerFormDrawer({ mode, initial, triggerLabel }: {
@@ -50,8 +51,17 @@ export function PartnerFormDrawer({ mode, initial, triggerLabel }: {
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
           <SelectField label="Partner Type" value={v.partnerType as string} onChange={(x) => f.setValue("partnerType", x)} options={options("PartnerType")} />
           <SelectField label="Status" value={v.status as string} onChange={(x) => f.setValue("status", x)} options={options("PartnerStatus")} />
+          <div className="grid grid-cols-2 gap-3">
+            <SelectField label="Advisor Type" value={v.advisorType as string} onChange={(x) => f.setValue("advisorType", x)} options={options("AdvisorType")} />
+            <SelectField label="Agreement Status" value={v.partnerAgreementStatus as string} onChange={(x) => f.setValue("partnerAgreementStatus", x)} options={options("PartnerAgreementStatus")} />
+          </div>
           <TextField label="Location" value={v.location as string} onChange={(x) => f.setValue("location", x)} />
           <MoneyField label="Amount" value={v.amount as number} onChange={(x) => f.setValue("amount", x)} />
+          <CheckboxField label="Fee-sharing agreement in place" value={v.feeSharingAgreement as boolean} onChange={(x) => f.setValue("feeSharingAgreement", x)} />
+          {(v.feeSharingAgreement as boolean) && (
+            <TextAreaField label="Fee-Sharing Terms" value={v.feeSharingTerms as string} onChange={(x) => f.setValue("feeSharingTerms", x)} />
+          )}
+          <CheckboxField label="Internal only (not client-facing)" value={v.internalOnly as boolean} onChange={(x) => f.setValue("internalOnly", x)} />
           <TextAreaField label="Profile" value={v.profile as string} onChange={(x) => f.setValue("profile", x)} />
           {f.formError && <p className="text-xs text-rose-600">{f.formError}</p>}
         </div>

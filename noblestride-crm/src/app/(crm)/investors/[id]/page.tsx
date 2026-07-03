@@ -40,6 +40,8 @@ export default async function InvestorDetailPage({ params }: PageProps) {
     esgFocus: investor.esgFocus ?? "",
     decisionProcess: investor.decisionProcess ?? "",
     notes: investor.notes ?? "",
+    engagementClassification: investor.engagementClassification ?? "",
+    ndaStatus: investor.ndaStatus ?? "",
   };
   const DELETE_INVESTOR = `mutation DeleteInvestor($id: ID!) { deleteInvestor(id: $id) { id } }`;
 
@@ -77,6 +79,12 @@ export default async function InvestorDetailPage({ params }: PageProps) {
             <Chip value={investor.investorType} group="InvestorType" />
             {investor.status && (
               <Chip value={investor.status} group="InvestorStatus" />
+            )}
+            {investor.engagementClassification && (
+              <Chip value={investor.engagementClassification} group="InvestorEngagementClassification" />
+            )}
+            {investor.ndaStatus && investor.ndaStatus !== "None" && (
+              <Chip value={investor.ndaStatus} group="InvestorNdaStatus" />
             )}
           </div>
           {investor.website && (

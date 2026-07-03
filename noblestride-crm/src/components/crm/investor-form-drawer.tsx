@@ -16,6 +16,7 @@ const EMPTY: Record<string, unknown> = {
   sectorFocus: [], geographicFocus: [], instruments: [], investmentStages: [],
   aum: undefined, ticketMin: undefined, ticketMax: undefined, currency: "",
   targetIrr: undefined, countryRestrictions: "", esgFocus: "", decisionProcess: "", notes: "",
+  engagementClassification: "", ndaStatus: "",
 };
 
 export function InvestorFormDrawer({ mode, initial, triggerLabel }: {
@@ -57,6 +58,10 @@ export function InvestorFormDrawer({ mode, initial, triggerLabel }: {
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
           <SelectField label="Investor Type" required value={v.investorType as string} onChange={(x) => f.setValue("investorType", x)} options={options("InvestorType")} error={f.errors.investorType} />
           <SelectField label="Status" value={v.status as string} onChange={(x) => f.setValue("status", x)} options={options("InvestorStatus")} />
+          <div className="grid grid-cols-2 gap-3">
+            <SelectField label="Engagement Classification" value={v.engagementClassification as string} onChange={(x) => f.setValue("engagementClassification", x)} options={options("InvestorEngagementClassification")} />
+            <SelectField label="NDA Status" value={v.ndaStatus as string} onChange={(x) => f.setValue("ndaStatus", x)} options={options("InvestorNdaStatus")} />
+          </div>
           <MultiSelectField label="Sector Focus" value={v.sectorFocus as string[]} onChange={(x) => f.setValue("sectorFocus", x)} options={options("Sector")} />
           <MultiSelectField label="Geographic Focus" value={v.geographicFocus as string[]} onChange={(x) => f.setValue("geographicFocus", x)} options={options("Geography")} />
           <MultiSelectField label="Instruments" value={v.instruments as string[]} onChange={(x) => f.setValue("instruments", x)} options={options("Instrument")} />

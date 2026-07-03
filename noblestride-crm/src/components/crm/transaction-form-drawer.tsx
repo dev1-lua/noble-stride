@@ -15,6 +15,7 @@ const UPDATE = `mutation UpdateTransaction($id: ID!, $input: TransactionInput!) 
 const EMPTY: Record<string, unknown> = {
   name: "", clientId: "", mandateId: "", ownerId: "", dealType: "", instrument: [],
   targetRaise: undefined, currency: "", sector: [], dateOpened: "",
+  successFeeAmount: undefined, successFeeInvoicedDate: "", successFeePaidDate: "",
 };
 
 export function TransactionFormDrawer({ mode, initial, clients, users, mandates, triggerLabel }: {
@@ -63,6 +64,11 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
           <MultiSelectField label="Instrument" value={v.instrument as string[]} onChange={(x) => f.setValue("instrument", x)} options={options("Instrument")} />
           <MultiSelectField label="Sector" value={v.sector as string[]} onChange={(x) => f.setValue("sector", x)} options={options("Sector")} />
           <DateField label="Date Opened" value={v.dateOpened as string} onChange={(x) => f.setValue("dateOpened", x)} />
+          <MoneyField label="Success Fee Amount" value={v.successFeeAmount as number} onChange={(x) => f.setValue("successFeeAmount", x)} />
+          <div className="grid grid-cols-2 gap-3">
+            <DateField label="Success Fee Invoiced" value={v.successFeeInvoicedDate as string} onChange={(x) => f.setValue("successFeeInvoicedDate", x)} />
+            <DateField label="Success Fee Paid" value={v.successFeePaidDate as string} onChange={(x) => f.setValue("successFeePaidDate", x)} />
+          </div>
           {f.formError && <p className="text-xs text-rose-600">{f.formError}</p>}
         </div>
       </Drawer>

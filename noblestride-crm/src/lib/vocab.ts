@@ -211,4 +211,33 @@ export const STATUS_DOT: Record<string, string> = {
   Active: "bg-emerald-500",
   Preferred: "bg-violet-500",
   Inactive: "bg-slate-300",
+  // EngagementStage (12-stage pipeline)
+  Shared: "bg-slate-400",
+  TeaserSent: "bg-sky-400",
+  NDASigned: "bg-sky-500",
+  IMShared: "bg-violet-400",
+  VDRAccess: "bg-violet-500",
+  Meeting: "bg-amber-400",
+  InfoRequest: "bg-amber-500",
+  DueDiligence: "bg-orange-500",
+  TermSheet: "bg-emerald-400",
+  Offer: "bg-emerald-500",
+  Invested: "bg-emerald-600",
+  Declined: "bg-rose-500",
+  // DocumentStatus (+ DocStatus Sent/Signed share keys)
+  Draft: "bg-slate-300",
+  UnderReview: "bg-amber-500",
+  Approved: "bg-emerald-500",
+  Executed: "bg-emerald-600",
+  Sent: "bg-sky-500",
+  Signed: "bg-emerald-500",
+  // DisbursementStatus
+  Disbursed: "bg-emerald-600",
+  Ongoing: "bg-amber-500",
+  FellOff: "bg-rose-400",
+  Dropped: "bg-rose-500",
+  // InvestorNdaStatus / PartnerAgreementStatus
+  None: "bg-slate-300",
+  OpenNDA: "bg-sky-500",
+  ClosedNDA: "bg-emerald-500",
 };

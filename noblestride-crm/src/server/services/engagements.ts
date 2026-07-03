@@ -6,6 +6,7 @@
 // transaction so the two writes are atomic.
 
 import { prisma } from "@/lib/db";
+import { LABELS, label } from "@/lib/vocab";
 import type { InteractionType } from "@prisma/client";
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -27,6 +28,46 @@ export async function engagementsByDeal() {
     transaction,
     engagements: transaction.engagements,
   }));
+}
+
+/**
+ * Return one column per EngagementStage value (12, in vocab order), each with
+ * the engagements in that stage (investor + transaction included).
+ *
+ * N+1 avoidance: all engagements are loaded in a single query, then bucketed
+ * by stage in-process — same pattern as transactionsByStage.
+ */
+export async function engagementsByStage() {
+  const all = await prisma.engagement.findMany({
+    orderBy: { updatedAt: "desc" },
+    include: { investor: true, transaction: true },
+  });
+
+  const buckets = new Map<string, typeof all>();
+  for (const eng of all) {
+    const bucket = buckets.get(eng.engagementStage) ?? [];
+    bucket.push(eng);
+    buckets.set(eng.engagementStage, bucket);
+  }
+
+  // Columns in vocab order (Object.keys preserves insertion order)
+  return Object.keys(LABELS.EngagementStage).map((stage) => ({
+    stage,
+    label: label("EngagementStage", stage),
+    items: buckets.get(stage) ?? [],
+  }));
+}
+
+/**
+ * Invested engagements with their disbursement fields, newest receipt first.
+ * Drives the Disbursements section on the engagement page.
+ */
+export async function listDisbursements() {
+  return prisma.engagement.findMany({
+    where: { engagementStage: "Invested" },
+    orderBy: [{ dateReceived: "desc" }, { updatedAt: "desc" }],
+    include: { investor: true, transaction: true },
+  });
 }
 
 /**

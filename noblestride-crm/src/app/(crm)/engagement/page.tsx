@@ -1,29 +1,68 @@
 // engagement/page.tsx — Engagement tracker.
-// Server Component: counters + per-deal grouped engagements + activity timeline.
-// LogEngagementDialog is the only client component here (receives plain SelectOption[]).
+// Server Component: counters + 12-stage engagement pipeline board + disbursements
+// + activity timeline. Client islands: LogEngagementDialog + per-card restage select.
 
-import { engagementsByDeal } from "@/server/services/engagements";
+import { engagementsByStage, listDisbursements } from "@/server/services/engagements";
 import { engagementCounters, activityTimeline } from "@/server/services/activities";
 import { listTransactions } from "@/server/services/transactions";
 import { listInvestors } from "@/server/services/investors";
-import { StatCard, Chip, Card, CardHeader, CardBody, Badge } from "@/components/ui";
+import { StatCard } from "@/components/ui";
+import { options } from "@/lib/vocab";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { LogEngagementDialog } from "@/components/crm/log-engagement-dialog";
+import { EngagementStageBoard } from "@/components/crm/engagement-stage-board";
+import type { EngagementStageColumnDTO } from "@/components/crm/engagement-stage-board";
+import { DisbursementTable } from "@/components/crm/disbursement-table";
+import type { DisbursementRow } from "@/components/crm/disbursement-table";
 
 export default async function EngagementPage() {
   // Parallel fetches
-  const [counters, deals, timeline, transactions, investors] = await Promise.all([
-    engagementCounters(),
-    engagementsByDeal(),
-    activityTimeline(),
-    listTransactions(),
-    listInvestors({}),
-  ]);
+  const [counters, stageColumns, disbursements, timeline, transactions, investors] =
+    await Promise.all([
+      engagementCounters(),
+      engagementsByStage(),
+      listDisbursements(),
+      activityTimeline(),
+      listTransactions(),
+      listInvestors({}),
+    ]);
 
   // Build SelectOption[] for dialog (plain strings — safe to pass to client component)
   const txnOptions = transactions.map((t) => ({ value: t.id, label: t.name }));
   const invOptions = investors.map((i) => ({ value: i.id, label: i.name }));
+  const stageOptions = options("EngagementStage");
+
+  // Shape pipeline columns into plain DTOs (no Prisma types cross the boundary)
+  const columns: EngagementStageColumnDTO[] = stageColumns.map((col) => ({
+    stage: col.stage,
+    label: col.label,
+    items: col.items.map((eng) => ({
+      id: eng.id,
+      transactionId: eng.transactionId,
+      investorId: eng.investorId,
+      investorName: eng.investor.name,
+      transactionName: eng.transaction.name,
+      interestLevel: eng.interestLevel,
+      ndaType: eng.ndaType,
+      termSheetIssued: eng.termSheetIssued,
+      probability: eng.probability,
+    })),
+  }));
+
+  // Disbursement rows (Decimal → number)
+  const disbursementRows: DisbursementRow[] = disbursements.map((eng) => ({
+    id: eng.id,
+    investorId: eng.investorId,
+    investorName: eng.investor.name,
+    transactionId: eng.transactionId,
+    transactionName: eng.transaction.name,
+    totalAmount: eng.totalAmount == null ? null : Number(eng.totalAmount),
+    amountDisbursed: eng.amountDisbursed == null ? null : Number(eng.amountDisbursed),
+    amountPending: eng.amountPending == null ? null : Number(eng.amountPending),
+    disbursementStatus: eng.disbursementStatus,
+    dateReceived: eng.dateReceived,
+  }));
 
   // Map timeline activities to ActivityTimelineItem
   const timelineItems: ActivityTimelineItem[] = timeline.map((a) => ({
@@ -47,7 +86,7 @@ export default async function EngagementPage() {
         <LogEngagementDialog transactions={txnOptions} investors={invOptions} />
       </div>
 
-      {/* Counters strip — 6 tiles */}
+      {/* Counters strip — 6 tiles (activity-driven) */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Outreach" value={String(counters.outreach)} />
         <StatCard label="NDA Signed" value={String(counters.ndaSigned)} />
@@ -57,50 +96,22 @@ export default async function EngagementPage() {
         <StatCard label="Term Sheets" value={String(counters.termSheets)} />
       </div>
 
-      {/* Main content: per-deal list + activity timeline */}
+      {/* 12-stage engagement pipeline board */}
+      <div>
+        <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-3">
+          Pipeline
+        </h2>
+        <EngagementStageBoard columns={columns} stageOptions={stageOptions} />
+      </div>
+
+      {/* Disbursements + activity timeline */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* LEFT: per-deal grouped engagements */}
-        <div className="lg:col-span-3 space-y-4">
+        {/* LEFT: invested engagements with disbursement tracking */}
+        <div className="lg:col-span-3 space-y-3">
           <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide">
-            By Deal
+            Disbursements
           </h2>
-          {deals.length === 0 ? (
-            <Card>
-              <CardBody>
-                <p className="text-sm text-zinc-400">No engagements recorded yet.</p>
-              </CardBody>
-            </Card>
-          ) : (
-            deals.map(({ transaction, engagements }) => (
-              <Card key={transaction.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-semibold text-zinc-900 truncate">
-                        {transaction.name}
-                      </h3>
-                      {transaction.client?.name && (
-                        <p className="text-xs text-zinc-500 mt-0.5">{transaction.client.name}</p>
-                      )}
-                    </div>
-                    <Badge tone="neutral">{engagements.length}</Badge>
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  <ul className="divide-y divide-zinc-100">
-                    {engagements.map((eng) => (
-                      <li key={eng.id} className="py-2.5 flex items-center justify-between gap-3">
-                        <span className="text-sm text-zinc-900 truncate">
-                          {eng.investor.name}
-                        </span>
-                        <Chip value={eng.status} group="EngagementStatus" />
-                      </li>
-                    ))}
-                  </ul>
-                </CardBody>
-              </Card>
-            ))
-          )}
+          <DisbursementTable rows={disbursementRows} />
         </div>
 
         {/* RIGHT: activity timeline */}
