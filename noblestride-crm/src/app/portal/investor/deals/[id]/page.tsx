@@ -3,13 +3,21 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { loadInvestorPortalData } from "@/server/visibility";
+import { loadInvestorPortalData, loadOwnEngagementForDeal } from "@/server/visibility";
 import { getViewpoint } from "@/server/viewpoint";
 import { label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
+import { MILESTONE_ORDER, MILESTONE_LABELS } from "@/lib/milestones";
 import { TierBadge } from "@/components/portal/tier-badge";
+import { expressInterest } from "./actions";
 
 export const dynamic = "force-dynamic";
+
+const DATE_FMT = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return (
@@ -20,14 +28,47 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
   );
 }
 
-export default async function InvestorDealPage({ params }: { params: Promise<{ id: string }> }) {
+function CheckIcon({ done }: { done: boolean }) {
+  if (!done) {
+    return (
+      <span className="mt-0.5 inline-block h-4 w-4 shrink-0 rounded-full border border-zinc-300 bg-white" />
+    );
+  }
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-emerald-600 text-white"
+      aria-hidden
+    >
+      <path
+        d="M4.5 8.5l2.5 2.5 4.5-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export default async function InvestorDealPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ interest?: string }>;
+}) {
   const vp = await getViewpoint();
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
   const { id } = await params;
+  const { interest } = await searchParams;
   const { deals } = await loadInvestorPortalData(prisma, vp.recordId);
   const deal = deals.find((d) => d.id === id);
   if (!deal) notFound();
+
+  const journey = await loadOwnEngagementForDeal(prisma, vp.recordId, id);
 
   const fin = deal.financialsSummary;
 
@@ -157,9 +198,78 @@ export default async function InvestorDealPage({ params }: { params: Promise<{ i
         </section>
       )}
 
-      <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-5 py-4 text-sm text-emerald-900">
-        Interested in this opportunity? {deal.contact}
-      </div>
+      {journey ? (
+        <section className="rounded-xl border border-zinc-200 bg-white p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+              Your Progress on This Deal
+            </h2>
+            <span className="text-xs text-zinc-500">
+              <span className="font-semibold text-zinc-700">
+                {journey.own.milestoneKeys.length} of {MILESTONE_ORDER.length}
+              </span>{" "}
+              milestones · {label("EngagementStage", journey.own.stage)}
+            </span>
+          </div>
+          <ol className="mt-3 divide-y divide-zinc-100">
+            {MILESTONE_ORDER.map((key) => {
+              const done = journey.own.milestoneKeys.includes(key);
+              const date = journey.milestoneDates[key];
+              return (
+                <li key={key} className="flex items-center gap-3 py-2">
+                  <CheckIcon done={done} />
+                  <span
+                    className={`text-sm ${done ? "font-medium text-zinc-900" : "text-zinc-400"}`}
+                  >
+                    {MILESTONE_LABELS[key]}
+                  </span>
+                  {done && date && (
+                    <span className="ml-auto text-xs text-zinc-400">{DATE_FMT.format(date)}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ) : null}
+
+      <section className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-emerald-700/70">
+          {journey ? "Request More Information" : "Express Interest"}
+        </h2>
+        {interest ? (
+          <p className="mt-2 text-sm font-medium text-emerald-900">
+            Thank you — your request has been sent to the NobleStride team. They will follow up
+            shortly.
+          </p>
+        ) : (
+          <>
+            <p className="mt-2 text-sm text-emerald-900">
+              {journey
+                ? "Need something specific — data room access, a management call, updated financials? Let the deal team know."
+                : "Interested in this opportunity? Register your interest and the NobleStride team will start your process."}
+            </p>
+            <form action={expressInterest} className="mt-3 space-y-3">
+              <input type="hidden" name="dealId" value={deal.id} />
+              <textarea
+                name="message"
+                rows={3}
+                placeholder="Optional message for the deal team…"
+                className="w-full rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="text-xs text-emerald-800/70">{deal.contact}</span>
+                <button
+                  type="submit"
+                  className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+                >
+                  {journey ? "Send request" : "Express interest"}
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+      </section>
     </div>
   );
 }

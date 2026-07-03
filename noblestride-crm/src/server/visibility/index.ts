@@ -18,9 +18,13 @@ export {
   projectDealForInvestor,
   discoverableDealsForInvestor,
   projectForPartner,
+  projectOwnEngagement,
   bandCurrency,
   toNum,
   GENERIC_CONTACT_LINE,
+  type OwnEngagementInput,
+  type OwnMilestoneInput,
+  type ProjectedOwnEngagement,
   type DealInput,
   type DealClientInput,
   type DocumentInput,
@@ -37,6 +41,9 @@ export {
 } from "./project";
 export {
   loadInvestorPortalData,
+  loadInvestorPipeline,
+  loadOwnEngagementForDeal,
   loadPartnerPortalData,
   type InvestorPortalData,
+  type InvestorPipelineItem,
 } from "./load";

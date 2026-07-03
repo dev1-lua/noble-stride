@@ -12,11 +12,13 @@ import type {
   Instrument,
   InvestorEngagementClassification,
   MandateStage,
+  MilestoneKey,
   PartnerAgreementStatus,
   AdvisorType,
   Sector,
   TransactionStage,
 } from "@prisma/client";
+import { effectiveMilestones, MILESTONE_ORDER } from "@/lib/milestones";
 import type { Tier } from "./tiers";
 import { isBlockedClassification } from "./tiers";
 import { fieldAccess, isFieldVisible } from "./matrix";
@@ -260,6 +262,71 @@ export function projectDealForInvestor(deal: DealInput, tier: Tier): ProjectedDe
         }))
       : null,
     contact: GENERIC_CONTACT_LINE,
+  };
+}
+
+// ─── Own-engagement projection (investor's own journey) ─────────────────────
+// The milestone docs are explicitly the investor's own perspective: an
+// investor may see their OWN stage, milestones, last contact and term-sheet
+// status. They must NEVER see internal feedback, probability, notes,
+// disbursement amounts, owner/team identities, or anything about other
+// investors — this projector maps an explicit allowlist and drops the rest.
+
+/** An engagement row as loaded for the OWNING investor. Extra (internal-only)
+ *  fields may be present on the input; they are never projected. */
+export interface OwnEngagementInput {
+  transactionId: string;
+  engagementStage: EngagementStage;
+  lastContact?: Date | null;
+  termSheetIssued?: boolean;
+  termSheetDate?: Date | null;
+  // Present on loaded records but NEVER projected (hard rules):
+  notes?: string | null;
+  feedback?: string | null;
+  probability?: number | null;
+  totalAmount?: unknown;
+  amountDisbursed?: unknown;
+  amountPending?: unknown;
+  disbursementStatus?: unknown;
+  ownerId?: string | null;
+  owner?: unknown;
+}
+
+export interface OwnMilestoneInput {
+  key: MilestoneKey;
+}
+
+export interface ProjectedOwnEngagement {
+  dealId: string;
+  stage: EngagementStage;
+  lastContact: Date | null;
+  termSheetIssued: boolean;
+  termSheetDate: Date | null;
+  /** Completed milestones (stage-implied ∪ recorded), in MILESTONE_ORDER. */
+  milestoneKeys: MilestoneKey[];
+}
+
+/**
+ * Project an investor's OWN engagement on a deal (their own journey only).
+ * Output contains ONLY: dealId, stage, lastContact, termSheetIssued,
+ * termSheetDate, milestoneKeys. Never feedback/probability/notes/amounts/
+ * owner or other-investor data.
+ */
+export function projectOwnEngagement(
+  engagement: OwnEngagementInput,
+  milestones: OwnMilestoneInput[],
+): ProjectedOwnEngagement {
+  const done = effectiveMilestones(
+    engagement.engagementStage,
+    milestones.map((m) => m.key),
+  );
+  return {
+    dealId: engagement.transactionId,
+    stage: engagement.engagementStage,
+    lastContact: engagement.lastContact ?? null,
+    termSheetIssued: engagement.termSheetIssued ?? false,
+    termSheetDate: engagement.termSheetDate ?? null,
+    milestoneKeys: MILESTONE_ORDER.filter((k) => done.has(k)),
   };
 }
 
