@@ -6,7 +6,12 @@ import { parseViewpoint, serializeViewpoint, VIEWPOINT_COOKIE } from "@/lib/view
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
   const vp = parseViewpoint(
-    JSON.stringify({ role: params.get("role"), recordId: params.get("recordId") ?? undefined }),
+    JSON.stringify({
+      role: params.get("role"),
+      recordId: params.get("recordId") ?? undefined,
+      orgRole: params.get("orgRole") ?? undefined,
+      userId: params.get("userId") ?? undefined,
+    }),
   );
   const dest =
     vp.role === "investor" ? "/portal/investor" : vp.role === "partner" ? "/portal/partner" : "/dashboard";

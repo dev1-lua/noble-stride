@@ -1,8 +1,10 @@
 "use client";
 
-// viewpoint-switcher.tsx — demo "view as" control (design spec §6).
-// Admin / Investor / Partner + record picker; navigates through /api/viewpoint
-// which sets the viewpoint cookie and lands on the right surface.
+// viewpoint-switcher.tsx — demo "view as" control (design spec §6 + §7.2).
+// Admin / Investor / Partner + record picker; when Admin is selected an
+// org-role lens (Admin / Deal Lead / Team Member) plus a user picker scope the
+// internal CRM. Navigates through /api/viewpoint which sets the viewpoint
+// cookie and lands on the right surface.
 
 import { useState } from "react";
 import { Eye } from "lucide-react";
@@ -12,19 +14,30 @@ export interface ViewpointOption {
   name: string;
 }
 
+const ORG_ROLES = [
+  { value: "Admin", label: "Admin" },
+  { value: "DealLead", label: "Deal Lead" },
+  { value: "TeamMember", label: "Team Member" },
+] as const;
+
 export function ViewpointSwitcher({
   investors,
   partners,
+  users = [],
 }: {
   investors: ViewpointOption[];
   partners: ViewpointOption[];
+  users?: ViewpointOption[];
 }) {
   const [role, setRole] = useState<"admin" | "investor" | "partner">("admin");
+  const [orgRole, setOrgRole] = useState<string>("Admin");
   const records = role === "investor" ? investors : role === "partner" ? partners : [];
 
-  function go(nextRole: string, recordId?: string) {
+  function go(nextRole: string, recordId?: string, nextOrgRole?: string, userId?: string) {
     const params = new URLSearchParams({ role: nextRole });
     if (recordId) params.set("recordId", recordId);
+    if (nextOrgRole && nextOrgRole !== "Admin") params.set("orgRole", nextOrgRole);
+    if (userId) params.set("userId", userId);
     window.location.href = `/api/viewpoint?${params.toString()}`;
   }
 
@@ -36,6 +49,7 @@ export function ViewpointSwitcher({
         onChange={(e) => {
           const next = e.target.value as typeof role;
           setRole(next);
+          setOrgRole("Admin");
           if (next === "admin") go("admin");
         }}
         className="bg-transparent text-xs font-medium text-zinc-600 focus:outline-none"
@@ -45,6 +59,41 @@ export function ViewpointSwitcher({
         <option value="investor">Investor</option>
         <option value="partner">Partner</option>
       </select>
+      {role === "admin" && (
+        <select
+          value={orgRole}
+          onChange={(e) => {
+            const next = e.target.value;
+            setOrgRole(next);
+            if (next === "Admin") go("admin");
+          }}
+          className="bg-transparent text-xs text-zinc-600 focus:outline-none"
+          aria-label="Choose organisation role lens"
+        >
+          {ORG_ROLES.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+        </select>
+      )}
+      {role === "admin" && orgRole !== "Admin" && (
+        <select
+          defaultValue=""
+          onChange={(e) => e.target.value && go("admin", undefined, orgRole, e.target.value)}
+          className="max-w-36 bg-transparent text-xs text-zinc-600 focus:outline-none"
+          aria-label="Choose team member to view as"
+        >
+          <option value="" disabled>
+            Choose user…
+          </option>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
+            </option>
+          ))}
+        </select>
+      )}
       {role !== "admin" && (
         <select
           defaultValue=""
