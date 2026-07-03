@@ -49,6 +49,12 @@ export default async function ClientDetailPage({ params }: PageProps) {
     existingInvestors: c.existingInvestors ?? "",
     source: c.source ?? "",
     pitchDeckUrl: c.pitchDeckUrl ?? "",
+    projectCodename: c.projectCodename ?? "",
+    ebitda: c.ebitda == null ? undefined : Number(c.ebitda),
+    existingDebt: c.existingDebt == null ? undefined : Number(c.existingDebt),
+    totalAssets: c.totalAssets == null ? undefined : Number(c.totalAssets),
+    womenLed: c.womenLed ?? false,
+    youthLed: c.youthLed ?? false,
   };
   const DELETE_CLIENT = `mutation DeleteClient($id: ID!) { deleteClient(id: $id) { id } }`;
 
@@ -60,6 +66,21 @@ export default async function ClientDetailPage({ params }: PageProps) {
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{client.name}</h1>
+            {c.projectCodename && (
+              <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600">
+                {c.projectCodename}
+              </span>
+            )}
+            {c.womenLed && (
+              <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700">
+                Women-led
+              </span>
+            )}
+            {c.youthLed && (
+              <span className="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-medium text-sky-700">
+                Youth-led
+              </span>
+            )}
             {sectors.map((s: string) => (
               <Chip key={s} value={s} group="Sector" />
             ))}
@@ -137,6 +158,27 @@ export default async function ClientDetailPage({ params }: PageProps) {
               <div>
                 <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Profitable</dt>
                 <dd className="mt-1 text-sm text-zinc-900">{c.profitable ? "Yes" : "No"}</dd>
+              </div>
+            )}
+
+            {c.ebitda != null && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">EBITDA</dt>
+                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(Number(c.ebitda))}</dd>
+              </div>
+            )}
+
+            {c.existingDebt != null && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Existing Debt</dt>
+                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(Number(c.existingDebt))}</dd>
+              </div>
+            )}
+
+            {c.totalAssets != null && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Total Assets</dt>
+                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(Number(c.totalAssets))}</dd>
               </div>
             )}
 

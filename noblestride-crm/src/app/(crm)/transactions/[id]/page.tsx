@@ -5,7 +5,11 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTransaction } from "@/server/services/transactions";
 import { listDocuments } from "@/server/services/documents";
+import { listDDTracks } from "@/server/services/due-diligence";
+import { listServiceProviders } from "@/server/services/service-providers";
 import { relationOptions } from "@/server/services/relation-options";
+import { DDTrack } from "@prisma/client";
+import { DDTracksPanel, type DDTrackRow } from "@/components/crm/dd-tracks-panel";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
@@ -30,9 +34,11 @@ export default async function TransactionDetailPage({ params }: PageProps) {
 
   if (!transaction) notFound();
 
-  const [rel, documents] = await Promise.all([
+  const [rel, documents, ddTracks, serviceProviders] = await Promise.all([
     relationOptions(),
     listDocuments({ transactionId: id }),
+    listDDTracks(id),
+    listServiceProviders(),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,7 +59,27 @@ export default async function TransactionDetailPage({ params }: PageProps) {
     successFeeAmount: txn.successFeeAmount == null ? undefined : Number(txn.successFeeAmount),
     successFeeInvoicedDate: toDate(txn.successFeeInvoicedDate),
     successFeePaidDate: toDate(txn.successFeePaidDate),
+    icFirstApprovalDate: toDate(txn.icFirstApprovalDate),
+    icSecondApprovalDate: toDate(txn.icSecondApprovalDate),
+    cakComesaStatus: txn.cakComesaStatus ?? "",
+    cakComesaFiledDate: toDate(txn.cakComesaFiledDate),
+    cakComesaApprovedDate: toDate(txn.cakComesaApprovedDate),
   };
+
+  // §6.2 DD workstreams: one row per track, whether or not a DB row exists yet.
+  const ddByTrack = new Map(ddTracks.map((t) => [t.track, t]));
+  const ddRows: DDTrackRow[] = Object.values(DDTrack).map((track) => {
+    const row = ddByTrack.get(track);
+    return {
+      track,
+      status: row?.status ?? "NotStarted",
+      ownerId: row?.ownerId ?? "",
+      serviceProviderId: row?.serviceProviderId ?? "",
+      startedAt: toDate(row?.startedAt),
+      completedAt: toDate(row?.completedAt),
+      notes: row?.notes ?? "",
+    };
+  });
   const DELETE_TRANSACTION = `mutation DeleteTransaction($id: ID!) { deleteTransaction(id: $id) { id } }`;
 
   const clientName: string = txn.client?.name ?? txn.name;
@@ -195,6 +221,37 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                 )}
               </div>
 
+              {/* IC approvals */}
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">IC Approvals</dt>
+                <dd className="mt-1 text-sm text-zinc-900">
+                  {txn.icFirstApprovalDate || txn.icSecondApprovalDate ? (
+                    <>
+                      {txn.icFirstApprovalDate && <>First {formatDate(txn.icFirstApprovalDate)}</>}
+                      {txn.icFirstApprovalDate && txn.icSecondApprovalDate && " · "}
+                      {txn.icSecondApprovalDate && <>Second {formatDate(txn.icSecondApprovalDate)}</>}
+                    </>
+                  ) : (
+                    <span className="text-zinc-400">—</span>
+                  )}
+                </dd>
+              </div>
+
+              {/* CAK / COMESA */}
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">CAK / COMESA</dt>
+                <dd className="mt-1 text-sm text-zinc-900">
+                  {label("RegulatoryStatus", txn.cakComesaStatus)}
+                </dd>
+                {(txn.cakComesaFiledDate || txn.cakComesaApprovedDate) && (
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    {txn.cakComesaFiledDate && <>Filed {formatDate(txn.cakComesaFiledDate)}</>}
+                    {txn.cakComesaFiledDate && txn.cakComesaApprovedDate && " · "}
+                    {txn.cakComesaApprovedDate && <>Approved {formatDate(txn.cakComesaApprovedDate)}</>}
+                  </p>
+                )}
+              </div>
+
               {/* Notes */}
               {txn.notes && (
                 <div className="sm:col-span-2">
@@ -280,6 +337,30 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           <p className="mt-3 text-xs text-zinc-400">
             Derived from the document register: a milestone is complete once a document of the
             matching type is linked to this transaction.
+          </p>
+        </CardBody>
+      </Card>
+
+      {/* Due-diligence workstreams (§6.2) */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Due Diligence Workstreams
+            <Badge tone="neutral" className="ml-2">
+              {ddRows.filter((r) => r.status === "Complete").length}/{ddRows.length}
+            </Badge>
+          </h2>
+        </CardHeader>
+        <CardBody>
+          <DDTracksPanel
+            transactionId={txn.id}
+            tracks={ddRows}
+            users={rel.users.map((u: { value: string; label: string }) => ({ id: u.value, name: u.label }))}
+            serviceProviders={serviceProviders.map((p) => ({ id: p.id, name: p.name }))}
+          />
+          <p className="mt-3 text-xs text-zinc-400">
+            Deal-level workstreams (financial / tax / commercial / ESG / legal). Internal only —
+            never shared with investors or partners.
           </p>
         </CardBody>
       </Card>
