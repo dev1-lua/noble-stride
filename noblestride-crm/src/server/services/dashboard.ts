@@ -4,6 +4,7 @@
 import { prisma } from "@/lib/db";
 import { LABELS, label } from "@/lib/vocab";
 import { quarterRange } from "@/server/domain/metrics";
+import { groupDisbursementsByPeriod, type DisbursementPeriodRow } from "@/server/domain/disbursement";
 import { ACTIVE_MANDATE_STAGES, CLOSED_TXN_STAGES } from "@/server/domain/types";
 import type { DashboardStats } from "@/server/domain/types";
 
@@ -182,4 +183,32 @@ export async function dealPipelineTrend(): Promise<
     }
     return { month: monthLabel, active, closed };
   });
+}
+
+/**
+ * Disbursement analytics by calendar year/quarter across all engagements (§13).
+ * One query, minimal select; bucketing happens in the pure domain helper.
+ */
+export async function disbursementByPeriod(): Promise<DisbursementPeriodRow[]> {
+  const rows = await prisma.engagement.findMany({
+    where: { OR: [{ totalAmount: { not: null } }, { amountDisbursed: { not: null } }] },
+    select: {
+      totalAmount: true,
+      amountDisbursed: true,
+      amountPending: true,
+      dateReceived: true,
+      year: true,
+      quarter: true,
+    },
+  });
+  return groupDisbursementsByPeriod(
+    rows.map((r) => ({
+      totalAmount: r.totalAmount == null ? null : Number(r.totalAmount),
+      amountDisbursed: r.amountDisbursed == null ? null : Number(r.amountDisbursed),
+      amountPending: r.amountPending == null ? null : Number(r.amountPending),
+      dateReceived: r.dateReceived,
+      year: r.year,
+      quarter: r.quarter,
+    })),
+  );
 }

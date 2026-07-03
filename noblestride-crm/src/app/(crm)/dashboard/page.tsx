@@ -2,20 +2,22 @@
 // Calls services directly (NOT urql). No "use client".
 
 import { Target, Briefcase, Users, DollarSign } from "lucide-react";
-import { dashboardStats, pipelineOverview, dealPipelineTrend } from "@/server/services/dashboard";
+import { dashboardStats, pipelineOverview, dealPipelineTrend, disbursementByPeriod } from "@/server/services/dashboard";
 import { aiOverviewInsights } from "@/server/services/ai";
 import { Card, CardHeader, CardBody } from "@/components/ui";
 import { AnimatedStatCard } from "@/components/ui/animated-stat-card";
 import { Reveal, Stagger } from "@/components/ui/motion";
 import { OverviewAgentCard } from "@/components/crm/overview-agent-card";
 import { DealPipelineTrendChart, PipelineOverviewChart } from "@/components/crm/pipeline-chart";
+import { DisbursementPeriodChart } from "@/components/crm/disbursement-period-chart";
 
 export default async function DashboardPage() {
-  const [s, insights, pipeline, trend] = await Promise.all([
+  const [s, insights, pipeline, trend, disbursements] = await Promise.all([
     dashboardStats(),
     aiOverviewInsights(),
     pipelineOverview(),
     dealPipelineTrend(),
+    disbursementByPeriod(),
   ]);
 
   return (
@@ -101,6 +103,23 @@ export default async function DashboardPage() {
           </Card>
         </Reveal>
       </div>
+
+      {/* Disbursements by quarter (§13) */}
+      <Reveal delay={0.2}>
+        <Card className="transition-shadow duration-300 hover:shadow-md">
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-zinc-900">Disbursements by Quarter</h2>
+            <p className="mt-0.5 text-xs text-zinc-500">Investor funds disbursed vs pending, per calendar quarter</p>
+          </CardHeader>
+          <CardBody>
+            {disbursements.length === 0 ? (
+              <p className="text-sm text-zinc-400">No disbursements recorded.</p>
+            ) : (
+              <DisbursementPeriodChart data={disbursements} />
+            )}
+          </CardBody>
+        </Card>
+      </Reveal>
     </div>
   );
 }
