@@ -36,7 +36,7 @@ export default async function InvestorPortalPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {deals.map((deal) => (
             <Link
               key={deal.id}
