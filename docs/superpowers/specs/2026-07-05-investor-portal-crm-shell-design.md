@@ -34,7 +34,7 @@
    - Height: `h-full` (NOT `h-screen sticky` — banner sits above in a flex column).
 
 7. **New `src/components/portal/investor-topbar.tsx`** (`"use client"`) — same structure/classes as admin topbar (sticky h-16, border-b, white):
-   - Title block (w-52): route→meta map — `/portal/investor` → "Opportunities / Deals matching your mandate"; `/portal/investor/deals/*` → "Opportunities"; `/pipeline` → "My Pipeline / Your journey on each opportunity"; `/profile` → "Fund Profile / Preferences that drive deal matching".
+   - Title block (w-52): route→meta map — `/portal/investor` → "Opportunities / Deals matching your mandate"; `/portal/investor/deals/*` → "Opportunities" (shows the same subtitle as the Opportunities tab — deal pages reuse the tab's meta); `/pipeline` → "My Pipeline / Your journey on each opportunity"; `/profile` → "Fund Profile / Preferences that drive deal matching".
    - Center: flex-1 spacer (no AskBar — agents are internal-only).
    - Right: search pill, notification bell **without** the fake count badge, `Avatar` with the investor fund's initials (name passed as prop from the layout, which already knows the viewpoint) in `bg-emerald-600`.
 
