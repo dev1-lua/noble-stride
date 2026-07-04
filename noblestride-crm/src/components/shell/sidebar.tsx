@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/cn";
 
 // sidebar foreground color — Tailwind v4 CSS-var arbitrary syntax
-const SIDEBAR_FG = "#cbd5cf"; // --color-sidebar-fg
+export const SIDEBAR_FG = "#cbd5cf"; // --color-sidebar-fg
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
@@ -45,7 +45,7 @@ const AGENT_CARDS = [
 
 // ─── Brand mark ───────────────────────────────────────────────────────────────
 
-function BrandMark() {
+export function BrandMark() {
   return (
     <div className="flex items-center gap-3 px-4 py-5 flex-shrink-0">
       {/* Emerald rounded-square with trending-up glyph */}
@@ -71,7 +71,7 @@ interface NavItemProps {
   active: boolean;
 }
 
-function NavItem({ href, label, Icon, active }: NavItemProps) {
+export function NavItem({ href, label, Icon, active }: NavItemProps) {
   return (
     <Link
       href={href}
