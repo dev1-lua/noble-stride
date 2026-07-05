@@ -17,4 +17,7 @@ Points we implemented with assumptions instead of guessing silently. Confirm eac
 5. **Ticket-band boundaries for the deal-size dropdown.**
    `/register`'s deal-size selector uses assumed bands (`Under $100k`, `$100k–$250k`, `$250k–$500k`, `$500k–$1M`, `$1M–$5M`, `Over $5M`; see `src/lib/ticket-bands.ts`) built off the client's investor-preferences template, extended upward for a PE/DFI audience. Confirm these boundaries are final.
 
+6. **Masking behavior for previously DECLINED deals in an investor's own pipeline history.**
+   Current behavior: once an investor declines a deal, the visibility engine reverts it to teaser-level masking (codename) in that investor's own pipeline history, just like any other pre-interest deal — even though the investor already saw the real name during their prior engagement. Confirm whether a declined deal should remain masked as a codename going forward, or continue showing the real name the investor already knew (current behavior is safe but may read as confusing).
+
 *(Add future open questions here rather than assuming.)*

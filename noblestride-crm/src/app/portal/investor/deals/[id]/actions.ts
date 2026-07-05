@@ -27,11 +27,20 @@ export async function expressInterest(formData: FormData): Promise<void> {
   const deal = deals.find((d) => d.id === dealId);
   if (!deal) notFound();
 
+  // The projected `deal` set above is used ONLY for authorization — its name
+  // may be the masked pre-interest codename ("Project Amber Falcon"). The
+  // internal Engagement.name that admins see everywhere must carry the real
+  // deal name, so it's fetched separately after authorization passes.
+  const txn = await prisma.transaction.findUniqueOrThrow({
+    where: { id: dealId },
+    select: { name: true },
+  });
+
   // (a) Upsert the engagement — first touch starts the journey at "Shared".
   const engagement = await prisma.engagement.upsert({
     where: { transactionId_investorId: { transactionId: dealId, investorId } },
     create: {
-      name: `${investor.name} — ${deal.name}`,
+      name: `${investor.name} — ${txn.name}`,
       transactionId: dealId,
       investorId,
       engagementStage: "Shared",

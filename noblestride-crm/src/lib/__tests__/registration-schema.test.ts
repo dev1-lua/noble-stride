@@ -24,7 +24,9 @@ describe("registrationSchema", () => {
 
   it("requires every field (all mandatory)", () => {
     for (const key of Object.keys(valid)) {
-      const { [key as keyof typeof valid]: _omitted, ...rest } = valid;
+      const rest = Object.fromEntries(
+        Object.entries(valid).filter(([k]) => k !== key)
+      );
       expect(registrationSchema.safeParse(rest).success).toBe(false);
     }
   });

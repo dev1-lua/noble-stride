@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { useMutation } from "urql";
+import type { CombinedError } from "urql";
 import { useRouter } from "next/navigation";
 import { Select } from "@/components/ui";
 import type { SelectOption } from "@/components/ui";
@@ -54,7 +55,7 @@ export function RestageSelect({ kind, id, currentStage, stageOptions }: RestageS
     setError(null);
     setPending(true);
 
-    let err: Error | null = null;
+    let err: CombinedError | null = null;
 
     if (kind === "mandate") {
       const result = await executeMandateMutation({ id, stage: newStage });
@@ -69,7 +70,11 @@ export function RestageSelect({ kind, id, currentStage, stageOptions }: RestageS
     if (err) {
       console.error("[RestageSelect] failed:", err.message);
       setStage(prevStage);
-      setError("Stage update failed — please try again.");
+      const rawMessage = err.graphQLErrors?.[0]?.message ?? err.message;
+      const message = rawMessage.startsWith("[GraphQL] ")
+        ? rawMessage.slice("[GraphQL] ".length)
+        : rawMessage;
+      setError(message || "Stage update failed — please try again.");
       return;
     }
 
