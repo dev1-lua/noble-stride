@@ -356,6 +356,47 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         </CardBody>
       </Card>
 
+      {/* Service Providers — read-only: TransactionInput has no connect/disconnect for
+          serviceProviders yet, so this is a display-only list this pass (managed from
+          the /service-providers list page instead). */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Service Providers
+            {txn.serviceProviders?.length > 0 && (
+              <Badge tone="neutral" className="ml-2">{txn.serviceProviders.length}</Badge>
+            )}
+          </h2>
+        </CardHeader>
+        <CardBody>
+          {!txn.serviceProviders || txn.serviceProviders.length === 0 ? (
+            <p className="text-sm text-zinc-400">No service providers engaged on this transaction.</p>
+          ) : (
+            <ul className="divide-y divide-zinc-100">
+              {txn.serviceProviders.map((sp: { id: string; name: string; type: string; contactPerson: string | null; status: string | null }) => (
+                <li key={sp.id} className="py-3 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <Link
+                      href={`/service-providers`}
+                      className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors"
+                    >
+                      {sp.name}
+                    </Link>
+                    {sp.contactPerson && (
+                      <p className="text-xs text-zinc-500 mt-0.5">{sp.contactPerson}</p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Chip value={sp.type} group="ServiceProviderType" />
+                    {sp.status && <span className="text-xs text-zinc-500">{sp.status}</span>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
+
       {/* Deal preparation checklist — derived from the document register */}
       <Card>
         <CardHeader>

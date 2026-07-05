@@ -7,7 +7,10 @@ import type { Actor } from "@/graphql/context";
 import { serviceProviderCreateSchema, serviceProviderUpdateSchema } from "@/lib/schemas/service-provider";
 
 export const listServiceProviders = () =>
-  prisma.serviceProvider.findMany({ orderBy: { name: "asc" } });
+  prisma.serviceProvider.findMany({
+    orderBy: { name: "asc" },
+    include: { _count: { select: { engagedOn: true } } },
+  });
 
 export const getServiceProvider = (id: string) =>
   prisma.serviceProvider.findUnique({ where: { id }, include: { engagedOn: true } });

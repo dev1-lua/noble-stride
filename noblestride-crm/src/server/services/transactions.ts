@@ -107,6 +107,7 @@ export async function getTransaction(id: string) {
       engagements: { include: { investor: true } },
       activities: { orderBy: { occurredAt: "desc" } },
       stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
+      serviceProviders: { orderBy: { name: "asc" } },
     },
   });
 }

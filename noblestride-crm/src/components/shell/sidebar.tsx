@@ -9,6 +9,7 @@ import {
   Users,
   MessageSquare,
   Building2,
+  Scale,
   Settings,
   ChevronLeft,
   Search,
@@ -33,6 +34,7 @@ const MAIN_NAV = [
   { href: "/documents", label: "Documents", Icon: FileText },
   { href: "/tasks", label: "Tasks", Icon: ListChecks },
   { href: "/partners", label: "Partners", Icon: Building2 },
+  { href: "/service-providers", label: "Service Providers", Icon: Scale },
   { href: "/access-matrix", label: "Access Matrix", Icon: ShieldCheck },
 ];
 
