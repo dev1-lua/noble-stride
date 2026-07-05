@@ -6,7 +6,7 @@ import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
@@ -15,6 +15,7 @@ import { createTransaction, updateTransaction, deleteTransaction } from "@/serve
 import { createPartner, updatePartner, deletePartner } from "@/server/services/partners";
 import { createServiceProvider, updateServiceProvider, deleteServiceProvider } from "@/server/services/service-providers";
 import { createDocument, updateDocument, deleteDocument } from "@/server/services/documents";
+import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -207,5 +208,22 @@ builder.mutationFields((t) => ({
     type: "Engagement", nullable: false,
     args: { id: t.arg.id({ required: true }), input: t.arg({ type: EngagementInput, required: true }) },
     resolve: (_q, _r, args, ctx) => updateEngagement(args.id, args.input as never, ctx.actor),
+  }),
+
+  // ── Task ──
+  createTask: t.prismaField({
+    type: "Task", nullable: false,
+    args: { input: t.arg({ type: TaskInput, required: true }) },
+    resolve: (_q, _r, args) => createTask(args.input as never),
+  }),
+  updateTask: t.prismaField({
+    type: "Task", nullable: false,
+    args: { id: t.arg.id({ required: true }), input: t.arg({ type: TaskInput, required: true }) },
+    resolve: (_q, _r, args) => updateTask(args.id, args.input as never),
+  }),
+  deleteTask: t.prismaField({
+    type: "Task", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args) => deleteTask(args.id),
   }),
 }));

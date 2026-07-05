@@ -184,6 +184,14 @@ export async function dealPipelineTrend(): Promise<
   });
 }
 
+/**
+ * Overdue action-point count (spec §3.8/§12.2) — tasks flagged `escalated`.
+ * Consumed by the Task 7 "Overdue actions" dashboard stat; no UI here.
+ */
+export async function overdueTasksCount(): Promise<number> {
+  return prisma.task.count({ where: { escalated: true } });
+}
+
 /** Investor-onboarding dashboard stats (design spec §7). */
 export async function onboardingStats(now: Date = new Date()) {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);

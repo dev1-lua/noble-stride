@@ -15,6 +15,7 @@ import {
   AdvisorTypeEnum, PartnerAgreementStatusEnum,
   DealStatusEnum, DealMilestoneEnum, DealFinancingTypeEnum, MaxSellingStakeEnum,
   ImpactFlagEnum, ClientStatusEnum,
+  TaskStatusEnum, TaskSourceEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -207,6 +208,24 @@ export const DocumentInput = builder.inputType("DocumentInput", {
     transactionId: t.id({ required: false }),
     clientId: t.id({ required: false }),
     investorId: t.id({ required: false }),
+  }),
+});
+
+export const TaskInput = builder.inputType("TaskInput", {
+  fields: (t) => ({
+    title: t.string({ required: true }),
+    status: t.field({ type: TaskStatusEnum, required: false }),
+    source: t.field({ type: TaskSourceEnum, required: false }),
+    dueAt: t.field({ type: "DateTime", required: false }),
+    body: t.string({ required: false }),
+    assigneeId: t.id({ required: false }),
+    assistantId: t.id({ required: false }),
+    escalated: t.boolean({ required: false }),
+    mandateId: t.id({ required: false }),
+    transactionId: t.id({ required: false }),
+    investorId: t.id({ required: false }),
+    clientId: t.id({ required: false }),
+    activityId: t.id({ required: false }),
   }),
 });
 

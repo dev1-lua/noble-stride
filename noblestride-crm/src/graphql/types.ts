@@ -1,6 +1,5 @@
 // GraphQL object types for the NobleStride Capital CRM.
-// One `builder.prismaObject` per Prisma model (9 total).
-// Task is OUT OF SCOPE — do NOT expose it or any `tasks` relation.
+// One `builder.prismaObject` per Prisma model.
 
 import { builder } from "./builder";
 import {
@@ -41,6 +40,8 @@ import {
   ClientStatusEnum,
   CommChannelEnum,
   CommDirectionEnum,
+  TaskStatusEnum,
+  TaskSourceEnum,
 } from "./builder";
 import { daysInStage } from "@/server/domain/metrics";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
@@ -459,5 +460,38 @@ export const DocumentRef = builder.prismaObject("Document", {
     transaction: t.relation("transaction", { nullable: true }),
     client: t.relation("client", { nullable: true }),
     investor: t.relation("investor", { nullable: true }),
+  }),
+});
+
+// ─── Task ────────────────────────────────────────────────────────────────────
+// Lightweight action-point tracker (spec §3.8/§3.10). No `createdSource` field.
+
+export const TaskRef = builder.prismaObject("Task", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    title: t.exposeString("title"),
+    status: t.field({ type: TaskStatusEnum, resolve: (task) => task.status }),
+    source: t.field({ type: TaskSourceEnum, nullable: true, resolve: (task) => task.source }),
+    dueAt: t.field({ type: "DateTime", nullable: true, resolve: (task) => task.dueAt }),
+    body: t.exposeString("body", { nullable: true }),
+    escalated: t.exposeBoolean("escalated"),
+    createdAt: t.field({ type: "DateTime", resolve: (task) => task.createdAt }),
+    updatedAt: t.field({ type: "DateTime", resolve: (task) => task.updatedAt }),
+    // FK scalars
+    assigneeId: t.exposeString("assigneeId", { nullable: true }),
+    assistantId: t.exposeString("assistantId", { nullable: true }),
+    mandateId: t.exposeString("mandateId", { nullable: true }),
+    transactionId: t.exposeString("transactionId", { nullable: true }),
+    investorId: t.exposeString("investorId", { nullable: true }),
+    clientId: t.exposeString("clientId", { nullable: true }),
+    activityId: t.exposeString("activityId", { nullable: true }),
+    // Relations
+    assignee: t.relation("assignee", { nullable: true }),
+    assistant: t.relation("assistant", { nullable: true }),
+    mandate: t.relation("mandate", { nullable: true }),
+    transaction: t.relation("transaction", { nullable: true }),
+    investor: t.relation("investor", { nullable: true }),
+    client: t.relation("client", { nullable: true }),
+    activity: t.relation("activity", { nullable: true }),
   }),
 });
