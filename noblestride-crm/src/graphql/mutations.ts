@@ -25,7 +25,7 @@ builder.mutationFields((t) => ({
       id: t.arg.id({ required: true }),
       stage: t.arg({ type: MandateStageEnum, required: true }),
     },
-    resolve: (_query, _root, args) => setMandateStage(args.id, args.stage),
+    resolve: (_query, _root, args, ctx) => setMandateStage(args.id, args.stage, ctx.actor),
   }),
 
   // 2. updateTransactionStage(id: ID!, stage: TransactionStage!): Transaction
@@ -36,7 +36,7 @@ builder.mutationFields((t) => ({
       id: t.arg.id({ required: true }),
       stage: t.arg({ type: TransactionStageEnum, required: true }),
     },
-    resolve: (_query, _root, args) => setTransactionStage(args.id, args.stage),
+    resolve: (_query, _root, args, ctx) => setTransactionStage(args.id, args.stage, ctx.actor),
   }),
 
   // 3. logEngagement(transactionId, investorId, type, subject, body): Activity
@@ -121,7 +121,7 @@ builder.mutationFields((t) => ({
   updateMandate: t.prismaField({
     type: "Mandate", nullable: false,
     args: { id: t.arg.id({ required: true }), input: t.arg({ type: MandateInput, required: true }) },
-    resolve: (_q, _r, args) => updateMandate(args.id, args.input as never),
+    resolve: (_q, _r, args, ctx) => updateMandate(args.id, args.input as never, ctx.actor),
   }),
   deleteMandate: t.prismaField({
     type: "Mandate", nullable: false,
@@ -138,7 +138,7 @@ builder.mutationFields((t) => ({
   updateTransaction: t.prismaField({
     type: "Transaction", nullable: false,
     args: { id: t.arg.id({ required: true }), input: t.arg({ type: TransactionInput, required: true }) },
-    resolve: (_q, _r, args) => updateTransaction(args.id, args.input as never),
+    resolve: (_q, _r, args, ctx) => updateTransaction(args.id, args.input as never, ctx.actor),
   }),
   deleteTransaction: t.prismaField({
     type: "Transaction", nullable: false,
@@ -206,6 +206,6 @@ builder.mutationFields((t) => ({
   updateEngagement: t.prismaField({
     type: "Engagement", nullable: false,
     args: { id: t.arg.id({ required: true }), input: t.arg({ type: EngagementInput, required: true }) },
-    resolve: (_q, _r, args) => updateEngagement(args.id, args.input as never),
+    resolve: (_q, _r, args, ctx) => updateEngagement(args.id, args.input as never, ctx.actor),
   }),
 }));

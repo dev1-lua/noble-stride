@@ -7,6 +7,7 @@ import type { KanbanColumn, MandateStage } from "@/server/domain/types";
 import type { Mandate } from "@prisma/client";
 import { mandateCreateSchema, mandateUpdateSchema, type MandateCreateInput, type MandateUpdateInput } from "@/lib/schemas/mandate";
 import { actorSource, CrudError } from "./crud";
+import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 
 // ─── Filter type ─────────────────────────────────────────────────────────────
@@ -59,7 +60,8 @@ export async function mandatesByStage(): Promise<KanbanColumn<Mandate>[]> {
 
 /**
  * Fetch a single mandate by id, including related client, lead, partner,
- * transactions, and activities (ordered by occurredAt desc).
+ * transactions, activities (ordered by occurredAt desc), and stage-change
+ * history (newest first).
  * Returns null when the mandate does not exist.
  */
 export async function getMandate(id: string) {
@@ -71,18 +73,25 @@ export async function getMandate(id: string) {
       referredBy: true,
       transactions: true,
       activities: { orderBy: { occurredAt: "desc" } },
+      stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
     },
   });
 }
 
 /**
- * Move a mandate to a new stage, resetting stageEnteredAt to now.
+ * Move a mandate to a new stage, resetting stageEnteredAt to now, and record
+ * a StageChange row (SPEC §7.1) when the stage actually changes.
  * This is the write seam the Kanban drag will hit (no Activity logging here).
  */
-export async function setMandateStage(id: string, stage: MandateStage): Promise<Mandate> {
-  return prisma.mandate.update({
-    where: { id },
-    data: { stage, stageEnteredAt: new Date() },
+export async function setMandateStage(id: string, stage: MandateStage, actor: Actor = { type: "HUMAN" }): Promise<Mandate> {
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.mandate.findUniqueOrThrow({ where: { id }, select: { stage: true } });
+    const updated = await tx.mandate.update({
+      where: { id },
+      data: { stage, stageEnteredAt: new Date() },
+    });
+    await recordStageChange(tx, { field: "stage", fromValue: existing.stage, toValue: stage, actor, mandateId: id });
+    return updated;
   });
 }
 
@@ -93,9 +102,16 @@ export async function createMandate(input: MandateCreateInput, actor: Actor) {
   return prisma.mandate.create({ data: { ...data, createdSource: actorSource(actor) } });
 }
 
-export async function updateMandate(id: string, input: MandateUpdateInput) {
+export async function updateMandate(id: string, input: MandateUpdateInput, actor: Actor = { type: "HUMAN" }) {
   const data = mandateUpdateSchema.parse(input);
-  return prisma.mandate.update({ where: { id }, data });
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.mandate.findUniqueOrThrow({ where: { id }, select: { dealStatus: true } });
+    const updated = await tx.mandate.update({ where: { id }, data });
+    if (data.dealStatus !== undefined) {
+      await recordStageChange(tx, { field: "dealStatus", fromValue: existing.dealStatus, toValue: data.dealStatus, actor, mandateId: id });
+    }
+    return updated;
+  });
 }
 
 export async function deleteMandate(id: string) {

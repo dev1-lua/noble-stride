@@ -11,6 +11,8 @@ import { options } from "@/lib/vocab";
 import { RestageSelect } from "@/components/crm/restage-select";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
+import { StageHistory } from "@/components/crm/stage-history";
+import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { FindProspectsButton } from "@/components/crm/find-prospects-button";
 import { MandateFormDrawer } from "@/components/crm/mandate-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
@@ -212,6 +214,19 @@ export default async function MandateDetailPage({ params }: PageProps) {
           )}
         </CardBody>
       </Card>
+
+      <StageHistory
+        stageGroup="MandateStage"
+        items={(m.stageChanges ?? []).map((s: { id: string; field: string; fromValue: string | null; toValue: string; changedAt: Date; changedBy?: { name: string } | null; createdSource: string }): StageHistoryItem => ({
+          id: s.id,
+          field: s.field,
+          fromValue: s.fromValue,
+          toValue: s.toValue,
+          changedAt: s.changedAt,
+          changedByName: s.changedBy?.name,
+          createdSource: s.createdSource,
+        }))}
+      />
 
       <ActivityTimeline
         activities={(m.activities ?? []).map((a: { id: string; type: string; subject?: string | null; occurredAt: Date }): ActivityTimelineItem => ({

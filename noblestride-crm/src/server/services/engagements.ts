@@ -72,7 +72,8 @@ export async function listDisbursements() {
 
 /**
  * Fetch a single engagement by id, including transaction, investor, owner,
- * and activities (newest first). Returns null when the engagement does not exist.
+ * activities (newest first), and stage-change history (newest first).
+ * Returns null when the engagement does not exist.
  */
 export async function getEngagement(id: string) {
   return prisma.engagement.findUnique({
@@ -82,6 +83,7 @@ export async function getEngagement(id: string) {
       investor: true,
       owner: true,
       activities: { orderBy: { occurredAt: "desc" } },
+      stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
     },
   });
 }

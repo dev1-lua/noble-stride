@@ -7,6 +7,8 @@ import { getEngagement } from "@/server/services/engagements";
 import { Chip, Card, CardHeader, CardBody, Avatar } from "@/components/ui";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
+import { StageHistory } from "@/components/crm/stage-history";
+import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { formatDate, daysAgoLabel } from "@/lib/format";
 import { RecordClosedNdaButton } from "@/components/crm/nda-actions";
 
@@ -26,6 +28,16 @@ export default async function EngagementDetailPage({ params }: PageProps) {
     type: a.type,
     subject: a.subject,
     occurredAt: a.occurredAt,
+  }));
+
+  const stageHistoryItems: StageHistoryItem[] = engagement.stageChanges.map((s) => ({
+    id: s.id,
+    field: s.field,
+    fromValue: s.fromValue,
+    toValue: s.toValue,
+    changedAt: s.changedAt,
+    changedByName: s.changedBy?.name,
+    createdSource: s.createdSource,
   }));
 
   return (
@@ -150,6 +162,8 @@ export default async function EngagementDetailPage({ params }: PageProps) {
           </p>
         </CardBody>
       </Card>
+
+      <StageHistory stageGroup="EngagementStage" items={stageHistoryItems} />
 
       {/* Activity timeline */}
       <ActivityTimeline activities={activityItems} />

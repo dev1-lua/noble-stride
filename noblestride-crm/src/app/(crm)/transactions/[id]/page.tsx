@@ -13,6 +13,8 @@ import { label, options } from "@/lib/vocab";
 import { RestageSelect } from "@/components/crm/restage-select";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
+import { StageHistory } from "@/components/crm/stage-history";
+import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { MatchInvestorsButton } from "@/components/crm/match-investors-button";
 import { PrepMilestones } from "@/components/crm/prep-milestones";
 import { PREP_MILESTONES } from "@/lib/milestones";
@@ -331,6 +333,19 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           )}
         </CardBody>
       </Card>
+
+      <StageHistory
+        stageGroup="TransactionStage"
+        items={(txn.stageChanges ?? []).map((s: { id: string; field: string; fromValue: string | null; toValue: string; changedAt: Date; changedBy?: { name: string } | null; createdSource: string }): StageHistoryItem => ({
+          id: s.id,
+          field: s.field,
+          fromValue: s.fromValue,
+          toValue: s.toValue,
+          changedAt: s.changedAt,
+          changedByName: s.changedBy?.name,
+          createdSource: s.createdSource,
+        }))}
+      />
 
       <ActivityTimeline
         activities={(txn.activities ?? []).map((a: { id: string; type: string; subject?: string | null; occurredAt: Date }): ActivityTimelineItem => ({

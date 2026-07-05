@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { actorSource } from "./crud";
+import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 import { amountPending, deriveYearQuarter } from "@/server/domain/disbursement";
 import { engagementCreateSchema, engagementUpdateSchema } from "@/lib/schemas/engagement";
@@ -27,7 +28,7 @@ export async function createEngagement(raw: unknown, actor: Actor) {
   });
 }
 
-export async function updateEngagement(id: string, raw: unknown) {
+export async function updateEngagement(id: string, raw: unknown, actor: Actor = { type: "HUMAN" }) {
   const input = engagementUpdateSchema.parse(raw);
   // Recompute derived fields over the MERGED state: incoming partial fields
   // override the persisted row, so a single-field money update doesn't reset
@@ -49,5 +50,17 @@ export async function updateEngagement(id: string, raw: unknown) {
       "amountDisbursed" in input ? input.amountDisbursed : existing.amountDisbursed == null ? undefined : Number(existing.amountDisbursed),
     dateReceived: "dateReceived" in input ? input.dateReceived : existing.dateReceived ?? undefined,
   };
-  return prisma.engagement.update({ where: { id }, data: { ...input, ...derived(merged) } as never });
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.engagement.update({ where: { id }, data: { ...input, ...derived(merged) } as never });
+    if (input.engagementStage !== undefined) {
+      await recordStageChange(tx, {
+        field: "engagementStage",
+        fromValue: existing.engagementStage,
+        toValue: input.engagementStage,
+        actor,
+        engagementId: id,
+      });
+    }
+    return updated;
+  });
 }

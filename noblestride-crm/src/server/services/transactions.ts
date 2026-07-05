@@ -11,6 +11,7 @@ import type { KanbanColumn, TransactionStage } from "@/server/domain/types";
 import type { Prisma } from "@prisma/client";
 import { transactionCreateSchema, transactionUpdateSchema, type TransactionCreateInput, type TransactionUpdateInput } from "@/lib/schemas/transaction";
 import { actorSource, CrudError } from "./crud";
+import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 
 // ─── Filter type ─────────────────────────────────────────────────────────────
@@ -91,7 +92,8 @@ export async function transactionsByStage(): Promise<KanbanColumn<TransactionWit
 
 /**
  * Fetch a single transaction by id, including related client, mandate, owner,
- * engagements (with investors), and activities (ordered by occurredAt desc).
+ * engagements (with investors), activities (ordered by occurredAt desc), and
+ * stage-change history (newest first).
  * Returns null when the transaction does not exist.
  */
 export async function getTransaction(id: string) {
@@ -103,6 +105,7 @@ export async function getTransaction(id: string) {
       owner: true,
       engagements: { include: { investor: true } },
       activities: { orderBy: { occurredAt: "desc" } },
+      stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
     },
   });
 }
@@ -110,15 +113,21 @@ export async function getTransaction(id: string) {
 /**
  * Move a transaction to a new stage, resetting stageEnteredAt to now.
  * Sets closedAt to now when entering a terminal stage (ClosedWon/ClosedLost),
- * clears it when re-opening to any other stage.
+ * clears it when re-opening to any other stage. Records a StageChange row
+ * (SPEC §7.1) when the stage actually changes.
  * This is the write seam the Kanban drag will hit (no Activity logging here).
  */
-export async function setTransactionStage(id: string, stage: TransactionStage) {
+export async function setTransactionStage(id: string, stage: TransactionStage, actor: Actor = { type: "HUMAN" }) {
   const closedAt = CLOSED_TXN_STAGES.includes(stage) ? new Date() : null;
 
-  return prisma.transaction.update({
-    where: { id },
-    data: { stage, stageEnteredAt: new Date(), closedAt },
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.transaction.findUniqueOrThrow({ where: { id }, select: { stage: true } });
+    const updated = await tx.transaction.update({
+      where: { id },
+      data: { stage, stageEnteredAt: new Date(), closedAt },
+    });
+    await recordStageChange(tx, { field: "stage", fromValue: existing.stage, toValue: stage, actor, transactionId: id });
+    return updated;
   });
 }
 
@@ -129,9 +138,19 @@ export async function createTransaction(input: TransactionCreateInput, actor: Ac
   return prisma.transaction.create({ data: { ...data, createdSource: actorSource(actor) } });
 }
 
-export async function updateTransaction(id: string, input: TransactionUpdateInput) {
+export async function updateTransaction(id: string, input: TransactionUpdateInput, actor: Actor = { type: "HUMAN" }) {
   const data = transactionUpdateSchema.parse(input);
-  return prisma.transaction.update({ where: { id }, data });
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.transaction.findUniqueOrThrow({ where: { id }, select: { dealStatus: true, dealMilestone: true } });
+    const updated = await tx.transaction.update({ where: { id }, data });
+    if (data.dealStatus !== undefined) {
+      await recordStageChange(tx, { field: "dealStatus", fromValue: existing.dealStatus, toValue: data.dealStatus, actor, transactionId: id });
+    }
+    if (data.dealMilestone !== undefined) {
+      await recordStageChange(tx, { field: "dealMilestone", fromValue: existing.dealMilestone, toValue: data.dealMilestone, actor, transactionId: id });
+    }
+    return updated;
+  });
 }
 
 export async function deleteTransaction(id: string) {
