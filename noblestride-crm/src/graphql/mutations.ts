@@ -1,13 +1,14 @@
 // GraphQL mutations for the NobleStride Capital CRM.
 // Thin resolvers — each is a one-line call to the matching service.
 
-import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum } from "./builder";
+import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum, OnboardingStatusEnum } from "./builder";
 import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
 import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput } from "./inputs";
-import { createInvestor, updateInvestor, deleteInvestor } from "@/server/services/investors";
+import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus } from "@/server/services/investors";
+import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
 import { createMandate, updateMandate, deleteMandate } from "@/server/services/mandates";
 import { createTransaction, updateTransaction, deleteTransaction } from "@/server/services/transactions";
@@ -74,6 +75,24 @@ builder.mutationFields((t) => ({
     type: "Investor", nullable: false,
     args: { id: t.arg.id({ required: true }) },
     resolve: (_q, _r, args) => deleteInvestor(args.id),
+  }),
+  setInvestorOnboardingStatus: t.prismaField({
+    type: "Investor", nullable: false,
+    args: {
+      id: t.arg.id({ required: true }),
+      status: t.arg({ type: OnboardingStatusEnum, required: true }),
+    },
+    resolve: (_q, _r, args, ctx) => setOnboardingStatus(String(args.id), args.status, ctx.actor),
+  }),
+  recordOpenNda: t.prismaField({
+    type: "Investor", nullable: false,
+    args: { investorId: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args, ctx) => recordOpenNda(String(args.investorId), ctx.actor),
+  }),
+  recordClosedNda: t.prismaField({
+    type: "Engagement", nullable: false,
+    args: { engagementId: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args, ctx) => recordClosedNda(String(args.engagementId), ctx.actor),
   }),
 
   // ── Client ──

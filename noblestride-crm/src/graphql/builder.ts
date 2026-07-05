@@ -25,6 +25,7 @@ import {
   InvestorType,
   MandateStage,
   NdaType,
+  OnboardingStatus,
   PartnerAgreementStatus,
   PartnerStatus,
   PartnerType,
@@ -87,3 +88,4 @@ export const DocumentTypeEnum = builder.enumType(DocumentType, { name: "Document
 export const DocumentAccessLevelEnum = builder.enumType(DocumentAccessLevel, { name: "DocumentAccessLevel" });
 export const DocumentStatusEnum = builder.enumType(DocumentStatus, { name: "DocumentStatus" });
 export const PartnerAgreementStatusEnum = builder.enumType(PartnerAgreementStatus, { name: "PartnerAgreementStatus" });
+export const OnboardingStatusEnum = builder.enumType(OnboardingStatus, { name: "OnboardingStatus" });

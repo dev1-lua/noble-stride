@@ -8,6 +8,7 @@ import type { InvestorFilter, InvestorSegments, Pagination } from "@/server/doma
 import { investorCreateSchema, investorUpdateSchema, type InvestorCreateInput, type InvestorUpdateInput } from "@/lib/schemas/investor";
 import { actorSource, CrudError } from "./crud";
 import type { Actor } from "@/graphql/context";
+import type { OnboardingStatus } from "@prisma/client";
 
 /**
  * List investors matching the given filter, ordered by name asc.
@@ -107,6 +108,28 @@ export async function createInvestor(input: InvestorCreateInput, actor: Actor) {
 export async function updateInvestor(id: string, input: InvestorUpdateInput) {
   const data = investorUpdateSchema.parse(input);
   return prisma.investor.update({ where: { id }, data });
+}
+
+const ONBOARDING_ACTIVITY_SUBJECT: Record<OnboardingStatus, string> = {
+  Approved: "Investor approved",
+  Rejected: "Investor rejected",
+  PendingReview: "Investor set to pending review",
+};
+
+/** Approve/reject a registration; logs the decision on the timeline. */
+export async function setOnboardingStatus(id: string, status: OnboardingStatus, actor: Actor) {
+  return prisma.$transaction(async (tx) => {
+    const investor = await tx.investor.update({ where: { id }, data: { onboardingStatus: status } });
+    await tx.activity.create({
+      data: {
+        type: "Note",
+        subject: `${ONBOARDING_ACTIVITY_SUBJECT[status]} — ${investor.name}`,
+        investorId: id,
+        createdSource: actorSource(actor),
+      },
+    });
+    return investor;
+  });
 }
 
 export async function deleteInvestor(id: string) {
