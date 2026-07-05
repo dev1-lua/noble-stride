@@ -18,9 +18,35 @@ export async function createTask(input: TaskCreateInput) {
   return prisma.task.create({ data });
 }
 
+/**
+ * Update a task, recomputing `escalated` (spec §3.8 — Auto, never
+ * caller-settable) whenever `status` and/or `dueAt` are part of the update.
+ * A task that is open (NotStarted/Pending/Ongoing) AND overdue is flagged
+ * immediately — e.g. pushing dueAt into the past, or reopening a Done task
+ * that already has a past dueAt — rather than waiting for the next
+ * `flagOverdueTasks()` sweep. A task that leaves an open status, or whose
+ * dueAt is cleared/moved to the future, is un-flagged in the same update.
+ */
 export async function updateTask(id: string, input: TaskUpdateInput) {
   const data = taskUpdateSchema.parse(input);
-  return prisma.task.update({ where: { id }, data });
+
+  let escalated: boolean | undefined;
+  if ("status" in data || "dueAt" in data) {
+    const current = await prisma.task.findUniqueOrThrow({
+      where: { id },
+      select: { status: true, dueAt: true },
+    });
+    const status = "status" in data && data.status ? data.status : current.status;
+    const dueAt = "dueAt" in data ? (data.dueAt ?? null) : current.dueAt;
+    const isOpen = OPEN_STATUSES.includes(status);
+    const isOverdue = dueAt != null && dueAt.getTime() < Date.now();
+    escalated = isOpen && isOverdue;
+  }
+
+  return prisma.task.update({
+    where: { id },
+    data: escalated === undefined ? data : { ...data, escalated },
+  });
 }
 
 export async function deleteTask(id: string) {

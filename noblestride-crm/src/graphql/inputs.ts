@@ -220,12 +220,13 @@ export const TaskInput = builder.inputType("TaskInput", {
     body: t.string({ required: false }),
     assigneeId: t.id({ required: false }),
     assistantId: t.id({ required: false }),
-    escalated: t.boolean({ required: false }),
     mandateId: t.id({ required: false }),
     transactionId: t.id({ required: false }),
     investorId: t.id({ required: false }),
     clientId: t.id({ required: false }),
     activityId: t.id({ required: false }),
+    // Note: no `escalated` field — spec §3.8 marks it Auto; the task service
+    // computes it from status/dueAt and never accepts a caller-supplied value.
   }),
 });
 

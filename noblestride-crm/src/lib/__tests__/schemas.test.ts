@@ -235,7 +235,7 @@ describe("entity create schemas", () => {
     expect(taskCreateSchema.safeParse({ title: "Follow up" }).success).toBe(true);
   });
 
-  it("task: accepts all optional link ids + source + escalated", () => {
+  it("task: accepts all optional link ids + source, strips caller-supplied escalated", () => {
     const due = new Date("2026-08-01T00:00:00.000Z");
     const r = taskCreateSchema.safeParse({
       title: "Send teaser",
@@ -245,6 +245,8 @@ describe("entity create schemas", () => {
       body: "Follow up with investor",
       assigneeId: "u1",
       assistantId: "u2",
+      // escalated is spec §3.8 Auto — not a schema field, so a caller-supplied
+      // value here must be silently stripped, never echoed back or persisted.
       escalated: true,
       mandateId: "m1",
       transactionId: "t1",
@@ -258,7 +260,7 @@ describe("entity create schemas", () => {
       expect(r.data.source).toBe("WhatsApp");
       expect(r.data.dueAt).toEqual(due);
       expect(r.data.assistantId).toBe("u2");
-      expect(r.data.escalated).toBe(true);
+      expect((r.data as Record<string, unknown>).escalated).toBeUndefined();
       expect(r.data.mandateId).toBe("m1");
       expect(r.data.transactionId).toBe("t1");
       expect(r.data.investorId).toBe("i1");

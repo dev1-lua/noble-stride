@@ -39,6 +39,103 @@ describe("task CRUD (smoke)", () => {
   });
 });
 
+describe("updateTask escalated recompute (smoke)", () => {
+  it("clears escalated when an overdue open task is marked Done", async () => {
+    const out = await withDb(async () => {
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const created = await createTask({ title: "ZZ Escalated->Done", status: "Pending", dueAt: yesterday });
+      try {
+        await flagOverdueTasks();
+        const flagged = await prisma.task.findUniqueOrThrow({ where: { id: created.id } });
+        expect(flagged.escalated).toBe(true);
+
+        const done = await updateTask(created.id, { status: "Done" });
+        expect(done.status).toBe("Done");
+        expect(done.escalated).toBe(false);
+      } finally {
+        await prisma.task.delete({ where: { id: created.id } });
+      }
+      return true;
+    });
+    if (out === null) return;
+  });
+
+  it("re-flags escalated when a Done task with a past dueAt is reopened", async () => {
+    const out = await withDb(async () => {
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const created = await createTask({ title: "ZZ Reopen->Escalated", status: "Done", dueAt: yesterday });
+      expect(created.escalated).toBe(false);
+      try {
+        const reopened = await updateTask(created.id, { status: "Pending" });
+        expect(reopened.status).toBe("Pending");
+        expect(reopened.escalated).toBe(true);
+      } finally {
+        await prisma.task.delete({ where: { id: created.id } });
+      }
+      return true;
+    });
+    if (out === null) return;
+  });
+
+  it("clears escalated immediately when dueAt is moved into the future", async () => {
+    const out = await withDb(async () => {
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const created = await createTask({ title: "ZZ DueAt->Future", status: "Ongoing", dueAt: yesterday });
+      try {
+        await flagOverdueTasks();
+        const flagged = await prisma.task.findUniqueOrThrow({ where: { id: created.id } });
+        expect(flagged.escalated).toBe(true);
+
+        const pushed = await updateTask(created.id, { dueAt: tomorrow });
+        expect(pushed.dueAt?.getTime()).toBe(tomorrow.getTime());
+        expect(pushed.escalated).toBe(false);
+      } finally {
+        await prisma.task.delete({ where: { id: created.id } });
+      }
+      return true;
+    });
+    if (out === null) return;
+  });
+
+  it("ignores a caller-supplied `escalated` value on create and update — it is computed only", async () => {
+    const out = await withDb(async () => {
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      // Caller tries to force escalated: true on a non-overdue task at create time.
+      const created = await createTask({
+        title: "ZZ Caller Escalated Ignored",
+        status: "NotStarted",
+        dueAt: tomorrow,
+        ...({ escalated: true } as Record<string, unknown>),
+      } as never);
+      expect(created.escalated).toBe(false);
+
+      try {
+        // Caller tries again on update, without touching status/dueAt — should stay untouched.
+        const updated = await updateTask(created.id, {
+          body: "note",
+          ...({ escalated: true } as Record<string, unknown>),
+        } as never);
+        expect(updated.escalated).toBe(false);
+
+        // Caller tries once more, this time alongside a status change that would
+        // legitimately keep escalated false (task stays open but not overdue) —
+        // the caller's `true` must still be ignored in favor of the computed value.
+        const updated2 = await updateTask(created.id, {
+          status: "Ongoing",
+          ...({ escalated: true } as Record<string, unknown>),
+        } as never);
+        expect(updated2.status).toBe("Ongoing");
+        expect(updated2.escalated).toBe(false);
+      } finally {
+        await prisma.task.delete({ where: { id: created.id } });
+      }
+      return true;
+    });
+    if (out === null) return;
+  });
+});
+
 describe("flagOverdueTasks (smoke)", () => {
   it("flips only open tasks past their deadline — leaves Done and future-dated tasks alone", async () => {
     const out = await withDb(async () => {
