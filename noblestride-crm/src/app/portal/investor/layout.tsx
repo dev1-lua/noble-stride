@@ -20,9 +20,35 @@ export default async function InvestorPortalLayout({
     vp.role === "investor" && vp.recordId
       ? await prisma.investor.findUnique({
           where: { id: vp.recordId },
-          select: { name: true },
+          select: { name: true, onboardingStatus: true },
         })
       : null;
+
+  if (investor && investor.onboardingStatus !== "Approved") {
+    const pending = investor.onboardingStatus === "PendingReview";
+    return (
+      <div className="flex h-screen flex-col overflow-hidden bg-zinc-50">
+        <div className="flex-shrink-0">
+          <ViewingBanner />
+        </div>
+        <main className="flex flex-1 items-center justify-center p-6">
+          <div className="max-w-md rounded-xl border border-zinc-200 bg-white p-8 text-center shadow-sm">
+            <h1 className="text-xl font-semibold text-zinc-900">
+              {pending ? "Registration under review" : "Registration not approved"}
+            </h1>
+            <p className="mt-3 text-sm text-zinc-500">
+              {pending
+                ? `Thank you for registering ${investor.name}. The NobleStride team reviews every investor before granting deal visibility. You will be contacted at your corporate email once approved.`
+                : "This registration was not approved. Contact NobleStride Capital if you believe this is an error."}
+            </p>
+            <p className="mt-6 text-xs text-zinc-400">
+              No opportunity information is visible before approval.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-zinc-50">
