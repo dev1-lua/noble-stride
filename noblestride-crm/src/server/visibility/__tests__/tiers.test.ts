@@ -40,23 +40,40 @@ describe("investorTier — exhaustive classification × stage table (§5.1)", ()
       const expected: Tier = blocked ? "NONE" : ACTIVE_STAGE_TIERS[stage];
       it(`${classification} × ${stage} → ${expected}`, () => {
         expect(
-          investorTier({ engagementClassification: classification }, { engagementStage: stage }),
+          investorTier(
+            { engagementClassification: classification, onboardingStatus: "Approved" },
+            { engagementStage: stage },
+          ),
         ).toBe(expected);
       });
     }
 
     const noEngagementExpected: Tier = blocked ? "NONE" : "PRE_INTEREST";
     it(`${classification} × no engagement → ${noEngagementExpected}`, () => {
-      expect(investorTier({ engagementClassification: classification })).toBe(noEngagementExpected);
-      expect(investorTier({ engagementClassification: classification }, null)).toBe(
-        noEngagementExpected,
-      );
+      expect(
+        investorTier({ engagementClassification: classification, onboardingStatus: "Approved" }),
+      ).toBe(noEngagementExpected);
+      expect(
+        investorTier({ engagementClassification: classification, onboardingStatus: "Approved" }, null),
+      ).toBe(noEngagementExpected);
     });
   }
 
   it("classification block wins over a DD-level stage", () => {
     expect(
-      investorTier({ engagementClassification: "Excluded" }, { engagementStage: "Invested" }),
+      investorTier(
+        { engagementClassification: "Excluded", onboardingStatus: "Approved" },
+        { engagementStage: "Invested" },
+      ),
+    ).toBe("NONE");
+  });
+
+  it("onboarding block wins even over an Active classification at a DD-level stage", () => {
+    expect(
+      investorTier(
+        { engagementClassification: "Active", onboardingStatus: "PendingReview" },
+        { engagementStage: "Invested" },
+      ),
     ).toBe("NONE");
   });
 });

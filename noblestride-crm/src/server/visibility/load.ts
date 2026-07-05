@@ -8,7 +8,8 @@ import type {
   PrismaClient,
   TransactionStage,
 } from "@prisma/client";
-import { investorTier, isBlockedClassification, type Tier } from "./tiers";
+import { ndaSatisfied } from "@/server/domain/nda-guard";
+import { investorTier, isBlockedClassification, isOnboardingBlocked, type Tier } from "./tiers";
 import {
   discoverableDealsForInvestor,
   projectDealForInvestor,
@@ -66,7 +67,9 @@ export async function loadInvestorPortalData(
     // Engaged deals are always candidates (tier gates them); otherwise the
     // deal must match the investor's discovery filters.
     if (!engagement && !discoverableIds.has(deal.id)) continue;
-    const projection = projectDealForInvestor(deal, investorTier(investor, engagement));
+    const projection = projectDealForInvestor(deal, investorTier(investor, engagement), {
+      ndaSatisfied: ndaSatisfied(investor, engagement),
+    });
     if (projection) projected.push(projection);
   }
 
@@ -106,6 +109,7 @@ export async function loadInvestorPipeline(
   investorId: string,
 ): Promise<InvestorPipelineItem[]> {
   const investor = await prisma.investor.findUniqueOrThrow({ where: { id: investorId } });
+  if (isOnboardingBlocked(investor.onboardingStatus)) return [];
   if (isBlockedClassification(investor.engagementClassification)) return [];
 
   const engagements = await prisma.engagement.findMany({
@@ -123,7 +127,9 @@ export async function loadInvestorPipeline(
   for (const engagement of engagements) {
     const tier = investorTier(investor, engagement);
     const dealTier: Tier = tier === "NONE" ? "PRE_INTEREST" : tier;
-    const deal = projectDealForInvestor(engagement.transaction, dealTier);
+    const deal = projectDealForInvestor(engagement.transaction, dealTier, {
+      ndaSatisfied: ndaSatisfied(investor, engagement),
+    });
     if (!deal) continue;
     const milestoneDates: Partial<Record<MilestoneKey, Date>> = {};
     for (const m of engagement.milestones) milestoneDates[m.key] = m.completedAt;

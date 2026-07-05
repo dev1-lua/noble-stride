@@ -13,6 +13,7 @@ import type {
   InvestorEngagementClassification,
   MandateStage,
   MilestoneKey,
+  OnboardingStatus,
   PartnerAgreementStatus,
   AdvisorType,
   Sector,
@@ -20,8 +21,9 @@ import type {
 } from "@prisma/client";
 import { effectiveMilestones, MILESTONE_ORDER } from "@/lib/milestones";
 import type { Tier } from "./tiers";
-import { isBlockedClassification } from "./tiers";
+import { isBlockedClassification, isOnboardingBlocked } from "./tiers";
 import { fieldAccess, isFieldVisible } from "./matrix";
+import { dealCodename } from "./codename";
 
 // ─── Numeric helpers ─────────────────────────────────────────────────────────
 
@@ -178,14 +180,19 @@ const PRE_INTEREST_DOC_TYPES: readonly DocumentType[] = ["Teaser", "PitchDeck"];
 /** Hard rule: engagement contracts never leave the building (§5.2). */
 const NEVER_SHARED_DOC_TYPES: readonly DocumentType[] = ["EngagementContract"];
 
-function projectDocuments(documents: DocumentInput[], tier: Exclude<Tier, "NONE">): ProjectedDocument[] {
+function projectDocuments(
+  documents: DocumentInput[],
+  tier: Exclude<Tier, "NONE">,
+  ndaSatisfied: boolean,
+): ProjectedDocument[] {
   return documents
     .filter((doc) => {
       if (NEVER_SHARED_DOC_TYPES.includes(doc.type)) return false;
       // Internal and ClientShared documents are never investor-visible.
       if (doc.accessLevel === "Internal" || doc.accessLevel === "ClientShared") return false;
-      // VDR files: hidden until tier DD ("on request" → hidden, spec §10).
-      if (doc.accessLevel === "VDR") return fieldAccess("vdrFiles", tier) === "full";
+      // VDR files: hidden until tier DD ("on request" → hidden, spec §10) AND
+      // the correct signed NDA (SOW §06).
+      if (doc.accessLevel === "VDR") return fieldAccess("vdrFiles", tier) === "full" && ndaSatisfied;
       // InvestorShared: teaser-level only before NDA; everything after.
       if (tier === "PRE_INTEREST") return PRE_INTEREST_DOC_TYPES.includes(doc.type);
       return true;
@@ -202,15 +209,30 @@ function projectDocuments(documents: DocumentInput[], tier: Exclude<Tier, "NONE"
 
 // ─── Deal projection ─────────────────────────────────────────────────────────
 
+export interface ProjectDealOptions {
+  /** Open NDA on the investor, or a Closed NDA on THIS deal's engagement. */
+  ndaSatisfied?: boolean;
+}
+
 /**
  * Project one deal for an external investor at a resolved tier (§5.2).
  * Returns null at tier NONE. The output NEVER contains: other investors'
  * engagements or identities, partner/provider identities, internal notes or
  * feedback, engagement contracts, Internal/ClientShared documents, or named
  * team members — regardless of tier (hard rules).
+ *
+ * At PRE_INTEREST the deal and client identity are masked with a
+ * deterministic codename (design spec §5); they unmask once the investor
+ * moves past PRE_INTEREST (AFTER_NDA/DD). VDR documents additionally require
+ * a satisfied NDA — see `opts.ndaSatisfied` (secure default: false).
  */
-export function projectDealForInvestor(deal: DealInput, tier: Tier): ProjectedDeal | null {
+export function projectDealForInvestor(
+  deal: DealInput,
+  tier: Tier,
+  opts: ProjectDealOptions = {},
+): ProjectedDeal | null {
   if (tier === "NONE") return null;
+  const ndaSatisfied = opts.ndaSatisfied ?? false;
 
   const client = deal.client ?? null;
   const sectors = [...new Set([...(deal.sector ?? []), ...(client?.sector ?? [])])];
@@ -219,12 +241,15 @@ export function projectDealForInvestor(deal: DealInput, tier: Tier): ProjectedDe
   const revenueLastYear = client?.revenueLastYear ?? null;
   const revenueForecast = client?.revenueForecast ?? null;
 
+  const masked = tier === "PRE_INTEREST";
+  const displayName = masked ? dealCodename(deal.id) : deal.name;
+
   return {
     id: deal.id,
-    name: deal.name,
+    name: displayName,
     tier,
     companyProfile: {
-      clientName: client?.name ?? deal.name,
+      clientName: masked ? displayName : (client?.name ?? deal.name),
       sector: sectors,
       description: client?.description ?? null,
       coreProduct: client?.coreProduct ?? null,
@@ -252,7 +277,7 @@ export function projectDealForInvestor(deal: DealInput, tier: Tier): ProjectedDe
           profitable: client?.profitable ?? null,
         },
     matchingMandateStatus: deal.mandate?.stage ?? null,
-    documents: projectDocuments(deal.documents ?? [], tier),
+    documents: projectDocuments(deal.documents ?? [], tier, ndaSatisfied),
     advisorClientContacts: isFieldVisible("advisorClientContacts", tier)
       ? (client?.contacts ?? []).map((c) => ({
           name: [c.firstName, c.lastName ?? ""].join(" ").trim(),
@@ -334,6 +359,7 @@ export function projectOwnEngagement(
 
 export interface DiscoveryInvestor {
   engagementClassification: InvestorEngagementClassification;
+  onboardingStatus: OnboardingStatus;
   sectorFocus?: Sector[];
   geographicFocus?: Geography[];
   ticketMin?: DecimalLike | null;
@@ -362,6 +388,7 @@ export function discoverableDealsForInvestor<T extends DealInput>(
   investor: DiscoveryInvestor,
   deals: T[],
 ): T[] {
+  if (isOnboardingBlocked(investor.onboardingStatus)) return [];
   if (isBlockedClassification(investor.engagementClassification)) return [];
 
   const sectorFocus = investor.sectorFocus ?? [];

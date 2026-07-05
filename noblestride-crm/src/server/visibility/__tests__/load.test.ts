@@ -34,6 +34,7 @@ const investorFixture = {
   id: OWN_INVESTOR_ID,
   name: "Own Fund LP",
   engagementClassification: "Active",
+  onboardingStatus: "Approved",
   sectorFocus: ["Technology"],
   geographicFocus: [],
   ticketMin: null,
@@ -71,6 +72,39 @@ describe("loadInvestorPortalData", () => {
     });
     const portal = await loadInvestorPortalData(prisma, OWN_INVESTOR_ID);
     expect(portal.deals).toEqual([]);
+  });
+
+  it("pending onboarding yields an empty portal even with engagements", async () => {
+    const prisma = stubPrisma({
+      investor: { ...investorFixture, onboardingStatus: "PendingReview" },
+      transactions: [engagedDeal, discoveryDeal],
+    });
+    const portal = await loadInvestorPortalData(prisma, OWN_INVESTOR_ID);
+    expect(portal.deals).toEqual([]);
+  });
+
+  it("wires NDA status through to VDR-doc visibility at DD tier", async () => {
+    const ddEngagement = {
+      id: "eng-own",
+      transactionId: "txn-1",
+      investorId: OWN_INVESTOR_ID,
+      engagementStage: "DueDiligence" as const,
+      ndaType: null,
+    };
+
+    const noNda = stubPrisma({
+      investor: { ...investorFixture, ndaStatus: "None", engagements: [ddEngagement] },
+      transactions: [engagedDeal, discoveryDeal],
+    });
+    const withoutNda = await loadInvestorPortalData(noNda, OWN_INVESTOR_ID);
+    expect(withoutNda.deals.find((d) => d.id === "txn-1")?.documents.some((d) => d.id === "doc-vdr")).toBe(false);
+
+    const openNda = stubPrisma({
+      investor: { ...investorFixture, ndaStatus: "OpenNDA", engagements: [ddEngagement] },
+      transactions: [engagedDeal, discoveryDeal],
+    });
+    const withNda = await loadInvestorPortalData(openNda, OWN_INVESTOR_ID);
+    expect(withNda.deals.find((d) => d.id === "txn-1")?.documents.some((d) => d.id === "doc-vdr")).toBe(true);
   });
 
   it("declined engagement drops the deal", async () => {

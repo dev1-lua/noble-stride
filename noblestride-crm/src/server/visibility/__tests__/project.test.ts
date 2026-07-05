@@ -5,12 +5,13 @@ import {
   GENERIC_CONTACT_LINE,
 } from "@/server/visibility/project";
 import type { Tier } from "@/server/visibility/tiers";
+import { dealCodename } from "@/server/visibility/codename";
 import { FORBIDDEN_STRINGS, makeDealFixture } from "./fixtures";
 
 const VISIBLE_TIERS: Exclude<Tier, "NONE">[] = ["PRE_INTEREST", "AFTER_NDA", "DD"];
 
-function docIds(tier: Exclude<Tier, "NONE">): string[] {
-  const projected = projectDealForInvestor(makeDealFixture(), tier);
+function docIds(tier: Exclude<Tier, "NONE">, ndaSatisfied = false): string[] {
+  const projected = projectDealForInvestor(makeDealFixture(), tier, { ndaSatisfied });
   if (!projected) throw new Error("expected a projection");
   return projected.documents.map((d) => d.id).sort();
 }
@@ -25,7 +26,10 @@ describe("projectDealForInvestor — tier gating (§5.2)", () => {
       it(`company profile + deal type/ticket + mandate status @ ${tier}`, () => {
         const p = projectDealForInvestor(makeDealFixture(), tier);
         expect(p).not.toBeNull();
-        expect(p?.companyProfile.clientName).toBe("Acme Agri Ltd");
+        // Client identity is masked at PRE_INTEREST (teaser codename) and
+        // unmasked from AFTER_NDA onward (design spec §5).
+        const expectedClientName = tier === "PRE_INTEREST" ? dealCodename("txn-1") : "Acme Agri Ltd";
+        expect(p?.companyProfile.clientName).toBe(expectedClientName);
         expect(p?.companyProfile.sector).toContain("Agribusiness");
         expect(p?.companyProfile.description).toBe("Vertically integrated grain processor");
         expect(p?.dealTypeTicket.dealType).toBe("Growth");
@@ -34,6 +38,23 @@ describe("projectDealForInvestor — tier gating (§5.2)", () => {
         expect(p?.contact).toBe(GENERIC_CONTACT_LINE);
       });
     }
+  });
+
+  describe("teaser masking (PRE_INTEREST only)", () => {
+    it("masks the deal name with a deterministic codename", () => {
+      const p = projectDealForInvestor(makeDealFixture(), "PRE_INTEREST");
+      const code = dealCodename("txn-1");
+      expect(p?.name).toBe(code);
+      expect(p?.companyProfile.clientName).toBe(code);
+    });
+
+    it("unmasks the deal and client name at AFTER_NDA and DD", () => {
+      for (const tier of ["AFTER_NDA", "DD"] as const) {
+        const p = projectDealForInvestor(makeDealFixture(), tier, { ndaSatisfied: true });
+        expect(p?.name).toBe("Project Baobab");
+        expect(p?.companyProfile.clientName).toBe("Acme Agri Ltd");
+      }
+    });
   });
 
   describe("financials summary: limited → banded, full → raw", () => {
@@ -67,8 +88,12 @@ describe("projectDealForInvestor — tier gating (§5.2)", () => {
       expect(docIds("AFTER_NDA")).toEqual(["doc-deck", "doc-im", "doc-model", "doc-teaser"]);
     });
 
-    it("DD: InvestorShared + VDR", () => {
-      expect(docIds("DD")).toEqual(["doc-deck", "doc-im", "doc-model", "doc-teaser", "doc-vdr"]);
+    it("DD without a satisfied NDA: InvestorShared only, VDR still hidden", () => {
+      expect(docIds("DD")).toEqual(["doc-deck", "doc-im", "doc-model", "doc-teaser"]);
+    });
+
+    it("DD with a satisfied NDA: InvestorShared + VDR", () => {
+      expect(docIds("DD", true)).toEqual(["doc-deck", "doc-im", "doc-model", "doc-teaser", "doc-vdr"]);
     });
   });
 

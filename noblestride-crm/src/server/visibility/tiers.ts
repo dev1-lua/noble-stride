@@ -1,7 +1,7 @@
 // Visibility engine — tier resolution (design spec §5.1, build-spec §11).
 // Pure module: type-only Prisma imports, no runtime dependencies.
 
-import type { EngagementStage, InvestorEngagementClassification } from "@prisma/client";
+import type { EngagementStage, InvestorEngagementClassification, OnboardingStatus } from "@prisma/client";
 
 /** External-investor visibility tier, from least to most access. */
 export type Tier = "NONE" | "PRE_INTEREST" | "AFTER_NDA" | "DD";
@@ -27,6 +27,11 @@ export function isBlockedClassification(classification: InvestorEngagementClassi
   return CLASSIFICATION_BLOCKED[classification];
 }
 
+/** Onboarding gate (design spec §5): only Approved investors see anything. */
+export function isOnboardingBlocked(status: OnboardingStatus): boolean {
+  return status !== "Approved";
+}
+
 /** Stage → tier (§5.1 rows 2–5). Record keyed by the enum for exhaustiveness. */
 const STAGE_TIER: Record<EngagementStage, Tier> = {
   Shared: "PRE_INTEREST",
@@ -46,6 +51,7 @@ const STAGE_TIER: Record<EngagementStage, Tier> = {
 /**
  * Resolve an investor's visibility tier for one deal (§5.1).
  *
+ * - Not-yet-approved onboarding (PendingReview/Rejected) → NONE, always.
  * - Blocked classification (Excluded/Greylisted/Inactive/OnHold) → NONE, always.
  * - Declined engagement → NONE.
  * - No engagement, or Shared/TeaserSent → PRE_INTEREST.
@@ -53,9 +59,13 @@ const STAGE_TIER: Record<EngagementStage, Tier> = {
  * - VDRAccess/DueDiligence/Invested → DD.
  */
 export function investorTier(
-  investor: { engagementClassification: InvestorEngagementClassification },
+  investor: {
+    engagementClassification: InvestorEngagementClassification;
+    onboardingStatus: OnboardingStatus;
+  },
   engagement?: { engagementStage: EngagementStage } | null,
 ): Tier {
+  if (isOnboardingBlocked(investor.onboardingStatus)) return "NONE";
   if (CLASSIFICATION_BLOCKED[investor.engagementClassification]) return "NONE";
   if (!engagement) return "PRE_INTEREST";
   return STAGE_TIER[engagement.engagementStage];
