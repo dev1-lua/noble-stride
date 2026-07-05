@@ -1,4 +1,5 @@
 data/
+decrypted/
 my-twenty-app/
 twenty-main/
 .playwright-mcp/
