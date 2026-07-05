@@ -88,6 +88,8 @@ export interface InvestorSegments {
   ventureCapital: number;
   dfi: number;
   debtProvider: number;
+  pendingReview: number;
+  rejected: number;
 }
 
 // ─── Partner referral input ───────────────────────────────────────────────────

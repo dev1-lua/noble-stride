@@ -10,6 +10,9 @@ import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { InvestorFormDrawer } from "@/components/crm/investor-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
+import { OnboardingActions } from "@/components/crm/onboarding-actions";
+import { RecordOpenNdaButton } from "@/components/crm/nda-actions";
+import { formatDate } from "@/lib/format";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -59,6 +62,127 @@ export default async function InvestorDetailPage({ params }: PageProps) {
       ? formatMoney(ticketMax)
       : "—";
 
+  // Onboarding panel: shown prominently as the first card while a registration
+  // is not yet approved; a normal card in the flow once approved.
+  const primaryContact = investor.contacts.find((c) => c.isPrimaryContact);
+  const onboardingProminent = investor.onboardingStatus !== "Approved";
+  const onboardingActionable = investor.onboardingStatus === "PendingReview" || investor.onboardingStatus === "Rejected";
+
+  const onboardingPanel = (
+    <Card className={onboardingProminent ? "border-amber-300 bg-amber-50/40" : undefined}>
+      <CardHeader>
+        <h2 className="text-sm font-semibold text-zinc-900">Onboarding</h2>
+      </CardHeader>
+      <CardBody className="space-y-4">
+        <Chip value={investor.onboardingStatus} group="OnboardingStatus" />
+
+        <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Registration</dt>
+            <dd className="mt-1 text-sm text-zinc-900">
+              {investor.registeredAt ? `Self-registered ${formatDate(investor.registeredAt)}` : "Team-created"}
+            </dd>
+          </div>
+
+          <div>
+            <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Email Verification</dt>
+            <dd className="mt-1 text-sm text-zinc-900">
+              {investor.emailVerifiedAt ? `Email verified ✓ ${formatDate(investor.emailVerifiedAt)}` : "Not verified"}
+            </dd>
+          </div>
+
+          <div>
+            <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Phone Verification</dt>
+            <dd className="mt-1 text-sm text-zinc-900">
+              {investor.phoneVerifiedAt ? `Phone verified ✓ ${formatDate(investor.phoneVerifiedAt)}` : "Not verified"}
+            </dd>
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-3">
+            <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Primary Contact</dt>
+            <dd className="mt-1 text-sm text-zinc-900">
+              {primaryContact ? (
+                <>
+                  {primaryContact.firstName} {primaryContact.lastName ?? ""}
+                  {primaryContact.email && (
+                    <>
+                      {" · "}
+                      <a href={`mailto:${primaryContact.email}`} className="text-accent hover:underline">
+                        {primaryContact.email}
+                      </a>
+                    </>
+                  )}
+                  {primaryContact.phone && (
+                    <>
+                      {" · "}
+                      <a href={`tel:${primaryContact.phone}`} className="text-zinc-500 hover:underline">
+                        {primaryContact.phone}
+                      </a>
+                    </>
+                  )}
+                </>
+              ) : (
+                <span className="text-zinc-400">—</span>
+              )}
+            </dd>
+          </div>
+        </dl>
+
+        {onboardingActionable && <OnboardingActions investorId={investor.id} />}
+      </CardBody>
+    </Card>
+  );
+
+  // NDA panel: open-NDA status on the investor + closed-NDA engagements list.
+  const closedNdaEngagements = investor.engagements.filter((e) => e.ndaType != null);
+
+  const ndaPanel = (
+    <Card>
+      <CardHeader>
+        <h2 className="text-sm font-semibold text-zinc-900">NDA</h2>
+      </CardHeader>
+      <CardBody className="space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <Chip value={investor.ndaStatus} group="InvestorNdaStatus" />
+          {investor.openNdaSignedAt && (
+            <span className="text-sm text-zinc-500">Signed {formatDate(investor.openNdaSignedAt)}</span>
+          )}
+        </div>
+
+        <div>
+          <p className="mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wide">Closed NDAs</p>
+          {closedNdaEngagements.length === 0 ? (
+            <p className="text-sm text-zinc-400">No closed-NDA engagements on record.</p>
+          ) : (
+            <ul className="divide-y divide-zinc-100">
+              {closedNdaEngagements.map((eng) => (
+                <li key={eng.id} className="py-2 flex items-center justify-between gap-4">
+                  <Link
+                    href={`/engagement/${eng.id}`}
+                    className="min-w-0 truncate text-sm font-medium text-zinc-900 hover:text-accent transition-colors"
+                  >
+                    {eng.name}
+                  </Link>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <Chip value={eng.ndaType as string} group="NdaType" />
+                    {eng.ndaSignedAt && <span className="text-xs text-zinc-500">{formatDate(eng.ndaSignedAt)}</span>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {investor.ndaStatus !== "OpenNDA" && <RecordOpenNdaButton investorId={investor.id} />}
+
+        <p className="text-xs text-zinc-400">
+          Open NDA covers every data room (per-deal access still requires internal approval). Closed NDA covers one
+          deal only.
+        </p>
+      </CardBody>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
@@ -103,6 +227,9 @@ export default async function InvestorDetailPage({ params }: PageProps) {
           <DeleteConfirm mutation={DELETE_INVESTOR} recordId={investor.id} entityLabel="investor" redirectTo="/investors" />
         </div>
       </div>
+
+      {/* Onboarding panel — first card while a registration awaits/failed review */}
+      {onboardingProminent && onboardingPanel}
 
       {/* Key facts grid */}
       <Card>
@@ -216,6 +343,12 @@ export default async function InvestorDetailPage({ params }: PageProps) {
           )}
         </CardBody>
       </Card>
+
+      {/* Onboarding panel — normal card, once the registration is approved */}
+      {!onboardingProminent && onboardingPanel}
+
+      {/* NDA panel */}
+      {ndaPanel}
 
       {/* Engagements */}
       <Card>

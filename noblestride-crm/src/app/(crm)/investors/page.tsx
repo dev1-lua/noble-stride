@@ -4,7 +4,7 @@
 import { Suspense } from "react";
 import { listInvestors, investorSegments } from "@/server/services/investors";
 import type { InvestorFilter } from "@/server/domain/types";
-import type { InvestorType, Sector, Geography, InvestorStatus } from "@prisma/client";
+import type { InvestorType, Sector, Geography, InvestorStatus, OnboardingStatus } from "@prisma/client";
 import { SegmentRow } from "@/components/crm/segment-row";
 import { FilterBar } from "@/components/crm/filter-bar";
 import { RecordTable } from "@/components/crm/record-table";
@@ -25,6 +25,7 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
     geography: sp.geography ? (sp.geography as Geography) : undefined,
     status: sp.status ? (sp.status as InvestorStatus) : undefined,
     search: typeof sp.q === "string" && sp.q.trim() ? sp.q.trim() : undefined,
+    onboardingStatus: sp.onboarding ? (sp.onboarding as OnboardingStatus) : undefined,
   };
 
   // Parallel fetch: segments (for counters) + filtered list
@@ -50,6 +51,19 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
 
       {/* Segment counters row */}
       <SegmentRow segments={segments} />
+
+      {/* Onboarding review queue callout — only shown when registrations are pending */}
+      {segments.pendingReview > 0 && (
+        <a
+          href="/investors?onboarding=PendingReview"
+          className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 hover:bg-amber-100"
+        >
+          <span>
+            <strong>{segments.pendingReview}</strong> investor registration{segments.pendingReview === 1 ? "" : "s"} awaiting review
+          </span>
+          <span className="font-medium">Review queue →</span>
+        </a>
+      )}
 
       {/* Filter bar — client component; reads its own searchParams from the URL */}
       <Suspense>

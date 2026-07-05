@@ -1,0 +1,66 @@
+"use client";
+// Approve / Reject / Greylist actions for a pending investor registration.
+// Greylist = engagementClassification "Greylisted" via the existing
+// updateInvestor mutation (zero visibility everywhere, SOW §06).
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation } from "urql";
+
+const SET_STATUS = `
+  mutation SetOnboarding($id: ID!, $status: OnboardingStatus!) {
+    setInvestorOnboardingStatus(id: $id, status: $status) { id onboardingStatus }
+  }
+`;
+const GREYLIST = `
+  mutation Greylist($id: ID!, $input: InvestorInput!) {
+    updateInvestor(id: $id, input: $input) { id engagementClassification }
+  }
+`;
+
+export function OnboardingActions({ investorId }: { investorId: string }) {
+  const router = useRouter();
+  const [, setStatus] = useMutation(SET_STATUS);
+  const [, greylist] = useMutation(GREYLIST);
+  const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run(label: string, fn: () => Promise<{ error?: { message: string } }>) {
+    setPending(label);
+    setError(null);
+    const res = await fn();
+    setPending(null);
+    if (res.error) setError(res.error.message);
+    else router.refresh();
+  }
+
+  const btn = "rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50";
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <button
+          className={`${btn} bg-emerald-600 text-white hover:bg-emerald-700`}
+          disabled={pending !== null}
+          onClick={() => run("approve", () => setStatus({ id: investorId, status: "Approved" }))}
+        >
+          {pending === "approve" ? "Approving…" : "Approve"}
+        </button>
+        <button
+          className={`${btn} bg-rose-600 text-white hover:bg-rose-700`}
+          disabled={pending !== null}
+          onClick={() => run("reject", () => setStatus({ id: investorId, status: "Rejected" }))}
+        >
+          {pending === "reject" ? "Rejecting…" : "Reject"}
+        </button>
+        <button
+          className={`${btn} border border-zinc-300 text-zinc-700 hover:bg-zinc-100`}
+          disabled={pending !== null}
+          onClick={() => run("greylist", () => greylist({ id: investorId, input: { engagementClassification: "Greylisted" } }))}
+        >
+          {pending === "greylist" ? "…" : "Greylist"}
+        </button>
+      </div>
+      {error && <p className="text-xs text-rose-600">{error}</p>}
+    </div>
+  );
+}

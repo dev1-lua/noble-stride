@@ -8,6 +8,7 @@ import { Chip, Card, CardHeader, CardBody, Avatar } from "@/components/ui";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { formatDate, daysAgoLabel } from "@/lib/format";
+import { RecordClosedNdaButton } from "@/components/crm/nda-actions";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -108,6 +109,45 @@ export default async function EngagementDetailPage({ params }: PageProps) {
               </div>
             )}
           </dl>
+        </CardBody>
+      </Card>
+
+      {/* NDA */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-sm font-semibold text-zinc-900">NDA</h2>
+        </CardHeader>
+        <CardBody className="space-y-4">
+          <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Engagement NDA</dt>
+              <dd className="mt-1">
+                {engagement.ndaType ? (
+                  <div className="flex items-center gap-2">
+                    <Chip value={engagement.ndaType} group="NdaType" />
+                    {engagement.ndaSignedAt && (
+                      <span className="text-xs text-zinc-500">{formatDate(engagement.ndaSignedAt)}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-sm text-zinc-400">No NDA recorded</span>
+                )}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Investor NDA Status</dt>
+              <dd className="mt-1">
+                <Chip value={engagement.investor.ndaStatus} group="InvestorNdaStatus" />
+              </dd>
+            </div>
+          </dl>
+
+          {engagement.ndaType == null && <RecordClosedNdaButton engagementId={engagement.id} />}
+
+          <p className="text-xs text-zinc-400">
+            Stage changes past Teaser require an NDA (Open on the investor, or Closed here).
+          </p>
         </CardBody>
       </Card>
 

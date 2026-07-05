@@ -46,11 +46,12 @@ export async function countInvestors(filter: InvestorFilter): Promise<number> {
  *   - `isActiveInvestorThisQuarter` is applied in-process over the flat result.
  */
 export async function investorSegments(now: Date = new Date()): Promise<InvestorSegments> {
-  const [typeCounts, investors] = await Promise.all([
+  const [typeCounts, onboardingCounts, investors] = await Promise.all([
     prisma.investor.groupBy({
       by: ["investorType"],
       _count: { _all: true },
     }),
+    prisma.investor.groupBy({ by: ["onboardingStatus"], _count: { _all: true } }),
     prisma.investor.findMany({
       select: {
         status: true,
@@ -63,6 +64,12 @@ export async function investorSegments(now: Date = new Date()): Promise<Investor
   const byType: Record<string, number> = {};
   for (const row of typeCounts) {
     byType[row.investorType] = row._count._all;
+  }
+
+  // Build onboarding-status-count lookup
+  const byOnboarding: Record<string, number> = {};
+  for (const row of onboardingCounts) {
+    byOnboarding[row.onboardingStatus] = row._count._all;
   }
 
   // Count active-this-quarter in-process (no N+1)
@@ -81,6 +88,8 @@ export async function investorSegments(now: Date = new Date()): Promise<Investor
     ventureCapital: byType["VentureCapital"] ?? 0,
     dfi: byType["DFI"] ?? 0,
     debtProvider: byType["DebtProvider"] ?? 0,
+    pendingReview: byOnboarding["PendingReview"] ?? 0,
+    rejected: byOnboarding["Rejected"] ?? 0,
   };
 }
 

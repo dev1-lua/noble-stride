@@ -17,6 +17,7 @@ type InvestorRow = {
   geographicFocus: string[];
   ticketMin: Prisma.Decimal | null;
   ticketMax: Prisma.Decimal | null;
+  onboardingStatus: string;
 };
 
 interface RecordTableProps {
@@ -25,7 +26,7 @@ interface RecordTableProps {
 
 /**
  * RecordTable — renders the investor list as a styled table.
- * Columns: Investor (avatar+name link), Type, Ticket Size, Sectors, Geography, Status.
+ * Columns: Investor (avatar+name link), Type, Ticket Size, Sectors, Geography, Status, Onboarding.
  * (No Contact column on the list page — listInvestors omits contacts to avoid an N+1.)
  */
 export function RecordTable({ investors }: RecordTableProps) {
@@ -43,12 +44,13 @@ export function RecordTable({ investors }: RecordTableProps) {
         {/* Fixed column proportions so the table always fits its card (no
             horizontal scroll); the Investor name truncates to absorb the slack. */}
         <colgroup>
-          <col className="w-[26%]" />
-          <col className="w-[11%]" />
-          <col className="w-[11%]" />
-          <col className="w-[17%]" />
-          <col className="w-[17%]" />
-          <col className="w-[18%]" />
+          <col className="w-[22%]" />
+          <col className="w-[10%]" />
+          <col className="w-[10%]" />
+          <col className="w-[15%]" />
+          <col className="w-[15%]" />
+          <col className="w-[14%]" />
+          <col className="w-[14%]" />
         </colgroup>
         <THead>
           <Tr className="hover:bg-transparent">
@@ -58,6 +60,7 @@ export function RecordTable({ investors }: RecordTableProps) {
             <Th>Sectors</Th>
             <Th>Geography</Th>
             <Th>Status</Th>
+            <Th>Onboarding</Th>
           </Tr>
         </THead>
         <TBody>
@@ -133,6 +136,11 @@ export function RecordTable({ investors }: RecordTableProps) {
                   ) : (
                     <span className="text-zinc-400">—</span>
                   )}
+                </Td>
+
+                {/* Onboarding dot + label */}
+                <Td>
+                  <Chip value={inv.onboardingStatus} group="OnboardingStatus" />
                 </Td>
               </Tr>
             );
