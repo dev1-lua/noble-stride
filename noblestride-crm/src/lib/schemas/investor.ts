@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { InvestorType, InvestorStatus, Sector, Geography, Instrument, InvestmentStage, InvestorEngagementClassification, InvestorNdaStatus } from "@prisma/client";
+import { InvestorType, InvestorStatus, Sector, Geography, Instrument, InvestmentStage, InvestorEngagementClassification, InvestorNdaStatus, OnboardingStatus } from "@prisma/client";
 
 export const investorCreateSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -22,6 +22,11 @@ export const investorCreateSchema = z.object({
   // Task 5: engagement classification, NDA status, profile fields
   engagementClassification: z.nativeEnum(InvestorEngagementClassification).optional(),
   ndaStatus: z.nativeEnum(InvestorNdaStatus).optional(),
+  onboardingStatus: z.nativeEnum(OnboardingStatus).optional(),
+  emailVerifiedAt: z.date().optional(),
+  phoneVerifiedAt: z.date().optional(),
+  registeredAt: z.date().optional(),
+  openNdaSignedAt: z.date().optional(),
   shareholdingPreference: z.string().trim().optional(),
   minRevenue: z.number().nonnegative().optional(),
   minEbitda: z.number().nonnegative().optional(),

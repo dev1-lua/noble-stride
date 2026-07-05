@@ -61,6 +61,16 @@ describe("entity create schemas", () => {
     }
   });
 
+  it("investor schema accepts onboarding fields", () => {
+    const parsed = investorCreateSchema.parse({
+      name: "Fund X",
+      investorType: "PrivateEquity",
+      onboardingStatus: "PendingReview",
+      registeredAt: new Date("2026-07-05"),
+    });
+    expect(parsed.onboardingStatus).toBe("PendingReview");
+  });
+
   it("mandate: requires name and clientId", () => {
     expect(mandateCreateSchema.safeParse({ name: "M" }).success).toBe(false);
     expect(mandateCreateSchema.safeParse({ name: "M", clientId: "c1" }).success).toBe(true);

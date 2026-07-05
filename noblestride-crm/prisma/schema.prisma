@@ -250,6 +250,12 @@ enum InvestorNdaStatus {
   ClosedNDA
 }
 
+enum OnboardingStatus {
+  PendingReview
+  Approved
+  Rejected
+}
+
 enum AdvisorType {
   Lawyer
   Investor
@@ -404,6 +410,12 @@ model Investor {
   // Task 5: engagement classification, NDA status, profile fields
   engagementClassification InvestorEngagementClassification @default(Active)
   ndaStatus                InvestorNdaStatus                @default(None)
+  // Investor onboarding (design spec 2026-07-05): approval gate + demo-OTP stamps + open-NDA record
+  onboardingStatus         OnboardingStatus                 @default(Approved)
+  emailVerifiedAt          DateTime?
+  phoneVerifiedAt          DateTime?
+  registeredAt             DateTime?
+  openNdaSignedAt          DateTime?
   shareholdingPreference   String?
   minRevenue               Decimal?  @db.Decimal(20, 2)
   minEbitda                Decimal?  @db.Decimal(20, 2)
@@ -440,6 +452,7 @@ model Investor {
   @@index([investorType])
   @@index([status])
   @@index([engagementClassification])
+  @@index([onboardingStatus])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -575,6 +588,7 @@ model Engagement {
   engagementStage    EngagementStage     @default(Shared)
   interestLevel      InterestLevel?
   ndaType            NdaType?
+  ndaSignedAt        DateTime?
   termSheetIssued    Boolean             @default(false)
   termSheetDate      DateTime?
   totalAmount        Decimal?            @db.Decimal(20, 2)

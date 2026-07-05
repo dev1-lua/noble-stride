@@ -28,6 +28,10 @@ export function buildInvestorWhere(filter: InvestorFilter): Prisma.InvestorWhere
     where.status = filter.status;
   }
 
+  if (filter.onboardingStatus != null) {
+    where.onboardingStatus = filter.onboardingStatus;
+  }
+
   if (filter.search != null) {
     where.name = { contains: filter.search, mode: "insensitive" };
   }

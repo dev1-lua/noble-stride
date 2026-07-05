@@ -164,6 +164,7 @@ export const LABELS: Record<string, Record<string, string>> = {
   DisbursementStatus: { Disbursed: "Disbursed", Ongoing: "Ongoing", FellOff: "Fell Off", Dropped: "Dropped" },
   InvestorEngagementClassification: { Active: "Active", Inactive: "Inactive", OnHold: "On Hold", Excluded: "Excluded", Greylisted: "Greylisted" },
   InvestorNdaStatus: { None: "None", OpenNDA: "Open NDA", ClosedNDA: "Closed NDA" },
+  OnboardingStatus: { PendingReview: "Pending Review", Approved: "Approved", Rejected: "Rejected" },
   AdvisorType: { Lawyer: "Lawyer", Investor: "Investor", Consultant: "Consultant", TransactionAdvisor: "Transaction Advisor", AdvisoryFirm: "Advisory Firm", Other: "Other" },
   ServiceProviderType: { LawFirm: "Law Firm", Audit: "Audit (Big 4)", Tax: "Tax", ESG: "ESG", Technical: "Technical", Other: "Other" },
   DocumentType: {
@@ -248,4 +249,7 @@ export const STATUS_DOT: Record<string, string> = {
   None: "bg-slate-300",
   OpenNDA: "bg-sky-500",
   ClosedNDA: "bg-emerald-500",
+  // OnboardingStatus
+  PendingReview: "bg-amber-500",
+  Rejected: "bg-rose-500",
 };
