@@ -7,7 +7,10 @@
 
 import { prisma } from "@/lib/db";
 import { LABELS, label } from "@/lib/vocab";
-import type { InteractionType } from "@prisma/client";
+import type { InteractionType, CommChannel, CommDirection } from "@prisma/client";
+import type { Actor } from "@/graphql/context";
+import { actorSource, CrudError } from "./crud";
+import { logActivitySchema, type LogActivityInput } from "@/lib/schemas/activity";
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -96,6 +99,8 @@ export interface LogEngagementInput {
   type: InteractionType;
   subject?: string;
   body?: string;
+  channel?: CommChannel;
+  direction?: CommDirection;
 }
 
 /**
@@ -112,10 +117,11 @@ export interface LogEngagementInput {
  *   5. Returns the created Activity (with engagement, investor, transaction).
  *
  * Provenance: this is a human-initiated action; both records get `HUMAN`.
- * The Lua-AI seam (Task 7) is what sets `AGENT`.
+ * The Lua-AI seam (Task 7) is what sets `AGENT`. `createdById` is still
+ * populated from the acting user when present, independent of that source.
  */
-export async function logEngagement(input: LogEngagementInput) {
-  const { transactionId, investorId, type, subject, body } = input;
+export async function logEngagement(input: LogEngagementInput, actor: Actor) {
+  const { transactionId, investorId, type, subject, body, channel, direction } = input;
 
   return prisma.$transaction(async (tx) => {
     // 1. Look up existing engagement
@@ -154,7 +160,10 @@ export async function logEngagement(input: LogEngagementInput) {
         type,
         subject,
         body,
+        channel,
+        direction,
         createdSource: "HUMAN",
+        createdById: actor.userId,
         engagementId: engagement.id,
         transactionId,
         investorId,
@@ -169,5 +178,50 @@ export async function logEngagement(input: LogEngagementInput) {
 
     // 5. Return the created Activity
     return activity;
+  });
+}
+
+// ─── logActivity — generalized communication logging (spec §3.10) ────────────
+
+/**
+ * The generalized WRITE seam for communication/activity logging: unlike
+ * `logEngagement`, it does not require a transaction+investor pair and does
+ * not touch the Engagement record. It requires `type` and ANY one-or-more of
+ * clientId/mandateId/transactionId/investorId/engagementId ("Linked record
+ * required" per spec) — logging against a bare client or mandate is valid.
+ *
+ * `createdById` is populated from `actor.userId` when present (this is the
+ * gap `logEngagement` had before this task); `createdSource` follows the
+ * acting caller (HUMAN/AGENT/API) via `actorSource`.
+ */
+export async function logActivity(input: LogActivityInput, actor: Actor) {
+  const data = logActivitySchema.parse(input);
+  const { clientId, mandateId, transactionId, investorId, engagementId, occurredAt, ...rest } = data;
+
+  if (!clientId && !mandateId && !transactionId && !investorId && !engagementId) {
+    throw new CrudError(
+      "logActivity requires at least one linked record (client, mandate, transaction, investor, or engagement).",
+    );
+  }
+
+  return prisma.activity.create({
+    data: {
+      ...rest,
+      occurredAt: occurredAt ?? new Date(),
+      createdSource: actorSource(actor),
+      createdById: actor.userId,
+      clientId,
+      mandateId,
+      transactionId,
+      investorId,
+      engagementId,
+    },
+    include: {
+      investor: true,
+      transaction: true,
+      engagement: true,
+      mandate: true,
+      client: true,
+    },
   });
 }

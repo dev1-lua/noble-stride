@@ -16,6 +16,7 @@ import {
   DealStatusEnum, DealMilestoneEnum, DealFinancingTypeEnum, MaxSellingStakeEnum,
   ImpactFlagEnum, ClientStatusEnum,
   TaskStatusEnum, TaskSourceEnum,
+  InteractionTypeEnum, CommChannelEnum, CommDirectionEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -227,6 +228,25 @@ export const TaskInput = builder.inputType("TaskInput", {
     activityId: t.id({ required: false }),
     // Note: no `escalated` field — spec §3.8 marks it Auto; the task service
     // computes it from status/dueAt and never accepts a caller-supplied value.
+  }),
+});
+
+// Spec-gap: generalized communication logging (spec §3.10). Mirrors the
+// TaskInput/DocumentInput free-linking convention — every link is optional
+// here at the GraphQL layer; the service enforces "at least one" at runtime.
+export const LogActivityInput = builder.inputType("LogActivityInput", {
+  fields: (t) => ({
+    type: t.field({ type: InteractionTypeEnum, required: true }),
+    channel: t.field({ type: CommChannelEnum, required: false }),
+    direction: t.field({ type: CommDirectionEnum, required: false }),
+    subject: t.string({ required: false }),
+    body: t.string({ required: false }),
+    occurredAt: t.field({ type: "DateTime", required: false }),
+    clientId: t.id({ required: false }),
+    mandateId: t.id({ required: false }),
+    transactionId: t.id({ required: false }),
+    investorId: t.id({ required: false }),
+    engagementId: t.id({ required: false }),
   }),
 });
 

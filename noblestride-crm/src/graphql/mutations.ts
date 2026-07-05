@@ -1,12 +1,12 @@
 // GraphQL mutations for the NobleStride Capital CRM.
 // Thin resolvers — each is a one-line call to the matching service.
 
-import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum, OnboardingStatusEnum } from "./builder";
+import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum } from "./builder";
 import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
-import { logEngagement } from "@/server/services/engagements";
+import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
@@ -50,15 +50,29 @@ builder.mutationFields((t) => ({
       type: t.arg({ type: InteractionTypeEnum, required: true }),
       subject: t.arg.string({ required: false }),
       body: t.arg.string({ required: false }),
+      channel: t.arg({ type: CommChannelEnum, required: false }),
+      direction: t.arg({ type: CommDirectionEnum, required: false }),
     },
-    resolve: (_query, _root, args) =>
+    resolve: (_query, _root, args, ctx) =>
       logEngagement({
         transactionId: args.transactionId,
         investorId: args.investorId,
         type: args.type,
         subject: args.subject ?? undefined,
         body: args.body ?? undefined,
-      }),
+        channel: args.channel ?? undefined,
+        direction: args.direction ?? undefined,
+      }, ctx.actor),
+  }),
+
+  // 3b. logActivity(input: LogActivityInput!): Activity — generalized
+  // communication logging (spec §3.10): any one-or-more of client/mandate/
+  // transaction/investor/engagement, not just the transaction+investor pair.
+  logActivity: t.prismaField({
+    type: "Activity",
+    nullable: false,
+    args: { input: t.arg({ type: LogActivityInput, required: true }) },
+    resolve: (_query, _root, args, ctx) => logActivity(args.input as never, ctx.actor),
   }),
 
   // ── Investor ──

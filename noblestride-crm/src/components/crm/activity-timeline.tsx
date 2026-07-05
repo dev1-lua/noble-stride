@@ -11,6 +11,8 @@ export interface ActivityTimelineItem {
   subject?: string | null;
   occurredAt: Date;
   context?: string | null; // optional secondary line e.g. "Akili Kids · Acme Capital"
+  channel?: string | null; // CommChannel enum value (spec §3.10)
+  direction?: string | null; // CommDirection enum value (spec §3.10)
 }
 
 export function ActivityTimeline({
@@ -40,6 +42,16 @@ export function ActivityTimeline({
                     <span className="text-xs font-medium text-zinc-700">
                       {label("InteractionType", a.type)}
                     </span>
+                    {a.channel && (
+                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+                        {label("CommChannel", a.channel)}
+                      </span>
+                    )}
+                    {a.direction && (
+                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+                        {label("CommDirection", a.direction)}
+                      </span>
+                    )}
                     {a.subject && (
                       <span className="text-sm text-zinc-900 truncate">{a.subject}</span>
                     )}

@@ -413,6 +413,8 @@ export default async function InvestorDetailPage({ params }: PageProps) {
           type: a.type,
           subject: a.subject,
           occurredAt: a.occurredAt,
+          channel: a.channel,
+          direction: a.direction,
         }))}
       />
     </div>

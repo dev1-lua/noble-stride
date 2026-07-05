@@ -71,6 +71,8 @@ export default async function EngagementPage() {
     subject: a.subject,
     occurredAt: a.occurredAt,
     context: [a.investor?.name, a.transaction?.name].filter(Boolean).join(" · ") || null,
+    channel: a.channel,
+    direction: a.direction,
   }));
 
   return (

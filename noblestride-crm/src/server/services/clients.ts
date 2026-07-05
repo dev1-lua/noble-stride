@@ -14,8 +14,9 @@ export async function listClients() {
 }
 
 /**
- * Fetch a single client by id, including contacts, mandates, and transactions.
- * Returns null when the client does not exist.
+ * Fetch a single client by id, including contacts, mandates, transactions,
+ * and activities (newest first — spec §3.10 comm logging against a bare
+ * client). Returns null when the client does not exist.
  */
 export async function getClient(id: string) {
   return prisma.client.findUnique({
@@ -24,6 +25,7 @@ export async function getClient(id: string) {
       contacts: true,
       mandates: true,
       transactions: true,
+      activities: { orderBy: { occurredAt: "desc" } },
     },
   });
 }

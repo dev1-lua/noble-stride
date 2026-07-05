@@ -1,6 +1,6 @@
 // clients/[id]/page.tsx — Client detail page.
-// Server Component: client profile + contacts (likely empty) + mandates + transactions.
-// No activity timeline (no data path: Activity has no client relation).
+// Server Component: client profile + contacts (likely empty) + mandates +
+// transactions + activity timeline (spec §3.10 — Activity.clientId).
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -10,6 +10,9 @@ import { formatMoney } from "@/lib/money";
 import { label } from "@/lib/vocab";
 import { ClientFormDrawer } from "@/components/crm/client-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
+import { ActivityTimeline } from "@/components/crm/activity-timeline";
+import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
+import { LogEngagementDialog } from "@/components/crm/log-engagement-dialog";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -77,6 +80,17 @@ export default async function ClientDetailPage({ params }: PageProps) {
   };
   const DELETE_CLIENT = `mutation DeleteClient($id: ID!) { deleteClient(id: $id) { id } }`;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const activities = (c.activities ?? []) as any[];
+  const timelineItems: ActivityTimelineItem[] = activities.map((a) => ({
+    id: a.id,
+    type: a.type,
+    subject: a.subject,
+    occurredAt: a.occurredAt,
+    channel: a.channel,
+    direction: a.direction,
+  }));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -103,6 +117,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
+          <LogEngagementDialog clientId={client.id} triggerLabel="Log Communication" dialogTitle="Log Communication" />
           <ClientFormDrawer mode="edit" initial={initial} />
           <DeleteConfirm mutation={DELETE_CLIENT} recordId={client.id} entityLabel="client" redirectTo="/clients" />
         </div>
@@ -408,6 +423,12 @@ export default async function ClientDetailPage({ params }: PageProps) {
           )}
         </CardBody>
       </Card>
+
+      <ActivityTimeline
+        activities={timelineItems}
+        title="Communications"
+        emptyText="No communications logged."
+      />
     </div>
   );
 }

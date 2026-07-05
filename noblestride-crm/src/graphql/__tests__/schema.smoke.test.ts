@@ -31,7 +31,7 @@ async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 describe("graphql schema", () => {
-  it("builds without errors and exposes a query type with 26 queries and 32 mutations", async () => {
+  it("builds without errors and exposes a query type with 26 queries and 33 mutations", async () => {
     // Dynamic import so the module graph is resolved lazily — errors surface here.
     const { schema } = await import("@/graphql/schema");
     expect(schema).toBeTruthy();
@@ -44,7 +44,7 @@ describe("graphql schema", () => {
     const mutationType = schema.getMutationType();
     expect(mutationType).toBeTruthy();
     const mutationFields = Object.keys(mutationType?.getFields() ?? {});
-    expect(mutationFields).toHaveLength(32);
+    expect(mutationFields).toHaveLength(33);
 
     // Spot-check that key query fields exist
     expect(queryFields).toContain("dashboardStats");
@@ -58,6 +58,7 @@ describe("graphql schema", () => {
     expect(mutationFields).toContain("updateMandateStage");
     expect(mutationFields).toContain("updateTransactionStage");
     expect(mutationFields).toContain("logEngagement");
+    expect(mutationFields).toContain("logActivity");
     expect(mutationFields).toContain("createEngagement");
     expect(mutationFields).toContain("updateEngagement");
     expect(mutationFields).toContain("createServiceProvider");
