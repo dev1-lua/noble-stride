@@ -1,0 +1,14 @@
+# Questions to clear with Noblestride (Evans/team) — next client meeting
+
+Points we implemented with assumptions instead of guessing silently. Confirm each and adjust the build if the answer differs.
+
+1. **Complete investor field set + which fields are mandatory.**
+   SOW §10 flags this for discovery. Current assumption: **all** registration and fund-profile fields are mandatory. Confirm the final field list and which are truly required vs optional.
+
+2. **Exact Open vs Closed NDA handling for visibility / VDR gating.**
+   SOW §10 flags this for discovery. Current assumption: an investor with a signed **Open NDA** can be granted access to *every* target company's data room (each still behind internal approval); a **Closed NDA** covers exactly *one* target company's data room, and every additional data room needs a new NDA.
+
+3. **Teaser anonymization pre-NDA.**
+   The end-to-end workflow doc has teaser → NDA sequencing, and standard practice anonymizes teasers, so pre-NDA we mask the target company's name as a codename ("Project X — Sector, Country") and unmask after NDA. SOW §07 says "basic profile" is visible pre-interest, which could be read either way. Confirm whether company names should be visible in teasers before an NDA is signed.
+
+*(Add future open questions here rather than assuming.)*
