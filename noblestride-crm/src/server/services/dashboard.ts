@@ -183,3 +183,28 @@ export async function dealPipelineTrend(): Promise<
     return { month: monthLabel, active, closed };
   });
 }
+
+/** Investor-onboarding dashboard stats (design spec §7). */
+export async function onboardingStats(now: Date = new Date()) {
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const [pendingReview, approvedThisMonth, ndaGroups] = await Promise.all([
+    prisma.investor.count({ where: { onboardingStatus: "PendingReview" } }),
+    prisma.activity.count({
+      where: { subject: { startsWith: "Investor approved" }, occurredAt: { gte: monthStart } },
+    }),
+    prisma.investor.groupBy({
+      by: ["ndaStatus"],
+      where: { engagementClassification: "Active", onboardingStatus: "Approved" },
+      _count: { _all: true },
+    }),
+  ]);
+  const byNda: Record<string, number> = {};
+  for (const row of ndaGroups) byNda[row.ndaStatus] = row._count._all;
+  return {
+    pendingReview,
+    approvedThisMonth,
+    ndaOpen: byNda["OpenNDA"] ?? 0,
+    ndaClosed: byNda["ClosedNDA"] ?? 0,
+    ndaNone: byNda["None"] ?? 0,
+  };
+}

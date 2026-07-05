@@ -1,8 +1,13 @@
 // dashboard/page.tsx — RSC Dashboard page.
 // Calls services directly (NOT urql). No "use client".
 
-import { Target, Briefcase, Users, DollarSign } from "lucide-react";
-import { dashboardStats, pipelineOverview, dealPipelineTrend } from "@/server/services/dashboard";
+import { Target, Briefcase, Users, DollarSign, ClipboardCheck, CheckCircle2, FileCheck2 } from "lucide-react";
+import {
+  dashboardStats,
+  pipelineOverview,
+  dealPipelineTrend,
+  onboardingStats,
+} from "@/server/services/dashboard";
 import { aiOverviewInsights } from "@/server/services/ai";
 import { Card, CardHeader, CardBody } from "@/components/ui";
 import { AnimatedStatCard } from "@/components/ui/animated-stat-card";
@@ -11,11 +16,12 @@ import { OverviewAgentCard } from "@/components/crm/overview-agent-card";
 import { DealPipelineTrendChart, PipelineOverviewChart } from "@/components/crm/pipeline-chart";
 
 export default async function DashboardPage() {
-  const [s, insights, pipeline, trend] = await Promise.all([
+  const [s, insights, pipeline, trend, onboarding] = await Promise.all([
     dashboardStats(),
     aiOverviewInsights(),
     pipelineOverview(),
     dealPipelineTrend(),
+    onboardingStats(),
   ]);
 
   return (
@@ -101,6 +107,40 @@ export default async function DashboardPage() {
           </Card>
         </Reveal>
       </div>
+
+      {/* Investor Onboarding stat group */}
+      <Reveal delay={0.2}>
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900">Investor Onboarding</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">Registration review &amp; NDA coverage</p>
+        </div>
+      </Reveal>
+
+      <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <a href="/investors?onboarding=PendingReview" className="block">
+          <AnimatedStatCard
+            label="Pending Review"
+            value={onboarding.pendingReview}
+            format="compact"
+            sub="investor registrations awaiting review"
+            icon={<ClipboardCheck className="h-4 w-4" />}
+          />
+        </a>
+        <AnimatedStatCard
+          label="Approved This Month"
+          value={onboarding.approvedThisMonth}
+          format="compact"
+          sub="investors approved this month"
+          icon={<CheckCircle2 className="h-4 w-4" />}
+        />
+        <AnimatedStatCard
+          label="NDA Coverage"
+          value={onboarding.ndaOpen + onboarding.ndaClosed + onboarding.ndaNone}
+          format="compact"
+          sub={`${onboarding.ndaOpen} open · ${onboarding.ndaClosed} closed · ${onboarding.ndaNone} none`}
+          icon={<FileCheck2 className="h-4 w-4" />}
+        />
+      </Stagger>
     </div>
   );
 }
