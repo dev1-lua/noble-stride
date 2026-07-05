@@ -23,3 +23,15 @@ export const TICKET_BANDS: TicketBand[] = [
 export function ticketBand(key: string): TicketBand | undefined {
   return TICKET_BANDS.find((b) => b.key === key);
 }
+
+/**
+ * Bucket a raw dollar amount into its TICKET_BANDS entry (min inclusive, max
+ * exclusive; the open-ended top band has max=null). Used by the dashboard's
+ * "active transactions by ticket size" breakdown (spec §13) to bucket
+ * Transaction.targetRaise the same way investor registration buckets ticket
+ * preferences. Returns undefined for null/negative/unbucketable amounts.
+ */
+export function bandForAmount(amount: number | null | undefined): TicketBand | undefined {
+  if (amount == null || amount < 0) return undefined;
+  return TICKET_BANDS.find((b) => amount >= b.min && (b.max === null || amount < b.max));
+}

@@ -6,6 +6,7 @@ import { LABELS, label } from "@/lib/vocab";
 import { quarterRange } from "@/server/domain/metrics";
 import { ACTIVE_MANDATE_STAGES, CLOSED_TXN_STAGES } from "@/server/domain/types";
 import type { DashboardStats } from "@/server/domain/types";
+import { TICKET_BANDS, bandForAmount } from "@/lib/ticket-bands";
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -190,6 +191,238 @@ export async function dealPipelineTrend(): Promise<
  */
 export async function overdueTasksCount(): Promise<number> {
   return prisma.task.count({ where: { escalated: true } });
+}
+
+/**
+ * The N most-overdue escalated tasks (soonest-missed deadline first), for the
+ * dashboard's "Overdue actions" list (spec §13 Team & tasks). Single indexed
+ * query — pairs with `overdueTasksCount()` for the headline number.
+ */
+export interface OverdueTaskItem {
+  id: string;
+  title: string;
+  assigneeName: string | null;
+  dueAt: Date | null;
+}
+
+export async function overdueTasks(limit = 5): Promise<OverdueTaskItem[]> {
+  const rows = await prisma.task.findMany({
+    where: { escalated: true },
+    orderBy: { dueAt: "asc" },
+    take: limit,
+    select: { id: true, title: true, dueAt: true, assignee: { select: { name: true } } },
+  });
+  return rows.map((t) => ({
+    id: t.id,
+    title: t.title,
+    assigneeName: t.assignee?.name ?? null,
+    dueAt: t.dueAt,
+  }));
+}
+
+// ─── Pipeline breakdowns (spec §13) ────────────────────────────────────────────
+
+export interface CountBreakdown {
+  key: string;
+  label: string;
+  count: number;
+}
+
+/**
+ * Active-transaction breakdowns for the dashboard's Pipeline Overview: by
+ * deal lead (owner), by sector, by financing type, by ticket-size band.
+ *
+ * Query plan (no N+1):
+ * - `ownerId` and `financingType` are single-valued scalar fields, so each
+ *   gets its own `groupBy` (2 queries total).
+ * - `sector` is a Prisma scalar-list field (multi-select) and ticket band is
+ *   a derived bucket over `targetRaise` — neither can be grouped server-side
+ *   the way we need, so BOTH are computed from ONE `findMany` (minimal
+ *   `{sector, targetRaise}` select) with the bucketing done in-process.
+ * - Owner display names come from a single follow-up `findMany` keyed by the
+ *   distinct ownerIds already returned by the groupBy (not per-row lookups).
+ */
+export async function pipelineBreakdowns(): Promise<{
+  byLead: CountBreakdown[];
+  bySector: CountBreakdown[];
+  byFinancingType: CountBreakdown[];
+  byTicketBand: CountBreakdown[];
+}> {
+  const activeWhere = { stage: { notIn: CLOSED_TXN_STAGES } } as const;
+
+  const [byOwnerRaw, byFinancingRaw, txnRows] = await Promise.all([
+    prisma.transaction.groupBy({ by: ["ownerId"], where: activeWhere, _count: { _all: true } }),
+    prisma.transaction.groupBy({ by: ["financingType"], where: activeWhere, _count: { _all: true } }),
+    prisma.transaction.findMany({ where: activeWhere, select: { sector: true, targetRaise: true } }),
+  ]);
+
+  const ownerIds = byOwnerRaw.map((r) => r.ownerId).filter((id): id is string => id != null);
+  const owners = ownerIds.length
+    ? await prisma.user.findMany({ where: { id: { in: ownerIds } }, select: { id: true, name: true } })
+    : [];
+  const ownerNameMap = new Map(owners.map((o) => [o.id, o.name]));
+
+  const byLead: CountBreakdown[] = byOwnerRaw
+    .map((r) => ({
+      key: r.ownerId ?? "unassigned",
+      label: r.ownerId ? (ownerNameMap.get(r.ownerId) ?? "Unknown") : "Unassigned",
+      count: r._count._all,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  const byFinancingType: CountBreakdown[] = byFinancingRaw
+    .map((r) => ({
+      key: r.financingType ?? "none",
+      label: r.financingType ? label("DealFinancingType", r.financingType) : "Not set",
+      count: r._count._all,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // sector + ticket band: bucketed in-process from the single findMany above.
+  const sectorCounts = new Map<string, number>();
+  const bandCounts = new Map<string, number>(TICKET_BANDS.map((b) => [b.key, 0]));
+  let noBand = 0;
+
+  for (const txn of txnRows) {
+    for (const sector of txn.sector) {
+      sectorCounts.set(sector, (sectorCounts.get(sector) ?? 0) + 1);
+    }
+    const amount = txn.targetRaise == null ? null : Number(txn.targetRaise);
+    const band = bandForAmount(amount);
+    if (band) bandCounts.set(band.key, (bandCounts.get(band.key) ?? 0) + 1);
+    else noBand++;
+  }
+
+  const bySector: CountBreakdown[] = [...sectorCounts.entries()]
+    .map(([sector, count]) => ({ key: sector, label: label("Sector", sector), count }))
+    .sort((a, b) => b.count - a.count);
+
+  const byTicketBand: CountBreakdown[] = TICKET_BANDS.map((band) => ({
+    key: band.key,
+    label: band.label,
+    count: bandCounts.get(band.key) ?? 0,
+  }));
+  if (noBand > 0) byTicketBand.push({ key: "none", label: "Not set", count: noBand });
+
+  return { byLead, bySector, byFinancingType, byTicketBand };
+}
+
+// ─── Disbursement by year/quarter (spec §13) ───────────────────────────────────
+
+export interface PeriodDisbursement {
+  year: number;
+  quarter: number;
+  total: number;
+  disbursed: number;
+  pending: number;
+}
+
+/**
+ * Disbursement totals grouped by (year, quarter) — a single `groupBy` with
+ * `_sum` over the three amount fields already stored on Engagement. Rows
+ * with no year/quarter set are excluded (nothing to bucket them into).
+ */
+export async function disbursementByPeriod(): Promise<PeriodDisbursement[]> {
+  const rows = await prisma.engagement.groupBy({
+    by: ["year", "quarter"],
+    where: { year: { not: null }, quarter: { not: null } },
+    _sum: { totalAmount: true, amountDisbursed: true, amountPending: true },
+  });
+
+  return rows
+    .map((r) => ({
+      year: r.year as number,
+      quarter: r.quarter as number,
+      total: Number(r._sum.totalAmount ?? 0),
+      disbursed: Number(r._sum.amountDisbursed ?? 0),
+      pending: Number(r._sum.amountPending ?? 0),
+    }))
+    .sort((a, b) => a.year - b.year || a.quarter - b.quarter);
+}
+
+// ─── Team & tasks (spec §13) ────────────────────────────────────────────────────
+
+export interface TeamWorkload {
+  userId: string;
+  name: string;
+  openMandates: number;
+  activeTransactions: number;
+}
+
+/**
+ * Deal load per team member: open mandates (ACTIVE_MANDATE_STAGES) + active
+ * transactions (stage not closed) led/owned by each active user.
+ *
+ * Query plan (no N+1): one `groupBy` on Mandate.leadId, one on
+ * Transaction.ownerId, one `findMany` for active user names — 3 queries
+ * total, independent of team size.
+ */
+export async function teamWorkload(): Promise<TeamWorkload[]> {
+  const [mandateGroups, txnGroups, users] = await Promise.all([
+    prisma.mandate.groupBy({
+      by: ["leadId"],
+      where: { stage: { in: ACTIVE_MANDATE_STAGES } },
+      _count: { _all: true },
+    }),
+    prisma.transaction.groupBy({
+      by: ["ownerId"],
+      where: { stage: { notIn: CLOSED_TXN_STAGES } },
+      _count: { _all: true },
+    }),
+    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+  ]);
+
+  const mandateMap = new Map(
+    mandateGroups.filter((r) => r.leadId != null).map((r) => [r.leadId as string, r._count._all]),
+  );
+  const txnMap = new Map(
+    txnGroups.filter((r) => r.ownerId != null).map((r) => [r.ownerId as string, r._count._all]),
+  );
+
+  return users
+    .map((u) => ({
+      userId: u.id,
+      name: u.name,
+      openMandates: mandateMap.get(u.id) ?? 0,
+      activeTransactions: txnMap.get(u.id) ?? 0,
+    }))
+    .filter((w) => w.openMandates > 0 || w.activeTransactions > 0)
+    .sort((a, b) => b.openMandates + b.activeTransactions - (a.openMandates + a.activeTransactions));
+}
+
+export interface TaskStatusByOwner {
+  userId: string;
+  name: string;
+  counts: Partial<Record<string, number>>;
+}
+
+/**
+ * Task-status × owner cross-tab: for each active user with at least one
+ * assigned task, a count per TaskStatus. Unassigned tasks are excluded (no
+ * owner to cross-tab against) — `dashboardStats`/`overdueTasksCount` already
+ * cover team-wide totals.
+ *
+ * Query plan (no N+1): one `groupBy` on (Task.assigneeId, Task.status) —
+ * counts for every user/status pair come back in one call — plus one
+ * `findMany` for active user names.
+ */
+export async function taskStatusByOwner(): Promise<TaskStatusByOwner[]> {
+  const [groups, users] = await Promise.all([
+    prisma.task.groupBy({ by: ["assigneeId", "status"], _count: { _all: true } }),
+    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+  ]);
+
+  const byUser = new Map<string, Partial<Record<string, number>>>();
+  for (const row of groups) {
+    if (row.assigneeId == null) continue;
+    const bucket = byUser.get(row.assigneeId) ?? {};
+    bucket[row.status] = row._count._all;
+    byUser.set(row.assigneeId, bucket);
+  }
+
+  return users
+    .map((u) => ({ userId: u.id, name: u.name, counts: byUser.get(u.id) ?? {} }))
+    .filter((r) => Object.keys(r.counts).length > 0);
 }
 
 /** Investor-onboarding dashboard stats (design spec §7). */

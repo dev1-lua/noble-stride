@@ -1,12 +1,17 @@
 // dashboard/page.tsx — RSC Dashboard page.
 // Calls services directly (NOT urql). No "use client".
 
-import { Target, Briefcase, Users, DollarSign, ClipboardCheck, CheckCircle2, FileCheck2 } from "lucide-react";
+import { Target, Briefcase, Users, DollarSign, ClipboardCheck, CheckCircle2, FileCheck2, AlertTriangle } from "lucide-react";
 import {
   dashboardStats,
   pipelineOverview,
+  pipelineBreakdowns,
   dealPipelineTrend,
   onboardingStats,
+  teamWorkload,
+  taskStatusByOwner,
+  overdueTasksCount,
+  overdueTasks,
 } from "@/server/services/dashboard";
 import { aiOverviewInsights } from "@/server/services/ai";
 import { Card, CardHeader, CardBody } from "@/components/ui";
@@ -14,15 +19,23 @@ import { AnimatedStatCard } from "@/components/ui/animated-stat-card";
 import { Reveal, Stagger } from "@/components/ui/motion";
 import { OverviewAgentCard } from "@/components/crm/overview-agent-card";
 import { DealPipelineTrendChart, PipelineOverviewChart } from "@/components/crm/pipeline-chart";
+import { BreakdownBarList } from "@/components/crm/pipeline-breakdown";
+import { TeamWorkloadTable, TaskStatusCrosstab, OverdueActionsList } from "@/components/crm/team-tasks-panel";
 
 export default async function DashboardPage() {
-  const [s, insights, pipeline, trend, onboarding] = await Promise.all([
-    dashboardStats(),
-    aiOverviewInsights(),
-    pipelineOverview(),
-    dealPipelineTrend(),
-    onboardingStats(),
-  ]);
+  const [s, insights, pipeline, breakdowns, trend, onboarding, workload, statusByOwner, overdueCount, overdueList] =
+    await Promise.all([
+      dashboardStats(),
+      aiOverviewInsights(),
+      pipelineOverview(),
+      pipelineBreakdowns(),
+      dealPipelineTrend(),
+      onboardingStats(),
+      teamWorkload(),
+      taskStatusByOwner(),
+      overdueTasksCount(),
+      overdueTasks(),
+    ]);
 
   return (
     <div className="space-y-6">
@@ -108,6 +121,51 @@ export default async function DashboardPage() {
         </Reveal>
       </div>
 
+      {/* Pipeline Breakdown — active transactions by lead / sector / financing type / ticket size */}
+      <Reveal delay={0.18}>
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900">Pipeline Breakdown</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            Active transactions by deal lead, sector, financing type &amp; ticket size
+          </p>
+        </div>
+      </Reveal>
+
+      <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card>
+          <CardHeader>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">By Deal Lead</h3>
+          </CardHeader>
+          <CardBody>
+            <BreakdownBarList rows={breakdowns.byLead} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">By Sector</h3>
+          </CardHeader>
+          <CardBody>
+            <BreakdownBarList rows={breakdowns.bySector.slice(0, 8)} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">By Financing Type</h3>
+          </CardHeader>
+          <CardBody>
+            <BreakdownBarList rows={breakdowns.byFinancingType} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">By Ticket Size</h3>
+          </CardHeader>
+          <CardBody>
+            <BreakdownBarList rows={breakdowns.byTicketBand} />
+          </CardBody>
+        </Card>
+      </Stagger>
+
       {/* Investor Onboarding stat group */}
       <Reveal delay={0.2}>
         <div>
@@ -141,6 +199,49 @@ export default async function DashboardPage() {
           icon={<FileCheck2 className="h-4 w-4" />}
         />
       </Stagger>
+
+      {/* Team & Tasks — deal load, task ownership, overdue actions */}
+      <Reveal delay={0.25}>
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900">Team &amp; Tasks</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">Deal load, task ownership &amp; overdue action points</p>
+        </div>
+      </Reveal>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <h3 className="text-sm font-semibold text-zinc-900">Deal Load by Team Member</h3>
+            <p className="mt-0.5 text-xs text-zinc-500">Open mandates + active transactions</p>
+          </CardHeader>
+          <CardBody>
+            <TeamWorkloadTable rows={workload} />
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <h3 className="text-sm font-semibold text-zinc-900">Task Status by Owner</h3>
+            <p className="mt-0.5 text-xs text-zinc-500">Assigned tasks, by status</p>
+          </CardHeader>
+          <CardBody>
+            <TaskStatusCrosstab rows={statusByOwner} />
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900">
+              <AlertTriangle className="h-4 w-4 text-rose-500" />
+              Overdue Actions
+            </h3>
+            <p className="mt-0.5 text-xs text-zinc-500">Escalated past their deadline</p>
+          </CardHeader>
+          <CardBody>
+            <OverdueActionsList count={overdueCount} items={overdueList} />
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }

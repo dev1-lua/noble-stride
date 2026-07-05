@@ -6,6 +6,7 @@ import { engagementsByStage, listDisbursements } from "@/server/services/engagem
 import { engagementCounters, activityTimeline } from "@/server/services/activities";
 import { listTransactions } from "@/server/services/transactions";
 import { listInvestors } from "@/server/services/investors";
+import { disbursementByPeriod } from "@/server/services/dashboard";
 import { StatCard } from "@/components/ui";
 import { options } from "@/lib/vocab";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
@@ -15,18 +16,25 @@ import { EngagementStageBoard } from "@/components/crm/engagement-stage-board";
 import type { EngagementStageColumnDTO } from "@/components/crm/engagement-stage-board";
 import { DisbursementTable } from "@/components/crm/disbursement-table";
 import type { DisbursementRow } from "@/components/crm/disbursement-table";
+import { DisbursementPeriodSummary } from "@/components/crm/disbursement-period-summary";
 
 export default async function EngagementPage() {
   // Parallel fetches
-  const [counters, stageColumns, disbursements, timeline, transactions, investors] =
+  const [counters, stageColumns, disbursements, periodSummary, timeline, transactions, investors] =
     await Promise.all([
       engagementCounters(),
       engagementsByStage(),
       listDisbursements(),
+      disbursementByPeriod(),
       activityTimeline(),
       listTransactions(),
       listInvestors({}),
     ]);
+
+  // "Deals rejected" — engagements that reached the Declined stage. Reuses the
+  // stage buckets already loaded above (engagementsByStage), so this costs no
+  // additional query.
+  const declinedCount = stageColumns.find((c) => c.stage === "Declined")?.items.length ?? 0;
 
   // Build SelectOption[] for dialog (plain strings — safe to pass to client component)
   const txnOptions = transactions.map((t) => ({ value: t.id, label: t.name }));
@@ -88,14 +96,15 @@ export default async function EngagementPage() {
         <LogEngagementDialog transactions={txnOptions} investors={invOptions} />
       </div>
 
-      {/* Counters strip — 6 tiles (activity-driven) */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      {/* Counters strip — 6 activity-driven tiles + deals rejected (stage-driven) */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7">
         <StatCard label="Outreach" value={String(counters.outreach)} />
         <StatCard label="NDA Signed" value={String(counters.ndaSigned)} />
         <StatCard label="Data Room" value={String(counters.dataRoom)} />
         <StatCard label="Meetings" value={String(counters.meetings)} />
         <StatCard label="Feedback" value={String(counters.feedback)} />
         <StatCard label="Term Sheets" value={String(counters.termSheets)} />
+        <StatCard label="Deals Rejected" value={String(declinedCount)} />
       </div>
 
       {/* 12-stage engagement pipeline board */}
@@ -114,6 +123,11 @@ export default async function EngagementPage() {
             Disbursements
           </h2>
           <DisbursementTable rows={disbursementRows} />
+
+          <h3 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide pt-2">
+            By Year &amp; Quarter
+          </h3>
+          <DisbursementPeriodSummary rows={periodSummary} />
         </div>
 
         {/* RIGHT: activity timeline */}
