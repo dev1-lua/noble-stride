@@ -13,7 +13,8 @@ const UPDATE = `mutation UpdatePartner($id: ID!, $input: PartnerInput!) { update
 
 const EMPTY: Record<string, unknown> = {
   name: "", partnerType: "", profile: "", status: "", location: "", amount: undefined, currency: "",
-  advisorType: "", feeSharingAgreement: false, feeSharingTerms: "", partnerAgreementStatus: "", internalOnly: true,
+  advisorType: "", organization: "", email: "", phone: "",
+  feeSharingAgreement: false, feeSharingTerms: "", partnerAgreementStatus: "", internalOnly: true,
 };
 
 export function PartnerFormDrawer({ mode, initial, triggerLabel }: {
@@ -56,6 +57,11 @@ export function PartnerFormDrawer({ mode, initial, triggerLabel }: {
             <SelectField label="Agreement Status" value={v.partnerAgreementStatus as string} onChange={(x) => f.setValue("partnerAgreementStatus", x)} options={options("PartnerAgreementStatus")} />
           </div>
           <TextField label="Location" value={v.location as string} onChange={(x) => f.setValue("location", x)} />
+          <TextField label="Organization" value={v.organization as string} onChange={(x) => f.setValue("organization", x)} />
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label="Email" value={v.email as string} onChange={(x) => f.setValue("email", x)} />
+            <TextField label="Phone" value={v.phone as string} onChange={(x) => f.setValue("phone", x)} />
+          </div>
           <MoneyField label="Amount" value={v.amount as number} onChange={(x) => f.setValue("amount", x)} />
           <CheckboxField label="Fee-sharing agreement in place" value={v.feeSharingAgreement as boolean} onChange={(x) => f.setValue("feeSharingAgreement", x)} />
           {(v.feeSharingAgreement as boolean) && (

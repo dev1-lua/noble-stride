@@ -9,6 +9,7 @@ type ClientRow = {
   hqCity: string | null;
   sector: string[];
   revenueLastYear: number | null;
+  status: string;
   mandateCount: number;
 };
 
@@ -25,7 +26,7 @@ export function ClientsTable({ clients }: { clients: ClientRow[] }) {
       <Table>
         <THead>
           <Tr className="hover:bg-transparent">
-            <Th>Client</Th><Th>Sector</Th><Th>HQ City</Th><Th>Revenue (LY)</Th><Th>Mandates</Th>
+            <Th>Client</Th><Th>Status</Th><Th>Sector</Th><Th>HQ City</Th><Th>Revenue (LY)</Th><Th>Mandates</Th>
           </Tr>
         </THead>
         <TBody>
@@ -37,6 +38,7 @@ export function ClientsTable({ clients }: { clients: ClientRow[] }) {
                   <span className="font-medium text-zinc-900 transition-colors group-hover:text-accent">{c.name}</span>
                 </Link>
               </Td>
+              <Td>{c.status ? <Chip value={c.status} group="ClientStatus" /> : "—"}</Td>
               <Td>
                 <div className="flex flex-wrap gap-1">
                   {c.sector.slice(0, 3).map((s) => <Chip key={s} value={s} group="Sector" />)}

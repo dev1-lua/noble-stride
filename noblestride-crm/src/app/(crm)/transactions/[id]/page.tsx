@@ -47,6 +47,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
     clientId: txn.clientId ?? "",
     mandateId: txn.mandateId ?? "",
     ownerId: txn.ownerId ?? "",
+    assistantId: txn.assistantId ?? "",
     dealType: txn.dealType ?? "",
     instrument: (txn.instrument ?? []) as string[],
     targetRaise: txn.targetRaise == null ? undefined : Number(txn.targetRaise),
@@ -55,17 +56,30 @@ export default async function TransactionDetailPage({ params }: PageProps) {
     successFeeAmount: txn.successFeeAmount == null ? undefined : Number(txn.successFeeAmount),
     successFeeInvoicedDate: toDate(txn.successFeeInvoicedDate),
     successFeePaidDate: toDate(txn.successFeePaidDate),
+    // Spec-gap: deal status/milestone/financing fields (spec §4.1/§4.3/§4.5/§4.7)
+    dealStatus: txn.dealStatus ?? "",
+    dealMilestone: txn.dealMilestone ?? "",
+    financingType: txn.financingType ?? "",
+    maxSellingStake: txn.maxSellingStake ?? "",
+    targetProfile: txn.targetProfile ?? "",
+    useOfFunds: txn.useOfFunds ?? "",
+    vdrLink: txn.vdrLink ?? "",
+    probability: txn.probability == null ? undefined : Number(txn.probability),
+    notes: txn.notes ?? "",
   };
   const DELETE_TRANSACTION = `mutation DeleteTransaction($id: ID!) { deleteTransaction(id: $id) { id } }`;
 
   const clientName: string = txn.client?.name ?? txn.name;
   const ownerName: string | null = txn.owner?.name ?? null;
   const ownerColor: string | null = txn.owner?.avatarColor ?? null;
+  const assistantName: string | null = txn.assistant?.name ?? null;
+  const assistantColor: string | null = txn.assistant?.avatarColor ?? null;
   const mandateName: string | null = txn.mandate?.name ?? null;
   const sectors: string[] = txn.sector ?? [];
   const instruments: string[] = txn.instrument ?? [];
   const targetRaiseNum = txn.targetRaise != null ? Number(txn.targetRaise) : null;
   const dealTypeName = txn.dealType ? label("DealType", txn.dealType) : null;
+  const probabilityNum: number | null = txn.probability != null ? Number(txn.probability) : null;
 
   const stageOptions = options("TransactionStage");
 
@@ -87,6 +101,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{clientName}</h1>
             <Chip value={txn.stage} group="TransactionStage" />
+            {txn.dealStatus && <Chip value={txn.dealStatus} group="DealStatus" />}
           </div>
           {dealTypeName && (
             <p className="mt-1 text-sm text-zinc-500">{dealTypeName}</p>
@@ -154,11 +169,70 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                 </dd>
               </div>
 
+              {/* Assistant */}
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Assistant</dt>
+                <dd className="mt-1 flex items-center gap-2">
+                  {assistantName ? (
+                    <>
+                      <Avatar name={assistantName} color={assistantColor ?? undefined} size="sm" />
+                      <span className="text-sm font-medium text-zinc-900">{assistantName}</span>
+                    </>
+                  ) : (
+                    <span className="text-sm text-zinc-400">—</span>
+                  )}
+                </dd>
+              </div>
+
               {/* Mandate link */}
               {mandateName && (
                 <div className="sm:col-span-2">
                   <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Mandate</dt>
                   <dd className="mt-1 text-sm font-medium text-zinc-900">{mandateName}</dd>
+                </div>
+              )}
+
+              {/* Deal milestone */}
+              {txn.dealMilestone && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Deal Milestone</dt>
+                  <dd className="mt-1"><Chip value={txn.dealMilestone} group="DealMilestone" /></dd>
+                </div>
+              )}
+
+              {/* Financing type ("Deal type") */}
+              {txn.financingType && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Deal Type</dt>
+                  <dd className="mt-1 text-sm text-zinc-900">{label("DealFinancingType", txn.financingType)}</dd>
+                </div>
+              )}
+
+              {/* Max selling stake */}
+              {txn.maxSellingStake && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Max Selling Stake</dt>
+                  <dd className="mt-1 text-sm text-zinc-900">{label("MaxSellingStake", txn.maxSellingStake)}</dd>
+                </div>
+              )}
+
+              {/* Probability */}
+              {probabilityNum != null && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Probability</dt>
+                  <dd className="mt-1 text-sm text-zinc-900">{probabilityNum}%</dd>
+                </div>
+              )}
+
+              {/* VDR link */}
+              {txn.vdrLink && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">VDR Link</dt>
+                  <dd className="mt-1 text-sm">
+                    <a href={txn.vdrLink} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline break-all">
+                      {txn.vdrLink}
+                    </a>
+                  </dd>
                 </div>
               )}
 
@@ -196,6 +270,22 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                   </p>
                 )}
               </div>
+
+              {/* Target profile */}
+              {txn.targetProfile && (
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Target Profile</dt>
+                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{txn.targetProfile}</dd>
+                </div>
+              )}
+
+              {/* Use of funds */}
+              {txn.useOfFunds && (
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Use of Funds</dt>
+                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{txn.useOfFunds}</dd>
+                </div>
+              )}
 
               {/* Notes */}
               {txn.notes && (

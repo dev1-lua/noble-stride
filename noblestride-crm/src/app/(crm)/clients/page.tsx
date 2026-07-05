@@ -7,7 +7,7 @@ export default async function ClientsPage() {
   const rows = await prisma.client.findMany({
     orderBy: { name: "asc" },
     select: {
-      id: true, name: true, hqCity: true, sector: true, revenueLastYear: true,
+      id: true, name: true, hqCity: true, sector: true, revenueLastYear: true, status: true,
       _count: { select: { mandates: true } },
     },
   });
@@ -18,6 +18,7 @@ export default async function ClientsPage() {
     hqCity: c.hqCity,
     sector: c.sector as string[],
     revenueLastYear: c.revenueLastYear == null ? null : Number(c.revenueLastYear),
+    status: c.status as string,
     mandateCount: c._count.mandates,
   }));
 

@@ -13,7 +13,7 @@ const CREATE = `mutation CreateMandate($input: MandateInput!) { createMandate(in
 const UPDATE = `mutation UpdateMandate($id: ID!, $input: MandateInput!) { updateMandate(id: $id, input: $input) { id } }`;
 
 const EMPTY: Record<string, unknown> = {
-  name: "", clientId: "", leadId: "", referredById: "", dealSize: undefined, currency: "",
+  name: "", clientId: "", leadId: "", referredById: "", dealStatus: "", dealSize: undefined, currency: "",
   sector: [], source: "", dateOpened: "", ndaStatus: "", ndaSentDate: "", ndaSignedDate: "",
   eaStatus: "", eaSentDate: "", eaSignedDate: "", nextAction: "", notes: "",
 };
@@ -62,6 +62,7 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
             <MoneyField label="Deal Size" value={v.dealSize as number} onChange={(x) => f.setValue("dealSize", x)} />
             <SelectField label="Source" value={v.source as string} onChange={(x) => f.setValue("source", x)} options={options("Source")} />
           </div>
+          <SelectField label="Deal Status" value={v.dealStatus as string} onChange={(x) => f.setValue("dealStatus", x)} options={options("DealStatus")} />
           <DateField label="Date Opened" value={v.dateOpened as string} onChange={(x) => f.setValue("dateOpened", x)} />
           <div className="grid grid-cols-2 gap-3">
             <SelectField label="NDA Status" value={v.ndaStatus as string} onChange={(x) => f.setValue("ndaStatus", x)} options={options("DocStatus")} />

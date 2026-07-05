@@ -37,7 +37,7 @@ export const investorCreateSchema = z.object({
   icApprovalProcess: z.string().trim().optional(),
   trackRecord: z.string().trim().optional(),
   investmentMandate: z.string().trim().optional(),
-  nextActionDate: z.date().optional(),
+  nextActionDate: z.coerce.date().optional(),
   feedback: z.string().trim().optional(),
   ssaRegionContactId: z.string().trim().optional(),
   // "Data collected from potential investors" doc §3–§7

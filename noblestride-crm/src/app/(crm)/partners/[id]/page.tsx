@@ -30,6 +30,9 @@ export default async function PartnerDetailPage({ params }: PageProps) {
     location: partner.location ?? "",
     amount: partner.amount == null ? undefined : Number(partner.amount),
     advisorType: partner.advisorType ?? "",
+    organization: partner.organization ?? "",
+    email: partner.email ?? "",
+    phone: partner.phone ?? "",
     feeSharingAgreement: partner.feeSharingAgreement,
     feeSharingTerms: partner.feeSharingTerms ?? "",
     partnerAgreementStatus: partner.partnerAgreementStatus ?? "",
@@ -65,9 +68,16 @@ export default async function PartnerDetailPage({ params }: PageProps) {
             <Chip value={partner.status} group="PartnerStatus" />
             {partner.internalOnly && <Badge tone="neutral">Internal Only</Badge>}
           </div>
-          {partner.location && (
-            <p className="mt-1 text-sm text-zinc-500">{partner.location}</p>
-          )}
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-500">
+            {partner.organization && <span>{partner.organization}</span>}
+            {partner.location && <span>{partner.location}</span>}
+            {partner.email && (
+              <a href={`mailto:${partner.email}`} className="text-accent hover:underline">{partner.email}</a>
+            )}
+            {partner.phone && (
+              <a href={`tel:${partner.phone}`} className="hover:underline">{partner.phone}</a>
+            )}
+          </div>
         </div>
         <div className="flex shrink-0 gap-2">
           <PartnerFormDrawer mode="edit" initial={initial} />

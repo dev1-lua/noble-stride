@@ -38,17 +38,25 @@ export function TextAreaField({ label, value, onChange, error, rows = 3 }: {
   );
 }
 
-export function NumberField({ label, value, onChange, error, required, placeholder }: {
+export function NumberField({ label, value, onChange, error, required, placeholder, min, max }: {
   label: string; value?: number; onChange: (v: number | undefined) => void;
-  error?: string; required?: boolean; placeholder?: string;
+  error?: string; required?: boolean; placeholder?: string; min?: number; max?: number;
 }) {
   return (
     <Input
       label={labelText(label, required)}
       type="number"
       inputMode="decimal"
+      min={min}
+      max={max}
       value={value ?? ""}
-      onChange={(e) => onChange(e.target.value === "" ? undefined : Number(e.target.value))}
+      onChange={(e) => {
+        if (e.target.value === "") { onChange(undefined); return; }
+        let n = Number(e.target.value);
+        if (min != null) n = Math.max(min, n);
+        if (max != null) n = Math.min(max, n);
+        onChange(n);
+      }}
       error={error}
       placeholder={placeholder}
     />

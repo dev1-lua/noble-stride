@@ -103,6 +103,7 @@ export async function getTransaction(id: string) {
       client: true,
       mandate: true,
       owner: true,
+      assistant: true,
       engagements: { include: { investor: true } },
       activities: { orderBy: { occurredAt: "desc" } },
       stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },

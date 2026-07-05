@@ -16,6 +16,11 @@ const EMPTY: Record<string, unknown> = {
   coreProduct: "", description: "", founders: "", founderGender: "",
   revenueLastYear: undefined, revenueForecast: undefined, currency: "",
   profitable: false, existingInvestors: "", source: "", pitchDeckUrl: "",
+  // Spec-gap: company profile fields (spec §3.1/§3.2)
+  codename: "", status: "", registrationNo: "", hqCountry: "", businessModel: "",
+  foundersNationality: "", ownershipStructure: "", directorsManagement: "", targetClients: "",
+  staffCount: undefined, branchCount: undefined, ebitda: undefined, netProfit: undefined,
+  existingDebt: undefined, loanBook: undefined, totalAssets: undefined, impactFlags: [],
 };
 
 export function ClientFormDrawer({ mode, initial, triggerLabel }: {
@@ -61,15 +66,42 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
           <TextField label="Core Product" value={v.coreProduct as string} onChange={(x) => f.setValue("coreProduct", x)} />
           <TextField label="Founders" value={v.founders as string} onChange={(x) => f.setValue("founders", x)} />
           <SelectField label="Founder Gender" value={v.founderGender as string} onChange={(x) => f.setValue("founderGender", x)} options={options("FounderGender")} />
-          <div className="grid grid-cols-2 gap-3">
-            <MoneyField label="Revenue (Last Year)" value={v.revenueLastYear as number} onChange={(x) => f.setValue("revenueLastYear", x)} />
-            <MoneyField label="Revenue (Forecast)" value={v.revenueForecast as number} onChange={(x) => f.setValue("revenueForecast", x)} />
-          </div>
           <SelectField label="Source" value={v.source as string} onChange={(x) => f.setValue("source", x)} options={options("Source")} />
           <TextField label="Existing Investors" value={v.existingInvestors as string} onChange={(x) => f.setValue("existingInvestors", x)} />
           <TextField label="Pitch Deck URL" value={v.pitchDeckUrl as string} onChange={(x) => f.setValue("pitchDeckUrl", x)} />
-          <CheckboxField label="Profitable" value={v.profitable as boolean} onChange={(x) => f.setValue("profitable", x)} />
           <TextAreaField label="Description" value={v.description as string} onChange={(x) => f.setValue("description", x)} />
+
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Identity</p>
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label="Codename" value={v.codename as string} onChange={(x) => f.setValue("codename", x)} />
+            <SelectField label="Status" value={v.status as string} onChange={(x) => f.setValue("status", x)} options={options("ClientStatus")} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label="Registration No." value={v.registrationNo as string} onChange={(x) => f.setValue("registrationNo", x)} />
+            <TextField label="HQ Country" value={v.hqCountry as string} onChange={(x) => f.setValue("hqCountry", x)} />
+          </div>
+          <TextField label="Founders' Nationality" value={v.foundersNationality as string} onChange={(x) => f.setValue("foundersNationality", x)} />
+          <MultiSelectField label="Impact Flags" value={v.impactFlags as string[]} onChange={(x) => f.setValue("impactFlags", x)} options={options("ImpactFlag")} />
+
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Financials</p>
+          <div className="grid grid-cols-2 gap-3">
+            <MoneyField label="Revenue (Last Year)" value={v.revenueLastYear as number} onChange={(x) => f.setValue("revenueLastYear", x)} />
+            <MoneyField label="Revenue (Forecast)" value={v.revenueForecast as number} onChange={(x) => f.setValue("revenueForecast", x)} />
+            <MoneyField label="EBITDA" value={v.ebitda as number} onChange={(x) => f.setValue("ebitda", x)} />
+            <MoneyField label="Net Profit" value={v.netProfit as number} onChange={(x) => f.setValue("netProfit", x)} />
+            <MoneyField label="Existing Debt" value={v.existingDebt as number} onChange={(x) => f.setValue("existingDebt", x)} />
+            <MoneyField label="Loan Book" value={v.loanBook as number} onChange={(x) => f.setValue("loanBook", x)} />
+            <MoneyField label="Total Assets" value={v.totalAssets as number} onChange={(x) => f.setValue("totalAssets", x)} />
+            <NumberField label="Staff Count" value={v.staffCount as number} onChange={(x) => f.setValue("staffCount", x)} min={0} />
+            <NumberField label="Branch Count" value={v.branchCount as number} onChange={(x) => f.setValue("branchCount", x)} min={0} />
+          </div>
+          <CheckboxField label="Profitable" value={v.profitable as boolean} onChange={(x) => f.setValue("profitable", x)} />
+
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Governance</p>
+          <TextAreaField label="Business Model" value={v.businessModel as string} onChange={(x) => f.setValue("businessModel", x)} />
+          <TextAreaField label="Ownership Structure" value={v.ownershipStructure as string} onChange={(x) => f.setValue("ownershipStructure", x)} />
+          <TextAreaField label="Directors / Management" value={v.directorsManagement as string} onChange={(x) => f.setValue("directorsManagement", x)} />
+          <TextAreaField label="Target Clients" value={v.targetClients as string} onChange={(x) => f.setValue("targetClients", x)} />
           {f.formError && <p className="text-xs text-rose-600">{f.formError}</p>}
         </div>
       </Drawer>

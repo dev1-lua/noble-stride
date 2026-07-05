@@ -27,9 +27,16 @@ export default async function ClientDetailPage({ params }: PageProps) {
   const c = client as any;
   const revenueLastYear = c.revenueLastYear != null ? Number(c.revenueLastYear) : null;
   const revenueForecast = c.revenueForecast != null ? Number(c.revenueForecast) : null;
+  const ebitda = c.ebitda != null ? Number(c.ebitda) : null;
+  const netProfit = c.netProfit != null ? Number(c.netProfit) : null;
+  const existingDebt = c.existingDebt != null ? Number(c.existingDebt) : null;
+  const loanBook = c.loanBook != null ? Number(c.loanBook) : null;
+  const totalAssets = c.totalAssets != null ? Number(c.totalAssets) : null;
 
   const sectors: string[] = c.sector ?? [];
   const countries: string[] = c.countries ?? [];
+
+  const impactFlags: string[] = c.impactFlags ?? [];
 
   const initial = {
     id: client.id,
@@ -49,6 +56,24 @@ export default async function ClientDetailPage({ params }: PageProps) {
     existingInvestors: c.existingInvestors ?? "",
     source: c.source ?? "",
     pitchDeckUrl: c.pitchDeckUrl ?? "",
+    // Spec-gap: company profile fields (spec §3.1/§3.2)
+    codename: c.codename ?? "",
+    status: c.status ?? "",
+    registrationNo: c.registrationNo ?? "",
+    hqCountry: c.hqCountry ?? "",
+    businessModel: c.businessModel ?? "",
+    foundersNationality: c.foundersNationality ?? "",
+    ownershipStructure: c.ownershipStructure ?? "",
+    directorsManagement: c.directorsManagement ?? "",
+    targetClients: c.targetClients ?? "",
+    staffCount: c.staffCount == null ? undefined : Number(c.staffCount),
+    branchCount: c.branchCount == null ? undefined : Number(c.branchCount),
+    ebitda: c.ebitda == null ? undefined : Number(c.ebitda),
+    netProfit: c.netProfit == null ? undefined : Number(c.netProfit),
+    existingDebt: c.existingDebt == null ? undefined : Number(c.existingDebt),
+    loanBook: c.loanBook == null ? undefined : Number(c.loanBook),
+    totalAssets: c.totalAssets == null ? undefined : Number(c.totalAssets),
+    impactFlags: impactFlags,
   };
   const DELETE_CLIENT = `mutation DeleteClient($id: ID!) { deleteClient(id: $id) { id } }`;
 
@@ -60,12 +85,15 @@ export default async function ClientDetailPage({ params }: PageProps) {
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{client.name}</h1>
+            {c.status && <Chip value={c.status} group="ClientStatus" />}
+            {c.codename && <span className="text-sm text-zinc-400">&ldquo;{c.codename}&rdquo;</span>}
             {sectors.map((s: string) => (
               <Chip key={s} value={s} group="Sector" />
             ))}
           </div>
           <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-500">
             {c.hqCity && <span>{c.hqCity}</span>}
+            {c.hqCountry && <span>{c.hqCountry}</span>}
             {c.yearFounded && <span>Est. {c.yearFounded}</span>}
             {c.website && (
               <a href={c.website} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
@@ -119,6 +147,31 @@ export default async function ClientDetailPage({ params }: PageProps) {
               </div>
             )}
 
+            {c.foundersNationality && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Founders&apos; Nationality</dt>
+                <dd className="mt-1 text-sm text-zinc-900">{c.foundersNationality}</dd>
+              </div>
+            )}
+
+            {c.registrationNo && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Registration No.</dt>
+                <dd className="mt-1 text-sm text-zinc-900">{c.registrationNo}</dd>
+              </div>
+            )}
+
+            {impactFlags.length > 0 && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Impact Flags</dt>
+                <dd className="mt-1 flex flex-wrap gap-1">
+                  {impactFlags.map((flag) => (
+                    <Chip key={flag} value={flag} group="ImpactFlag" />
+                  ))}
+                </dd>
+              </div>
+            )}
+
             {revenueLastYear != null && (
               <div>
                 <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Revenue (Last Year)</dt>
@@ -156,6 +209,98 @@ export default async function ClientDetailPage({ params }: PageProps) {
           </dl>
         </CardBody>
       </Card>
+
+      {/* Financials */}
+      {(ebitda != null || netProfit != null || existingDebt != null || loanBook != null || totalAssets != null || c.staffCount != null || c.branchCount != null) && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-zinc-900">Financials</h2>
+          </CardHeader>
+          <CardBody>
+            <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+              {c.staffCount != null && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Staff Count</dt>
+                  <dd className="mt-1 text-sm text-zinc-900">{c.staffCount}</dd>
+                </div>
+              )}
+              {c.branchCount != null && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Branch Count</dt>
+                  <dd className="mt-1 text-sm text-zinc-900">{c.branchCount}</dd>
+                </div>
+              )}
+              {ebitda != null && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">EBITDA</dt>
+                  <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(ebitda)}</dd>
+                </div>
+              )}
+              {netProfit != null && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Net Profit</dt>
+                  <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(netProfit)}</dd>
+                </div>
+              )}
+              {existingDebt != null && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Existing Debt</dt>
+                  <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(existingDebt)}</dd>
+                </div>
+              )}
+              {loanBook != null && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Loan Book</dt>
+                  <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(loanBook)}</dd>
+                </div>
+              )}
+              {totalAssets != null && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Total Assets</dt>
+                  <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(totalAssets)}</dd>
+                </div>
+              )}
+            </dl>
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Governance */}
+      {(c.businessModel || c.ownershipStructure || c.directorsManagement || c.targetClients) && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-zinc-900">Governance</h2>
+          </CardHeader>
+          <CardBody>
+            <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
+              {c.businessModel && (
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Business Model</dt>
+                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{c.businessModel}</dd>
+                </div>
+              )}
+              {c.ownershipStructure && (
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Ownership Structure</dt>
+                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{c.ownershipStructure}</dd>
+                </div>
+              )}
+              {c.directorsManagement && (
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Directors / Management</dt>
+                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{c.directorsManagement}</dd>
+                </div>
+              )}
+              {c.targetClients && (
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Target Clients</dt>
+                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{c.targetClients}</dd>
+                </div>
+              )}
+            </dl>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Contacts — will be empty for most seed clients; show empty state */}
       <Card>

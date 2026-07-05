@@ -283,4 +283,13 @@ export const STATUS_DOT: Record<string, string> = {
   // OnboardingStatus
   PendingReview: "bg-amber-500",
   Rejected: "bg-rose-500",
+  // ClientStatus
+  Prospect: "bg-sky-500",
+  Archived: "bg-slate-300",
+  // DealStatus (Dropped/Active already covered above)
+  Open: "bg-sky-500",
+  OnHold: "bg-amber-500",
+  Closed: "bg-emerald-500",
+  ClosedReopened: "bg-violet-500",
+  ClosedOnHold: "bg-amber-400",
 };

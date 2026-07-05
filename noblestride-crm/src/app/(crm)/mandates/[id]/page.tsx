@@ -40,6 +40,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
     clientId: m.clientId ?? "",
     leadId: m.leadId ?? "",
     referredById: m.referredById ?? "",
+    dealStatus: m.dealStatus ?? "",
     dealSize: m.dealSize == null ? undefined : Number(m.dealSize),
     sector: (m.sector ?? []) as string[],
     source: m.source ?? "",
@@ -77,6 +78,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{clientName}</h1>
             <Chip value={m.stage} group="MandateStage" />
+            {m.dealStatus && <Chip value={m.dealStatus} group="DealStatus" />}
           </div>
           {m.name && m.name !== clientName && (
             <p className="mt-1 text-sm text-zinc-500">{m.name}</p>

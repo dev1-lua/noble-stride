@@ -45,6 +45,9 @@ export default async function InvestorDetailPage({ params }: PageProps) {
     notes: investor.notes ?? "",
     engagementClassification: investor.engagementClassification ?? "",
     ndaStatus: investor.ndaStatus ?? "",
+    shareholdingPreference: investor.shareholdingPreference ?? "",
+    nextActionDate: investor.nextActionDate ? investor.nextActionDate.toISOString().slice(0, 10) : "",
+    feedback: investor.feedback ?? "",
   };
   const DELETE_INVESTOR = `mutation DeleteInvestor($id: ID!) { deleteInvestor(id: $id) { id } }`;
 
@@ -282,6 +285,27 @@ export default async function InvestorDetailPage({ params }: PageProps) {
                   : <span className="text-sm text-zinc-400">—</span>}
               </dd>
             </div>
+
+            {investor.shareholdingPreference && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Shareholding Preference</dt>
+                <dd className="mt-1 text-sm text-zinc-900">{investor.shareholdingPreference}</dd>
+              </div>
+            )}
+
+            {investor.nextActionDate && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Next Action Date</dt>
+                <dd className="mt-1 text-sm text-zinc-900">{formatDate(investor.nextActionDate)}</dd>
+              </div>
+            )}
+
+            {investor.feedback && (
+              <div className="sm:col-span-2 lg:col-span-3">
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Feedback</dt>
+                <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{investor.feedback}</dd>
+              </div>
+            )}
 
             {investor.notes && (
               <div className="sm:col-span-2 lg:col-span-3">
