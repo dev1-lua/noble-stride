@@ -13,6 +13,8 @@ import {
   DocumentTypeEnum, DocumentAccessLevelEnum, DocumentStatusEnum,
   InvestorEngagementClassificationEnum, InvestorNdaStatusEnum,
   AdvisorTypeEnum, PartnerAgreementStatusEnum,
+  DealStatusEnum, DealMilestoneEnum, DealFinancingTypeEnum, MaxSellingStakeEnum,
+  ImpactFlagEnum, ClientStatusEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -80,6 +82,24 @@ export const ClientInput = builder.inputType("ClientInput", {
     existingInvestors: t.string({ required: false }),
     source: t.field({ type: SourceEnum, required: false }),
     pitchDeckUrl: t.string({ required: false }),
+    // Spec-gap: company profile fields (spec §3.1/§3.2)
+    codename: t.string({ required: false }),
+    registrationNo: t.string({ required: false }),
+    hqCountry: t.string({ required: false }),
+    businessModel: t.string({ required: false }),
+    foundersNationality: t.string({ required: false }),
+    ownershipStructure: t.string({ required: false }),
+    directorsManagement: t.string({ required: false }),
+    targetClients: t.string({ required: false }),
+    staffCount: t.int({ required: false }),
+    branchCount: t.int({ required: false }),
+    ebitda: t.float({ required: false }),
+    netProfit: t.float({ required: false }),
+    existingDebt: t.float({ required: false }),
+    loanBook: t.float({ required: false }),
+    totalAssets: t.float({ required: false }),
+    impactFlags: t.field({ type: [ImpactFlagEnum], required: false }),
+    status: t.field({ type: ClientStatusEnum, required: false }),
   }),
 });
 
@@ -89,6 +109,7 @@ export const MandateInput = builder.inputType("MandateInput", {
     clientId: t.id({ required: true }),
     leadId: t.id({ required: false }),
     referredById: t.id({ required: false }),
+    dealStatus: t.field({ type: DealStatusEnum, required: false }),
     dealSize: t.float({ required: false }),
     currency: t.string({ required: false }),
     sector: t.field({ type: [SectorEnum], required: false }),
@@ -111,6 +132,7 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     clientId: t.id({ required: true }),
     mandateId: t.id({ required: false }),
     ownerId: t.id({ required: false }),
+    assistantId: t.id({ required: false }),
     dealType: t.field({ type: DealTypeEnum, required: false }),
     instrument: t.field({ type: [InstrumentEnum], required: false }),
     targetRaise: t.float({ required: false }),
@@ -120,6 +142,16 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     successFeeAmount: t.float({ required: false }),
     successFeeInvoicedDate: t.field({ type: "DateTime", required: false }),
     successFeePaidDate: t.field({ type: "DateTime", required: false }),
+    // Spec-gap: deal status/milestone/financing fields (spec §4.1/§4.3/§4.5/§4.7)
+    dealStatus: t.field({ type: DealStatusEnum, required: false }),
+    dealMilestone: t.field({ type: DealMilestoneEnum, required: false }),
+    financingType: t.field({ type: DealFinancingTypeEnum, required: false }),
+    maxSellingStake: t.field({ type: MaxSellingStakeEnum, required: false }),
+    targetProfile: t.string({ required: false }),
+    useOfFunds: t.string({ required: false }),
+    vdrLink: t.string({ required: false }),
+    probability: t.int({ required: false }),
+    notes: t.string({ required: false }),
   }),
 });
 

@@ -1,11 +1,12 @@
 import { z } from "zod";
-import { Sector, Source, DocStatus } from "@prisma/client";
+import { Sector, Source, DocStatus, DealStatus } from "@prisma/client";
 
 export const mandateCreateSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   clientId: z.string().trim().min(1, "Client is required"),
   leadId: z.string().trim().optional(),
   referredById: z.string().trim().optional(),
+  dealStatus: z.nativeEnum(DealStatus).optional(),
   dealSize: z.number().nonnegative().optional(),
   currency: z.string().trim().min(1).optional(),
   sector: z.array(z.nativeEnum(Sector)).optional(),

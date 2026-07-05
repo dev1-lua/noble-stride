@@ -5,7 +5,7 @@ export const LABELS: Record<string, Record<string, string>> = {
   Sector: {
     Agribusiness: "Agribusiness",
     FinancialServices: "Financial Services",
-    FMCG: "FMCG",
+    FMCG: "Retail & FMCG",
     Manufacturing: "Manufacturing",
     RenewableEnergy: "Renewable Energy",
     Technology: "Technology",
@@ -22,6 +22,7 @@ export const LABELS: Record<string, Record<string, string>> = {
     Services: "Services",
     TransportLogistics: "Transport & Logistics",
     WaterSanitation: "Water & Sanitation",
+    Energy: "Energy",
   },
   InvestorType: {
     PrivateEquity: "Private Equity",
@@ -48,6 +49,7 @@ export const LABELS: Record<string, Record<string, string>> = {
     Mezzanine: "Mezzanine",
     Grant: "Grant",
     Convertible: "Convertible",
+    Hybrid: "Hybrid",
   },
   InvestmentStage: {
     PreSeed: "Pre-Seed",
@@ -104,8 +106,15 @@ export const LABELS: Record<string, Record<string, string>> = {
     Referral: "Referral",
     Inbound: "Inbound",
     Outreach: "Outreach",
-    Event: "Event",
+    Event: "Networking event",
     Website: "Website",
+    DirectEnquiry: "Direct enquiry",
+    Consultant: "Consultant",
+    Investor: "Investor",
+    Partner: "Partner",
+    SocialMedia: "Social media (LinkedIn / WhatsApp)",
+    InternalBusinessDev: "Internal business development",
+    Other: "Other",
   },
   DocStatus: {
     NotSent: "Not Sent",
@@ -139,6 +148,7 @@ export const LABELS: Record<string, Record<string, string>> = {
     Pending: "Pending",
     Ongoing: "Ongoing",
     Done: "Done",
+    Dropped: "Dropped",
   },
   InteractionType: {
     Outreach: "Outreach",
@@ -175,6 +185,26 @@ export const LABELS: Record<string, Record<string, string>> = {
   DocumentAccessLevel: { Internal: "Internal", ClientShared: "Client-Shared", InvestorShared: "Investor-Shared", VDR: "VDR" },
   DocumentStatus: { Draft: "Draft", UnderReview: "Under Review", Approved: "Approved", Shared: "Shared", Executed: "Executed" },
   PartnerAgreementStatus: { None: "None", Sent: "Sent", Signed: "Signed" },
+  // Spec-gap enums (SPEC §3.1/§3.10/§4.x)
+  DealFinancingType: { Debt: "Debt", Equity: "Equity", EquityAndDebt: "Equity & Debt" },
+  DealStatus: {
+    Open: "Open", OnHold: "On Hold", Closed: "Closed",
+    ClosedReopened: "Closed & Reopened", ClosedOnHold: "Closed & On Hold", Dropped: "Dropped",
+  },
+  DealMilestone: {
+    TermSheet: "Term Sheet", NonBindingOffer: "Non-binding Offer", LoanAgreement: "Loan Agreement",
+    SpaSha: "SPA / SHA", DueDiligence: "Due Diligence", IC: "IC", TA: "TA", Closed: "Closed",
+  },
+  MaxSellingStake: { Minority: "Minority", Majority: "Majority", FullSale: "Full Sale", NA: "N/A" },
+  TaskSource: {
+    MondayMeeting: "Monday Meeting", WhatsApp: "WhatsApp", Email: "Email", Verbal: "Verbal", Other: "Other",
+  },
+  CommChannel: {
+    WhatsApp: "WhatsApp", Email: "Email", Slack: "Slack", WebChat: "Web chat", Call: "Call", Meeting: "Meeting",
+  },
+  CommDirection: { Inbound: "Inbound", Outbound: "Outbound" },
+  ClientStatus: { Active: "Active", Prospect: "Prospect", Archived: "Archived" },
+  ImpactFlag: { WomenLed: "Women-led", YouthLed: "Youth-led" },
   MilestoneKey: {
     TeaserReview: "Teaser Review", NdaExecuted: "NDA Executed", ExpressionOfInterest: "EOI / LOI",
     DataRoomAccess: "Data Room Access", PreliminaryDD: "Preliminary DD", ICPaperPrepared: "IC Paper",

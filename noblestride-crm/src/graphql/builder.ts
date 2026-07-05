@@ -5,6 +5,12 @@ import { prisma } from "@/lib/db";
 import {
   ActorSource,
   AdvisorType,
+  ClientStatus,
+  CommChannel,
+  CommDirection,
+  DealFinancingType,
+  DealMilestone,
+  DealStatus,
   DealType,
   DisbursementStatus,
   DocStatus,
@@ -15,6 +21,7 @@ import {
   EngagementStatus,
   FounderGender,
   Geography,
+  ImpactFlag,
   Instrument,
   InteractionType,
   InterestLevel,
@@ -24,6 +31,7 @@ import {
   InvestorStatus,
   InvestorType,
   MandateStage,
+  MaxSellingStake,
   NdaType,
   OnboardingStatus,
   PartnerAgreementStatus,
@@ -33,6 +41,7 @@ import {
   Sector,
   ServiceProviderType,
   Source,
+  TaskSource,
   TaskStatus,
   TransactionStage,
 } from "@prisma/client";
@@ -89,3 +98,13 @@ export const DocumentAccessLevelEnum = builder.enumType(DocumentAccessLevel, { n
 export const DocumentStatusEnum = builder.enumType(DocumentStatus, { name: "DocumentStatus" });
 export const PartnerAgreementStatusEnum = builder.enumType(PartnerAgreementStatus, { name: "PartnerAgreementStatus" });
 export const OnboardingStatusEnum = builder.enumType(OnboardingStatus, { name: "OnboardingStatus" });
+// Spec-gap enums (SPEC §3.1/§3.10/§4.x)
+export const DealFinancingTypeEnum = builder.enumType(DealFinancingType, { name: "DealFinancingType" });
+export const DealStatusEnum = builder.enumType(DealStatus, { name: "DealStatus" });
+export const DealMilestoneEnum = builder.enumType(DealMilestone, { name: "DealMilestone" });
+export const MaxSellingStakeEnum = builder.enumType(MaxSellingStake, { name: "MaxSellingStake" });
+export const TaskSourceEnum = builder.enumType(TaskSource, { name: "TaskSource" });
+export const CommChannelEnum = builder.enumType(CommChannel, { name: "CommChannel" });
+export const CommDirectionEnum = builder.enumType(CommDirection, { name: "CommDirection" });
+export const ClientStatusEnum = builder.enumType(ClientStatus, { name: "ClientStatus" });
+export const ImpactFlagEnum = builder.enumType(ImpactFlag, { name: "ImpactFlag" });

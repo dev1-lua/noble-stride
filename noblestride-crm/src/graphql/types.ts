@@ -33,6 +33,14 @@ import {
   InvestorNdaStatusEnum,
   AdvisorTypeEnum,
   PartnerAgreementStatusEnum,
+  DealStatusEnum,
+  DealMilestoneEnum,
+  DealFinancingTypeEnum,
+  MaxSellingStakeEnum,
+  ImpactFlagEnum,
+  ClientStatusEnum,
+  CommChannelEnum,
+  CommDirectionEnum,
 } from "./builder";
 import { daysInStage } from "@/server/domain/metrics";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
@@ -168,6 +176,24 @@ export const ClientRef = builder.prismaObject("Client", {
     existingInvestors: t.exposeString("existingInvestors", { nullable: true }),
     source: t.field({ type: SourceEnum, nullable: true, resolve: (c) => c.source }),
     pitchDeckUrl: t.exposeString("pitchDeckUrl", { nullable: true }),
+    // Spec-gap: company profile fields (spec §3.1/§3.2)
+    codename: t.exposeString("codename", { nullable: true }),
+    registrationNo: t.exposeString("registrationNo", { nullable: true }),
+    hqCountry: t.exposeString("hqCountry", { nullable: true }),
+    businessModel: t.exposeString("businessModel", { nullable: true }),
+    foundersNationality: t.exposeString("foundersNationality", { nullable: true }),
+    ownershipStructure: t.exposeString("ownershipStructure", { nullable: true }),
+    directorsManagement: t.exposeString("directorsManagement", { nullable: true }),
+    targetClients: t.exposeString("targetClients", { nullable: true }),
+    staffCount: t.exposeInt("staffCount", { nullable: true }),
+    branchCount: t.exposeInt("branchCount", { nullable: true }),
+    ebitda: t.float({ nullable: true, resolve: (c) => (c.ebitda == null ? null : Number(c.ebitda)) }),
+    netProfit: t.float({ nullable: true, resolve: (c) => (c.netProfit == null ? null : Number(c.netProfit)) }),
+    existingDebt: t.float({ nullable: true, resolve: (c) => (c.existingDebt == null ? null : Number(c.existingDebt)) }),
+    loanBook: t.float({ nullable: true, resolve: (c) => (c.loanBook == null ? null : Number(c.loanBook)) }),
+    totalAssets: t.float({ nullable: true, resolve: (c) => (c.totalAssets == null ? null : Number(c.totalAssets)) }),
+    impactFlags: t.field({ type: [ImpactFlagEnum], resolve: (c) => c.impactFlags }),
+    status: t.field({ type: ClientStatusEnum, resolve: (c) => c.status }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (c) => c.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (c) => c.updatedAt }),
@@ -175,6 +201,7 @@ export const ClientRef = builder.prismaObject("Client", {
     contacts: t.relation("contacts"),
     mandates: t.relation("mandates"),
     transactions: t.relation("transactions"),
+    activities: t.relation("activities"),
   }),
 });
 
@@ -186,6 +213,7 @@ export const MandateRef = builder.prismaObject("Mandate", {
     name: t.exposeString("name"),
     stage: t.field({ type: MandateStageEnum, resolve: (m) => m.stage }),
     stageEnteredAt: t.field({ type: "DateTime", resolve: (m) => m.stageEnteredAt }),
+    dealStatus: t.field({ type: DealStatusEnum, resolve: (m) => m.dealStatus }),
     // Derived: whole days elapsed in current stage
     daysInStage: t.int({ resolve: (m) => daysInStage(m.stageEnteredAt) }),
     // Money
@@ -239,6 +267,16 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     successFeeAmount: t.float({ nullable: true, resolve: (tx) => (tx.successFeeAmount == null ? null : Number(tx.successFeeAmount)) }),
     successFeeInvoicedDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.successFeeInvoicedDate }),
     successFeePaidDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.successFeePaidDate }),
+    // Spec-gap: deal status/milestone/financing fields (spec §4.1/§4.3/§4.5/§4.7)
+    dealStatus: t.field({ type: DealStatusEnum, resolve: (tx) => tx.dealStatus }),
+    dealMilestone: t.field({ type: DealMilestoneEnum, nullable: true, resolve: (tx) => tx.dealMilestone }),
+    financingType: t.field({ type: DealFinancingTypeEnum, nullable: true, resolve: (tx) => tx.financingType }),
+    maxSellingStake: t.field({ type: MaxSellingStakeEnum, nullable: true, resolve: (tx) => tx.maxSellingStake }),
+    targetProfile: t.exposeString("targetProfile", { nullable: true }),
+    useOfFunds: t.exposeString("useOfFunds", { nullable: true }),
+    vdrLink: t.exposeString("vdrLink", { nullable: true }),
+    probability: t.exposeInt("probability", { nullable: true }),
+    notes: t.exposeString("notes", { nullable: true }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (tx) => tx.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (tx) => tx.updatedAt }),
@@ -246,10 +284,12 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     clientId: t.exposeString("clientId"),
     mandateId: t.exposeString("mandateId", { nullable: true }),
     ownerId: t.exposeString("ownerId", { nullable: true }),
+    assistantId: t.exposeString("assistantId", { nullable: true }),
     // Relations — tasks excluded per brief
     client: t.relation("client"),
     mandate: t.relation("mandate", { nullable: true }),
     owner: t.relation("owner", { nullable: true }),
+    assistant: t.relation("assistant", { nullable: true }),
     engagements: t.relation("engagements"),
     activities: t.relation("activities"),
     serviceProviders: t.relation("serviceProviders"),
@@ -368,17 +408,22 @@ export const ActivityRef = builder.prismaObject("Activity", {
     occurredAt: t.field({ type: "DateTime", resolve: (a) => a.occurredAt }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (a) => a.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (a) => a.createdAt }),
+    // Spec-gap: communication channel/direction (spec §3.10)
+    channel: t.field({ type: CommChannelEnum, nullable: true, resolve: (a) => a.channel }),
+    direction: t.field({ type: CommDirectionEnum, nullable: true, resolve: (a) => a.direction }),
     // FK scalars
     engagementId: t.exposeString("engagementId", { nullable: true }),
     transactionId: t.exposeString("transactionId", { nullable: true }),
     investorId: t.exposeString("investorId", { nullable: true }),
     mandateId: t.exposeString("mandateId", { nullable: true }),
+    clientId: t.exposeString("clientId", { nullable: true }),
     createdById: t.exposeString("createdById", { nullable: true }),
-    // Relations
+    // Relations — tasks excluded per brief
     engagement: t.relation("engagement", { nullable: true }),
     transaction: t.relation("transaction", { nullable: true }),
     investor: t.relation("investor", { nullable: true }),
     mandate: t.relation("mandate", { nullable: true }),
+    client: t.relation("client", { nullable: true }),
     createdBy: t.relation("createdBy", { nullable: true }),
   }),
 });
