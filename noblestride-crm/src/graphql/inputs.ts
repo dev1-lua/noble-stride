@@ -269,3 +269,21 @@ export const EngagementInput = builder.inputType("EngagementInput", {
     notes: t.string({ required: false }),
   }),
 });
+
+// Person (contact) CRUD (spec §3.5). The parent FK trio mirrors the Prisma
+// model; the service enforces "at least one parent" at runtime.
+export const PersonInput = builder.inputType("PersonInput", {
+  fields: (t) => ({
+    firstName: t.string({ required: true }),
+    lastName: t.string({ required: false }),
+    email: t.string({ required: false }),
+    phone: t.string({ required: false }),
+    jobTitle: t.string({ required: false }),
+    linkedinUrl: t.string({ required: false }),
+    isPrimaryContact: t.boolean({ required: false }),
+    isSSAContact: t.boolean({ required: false }),
+    investorId: t.id({ required: false }),
+    clientId: t.id({ required: false }),
+    partnerId: t.id({ required: false }),
+  }),
+});

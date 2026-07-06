@@ -6,7 +6,7 @@ import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
@@ -16,6 +16,7 @@ import { createPartner, updatePartner, deletePartner } from "@/server/services/p
 import { createServiceProvider, updateServiceProvider, deleteServiceProvider } from "@/server/services/service-providers";
 import { createDocument, updateDocument, deleteDocument } from "@/server/services/documents";
 import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
+import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -239,5 +240,22 @@ builder.mutationFields((t) => ({
     type: "Task", nullable: false,
     args: { id: t.arg.id({ required: true }) },
     resolve: (_q, _r, args) => deleteTask(args.id),
+  }),
+
+  // ── Person (contacts, spec §3.5) ──
+  createPerson: t.prismaField({
+    type: "Person", nullable: false,
+    args: { input: t.arg({ type: PersonInput, required: true }) },
+    resolve: (_q, _r, args) => createPerson(args.input as never),
+  }),
+  updatePerson: t.prismaField({
+    type: "Person", nullable: false,
+    args: { id: t.arg.id({ required: true }), input: t.arg({ type: PersonInput, required: true }) },
+    resolve: (_q, _r, args) => updatePerson(args.id, args.input as never),
+  }),
+  deletePerson: t.prismaField({
+    type: "Person", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args) => deletePerson(args.id),
   }),
 }));
