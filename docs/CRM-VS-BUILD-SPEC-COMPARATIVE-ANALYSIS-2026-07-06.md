@@ -1,34 +1,50 @@
 # NobleStride CRM vs Build Specification — Full Comparative Analysis
 
-**Date:** 2026-07-06
+**Date:** 2026-07-06 · **Updated:** 2026-07-06 (post-implementation — see banner below)
 **Spec compared:** `decrypted/Lua x Noblestride - Build Specification (INTERNAL).pdf` — v2.0, 1 June 2026, 29 pages, read end-to-end (identical content to `docs/SOW.md`). Every table in the PDF is covered below: the entity catalogue (§2), all 11 data-dictionary tables (§3.1–3.11), all 16 picklists (§4.1–4.16), the sector taxonomy (§5), the milestone framework (§6, 3 tables), the access matrix (§7.2), the 4 agent specs (§8), the WhatsApp mapping (§9), intake + qualification (§10.1/10.2), the visibility matrix (§11), guardrails/escalation (§12), dashboards (§13), integrations (§14) and deliverables (§15).
-**Build compared:** `noblestride-crm/` on branch `feat/InvestorOnboarding` (HEAD `3f5c145`). All claims verified against code with `file:line` evidence via four parallel audits (data model & picklists · UI & dashboards · access & visibility · agents & integrations), spot-checked against `prisma/schema.prisma` directly.
+**Build compared:** `noblestride-crm/` on branch `feat/InvestorOnboarding`. Originally audited at HEAD `3f5c145`; **statuses below now reflect HEAD `f3419a0`** after the spec-gap implementation pass (commits `ae1f53e`..`f3419a0`). All claims verified against code with `file:line` evidence via four parallel audits (data model & picklists · UI & dashboards · access & visibility · agents & integrations), spot-checked against `prisma/schema.prisma` directly.
 **Supersedes** `docs/CRM-COMPARATIVE-ANALYSIS-2026-07-03.md` for spec-vs-build status (that doc's three-way concept-note comparison remains valid).
 
 **Legend:** ✅ DONE · 🟡 PARTIAL (halfway — data or UI exists but incomplete/mismatched) · ❌ MISSING · ➖ Not committed scope (optional add-on per spec)
 
 ---
 
+> ## ✳️ Implementation log — 2026-07-06 spec-gap pass (commits `ae1f53e`..`f3419a0`)
+>
+> After the initial audit, the spec-explicit gaps that needed **no client sign-off** were closed via subagent-driven development (Sonnet implemented, Opus reviewed each task, Fable did the final whole-branch review). Verification: `tsc` clean · **363/363** tests · zero new lint · clean production build · all CRM routes render live. What changed, and where it moved the needle below:
+>
+> 1. **Schema foundation** (`ae1f53e`) — 9 new enums with exact spec values (Deal type `Debt/Equity/EquityAndDebt`, Deal status, Deal milestone, Max selling stake, Task source, Comm channel/direction, Client status, Impact flags); enum extensions (Instrument `+Hybrid`, Sector `+Energy`, TaskStatus `+Dropped`, the missing §4.6 origination sources); 17 new Company fields; new Transaction/Task/Activity fields; and an append-only `StageChange` audit model. → moved **§3.1, §3.2, §4.1/4.2/4.3/4.5/4.6/4.7/4.11/4.12, §5**.
+> 2. **Stage-history audit rows** (`1713507`, §7.1) — every mandate/transaction/engagement stage & status change now records from→to + timestamp + actor, shown on detail pages. → moved **§7.1, §13 (deal-stage history data)**.
+> 3. **Task CRUD + overdue escalation** (`6b91929`, `0bf2329`, §3.8/§12.2) — full create/edit/delete, source picklist, `Dropped` status, assistant, and an auto overdue flag that self-clears. → moved **§2 (Task), §3.8, §4.11/4.12, §12.2, §13 (team & tasks)**.
+> 4. **Company/Deal/Investor/Partner field exposure** (`0afc483`) — the new fields surfaced in form drawers + detail pages (codename, EBITDA/debt/assets, impact flags, use of funds, VDR link, deal status/milestone/type, probability, assistant, etc.). → moved **§3.1, §3.2, §3.4, §3.6**.
+> 5. **Service Provider UI** (`121c66b`, §3.7) — list, form drawer, sidebar nav, and a transaction-detail card (backend existed with zero UI). → moved **§2 (Service Provider), §3.7**.
+> 6. **Communication logging generalized** (`f1db74c`, §3.10) — `logActivity` logs against **any** linked record (client/mandate/transaction/investor/engagement, at-least-one enforced server-side), adds channel + direction, sets `createdById` from the trusted actor, and an Activity↔Task relation; client-detail timeline added. → moved **§2 (Communication), §3.10**.
+> 7. **Dashboard groupings** (`f3419a0`, §13) — pipeline by lead/sector/financing-type/ticket-band, disbursement by year/quarter, team workload, task-status-by-owner, overdue actions, deals-rejected. → moved **§13**.
+>
+> **Still out of scope for this pass (unchanged below):** the 4 Lua agents (§8), WhatsApp/email/Slack/SharePoint integrations (§14), the §10 *company* intake+qualification form, real authentication + enforced in-org RBAC (§7.2), file upload/storage (§3.9), and items flagged for client confirmation in `memory/client-meeting-questions.md` (§16).
+
+---
+
 ## 0. Executive summary — scorecard by spec section
 
-| Spec section | Verdict | One-line status |
+| Spec section | Verdict | One-line status (post-implementation) |
 |---|---|---|
-| §2 Entity catalogue (11 entities) | 🟡 | 9 of 11 built as models (Advisory ➖ optional; Communication substituted by a narrower `Activity`) |
-| §3 Data dictionary | 🟡 | Investor-Deal Engagement (§3.11) is a near-exact match; Investor (§3.4) strong; Company (§3.1) and Deal (§3.2) have large field gaps; Task read-only |
-| §4 Picklists (16 lists) | 🟡 | 5 exact matches, 6 partial, 5 missing — Deal type/status/milestone vocabularies are the big misses |
-| §5 Sector taxonomy | 🟡 | 15/18 top-level sectors exact; Energy narrowed, "Retail &" dropped, extra `Banking`; **sub-sectors entirely absent** |
-| §6 Milestones | 🟡 | All 14 investor-side milestones encoded + portal steppers; but milestone rows are backfill-only (no write path), doc-prep conditionality label-only, post-transaction monitoring absent |
-| §7 Audit / access control | ❌ | **Largest gap.** No audit trail, no stage history, no field immutability, RBAC display-only, auth is a demo cookie lens |
-| §8 Four agents | ❌ | 0 of 4 built; `ai.ts` holds read-only heuristic stubs with `SEAM` comments |
-| §9 WhatsApp integration | ❌ | Nothing beyond a manual "WhatsApp" source tag |
-| §10 Website intake & qualification | ❌ | `/register` is **investor** self-registration; the spec's **company** intake form + qualification rules don't exist |
-| §11 Investor deal visibility | ✅/🟡 | **Best-covered deliverable.** Visibility engine implements the matrix, hard rules and classification blocking with 200+ tests; investor-facing filter UI (§11.1) missing |
-| §12 Guardrails / escalation | 🟡/❌ | Structural guards exist where features exist (NDA guard, onboarding gate); **all §12.2 escalation triggers missing** |
-| §13 Dashboards (7 views) | 🟡 | Disbursement + referrals strong; pipeline groupings, stage history, team-workload and year/quarter views missing |
-| §14 Integrations | ❌ | 0/5 (WhatsApp, Outlook, Slack, website, SharePoint/file storage) |
-| §15 Deliverables | 🟡 | CRM + visibility delivered; agents/integrations/intake not started; RBAC/DPA config missing |
+| §2 Entity catalogue (11 entities) | 🟡→✅ | 10 of 11 now full CRM entities (Task + Service Provider gained UI); Advisory ➖ optional; Communication (`Activity`) now carries channel/direction/client-link |
+| §3 Data dictionary | 🟡→✅ mostly | Engagement (§3.11) near-exact; Investor (§3.4) strong; **Company (§3.1) and Deal (§3.2) field gaps largely closed**; Task (§3.8) now full CRUD; residual gaps are sub-sector, contact CRUD, file upload |
+| §4 Picklists (16 lists) | 🟡→✅ mostly | Now **11 exact/complete** (Deal type/status/milestone/max-stake/task-source added, Instrument+Hybrid, TaskStatus+Dropped); Deal stage (§4.4) + deployment status (§4.13) deferred to client (vocabulary questions) |
+| §5 Sector taxonomy | 🟡 | 16/18 top-level now exact (Energy added, "Retail & FMCG" label fixed); extra `Banking` + sub-sectors still open (client questions 9, sub-sector depth) |
+| §6 Milestones | 🟡 | Unchanged: 14 investor-side milestones encoded + portal steppers; milestone rows still backfill-only, post-transaction monitoring absent |
+| §7 Audit / access control | 🟡 | **Stage/status history (§7.1) now built** (append-only, timestamped, attributed on mandate/transaction/engagement); core-identifier immutability, enforced RBAC and real auth still ❌ |
+| §8 Four agents | ❌ | Unchanged: 0 of 4 built; `ai.ts` holds read-only heuristic stubs |
+| §9 WhatsApp integration | ❌ | Unchanged: nothing beyond a manual source tag (Comm channel field now exists to receive it later) |
+| §10 Website intake & qualification | ❌ | Unchanged: `/register` is investor self-registration; the company intake form + qualification rules don't exist |
+| §11 Investor deal visibility | ✅/🟡 | Unchanged (best-covered deliverable); investor-facing filter UI (§11.1) still missing; impact filter now unblocked at data layer (impact flags added) |
+| §12 Guardrails / escalation | 🟡 | §12.1 structural guards intact; **§12.2 overdue-task escalation now built**; deal-status-change notifications and request/review workflows still ❌ |
+| §13 Dashboards (7 views) | 🟡→✅ mostly | **Pipeline groupings, disbursement year/quarter, team-workload, task-status-by-owner, overdue, deals-rejected all built**; stage-history roll-up view and historical engagement summary still open |
+| §14 Integrations | ❌ | Unchanged: 0/5 (WhatsApp, Outlook, Slack, website, SharePoint/file storage) |
+| §15 Deliverables | 🟡→✅ mostly | CRM, visibility, dashboards, access-audit slice delivered; agents/integrations/intake and full DPA/RBAC config not started |
 
-**The shape of the gap:** the *data core* (entities, engagement pipeline, visibility) is genuinely strong — several picklists match the spec character-for-character. The shortfall concentrates in (a) **vocabularies** the spec fixed but the build re-themed (deal type/stage/status), (b) **field completeness** on Company and Deal, (c) **operational plumbing** (tasks CRUD, escalation, audit trail, dashboards groupings), and (d) **everything channel-facing** (agents, WhatsApp, email, website intake, files).
+**The shape of the gap now:** the *data core* is strong and the **spec's controlled vocabularies and Company/Deal field completeness — the biggest pre-implementation misses — are now largely closed**, along with an audit trail for stage changes, full Task management, generalized communication logging, Service Provider UI, and the missing dashboard groupings. What remains concentrates in (a) **everything channel-facing** (agents, WhatsApp, email, website intake, file storage — §8/§9/§10/§14), (b) **enforcement** (real auth + in-org RBAC + core-identifier immutability — §7.2/§7.1), and (c) a handful of **client-decision** items (deal-stage vocabulary, deployment-status vocabulary, sub-sector depth, Advisory scope — see §16).
 
 ---
 
@@ -36,15 +52,15 @@
 
 | # | Component | Status | Evidence / notes |
 |---|---|---|---|
-| 1 | CRM & Deal Management | 🟡 | 11-entity Prisma schema + CRUD UI for most entities; audit trails missing (see §7) |
+| 1 | CRM & Deal Management | 🟡→✅ | 11-entity Prisma schema + CRUD UI for all core entities (Task + Service Provider UI added this pass); stage-change audit trail added; core-identifier immutability + RBAC still pending (§7) |
 | 2 | Client Agent | ❌ | Not built (`src/server/services/ai.ts` has no client-correspondence logic) |
 | 3 | Investor Agent | ❌ | Not built; only heuristic `aiMatchInvestors` (ai.ts:16–54) overlaps its "surface fits" duty |
-| 4 | Investor Tracker Agent | 🟡 | The *data + guard layer* it would drive exists (Engagement stages, NDA guard, disbursement); no agent, no scheduled checks, no stall flags |
+| 4 | Investor Tracker Agent | 🟡 | The *data + guard layer* it would drive exists (Engagement stages, NDA guard, disbursement, now stage history + overdue flags); no agent, no scheduled checks |
 | 5 | Referral / Partner Tracking Agent | 🟡 | Manual equivalent: partner portal referral form creates real Mandates (`submit-referral.ts:39-92`); no agent/channel capture |
-| 6 | WhatsApp Integration | ❌ | No webhook/API client anywhere (grep: 2 hits, both picklist labels) |
+| 6 | WhatsApp Integration | ❌ | No webhook/API client anywhere (Comm channel field now present to receive it later) |
 | 7 | Website Intake & Qualification Agent | ❌ | Company intake + qualification logic absent; `/register` serves investors instead |
 | 8 | Investor Deal Visibility | ✅ | `src/server/visibility/` — tiers, field matrix, codenames, NDA-gated VDR docs, classification blocking |
-| 9 | Reporting & Dashboards | 🟡 | See §13 breakdown |
+| 9 | Reporting & Dashboards | 🟡→✅ mostly | See §13 breakdown — pipeline/disbursement/team-task groupings now built |
 
 ---
 
@@ -52,203 +68,156 @@
 
 | Spec entity | Built as | Status | Notes |
 |---|---|---|---|
-| Company / Target | `Client` | 🟡 | Central-anchor role holds (mandates/transactions/tasks/documents link back); many fields missing (§3.1) |
-| Deal / Mandate | `Mandate` **+** `Transaction` | 🟡 | Spec's one entity split into client-acquisition + fundraising-execution pipelines; stage/status vocab diverges (§4.4/§4.5) |
+| Company / Target | `Client` | 🟡→✅ | Central-anchor role holds; **most §3.1 fields now added and editable** (residual: sub-sector, contact CRUD) |
+| Deal / Mandate | `Mandate` **+** `Transaction` | 🟡 | Spec's one entity split into client-acquisition + fundraising-execution pipelines; **deal type/status/milestone fields now added**; kanban stage vocab still diverges (§4.4 — client question 7) |
 | Advisory Engagement | — | ➖ | Optional add-on, correctly not built pending discovery (spec §3.3, §19.2) |
-| Investor | `Investor` | ✅ | Fullest entity; onboarding + NDA fields added on this branch |
-| Investor Contact | `Person` | 🟡 | Model complete (flags incl. SSA/primary); **no create/edit UI anywhere** |
-| Referral / Partner | `Partner` | ✅ | Fee-sharing, advisor type, agreement status, internal-only default true |
-| Service Provider | `ServiceProvider` | 🟡 | Model + GraphQL mutations complete; **zero UI surface, no nav entry** |
-| Task | `Task` | 🟡 | Model exists, 387 real rows imported; **entirely read-only** (no schema/input/mutation/drawer), fields missing |
-| Document | `Document` | 🟡 | Register + access levels + review chain; File = optional URL, no upload |
-| Communication | `Activity` | 🟡 | Timeline log exists; no channel/direction fields, no client link, write path requires Transaction+Investor pair |
+| Investor | `Investor` | ✅ | Fullest entity; onboarding + NDA fields; nextActionDate/feedback/shareholding now exposed |
+| Investor Contact | `Person` | 🟡 | Model complete (SSA/primary flags); **still no create/edit UI** |
+| Referral / Partner | `Partner` | ✅ | Fee-sharing, advisor type, agreement status, internal-only; organization/email/phone now in the drawer |
+| Service Provider | `ServiceProvider` | 🟡→✅ | **UI added this pass** — list page, form drawer, sidebar nav, transaction-detail card (transaction linking read-only) |
+| Task | `Task` | 🟡→✅ | **Full CRUD added** — create/edit/delete, source, `Dropped` status, assistant, auto overdue escalation |
+| Document | `Document` | 🟡 | Register + access levels + review chain; File still an optional URL, no upload (§3.9) |
+| Communication | `Activity` | 🟡→✅ mostly | **Channel + direction + client link added; generalized `logActivity`** logs against any linked record; WhatsApp/Slack *ingestion* is still the §9 integration gap |
 | Investor-Deal Engagement | `Engagement` | ✅ | Near-exact §3.11 match incl. derived year/quarter and amount-pending |
 
-**Relationship rules (§2.1):** deal→company anchoring ✅ (required `clientId` on both pipelines); one-deal-one-communication-universe 🟡 (Activity can't link to Client at all); investor-deal links via Engagement ✅; company holding both deal types ➖ (no advisory); partner internal-only ✅ (`internalOnly @default(true)`, never projected to investors).
+**Relationship rules (§2.1):** deal→company anchoring ✅; one-deal-one-communication-universe ✅ (Activity can now link to Client); investor-deal links via Engagement ✅; company holding both deal types ➖ (no advisory); partner internal-only ✅ (never projected to investors).
 
 ---
 
 ## 3. Data dictionary (§3.1–§3.11) — field-by-field
 
-### 3.1 Company / Target → `Client` (schema.prisma:462–490) — weakest entity
+### 3.1 Company / Target → `Client` — was weakest entity, now largely complete
 
 | Spec field (Req) | Status | Notes |
 |---|---|---|
 | Company ID (Y) | ✅ | cuid |
-| **Project codename (Y)** | ❌ | Single `name` field serves both codename and legal name — spec keeps them separate for confidentiality; the visibility engine generates display codenames on the fly (`visibility/codename.ts`) but nothing is stored |
-| Legal name (Y) | 🟡 | `name` (required in zod) but not distinct from codename |
-| Registration no. | ❌ | No field |
+| **Project codename (Y)** | ✅ | `codename` added — now stored separately from legal name (`ae1f53e`, exposed `0afc483`) |
+| Legal name (Y) | ✅ | `name` (required), now distinct from codename |
+| Registration no. | ✅ | `registrationNo` added |
 | Year founded | ✅ | `yearFounded` |
-| **HQ city / country (Y)** | 🟡 | `hqCity` only — no country; optional |
-| Countries of operations | 🟡 | `countries Geography[]` — regional buckets (EastAfrica…), not countries |
-| **Sector (Y)** | 🟡 | Multi-select array vs spec single-select; optional |
-| Sub-sector | ❌ | No taxonomy anywhere (see §5) |
+| **HQ city / country (Y)** | ✅ | `hqCity` + `hqCountry` added |
+| Countries of operations | 🟡 | `countries Geography[]` — regional buckets (client question 8) |
+| **Sector (Y)** | 🟡 | Multi-select array vs spec single-select (client question 11); optional |
+| Sub-sector | ❌ | No taxonomy anywhere (client question — sub-sector depth) |
 | **Core product / service (Y)** | 🟡 | Present, optional |
 | **Description (Y)** | 🟡 | Present, optional |
-| Business model | ❌ | No field |
+| Business model | ✅ | `businessModel` added |
 | Founders, gender | 🟡 | Single-select `FounderGender` enum vs spec multi |
-| Founders, nationality | ❌ | Only free-text `founders` (names) |
-| Ownership / shareholding | ❌ | No field |
-| Directors / management | ❌ | No field |
-| Target clients | ❌ | No field |
-| Years of operation | ❌ | Not stored or derived |
-| Staff / branches | ❌ | No field |
+| Founders, nationality | ✅ | `foundersNationality` added |
+| Ownership / shareholding | ✅ | `ownershipStructure` added |
+| Directors / management | ✅ | `directorsManagement` added |
+| Target clients | ✅ | `targetClients` added |
+| Years of operation | ❌ | Not stored or derived (not in the added-field set) |
 | Last year revenue (USD) | ✅ | `revenueLastYear` |
 | Revenue forecast (USD) | ✅ | `revenueForecast` |
-| EBITDA / net profit | ❌ | Only `profitable Boolean?` |
-| Profitability | 🟡 | Boolean vs spec picklist |
-| Existing debt | ❌ | No field |
-| Loan book (FIs) | ❌ | No field |
-| Total assets | ❌ | No field |
-| **Primary contact (Y)** | 🟡 | Modeled as `Person.isPrimaryContact` flag; **no UI to create/edit client contacts** |
+| EBITDA / net profit | ✅ | `ebitda` + `netProfit` added |
+| Profitability | 🟡 | Boolean `profitable` vs spec picklist |
+| Existing debt | ✅ | `existingDebt` added |
+| Loan book (FIs) | ✅ | `loanBook` added |
+| Total assets | ✅ | `totalAssets` added |
+| **Primary contact (Y)** | 🟡 | `Person.isPrimaryContact` flag; **still no UI to create/edit client contacts** |
 | Website / social | 🟡 | Website only |
-| **Origination source (Y)** | 🟡 | `source Source?` optional; value-set mismatch (§4.6) |
-| Impact flags (women-led / youth-led) | ❌ | Absent — this also blocks the §11.1 impact filter |
-| **Status (Y)** | ❌ | No Active/Prospect/Archived field at all |
+| **Origination source (Y)** | 🟡 | `source Source?` optional; value set now complete (§4.6) |
+| Impact flags (women-led / youth-led) | ✅ | `impactFlags ImpactFlag[]` added (also unblocks the §11.1 impact filter) |
+| **Status (Y)** | ✅ | `status ClientStatus @default(Prospect)` added + list column |
 
-**Count: 5 ✅ · 10 🟡 · 16 ❌ of 31 fields.**
+**Count moved from 5 ✅ / 10 🟡 / 16 ❌ → ~15 ✅ / ~10 🟡 / ~2 ❌ (sub-sector, years-of-operation).**
 
-### 3.2 Deal / Mandate → `Mandate` (496–531) + `Transaction` (537–572)
+### 3.2 Deal / Mandate → `Mandate` + `Transaction`
 
 | Spec field (Req) | Status | Notes |
 |---|---|---|
 | Deal ID (Y) | ✅ | cuid on both |
 | Project (Y) | ✅ | `name` |
 | Company (Y) | ✅ | Required `clientId` on both |
-| **Deal type (Y)** — Debt/Equity/Equity & Debt | ❌ | `DealType` enum was **repurposed** to round names (SeriesA/SeriesB/Growth/Expansion/AcquisitionFinance, schema:145-151); spec's 3 values absent; nothing on Mandate |
-| Instrument | 🟡 | `Instrument[]` on Transaction (multi vs single); `Convertible` replaces spec's `Hybrid` |
-| Target profile | ❌ | No field |
-| Max selling stake (§4.7) | ❌ | No field/enum |
+| **Deal type (Y)** — Debt/Equity/Equity & Debt | ✅ | New `financingType DealFinancingType` (exact 3 values), labeled "Deal type"; the legacy round-name `DealType` enum relabeled "Round" |
+| Instrument | ✅ | `Instrument[]` now includes `Hybrid` (all spec values present; still multi-select + extra `Convertible`) |
+| Target profile | ✅ | `targetProfile` added |
+| Max selling stake (§4.7) | ✅ | `maxSellingStake MaxSellingStake` added |
 | **Ticket size USD Mn (Y)** | 🟡 | `Mandate.dealSize` / `Transaction.targetRaise`, both optional |
-| Use of funds | ❌ | No field |
+| Use of funds | ✅ | `useOfFunds` added |
 | **Sector (Y, inherited)** | 🟡 | Multi array, optional, no inherit-from-company logic |
-| **Status (Y)** — Open/On Hold/Closed/Dropped/Closed & Reopened/Closed & On Hold | ❌ | No status field distinct from stage on either model |
-| **Deal stage (Y)** (§4.4) | 🟡 | `MandateStage`/`TransactionStage` are generic sales stages; only DD/Term Sheet/Closed overlap spec's document-driven list |
-| Deal milestone (§4.3) | ❌ | No deal-level milestone field (`MilestoneKey` is the investor-engagement cycle) |
+| **Status (Y)** — Open/On Hold/Closed/Dropped/… | ✅ | New `dealStatus DealStatus` (exact §4.5 values) on Mandate + Transaction |
+| **Deal stage (Y)** (§4.4) | 🟡 | Kanban `MandateStage`/`TransactionStage` still generic (client question 7) |
+| Deal milestone (§4.3) | ✅ | New `dealMilestone DealMilestone` (exact §4.3 values) on Transaction |
 | **Deal lead (Y)** | 🟡 | `Mandate.leadId` / `Transaction.ownerId`, optional |
-| Deal assistant | ❌ | No field |
+| Deal assistant | ✅ | `assistantId` added on Transaction (Mandate uses lead only) |
 | Consultant / referrer | 🟡 | `Mandate.referredById → Partner` ✅; absent on Transaction |
-| **Date onboarded (Y, immutable)** | 🟡 | `dateOpened` optional; no immutability enforcement |
+| **Date onboarded (Y, immutable)** | 🟡 | `dateOpened` optional; immutability still not enforced (stage-status changes now audited, but not this field) |
 | **Source (Y)** | 🟡 | Mandate only, optional |
-| Teaser / IM / Model (Not started/Draft/Done) | 🟡 | No stored tri-state; derived live from the Document register (deal-prep checklist, milestones.ts:89-95) — a reasonable substitute but not the spec picklists |
-| VDR (link) | ❌ | Only `DocumentAccessLevel.VDR` on individual docs |
-| Probability of closure | ❌ | Deal-level absent (exists per-investor on Engagement) |
-| Comments | 🟡 | `Mandate.notes`; nothing on Transaction |
+| Teaser / IM / Model (Not started/Draft/Done) | 🟡 | Derived live from the Document register (deal-prep checklist) — reasonable substitute (client question 13) |
+| VDR (link) | ✅ | `vdrLink` added (rendered as a link on detail) |
+| Probability of closure | ✅ | `probability` added at deal level on Transaction (also still per-investor on Engagement) |
+| Comments | ✅ | `Mandate.notes` + `Transaction.notes` (added) |
 
-### 3.3 Advisory Engagement — ➖ entirely unbuilt, **correctly**: spec marks it optional, not committed PoC scope (§3.3, §17 item 1, §19.2). All 12 fields + picklists §4.8/§4.9 pending client confirmation.
+### 3.3 Advisory Engagement — ➖ entirely unbuilt, **correctly** (spec optional; §17 item 1, §19.2). Client question 14.
 
-### 3.4 Investor → `Investor` (391–456) — strong
-
-| Spec field (Req) | Status | Notes |
-|---|---|---|
-| Investor ID (Y) | ✅ | |
-| Firm / fund name (Y) | ✅ | Required |
-| **Institution type (Y)** | 🟡 | All 7 spec values present (DebtProvider≈Lender) + 3 extras (Angel, CorporateVC, GrantDonor) |
-| Website | ✅ | |
-| **Sector focus (Y)** | 🟡 | Present; required only in registration flow, optional in admin path |
-| **Geographic focus (Y)** | 🟡 | Present, optional; regional buckets |
-| Country restrictions | ✅ | |
-| **Ticket min/max (Y)** | 🟡 | Present, optional |
-| **Instruments (Y)** | 🟡 | Present, optional; Hybrid missing |
-| **Deployment status (Y)** (§4.13) | 🟡 | Vocabulary reworked to fund lifecycle (ActivelyDeploying/Fundraising/FinalClose/FullyDeployed/Dormant) — spec's "Not deploying"/"On hold" absent |
-| Investment mandate | ✅ | |
-| Stage preference | 🟡 | Multi `investmentStages[]` vs single picklist |
-| Target return / IRR | 🟡 | `Float` vs spec Text |
-| Shareholding preference | 🟡 | Free text vs Minority/Majority picklist |
-| Min EBITDA / revenue / loan-book | ✅ | Three distinct currency fields (superset) |
-| Pricing preference | ✅ | |
-| ESG / impact focus | ✅ | |
-| Current fund size / deployable | ✅ | `aum` |
-| Remaining investment period | ✅ | |
-| DD requirements / timeline | ✅ | |
-| IC / approval process | ✅ | |
-| Track record | ✅ | Superset: + notableInvestments, portfolioComposition, caseStudies |
-| **NDA status (Y)** | 🟡 | `InvestorNdaStatus{None,OpenNDA,ClosedNDA}` exact values; field defaulted, not required-at-entry |
-| **Engagement classification (Y)** | 🟡 | Exact §4.14 values; drives visibility ✅ |
-| Next action date | 🟡 | Schema + GraphQL only — **no UI to set it** |
-| Feedback | 🟡 | Same — data layer only |
-| SSA-region contact | 🟡 | Same — data layer only |
-
-### 3.5 Investor Contact → `Person` (359–385)
+### 3.4 Investor → `Investor` — strong (unchanged except UI exposure)
 
 | Spec field (Req) | Status | Notes |
 |---|---|---|
-| Contact ID (Y) | ✅ | |
-| Investor lookup (Y) | ✅ | Nullable FK (Person shared across Client/Investor/Partner) |
-| Name (Y) | 🟡 | first/last split |
-| Role | 🟡 | `jobTitle` |
-| **Email (Y)** | 🟡 | Nullable; corporate-email (no Gmail/Yahoo) check ✅ implemented in registration (`src/lib/corporate-email.ts`) — the spec's §3.5 note |
-| **Phone (Y)** | 🟡 | Nullable; OTP use is demo-only (static `000000`) |
-| Primary contact | ✅ | `isPrimaryContact` |
-| SSA contact | ✅ | `isSSAContact` |
-| **CRUD** | ❌ | No person form drawer, no create/update mutation call sites — contacts render read-only everywhere; only self-registration and the investor Fund Profile page write them |
+| Investor ID / Firm name (Y) | ✅ | |
+| **Institution type (Y)** | 🟡 | All 7 spec values present + 3 extras (Angel, CorporateVC, GrantDonor) |
+| Website / Country restrictions | ✅ | |
+| **Sector / Geographic focus (Y)** | 🟡 | Present; required only in registration, optional in admin path; regional buckets |
+| **Ticket min/max, Instruments (Y)** | 🟡 | Present, optional; Hybrid now available as an instrument value |
+| **Deployment status (Y)** (§4.13) | 🟡 | Vocabulary reworked to fund lifecycle — spec's exact 3 values not present (client question 10) |
+| Investment mandate / Stage pref / IRR / Shareholding / Pricing / ESG / AUM / Remaining period / DD / IC / Track record | ✅/🟡 | Mostly ✅ (several superset fields); stage-pref multi vs single, IRR numeric vs text, shareholding free-text |
+| Min EBITDA / revenue / loan-book | ✅ | Three distinct currency fields |
+| **NDA status (Y)** / **Engagement classification (Y)** | 🟡 | Exact enum values; defaulted, not required-at-entry; classification drives visibility ✅ |
+| Next action date / Feedback / SSA-region contact | 🟡→✅ | **nextActionDate + feedback now exposed in the drawer** (`0afc483`); SSA-region contact still data-layer-only |
 
-### 3.6 Referral / Partner → `Partner` (641–669)
+### 3.5 Investor Contact → `Person` (unchanged)
 
-| Spec field (Req) | Status | Notes |
-|---|---|---|
-| Partner ID (Y) | ✅ | |
-| Name (Y) | ✅ | Required |
-| Advisor type | ✅ | Exact 6-value enum match |
-| Organization | 🟡 | In schema, **not in the form drawer** |
-| **Email (Y) / Phone (Y)** | 🟡 | In schema, optional, **not in the form drawer** |
-| Fee-sharing agreement + terms | ✅ | Boolean + conditional long-text, in drawer |
-| NDA / partner agreement | ✅ | `PartnerAgreementStatus{None,Sent,Signed}` exact |
-| Deals introduced (multi) | 🟡 | Only settable from the Mandate side (`referredById`); referral-form contact info lands as free text in `Mandate.notes` |
-| Internal-only (Y, default true) | ✅ | `@default(true)`; never projected to investors |
-| Status | 🟡 | Extra `Preferred` value |
+Model complete (first/last name, jobTitle, email/phone nullable, isPrimaryContact/isSSAContact, corporate-email check in registration). **Still no general create/edit UI** for Client/Investor/Partner contacts — 🟡. Remains a §16 item.
 
-### 3.7 Service Provider → `ServiceProvider` (732–750)
+### 3.6 Referral / Partner → `Partner`
 
-All 9 fields ✅ at data layer (type enum exact 6-value match; status is free text vs picklist 🟡). **But: no UI page, no form drawer, no sidebar entry — mutations exist with zero call sites.** Effectively invisible to users. ❌ on UI.
+All spec fields at data layer; advisor type / fee-sharing / agreement status / internal-only exact. **Organization + email + phone now added to the form drawer** (`0afc483`) — was 🟡, now ✅. Deals-introduced still settable only from the Mandate side (🟡); extra `Preferred` status value.
 
-### 3.8 Task → `Task` (704–726) — biggest small-entity gap
+### 3.7 Service Provider → `ServiceProvider`
+
+All 9 fields ✅ at data layer (type enum exact; status free-text 🟡). **UI added this pass** (`121c66b`): list page, form drawer, sidebar nav, transaction-detail card — was ❌ on UI, now ✅. Transaction↔provider linking is read-only (TransactionInput has no connect/disconnect — noted follow-up).
+
+### 3.8 Task → `Task` — was biggest small-entity gap, now full CRUD
 
 | Spec field (Req) | Status | Notes |
 |---|---|---|
 | Task ID (Y) | ✅ | |
 | **Linked record (Y)** | 🟡 | 4 optional FKs (mandate/transaction/investor/client); unlinked tasks possible |
 | **Action point (Y)** | ✅ | `title` |
-| **Source (Y)** (§4.12) | ❌ | No field at all |
-| **Status (Y)** | 🟡 | `Dropped` missing from enum |
+| **Source (Y)** (§4.12) | ✅ | `source TaskSource` added + in form |
+| **Status (Y)** | ✅ | `Dropped` added — all 5 §4.11 values |
 | Deadline | ✅ | `dueAt` |
-| **Owner (Y)** | 🟡 | `assigneeId` optional |
-| Assistant | ❌ | No field |
+| **Owner (Y)** | 🟡 | `assigneeId` optional but now editable |
+| Assistant | ✅ | `assistantId` added |
 | Notes | ✅ | `body` |
-| **Escalation flag (Auto)** | ❌ | No field; zero overdue/escalation logic in the codebase |
-| **CRUD** | ❌ | No zod schema, no GraphQL input/mutation, no drawer — tasks exist only via import/seed; `/tasks` page is a read-only table |
+| **Escalation flag (Auto)** | ✅ | `escalated` + `flagOverdueTasks()` sweep (auto-set on overdue, auto-clears when Done/rescheduled; not caller-writable) |
+| **CRUD** | ✅ | Full create/edit/delete via `tasks.ts` service + drawer + mutations (`6b91929`, `0bf2329`) |
 
-### 3.9 Document → `Document` (757–788)
+### 3.9 Document → `Document` (unchanged)
 
-| Spec field (Req) | Status | Notes |
-|---|---|---|
-| Document ID (Y) | ✅ | |
-| **Linked record (Y)** | 🟡 | transaction/client/investor optional FKs; **no Mandate link**; none required |
-| **Type (Y)** | ✅ | All 14 spec values + `BusinessPlan` extra |
-| Version | ✅ | |
-| **Access level (Y)** | ✅ | Exact §4.16 enum; enforced by the visibility engine for external roles |
-| Status | ✅ | Exact 5-value enum; + review chain (reviewer → approver → client review) beyond spec |
-| **File (Y)** | 🟡 | Optional `fileUrl` text — **no upload/storage anywhere** (`<TextField label="File URL">`, document-form-drawer.tsx:66) |
-| Uploaded by / date (Y, Auto) | 🟡 | Fields exist; uploader not auto-populated (no auth identity) |
+All fields present except **File is still an optional `fileUrl` text — no upload/storage** (🟡, §16 remaining). Access level exact + enforced by the visibility engine; type superset; review chain beyond spec. Linked-record has no Mandate FK (🟡).
 
-### 3.10 Communication → `Activity` (675–698)
+### 3.10 Communication → `Activity` — generalized this pass
 
 | Spec field (Req) | Status | Notes |
 |---|---|---|
 | Comm ID (Y) | ✅ | |
-| **Channel (Y)** — WhatsApp/Email/Slack/Web chat/Call/Meeting | ❌ | `InteractionType` conflates channel with engagement-event type; WhatsApp/Slack/Web chat absent |
-| **Linked record (Y)** | 🟡 | engagement/transaction/investor/mandate FKs; **no clientId** — can't log against a company |
-| Direction | ❌ | No field |
+| **Channel (Y)** — WhatsApp/Email/Slack/Web chat/Call/Meeting | ✅ | `channel CommChannel` added (exact 6 values) |
+| **Linked record (Y)** | ✅ | `clientId` added; `logActivity` accepts any of client/mandate/transaction/investor/engagement, **at-least-one enforced server-side** |
+| Direction | ✅ | `direction CommDirection` added |
 | **Summary (Y)** | 🟡 | `subject`/`body`, optional |
-| Extracted action items | ❌ | No Activity↔Task relation |
+| Extracted action items | 🟡 | Activity↔Task relation added (`ActivityTasks`); no UI yet to create tasks from a comm |
 | **Timestamp (Y)** | ✅ | `occurredAt` |
-| **Logged by (Y)** | 🟡 | `createdSource` always set; `createdById` never populated by the live write path (engagements.ts:150-166) |
-| **Write path** | 🟡 | Single mutation `logEngagement` requires **both** transactionId AND investorId — no company-only or mandate-only logging |
+| **Logged by (Y)** | ✅ | `createdById` now populated from the trusted actor |
+| **Write path** | ✅ | Generalized `logActivity` (`f1db74c`); `logEngagement` kept backward-compatible; client-detail timeline added |
 
-### 3.11 Investor-Deal Engagement → `Engagement` (578–617) — **best entity in the build**
+*Remaining §9 gap:* WhatsApp/Slack/email *ingestion* into these fields is the integration work, still unbuilt.
 
-All 15 spec fields ✅: link ID, investor+deal lookups, 12-value engagement stage (exact §3.11 order Shared→Declined), interest level (exact), NDA type (exact), term sheet boolean + date, total/disbursed/pending (pending auto-derived), engagement status (`DisbursementStatus` exact §4.10), date received, year/quarter (auto-derived, engagements-crud.ts:8-13), probability, feedback.
-Two caveats: 🟡 UI edits only `engagementStage` (restage dropdown + NDA record buttons) — interest level, amounts, probability, feedback have no edit surface; 🟡 a legacy second `status: EngagementStatus` field (NotContacted…Committed) overlaps confusingly.
+### 3.11 Investor-Deal Engagement → `Engagement` — **best entity, unchanged**
+
+All 15 spec fields ✅ (12-value stage exact order, interest level, NDA type, term sheet + date, total/disbursed/pending with pending auto-derived, disbursement status exact §4.10, date received, year/quarter auto-derived, probability, feedback). Stage changes are **now audited** via `StageChange` (§7.1). UI still edits mainly `engagementStage` + NDA (🟡 for the other fields' edit surface).
 
 ---
 
@@ -256,124 +225,90 @@ Two caveats: 🟡 UI edits only `engagementStage` (restage dropdown + NDA record
 
 | § | Picklist | Status | Detail |
 |---|---|---|---|
-| 4.1 | Deal type (Debt; Equity; Equity & Debt) | ❌ | `DealType` holds round names instead — none of the 3 spec values exist |
-| 4.2 | Instrument (Debt; Equity; Mezzanine; Grant; Hybrid) | 🟡 | 4/5 exact; `Hybrid` missing, extra `Convertible` |
-| 4.3 | Deal milestone (Term Sheet; NBO; Loan Agreement; SPA/SHA; DD; IC; TA; Closed) | ❌ | No deal-level milestone enum/field |
-| 4.4 | Deal stage (Indicative TS → Closed, 9 values) | 🟡 | Replaced by generic `MandateStage`/`TransactionStage`; ~3 concepts overlap |
-| 4.5 | Deal status (Open; On Hold; Closed; Closed & Reopened; Closed & On Hold; Dropped) | ❌ | No status field exists |
-| 4.6 | Origination source (9 values) | 🟡 | Referral/Website ✅; Event≈Networking event; Consultant/Investor/Partner/Direct enquiry/Social media/Internal BD ❌; enum polluted with Task-source values (MondayMeeting, Verbal) |
-| 4.7 | Max selling stake (Minority; Majority; Full Sale; N/A) | ❌ | Nothing |
+| 4.1 | Deal type (Debt; Equity; Equity & Debt) | ✅ | New `DealFinancingType` exact 3 values |
+| 4.2 | Instrument (Debt; Equity; Mezzanine; Grant; Hybrid) | ✅ | `Hybrid` added — all spec values present (extra `Convertible` retained) |
+| 4.3 | Deal milestone (Term Sheet; NBO; Loan Agreement; SPA/SHA; DD; IC; TA; Closed) | ✅ | New `DealMilestone` exact values on Transaction |
+| 4.4 | Deal stage (Indicative TS → Closed, 9 values) | 🟡 | Kanban `MandateStage`/`TransactionStage` still generic (client question 7) |
+| 4.5 | Deal status (Open; On Hold; Closed; Closed & Reopened; Closed & On Hold; Dropped) | ✅ | New `DealStatus` exact 6 values |
+| 4.6 | Origination source (9 values) | ✅ | All 9 now present (added Direct enquiry, Consultant, Investor, Partner, Social media, Internal BD; Event=Networking event) — *structural note:* still one shared `Source` enum with Task-source values |
+| 4.7 | Max selling stake (Minority; Majority; Full Sale; N/A) | ✅ | New `MaxSellingStake` exact values |
 | 4.8 | Advisory project type | ➖ | Advisory not in scope |
 | 4.9 | Advisory project milestone | ➖ | Advisory not in scope |
 | 4.10 | Engagement status (Disbursed; Ongoing; Fell off; Dropped) | ✅ | Exact match |
-| 4.11 | Task status (5 values) | 🟡 | 4/5; `Dropped` missing |
-| 4.12 | Task source (Monday Meeting; WhatsApp; Email; Verbal; Other) | ❌ | Task has no source field; 4/5 values sit misplaced in the shared `Source` enum, `Other` absent |
-| 4.13 | Investor deployment status (Active/Deploying; Not deploying; On hold) | 🟡 | Reworked into fund-lifecycle values; 1/3 spec values represented |
+| 4.11 | Task status (5 values) | ✅ | `Dropped` added — all 5 |
+| 4.12 | Task source (Monday Meeting; WhatsApp; Email; Verbal; Other) | ✅ | New `TaskSource` enum, now a real Task field with all 5 values |
+| 4.13 | Investor deployment status (Active/Deploying; Not deploying; On hold) | 🟡 | Reworked to fund lifecycle (client question 10) |
 | 4.14 | Engagement classification (5 values) | ✅ | Exact match; drives visibility |
-| 4.15 | NDA type (Open; Closed) | ✅ | Exact match (+ `InvestorNdaStatus` exact for §3.4) |
+| 4.15 | NDA type (Open; Closed) | ✅ | Exact match |
 | 4.16 | Document access level (4 values) | ✅ | Exact match |
+
+**Moved from 5 exact / 6 partial / 5 missing → 11 exact-complete / 3 partial (§4.4 deal stage, §4.13 deployment — both client questions) / 2 ➖ advisory.**
 
 ---
 
 ## 5. Sector taxonomy (§5)
 
-15/18 spec sectors exact. Deviations: **Energy** narrowed to `RenewableEnergy` 🟡; **Retail & FMCG** labeled just "FMCG" 🟡; extra top-level `Banking` (spec treats Banks as a Financial Services *sub-sector*) 🟡. **Sub-sector taxonomy (second-level picklist): ❌ entirely absent** — no field, enum, or data (depth is discovery item §17.5, but the *mechanism* is committed spec). Restricted-sector screening (real estate, oil & gas, mining, alcohol, tobacco, gambling) ❌ — no qualification logic exists anywhere (see §10).
+16/18 spec sectors now exact (**Energy added** this pass; "Retail & FMCG" label fixed). Remaining deviations: extra top-level `Banking` (client question 9); **sub-sector taxonomy still ❌** (client question — sub-sector depth). Restricted-sector screening still ❌ (no qualification logic — §10).
 
 ---
 
-## 6. Milestone framework (§6)
+## 6. Milestone framework (§6) — unchanged
 
 | Element | Status | Detail |
 |---|---|---|
-| 6.1 Doc-prep milestones (Teaser, Model, IM) | ✅ | Deal Preparation checklist derived live from the Document register (transactions/[id]/page.tsx:267-285; milestones.ts:89-95) |
-| 6.1 Valuation report (equity only) / Business plan (optional) | 🟡 | Rendered unconditionally for every deal — conditionality is label-text only |
-| 6.2 The 14 investor-side milestones | 🟡 | All 14 encoded 1:1 in `MilestoneKey` + portal steppers. **But** `EngagementMilestone` has **zero write mutations** — display is backfilled from the 12 coarse stages, so milestones 6–14 collapse into stage cliff-edges (IC paper/1st IC/NBO all "complete" the moment stage hits TermSheet). Not individually recordable or dateable. Internal CRM never shows the stepper (portal-only). |
-| 6.3 Disbursement | ✅ | Total/disbursed/pending table on `/engagement` with editable dialog |
-| 6.3 Success-fee invoicing & payment | 🟡 | Amount/invoiced/paid fields on Transaction + form; no invoice generation |
+| 6.1 Doc-prep milestones (Teaser, Model, IM) | ✅ | Deal Preparation checklist derived from the Document register |
+| 6.1 Valuation report (equity only) / Business plan (optional) | 🟡 | Rendered unconditionally; conditionality label-only |
+| 6.2 The 14 investor-side milestones | 🟡 | All 14 encoded + portal steppers; `EngagementMilestone` still backfill-only (no per-milestone write path), so 6–14 collapse into stage cliff-edges |
+| 6.3 Disbursement | ✅ | Total/disbursed/pending table (+ new year/quarter summary, §13) |
+| 6.3 Success-fee invoicing & payment | 🟡 | Fields on Transaction; no invoice generation |
 | 6.3 Post-transaction monitoring | ❌ | Nothing |
 
 ---
 
-## 7. Audit, immutability, access control (§7) — **largest gap**
+## 7. Audit, immutability, access control (§7)
 
 | Requirement | Status | Evidence |
 |---|---|---|
-| Prior value + timestamp + user kept on protected-field changes (§7.1) | ❌ | No AuditLog/history model; `updateEngagement` overwrites in place (engagements-crud.ts:30-53); grep for audit/prevValue/changedBy → nothing |
-| Deal stage history (every change + user) | ❌ | Restage mutations don't even receive the actor (mutations.ts:206-209); no history rows |
+| Prior value + timestamp + user on protected-field changes (§7.1) | 🟡 | **Stage & status changes now audited** via append-only `StageChange` (from→to, `changedAt`, `changedBy`/`createdSource`) written atomically in the update services (`1713507`); **core-identifier changes** (legal name, registration, primary contact) still not versioned |
+| Deal stage history (every change + user) | ✅ | `StageChange` rows for mandate/transaction/engagement stage + dealStatus + dealMilestone; shown reverse-chron on detail pages |
 | Immutable deal creation date / source / ID | ❌ | Plain fields, no guard |
-| Role-based CRUD matrix enforced at data layer (§7.2) | ❌ | `/access-matrix` is explicitly "display-only… nothing is persisted or enforced" (access-matrix.tsx:3-4); also omits the two external roles and 2 of 10 entities |
-| Real authentication | ❌ | `ns_viewpoint` cookie is unsigned and settable by anyone via `/api/viewpoint?role=…` (route.ts:4-16); OTP is a hardcoded `000000` printed on screen |
-| GraphQL mutation authorization | ❌ | Zero role checks across all resolvers — any caller can run any mutation |
-| External viewpoint kept out of internal shell | ✅* | Server-side redirect in (crm)/layout.tsx:14-17 — *within the demo-lens trust model only |
-| External-role visibility gating | ✅ | The one genuinely enforced §7 element — via the visibility engine (see §11) |
+| Role-based CRUD matrix enforced at data layer (§7.2) | ❌ | `/access-matrix` still display-only; omits external roles |
+| Real authentication | ❌ | `ns_viewpoint` cookie is a demo lens; OTP hardcoded |
+| GraphQL mutation authorization | ❌ | No role checks in resolvers |
+| External viewpoint kept out of internal shell | ✅* | Server-side redirect — within the demo-lens trust model |
+| External-role visibility gating | ✅ | Enforced via the visibility engine (§11) |
 
 ---
 
-## 8. Agent specifications (§8) — 0 of 4 built
+## 8. Agent specifications (§8) — 0 of 4 built (unchanged)
 
-`src/server/services/ai.ts` (182 lines) = 4 read-only heuristic helpers (`aiMatchInvestors`, `aiFindProspects`, `aiOverviewInsights`, `aiAsk`), each with a `// SEAM: replace body with Lua` comment. No Lua SDK in package.json; no triggers, channel listeners, classifiers, or agent-authored writes anywhere. `docs/agents/04-noblestride-agents.md` is a build guide describing three *different* agents; its "Engagement Logger" is marked not-yet-built.
-
-| Agent | Trigger | Channels | Does/Writes | Human gate | Verdict |
-|---|---|---|---|---|---|
-| 8.1 Client Agent | ❌ | ❌ | ❌ | n/a | ❌ Nothing exists |
-| 8.2 Investor Agent | ❌ | ❌ | 🟡 matching heuristic only (ai.ts:16-54); no outreach drafting/correspondence capture | n/a | ❌ |
-| 8.3 Investor Tracker Agent | ❌ no scheduler | n/a | 🟡 the data+guard substrate exists (stages, NDA guard, disbursement); no stall/overdue flags, no auto follow-up tasks | ✅ NDA guard is a real structural gate (nda-guard.ts:41-52) | 🟡 substrate only |
-| 8.4 Referral/Partner Agent | 🟡 portal form, not an agent | ❌ | 🟡 referral→Mandate creation + conversion boolean; no performance compilation | manual by default | 🟡 manual equivalent |
-
-"Never" rules: mostly N/A (no automation exists to violate them); the two that are enforceable today are enforced — VDR-without-NDA blocked (nda-guard + visibility), partner identity never projected (structural).
+`ai.ts` = 4 read-only heuristic helpers with `// SEAM: replace with Lua` comments; no Lua SDK; no triggers, channel listeners, classifiers, or agent-authored writes. The data + guard substrate an agent would drive is now richer (stages, NDA guard, disbursement, **stage history, overdue flags**), but the agents themselves are unbuilt. `docs/agents/04-noblestride-agents.md` is a build guide only.
 
 ---
 
-## 9. WhatsApp integration (§9) — ❌ nothing
+## 9. WhatsApp integration (§9) — ❌ nothing (unchanged)
 
-No webhook receiver, Business-API client, or message parser. Grep for "whatsapp" → 2 picklist-label hits. All six mapping-table rows MISSING; the substrate they'd write to is also incomplete (no Communication.channel, no Task.source, no escalation flag). §9.1 never-automated list: moot (no automation), and no enforcement exists to prevent naive future violation.
-
----
-
-## 10. Website intake & qualification (§10) — ❌ built for the wrong actor
-
-**Critical mismatch:** the spec's §10 is a public intake form for **target companies raising capital**. The branch's `/register` is **investor** self-registration ("Register as an Investor", register/page.tsx:32-39; creates an `Investor` PendingReview). Valuable — it implements §11.2 access control and the concept-note's anti-broker ask — but it is not the §10 deliverable.
-
-- **10.1 intake fields:** 0/12 required fields collected by any public surface. ~4/24 partially covered by the *partner-portal* referral form (companyName, dealSize, sector, contactName) — internal, not the public website agent. Five §10.1 fields have no schema column at all (post-money valuation, raised-to-date ×2, founders' nationality, target clients); NDA-acceptance flag absent.
-- **10.2 qualification logic:** ❌ entirely. No screening code for revenue ≥ $1M, raise ≥ $1M, 3-yr audited accounts, restricted sectors, SSA-only, gov-owned/PEP. No Qualified/Rejected label on Client or Mandate. (`ranking.ts`/`filters.ts` match *investors*, not leads.)
-- **10.3 routing:** 🟡 for investors an open-queue + human approve/reject exists (investors/page.tsx:56-66 + onboarding-actions.tsx); for company leads, referrals land straight on the Mandates kanban at NewLead with no qualification marker or assignment step.
+No webhook/API client/parser. All six mapping-table rows MISSING. The substrate is now readier: **Communication.channel + Task.source + escalation flag now exist** to receive structured inbound once the integration is built. §9.1 never-automated list: still no enforcement to prevent naive future violation.
 
 ---
 
-## 11. Investor deal visibility (§11) — **best-covered deliverable**
+## 10. Website intake & qualification (§10) — ❌ built for the wrong actor (unchanged)
 
-Engine: `src/server/visibility/` (matrix.ts, tiers.ts, project.ts, load.ts, codename.ts) + 200+ table-driven tests.
+`/register` is **investor** self-registration (implements §11.2 access control), not the spec's **target-company** intake. 0/12 required §10.1 fields on any public surface; **§10.2 qualification logic entirely absent** (no revenue/raise/audited-accounts/restricted-sector/SSA/PEP screens, no Qualified/Rejected label); §10.3 open-queue exists for investors, not for company leads.
 
-| Visibility-matrix row (Pre-interest / After-NDA / DD) | Status | Notes |
-|---|---|---|
-| Company profile, sector, target profile — V/V/V | ✅ | Client identity masked as codename pre-interest (stricter than spec; flagged as client question) |
-| Deal type, ticket — V/V/V | ✅ | |
-| Revenue, EBITDA, assets, use of funds — Limited/V/V | 🟡 | Revenue banded pre-NDA ✅; EBITDA/assets/use-of-funds can't be gated — **not in the data model** (§3.1 gap cascades here) |
-| Matching active mandate status — V/V/V | ✅ | |
-| Full financials, IM, model — Hidden/V/V | 🟡 | "Full financials" = the same revenue fields; docs gated via access levels |
-| VDR / DD files — Hidden/On-request/V | ✅ | Requires DD tier **and** `ndaSatisfied` (project.ts:195) |
-| Advisor + client contacts — Hidden/Hidden/V | ✅ | Generic contact line even at DD — stricter than spec, zero leak |
-| Other investors — Hidden ×3 | ✅ | Structurally absent from the projection type |
-| Engagement contracts — Hidden ×3 | ✅ | `NEVER_SHARED_DOC_TYPES` hard filter |
-| Feedback / offers / client responses — Hidden ×3 | ✅ | Explicitly never projected |
-| Internal team messages — Hidden ×3 | ✅ | Activity data never reaches investor paths |
-| **Hard rule: partner identity** | ✅ | Projection type cannot carry it; tested |
-| **Hard rule: excluded/greylisted see nothing** | ✅ | Enforced in 3 independent code paths (tiers/discovery/pipeline) |
-| §11.1 investor-facing filters | ❌/🟡 | Matching is automatic from the stored profile (sector/geo/ticket 🟡); **no interactive filter UI**; deal-type + core-financials filters ❌; impact filter ❌ (blocked by missing company flags) |
-| §11.2 baseline visibility, not type-siloed | ✅ | No investorType branching in discovery |
-| §11.2 back-end limit/restrict/deactivate | ✅ | Classification switch + onboarding approval gate (this branch) — real data-level controls |
-| §11.2 VDR locked until interest + NDA | ✅ | Both conditions independently required |
-| §11.2 revoked promptly on decline | 🟡 | Declining zeroes the tier ✅ but only via manual restage; no dedicated revoke action or audit event |
+---
 
-**Caveat spanning all of §11:** identity behind the gates is the forgeable demo cookie — the logic is real, the *authentication* isn't.
+## 11. Investor deal visibility (§11) — best-covered deliverable (unchanged)
+
+Engine `src/server/visibility/` + 200+ tests implements the full matrix, hard rules (partner identity + other investors never visible), and excluded/greylisted blocking across three code paths. **§11.1 investor-facing filters still missing** (matching is automatic from the stored profile); the **impact filter is now unblocked at the data layer** (impact flags added this pass) but has no UI. VDR locked until interest + NDA ✅; decline-revocation only via manual restage 🟡.
 
 ---
 
 ## 12. Automation guardrails & escalation (§12)
 
-**12.1 never-automated (10 rules):** where a feature exists, the guard exists — no-auto-NDA-signing ✅ (recording only), VDR-without-NDA ✅ (NdaGuardError), excluded-investor sharing ✅, onboarding approval human-clicked ✅ (but not role-protected 🟡). Rules 2,3,5,8,9,10 are N/A — no automation exists yet to constrain; they must be designed into the agents when built.
+**12.1 never-automated (10 rules):** unchanged — structural guards exist where features exist (no-auto-NDA-signing ✅, VDR-without-NDA ✅, excluded-investor sharing ✅, onboarding approval human-clicked ✅ but not role-protected). Rules 2,3,5,8,9,10 remain N/A pending the agents.
 
-**12.2 escalation triggers: ❌ all five.** No overdue computation (Task has no escalation flag), no deal-status-change notifications (the topbar bell is decorative with a hardcoded "3"), no WhatsApp task auto-creation, no tracked request workflows, no review-request workflow.
+**12.2 escalation triggers:** **overdue-task escalation now built** (`escalated` auto-flag + `flagOverdueTasks()` sweep, surfaced on the tasks page and dashboard). Deal-status-change notifications, WhatsApp task auto-creation, tracked request workflows, and review-request workflows still ❌.
 
 ---
 
@@ -381,70 +316,79 @@ Engine: `src/server/visibility/` (matrix.ts, tiers.ts, project.ts, load.ts, code
 
 | Dashboard | Field/grouping | Status |
 |---|---|---|
-| Pipeline overview | Active vs inactive | 🟡 active counts only |
-| | Deals by lead | ❌ |
-| | By transaction type | ❌ |
-| | By sector | ❌ |
-| | By ticket-size band | ❌ (bands exist in `ticket-bands.ts`, used only in registration) |
-| Deal status | Distribution | 🟡 keyed to internal stage vocab, not spec buckets |
-| | Stage history | ❌ (blocked by missing audit trail) |
-| Investor engagement | Deals under review per investor | 🟡 stage kanban; no per-investor rollup |
-| | Deals rejected | ❌ |
-| | Invested/completed | 🟡 disbursement rows, not a summary metric |
+| Pipeline overview | Active vs inactive | 🟡 active counts |
+| | Deals by lead | ✅ (new) |
+| | By transaction type | ✅ (new — financing type) |
+| | By sector | ✅ (new) |
+| | By ticket-size band | ✅ (new — reuses `ticket-bands.ts`) |
+| Deal status | Distribution | 🟡 keyed to internal stage vocab |
+| | Stage history | 🟡 data + detail-page view now exist (`StageChange`); roll-up dashboard view not built |
+| Investor engagement | Deals under review per investor | 🟡 stage kanban |
+| | Deals rejected | ✅ (new — Declined count on engagement page) |
+| | Invested/completed | 🟡 disbursement rows |
 | | Historical summary | ❌ |
 | Disbursement | Total/disbursed/pending by deal + investor | ✅ |
-| | By year and quarter | ❌ (data derived and stored, never grouped) |
+| | By year and quarter | ✅ (new — grouped summary) |
 | Referrals & partners | Deals per partner + status | ✅ |
-| | Conversion funnel | 🟡 single aggregate %, not introduced→progressed→closed |
-| Team & tasks | Deal load by member | ❌ |
-| | Task status by owner | 🟡 global counts + owner column, no cross-tab |
-| | Overdue actions | ❌ |
+| | Conversion funnel | 🟡 single aggregate % |
+| Team & tasks | Deal load by member | ✅ (new) |
+| | Task status by owner | ✅ (new — cross-tab) |
+| | Overdue actions | ✅ (new — uses the escalation flag) |
 | Advisory | All | ➖ |
 
-Beyond spec: investor-onboarding stat group (Pending Review / Approved This Month / NDA Coverage), 6-month pipeline trend chart, AI insight cards.
+Beyond spec: investor-onboarding stat group, 6-month pipeline trend chart, AI insight cards.
 
 ---
 
 ## 14. Systems & integrations (§14) + Deliverables (§15)
 
-Integrations: WhatsApp ❌ · Outlook/M365 email capture ❌ · Slack ❌ · Website embed ❌ · SharePoint/file storage ❌ (Document.fileUrl free-text only; no `<input type="file">` anywhere). Data protection (§14.2): confidentiality gates ✅ at data layer for external roles; RBAC/encryption-audit posture ❌ not configured.
+Integrations unchanged: WhatsApp ❌ · Outlook/M365 ❌ · Slack ❌ · Website embed ❌ · SharePoint/file storage ❌. Data protection (§14.2): external-role confidentiality gates ✅; RBAC/encryption-audit posture ❌.
 
 | §15 deliverable | Status |
 |---|---|
-| Discovery & configuration brief | ✅ as in-repo docs (specs, plans, gap analyses) |
-| Configured CRM | 🟡 entities/picklists/tagging largely built; audit trails missing |
+| Discovery & configuration brief | ✅ (in-repo docs) |
+| Configured CRM | 🟡→✅ mostly — entities/picklists/fields/tagging built; stage-audit added; core-identifier immutability + RBAC still pending |
 | Four deployed agents | ❌ |
 | WhatsApp integration | ❌ |
 | Website intake & qualification agent | ❌ |
 | Investor deal visibility | ✅ |
-| Reporting dashboards | 🟡 |
-| Access controls & DPA configuration | ❌/🟡 |
+| Reporting dashboards | 🟡→✅ mostly |
+| Access controls & DPA configuration | 🟡 — stage-change audit + external gating done; in-org RBAC + full DPA config pending |
 | Onboarding & handover | 🟡 docs exist; walkthrough/PoC support pending |
 
 ---
 
 ## 15. Where the build exceeds the spec
 
-- **Investor self-registration + approval queue + NDA recording** (this branch) — the spec never asks for investor self-service; the concept note did. Implements §11.2's "Noblestride keeps back-end control" with a real PendingReview→Approved gate enforced at two layers.
+- **Investor self-registration + approval queue + NDA recording** (implements §11.2 back-end control with a real PendingReview→Approved gate).
 - **Investor portal as a working CRM** (fund-profile editing, milestone steppers, Express Interest write-back) vs the spec's "controlled view".
-- **Partner portal** (referral submission creating real mandates, funnel, expected fee) vs a tracking *agent*.
-- Document **review chain** (reviewer → approver → client review dates); teaser **codename masking** pre-NDA; corporate-email gate; kanban boards with drag-drop; real-data import (106 mandates / 104 clients / 387 tasks).
+- **Partner portal** (referral submission creating real mandates, funnel, expected fee).
+- Document **review chain**; teaser **codename masking** pre-NDA; corporate-email gate; kanban boards; real-data import (106 mandates / 104 clients / 387 tasks).
+- **New this pass:** append-only stage/status **audit trail**, full **Task management** with auto-escalation, **Service Provider** management UI, generalized **communication logging** with channel/direction, and the full set of **§13 dashboard groupings**.
 
 ---
 
 ## 16. What to do next
 
-See the companion recommendations in this analysis' final section of the session report and `memory/client-meeting-questions.md` for items needing client input. Summary of instantly actionable work (no client sign-off needed — all spec-explicit):
+### ✅ Done in the 2026-07-06 spec-gap pass (were the "instantly actionable" items)
+1. Task entity completion (source, Dropped status, assistant, escalation + overdue, full CRUD) — **done**.
+2. Deal vocabulary & fields (Deal type, Deal status, Deal milestone, max selling stake, target profile, use of funds, VDR link, deal-level probability, notes) — **done**.
+3. Company/Target §3.1 fields (codename, registration no., HQ country, business model, founders' nationality, ownership, directors, target clients, staff/branches, EBITDA/net profit, existing debt, loan book, total assets, impact flags, status) — **done** (except years-of-operation derivation).
+4. Picklist corrections (missing §4.6 origination values, Hybrid instrument, Energy sector, "Retail & FMCG" label, Task source split into its own field) — **done**.
+5. Stage-history audit rows (§7.1 slice) — **done**.
+6. Communication upgrades (channel + direction, client link, Activity→Task relation, generalized logging UI) — **done** (create-task-from-comm UI still pending).
+7. Service Provider UI — **done**.
+8. Dashboard groupings (by lead/sector/type/ticket band; disbursement by year+quarter; team workload; task-status-by-owner; overdue) — **done**.
 
-1. **Task entity completion** — source picklist (§4.12), `Dropped` status, assistant, escalation flag + overdue computation, full CRUD UI. Unblocks the Team & Tasks dashboard and §12.2's first trigger.
-2. **Deal vocabulary & fields** — real `Deal type` (Debt/Equity/Equity & Debt), separate Deal **status** (§4.5), deal **milestone** (§4.3), max selling stake (§4.7), target profile, use of funds, deal assistant, VDR link, deal-level probability, comments on Transaction.
-3. **Company/Target §3.1 fields** — project codename, registration no., HQ country, business model, founders' nationality, ownership, directors, target clients, staff/branches, EBITDA/net profit, existing debt, loan book, total assets, **impact flags** (also unblocks §11.1 impact filter), company **status**.
-4. **Picklist corrections** — split Task source out of `Source`; add missing §4.6 origination values; add `Hybrid` instrument; add `Energy` sector + "Retail & FMCG" label.
-5. **Stage-history audit rows** (§7.1's most tractable slice) — append-only history for mandate/transaction/engagement stage changes with timestamp + actor; unblocks the Deal-status stage-history dashboard.
-6. **Communication upgrades** (§3.10) — channel + direction fields, client link, Activity→Task relation, generalized logging UI.
-7. **Service Provider UI** — page + drawer + nav (backend already complete).
-8. **Dashboard groupings** (§13) — by lead / sector / type / ticket band; disbursement by year+quarter; team workload; task-status-by-owner; overdue actions.
-9. **§10 company intake + qualification** — the full field list and qualification rules are spec-explicit; build the public form, screening labels and review queue (the agent wrapper can come later).
-10. **Contact (Person) CRUD UI**; expose the investor fields that exist in schema but not in any form (nextActionDate, feedback, SSA contact, shareholding preference).
+### ⏳ Still open — no client input needed (next candidates)
+- **File upload / storage** for Documents (§3.9 File is spec-required) + a real VDR file flow.
+- **Contact (Person) create/edit UI** for Client/Investor/Partner.
+- **Core-identifier immutability/versioning** (§7.1 beyond stage history) and **create-task-from-communication** UI (§3.10 extracted action items).
+- **Years-of-operation derivation**; Profitability as a picklist; Document→Mandate link.
+- Stage-history **roll-up dashboard**, historical engagement summary, conversion funnel breakdown.
 
-Items requiring client confirmation first are recorded in `memory/client-meeting-questions.md` (questions 7–14 added 2026-07-06).
+### 🚧 Larger builds (roadmap)
+- The 4 Lua agents (§8), WhatsApp/email/Slack capture (§9/§14), the §10 **company** intake + qualification form, real authentication + enforced in-org RBAC (§7.2).
+
+### ❓ Needs client confirmation first
+Recorded in `memory/client-meeting-questions.md` (questions 7–14, added 2026-07-06): deal-stage vocabulary (§4.4), country-vs-region geography, sector/deployment-status vocabulary conflicts between the spec and the client's other docs, single-vs-multi sector, required-field enforcement on legacy imports, teaser/IM/model derived-vs-stored, and Advisory Engagement scope.
