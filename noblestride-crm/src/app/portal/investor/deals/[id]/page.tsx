@@ -133,7 +133,7 @@ export default async function InvestorDealPage({
               k={fin.disclosure === "limited" ? "Forecast (range)" : "Revenue forecast"}
               v={typeof fin.revenueForecast === "number" ? formatMoney(fin.revenueForecast) : fin.revenueForecast}
             />
-            <Row k="Profitable" v={fin.profitable == null ? null : fin.profitable ? "Yes" : "No"} />
+            <Row k="Profitability" v={fin.profitability == null ? null : label("Profitability", fin.profitability)} />
             <Row
               k="Mandate status"
               v={deal.matchingMandateStatus ? label("MandateStage", deal.matchingMandateStatus) : null}

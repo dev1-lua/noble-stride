@@ -50,7 +50,7 @@ export function makeDealFixture(): DealInput {
       yearFounded: 2012,
       revenueLastYear: 7_200_000,
       revenueForecast: 12_500_000,
-      profitable: true,
+      profitability: "Profitable",
       contacts: [
         {
           firstName: "Grace",

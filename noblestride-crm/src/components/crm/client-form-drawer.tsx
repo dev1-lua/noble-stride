@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui";
 import { Drawer } from "@/components/ui/drawer";
-import { TextField, TextAreaField, NumberField, MoneyField, SelectField, MultiSelectField, CheckboxField } from "@/components/ui/fields";
+import { TextField, TextAreaField, NumberField, MoneyField, SelectField, MultiSelectField } from "@/components/ui/fields";
 import { useEntityForm } from "@/components/ui/use-entity-form";
 import { clientCreateSchema, clientUpdateSchema } from "@/lib/schemas/client";
 import { options } from "@/lib/vocab";
@@ -13,9 +13,9 @@ const UPDATE = `mutation UpdateClient($id: ID!, $input: ClientInput!) { updateCl
 
 const EMPTY: Record<string, unknown> = {
   name: "", yearFounded: undefined, hqCity: "", countries: [], website: "", sector: [],
-  coreProduct: "", description: "", founders: "", founderGender: "",
+  coreProduct: "", description: "", founders: "", founderGenders: [],
   revenueLastYear: undefined, revenueForecast: undefined, currency: "",
-  profitable: false, existingInvestors: "", source: "", pitchDeckUrl: "",
+  profitability: "", existingInvestors: "", source: "", pitchDeckUrl: "",
   // Spec-gap: company profile fields (spec §3.1/§3.2)
   codename: "", status: "", registrationNo: "", hqCountry: "", businessModel: "",
   foundersNationality: "", ownershipStructure: "", directorsManagement: "", targetClients: "",
@@ -65,7 +65,7 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
           <TextField label="Website" value={v.website as string} onChange={(x) => f.setValue("website", x)} />
           <TextField label="Core Product" value={v.coreProduct as string} onChange={(x) => f.setValue("coreProduct", x)} />
           <TextField label="Founders" value={v.founders as string} onChange={(x) => f.setValue("founders", x)} />
-          <SelectField label="Founder Gender" value={v.founderGender as string} onChange={(x) => f.setValue("founderGender", x)} options={options("FounderGender")} />
+          <MultiSelectField label="Founders' Gender" value={v.founderGenders as string[]} onChange={(x) => f.setValue("founderGenders", x)} options={options("FounderGender")} />
           <SelectField label="Source" value={v.source as string} onChange={(x) => f.setValue("source", x)} options={options("Source")} />
           <TextField label="Existing Investors" value={v.existingInvestors as string} onChange={(x) => f.setValue("existingInvestors", x)} />
           <TextField label="Pitch Deck URL" value={v.pitchDeckUrl as string} onChange={(x) => f.setValue("pitchDeckUrl", x)} />
@@ -95,7 +95,7 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
             <NumberField label="Staff Count" value={v.staffCount as number} onChange={(x) => f.setValue("staffCount", x)} min={0} />
             <NumberField label="Branch Count" value={v.branchCount as number} onChange={(x) => f.setValue("branchCount", x)} min={0} />
           </div>
-          <CheckboxField label="Profitable" value={v.profitable as boolean} onChange={(x) => f.setValue("profitable", x)} />
+          <SelectField label="Profitability" value={v.profitability as string} onChange={(x) => f.setValue("profitability", x)} options={options("Profitability")} />
 
           <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Governance</p>
           <TextAreaField label="Business Model" value={v.businessModel as string} onChange={(x) => f.setValue("businessModel", x)} />

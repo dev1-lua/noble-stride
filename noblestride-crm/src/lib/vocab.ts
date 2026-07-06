@@ -205,6 +205,7 @@ export const LABELS: Record<string, Record<string, string>> = {
   CommDirection: { Inbound: "Inbound", Outbound: "Outbound" },
   ClientStatus: { Active: "Active", Prospect: "Prospect", Archived: "Archived" },
   ImpactFlag: { WomenLed: "Women-led", YouthLed: "Youth-led" },
+  Profitability: { Profitable: "Profitable", LossMaking: "Loss-making" },
   ActorSource: { HUMAN: "Team", AGENT: "Agent", API: "API" },
   MilestoneKey: {
     TeaserReview: "Teaser Review", NdaExecuted: "NDA Executed", ExpressionOfInterest: "EOI / LOI",

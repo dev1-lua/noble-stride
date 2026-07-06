@@ -16,6 +16,7 @@ import type {
   OnboardingStatus,
   PartnerAgreementStatus,
   AdvisorType,
+  Profitability,
   Sector,
   TransactionStage,
 } from "@prisma/client";
@@ -93,7 +94,7 @@ export interface DealClientInput {
   yearFounded?: number | null;
   revenueLastYear?: DecimalLike | null;
   revenueForecast?: DecimalLike | null;
-  profitable?: boolean | null;
+  profitability?: Profitability | null;
   contacts?: PersonInput[];
 }
 
@@ -159,7 +160,7 @@ export interface ProjectedDeal {
     disclosure: "limited" | "full";
     revenueLastYear: string | number | null;
     revenueForecast: string | number | null;
-    profitable: boolean | null;
+    profitability: Profitability | null;
   };
   matchingMandateStatus: MandateStage | null;
   documents: ProjectedDocument[];
@@ -268,13 +269,13 @@ export function projectDealForInvestor(
           disclosure: "full",
           revenueLastYear: toNum(revenueLastYear),
           revenueForecast: toNum(revenueForecast),
-          profitable: client?.profitable ?? null,
+          profitability: client?.profitability ?? null,
         }
       : {
           disclosure: "limited",
           revenueLastYear: bandCurrency(revenueLastYear),
           revenueForecast: bandCurrency(revenueForecast),
-          profitable: client?.profitable ?? null,
+          profitability: client?.profitability ?? null,
         },
     matchingMandateStatus: deal.mandate?.stage ?? null,
     documents: projectDocuments(deal.documents ?? [], tier, ndaSatisfied),

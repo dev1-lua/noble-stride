@@ -66,6 +66,8 @@ export default async function TransactionDetailPage({ params }: PageProps) {
     vdrLink: txn.vdrLink ?? "",
     probability: txn.probability == null ? undefined : Number(txn.probability),
     notes: txn.notes ?? "",
+    referredById: txn.referredById ?? "",
+    serviceProviderIds: (txn.serviceProviders ?? []).map((sp: { id: string }) => sp.id),
   };
   const DELETE_TRANSACTION = `mutation DeleteTransaction($id: ID!) { deleteTransaction(id: $id) { id } }`;
 
@@ -112,7 +114,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>
-          <TransactionFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} mandates={rel.mandates} />
+          <TransactionFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} mandates={rel.mandates} partners={rel.partners} serviceProviders={rel.serviceProviders} />
           <DeleteConfirm mutation={DELETE_TRANSACTION} recordId={txn.id} entityLabel="transaction" redirectTo="/transactions" />
         </div>
       </div>
@@ -189,6 +191,15 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                 <div className="sm:col-span-2">
                   <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Mandate</dt>
                   <dd className="mt-1 text-sm font-medium text-zinc-900">{mandateName}</dd>
+                </div>
+              )}
+
+              {txn.referredBy && (
+                <div>
+                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Referred By</dt>
+                  <dd className="mt-1 text-sm text-zinc-900">
+                    <Link href={`/partners/${txn.referredBy.id}`} className="hover:text-accent transition-colors">{txn.referredBy.name}</Link>
+                  </dd>
                 </div>
               )}
 
@@ -356,9 +367,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         </CardBody>
       </Card>
 
-      {/* Service Providers — read-only: TransactionInput has no connect/disconnect for
-          serviceProviders yet, so this is a display-only list this pass (managed from
-          the /service-providers list page instead). */}
+      {/* Service Providers engaged on this transaction (edit via the drawer above) */}
       <Card>
         <CardHeader>
           <h2 className="text-sm font-semibold text-zinc-900">

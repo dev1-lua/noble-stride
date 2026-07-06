@@ -19,14 +19,17 @@ const EMPTY: Record<string, unknown> = {
   // Spec-gap: deal status/milestone/financing fields (spec §4.1/§4.3/§4.5/§4.7)
   dealStatus: "", dealMilestone: "", financingType: "", maxSellingStake: "",
   targetProfile: "", useOfFunds: "", vdrLink: "", probability: undefined, notes: "",
+  referredById: "", serviceProviderIds: [],
 };
 
-export function TransactionFormDrawer({ mode, initial, clients, users, mandates, triggerLabel }: {
+export function TransactionFormDrawer({ mode, initial, clients, users, mandates, partners, serviceProviders, triggerLabel }: {
   mode: "create" | "edit";
   initial?: Record<string, unknown> & { id?: string };
   clients: SelectOption[];
   users: SelectOption[];
   mandates: SelectOption[];
+  partners: SelectOption[];
+  serviceProviders: SelectOption[];
   triggerLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -62,6 +65,8 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
           <RelationSelect label="Mandate" value={v.mandateId as string} onChange={(x) => f.setValue("mandateId", x)} options={mandates} placeholder="Select mandate…" />
           <RelationSelect label="Owner" value={v.ownerId as string} onChange={(x) => f.setValue("ownerId", x)} options={users} placeholder="Select owner…" />
           <RelationSelect label="Assistant" value={v.assistantId as string} onChange={(x) => f.setValue("assistantId", x)} options={users} placeholder="Select assistant…" />
+          <RelationSelect label="Referred By (Consultant/Partner)" value={v.referredById as string} onChange={(x) => f.setValue("referredById", x)} options={partners} placeholder="Select partner…" />
+          <MultiSelectField label="Service Providers Engaged" value={v.serviceProviderIds as string[]} onChange={(x) => f.setValue("serviceProviderIds", x)} options={serviceProviders} />
           <div className="grid grid-cols-2 gap-3">
             <MoneyField label="Target Raise" value={v.targetRaise as number} onChange={(x) => f.setValue("targetRaise", x)} />
             <SelectField label="Round" value={v.dealType as string} onChange={(x) => f.setValue("dealType", x)} options={options("DealType")} />

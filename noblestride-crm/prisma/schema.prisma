@@ -414,6 +414,11 @@ enum ImpactFlag {
   YouthLed
 }
 
+enum Profitability {
+  Profitable
+  LossMaking
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Team & contacts
 // ─────────────────────────────────────────────────────────────────────────────
@@ -556,11 +561,11 @@ model Client {
   coreProduct       String?
   description       String?
   founders          String?
-  founderGender     FounderGender?
+  founderGenders    FounderGender[] @default([])
   revenueLastYear   Decimal?       @db.Decimal(20, 2)
   revenueForecast   Decimal?       @db.Decimal(20, 2)
   currency          String         @default("USD")
-  profitable        Boolean?
+  profitability     Profitability?
   existingInvestors String?
   source            Source?
   pitchDeckUrl      String?
@@ -633,6 +638,7 @@ model Mandate {
   transactions Transaction[]
   activities   Activity[]
   tasks        Task[]
+  documents    Document[]
   stageChanges StageChange[]
 
   @@index([stage])
@@ -682,6 +688,8 @@ model Transaction {
   owner       User?        @relation("TransactionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   assistantId String?
   assistant   User?        @relation("TransactionAssistant", fields: [assistantId], references: [id], onDelete: SetNull)
+  referredById String?
+  referredBy   Partner?    @relation("PartnerTransactionReferral", fields: [referredById], references: [id], onDelete: SetNull)
   engagements      Engagement[]
   activities       Activity[]
   tasks            Task[]
@@ -786,6 +794,7 @@ model Partner {
 
   contacts         Person[]
   referredMandates Mandate[] @relation("PartnerReferral")
+  referredTransactions Transaction[] @relation("PartnerTransactionReferral")
   stageChanges     StageChange[]
 
   @@index([partnerType])
@@ -917,12 +926,15 @@ model Document {
   client        Client?             @relation(fields: [clientId], references: [id], onDelete: SetNull)
   investorId    String?
   investor      Investor?           @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  mandateId     String?
+  mandate       Mandate?            @relation(fields: [mandateId], references: [id], onDelete: SetNull)
   createdSource ActorSource         @default(HUMAN)
   createdAt     DateTime            @default(now())
 
   @@index([type])
   @@index([accessLevel])
   @@index([transactionId])
+  @@index([mandateId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

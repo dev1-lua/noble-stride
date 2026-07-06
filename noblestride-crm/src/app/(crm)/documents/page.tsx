@@ -8,17 +8,19 @@ import { listTransactions } from "@/server/services/transactions";
 import { listClients } from "@/server/services/clients";
 import { listInvestors } from "@/server/services/investors";
 import { listUsers } from "@/server/services/users";
+import { listMandates } from "@/server/services/mandates";
 import { StatCard, Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { DocumentFormDrawer } from "@/components/crm/document-form-drawer";
 
 export default async function DocumentsPage() {
-  const [documents, transactions, clients, investors, users] = await Promise.all([
+  const [documents, transactions, clients, investors, users, mandates] = await Promise.all([
     listDocuments(),
     listTransactions(),
     listClients(),
     listInvestors({}),
     listUsers(),
+    listMandates(),
   ]);
 
   // SelectOption[] for the drawer (plain strings — safe to pass to client component)
@@ -26,6 +28,7 @@ export default async function DocumentsPage() {
   const clientOptions = clients.map((c) => ({ value: c.id, label: c.name }));
   const invOptions = investors.map((i) => ({ value: i.id, label: i.name }));
   const userOptions = users.map((u) => ({ value: u.id, label: u.name }));
+  const mandateOptions = mandates.map((m) => ({ value: m.id, label: m.name }));
 
   const underReview = documents.filter((d) => d.status === "UnderReview").length;
   const executed = documents.filter((d) => d.status === "Executed").length;
@@ -49,6 +52,7 @@ export default async function DocumentsPage() {
           clients={clientOptions}
           investors={invOptions}
           users={userOptions}
+          mandates={mandateOptions}
         />
       </div>
 

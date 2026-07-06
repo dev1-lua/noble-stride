@@ -4,6 +4,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getMandate } from "@/server/services/mandates";
+import { listDocuments } from "@/server/services/documents";
 import { relationOptions } from "@/server/services/relation-options";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/format";
@@ -28,7 +29,10 @@ export default async function MandateDetailPage({ params }: PageProps) {
 
   if (!mandate) notFound();
 
-  const rel = await relationOptions();
+  const [rel, documents] = await Promise.all([
+    relationOptions(),
+    listDocuments({ mandateId: id }),
+  ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const m = mandate as any;
@@ -210,6 +214,47 @@ export default async function MandateDetailPage({ params }: PageProps) {
                     {txn.name}
                   </Link>
                   <Chip value={txn.stage} group="TransactionStage" />
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* Documents linked to this deal (spec §3.9 linked record = Deal) */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Documents
+            {documents.length > 0 && <Badge tone="neutral" className="ml-2">{documents.length}</Badge>}
+          </h2>
+        </CardHeader>
+        <CardBody>
+          {documents.length === 0 ? (
+            <p className="text-sm text-zinc-400">No documents linked to this mandate.</p>
+          ) : (
+            <ul className="divide-y divide-zinc-100">
+              {documents.map((doc) => (
+                <li key={doc.id} className="py-3 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    {doc.fileUrl ? (
+                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors truncate block">
+                        {doc.name}
+                      </a>
+                    ) : (
+                      <p className="text-sm font-medium text-zinc-900 truncate">{doc.name}</p>
+                    )}
+                    <p className="mt-0.5 text-xs text-zinc-500">
+                      {doc.version ? `${doc.version} · ` : ""}
+                      Uploaded {formatDate(doc.uploadedAt)}
+                      {doc.uploadedBy?.name ? ` by ${doc.uploadedBy.name}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Chip value={doc.type} group="DocumentType" />
+                    <Chip value={doc.accessLevel} group="DocumentAccessLevel" />
+                    {doc.status && <Chip value={doc.status} group="DocumentStatus" />}
+                  </div>
                 </li>
               ))}
             </ul>

@@ -104,6 +104,7 @@ export async function getTransaction(id: string) {
       mandate: true,
       owner: true,
       assistant: true,
+      referredBy: true,
       engagements: { include: { investor: true } },
       activities: { orderBy: { occurredAt: "desc" } },
       stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
@@ -136,12 +137,18 @@ export async function setTransactionStage(id: string, stage: TransactionStage, a
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
 export async function createTransaction(input: TransactionCreateInput, actor: Actor) {
-  const data = transactionCreateSchema.parse(input);
-  return prisma.transaction.create({ data: { ...data, createdSource: actorSource(actor) } });
+  const { serviceProviderIds, ...data } = transactionCreateSchema.parse(input);
+  return prisma.transaction.create({
+    data: {
+      ...data,
+      createdSource: actorSource(actor),
+      ...(serviceProviderIds ? { serviceProviders: { connect: serviceProviderIds.map((id) => ({ id })) } } : {}),
+    },
+  });
 }
 
 export async function updateTransaction(id: string, input: TransactionUpdateInput, actor: Actor = { type: "HUMAN" }) {
-  const data = transactionUpdateSchema.parse(input);
+  const { serviceProviderIds, ...data } = transactionUpdateSchema.parse(input);
   return prisma.$transaction(async (tx) => {
     const existing = await tx.transaction.findUniqueOrThrow({
       where: { id },
@@ -154,7 +161,13 @@ export async function updateTransaction(id: string, input: TransactionUpdateInpu
     ) {
       throw new CrudError("Date opened is locked once set (spec §7.1: creation date is immutable).");
     }
-    const updated = await tx.transaction.update({ where: { id }, data });
+    const updated = await tx.transaction.update({
+      where: { id },
+      data: {
+        ...data,
+        ...(serviceProviderIds ? { serviceProviders: { set: serviceProviderIds.map((spId) => ({ id: spId })) } } : {}),
+      },
+    });
     if (data.dealStatus !== undefined) {
       await recordStageChange(tx, { field: "dealStatus", fromValue: existing.dealStatus, toValue: data.dealStatus, actor, transactionId: id });
     }

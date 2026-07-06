@@ -39,6 +39,7 @@ import {
   MaxSellingStakeEnum,
   ImpactFlagEnum,
   ClientStatusEnum,
+  ProfitabilityEnum,
   CommChannelEnum,
   CommDirectionEnum,
   TaskStatusEnum,
@@ -169,12 +170,12 @@ export const ClientRef = builder.prismaObject("Client", {
     coreProduct: t.exposeString("coreProduct", { nullable: true }),
     description: t.exposeString("description", { nullable: true }),
     founders: t.exposeString("founders", { nullable: true }),
-    founderGender: t.field({ type: FounderGenderEnum, nullable: true, resolve: (c) => c.founderGender }),
+    founderGenders: t.field({ type: [FounderGenderEnum], resolve: (c) => c.founderGenders }),
     // Money
     revenueLastYear: t.float({ nullable: true, resolve: (c) => (c.revenueLastYear == null ? null : Number(c.revenueLastYear)) }),
     revenueForecast: t.float({ nullable: true, resolve: (c) => (c.revenueForecast == null ? null : Number(c.revenueForecast)) }),
     currency: t.exposeString("currency"),
-    profitable: t.exposeBoolean("profitable", { nullable: true }),
+    profitability: t.field({ type: ProfitabilityEnum, nullable: true, resolve: (c) => c.profitability }),
     existingInvestors: t.exposeString("existingInvestors", { nullable: true }),
     source: t.field({ type: SourceEnum, nullable: true, resolve: (c) => c.source }),
     pitchDeckUrl: t.exposeString("pitchDeckUrl", { nullable: true }),
@@ -287,11 +288,13 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     mandateId: t.exposeString("mandateId", { nullable: true }),
     ownerId: t.exposeString("ownerId", { nullable: true }),
     assistantId: t.exposeString("assistantId", { nullable: true }),
+    referredById: t.exposeString("referredById", { nullable: true }),
     // Relations — tasks excluded per brief
     client: t.relation("client"),
     mandate: t.relation("mandate", { nullable: true }),
     owner: t.relation("owner", { nullable: true }),
     assistant: t.relation("assistant", { nullable: true }),
+    referredBy: t.relation("referredBy", { nullable: true }),
     engagements: t.relation("engagements"),
     activities: t.relation("activities"),
     serviceProviders: t.relation("serviceProviders"),
@@ -454,6 +457,7 @@ export const DocumentRef = builder.prismaObject("Document", {
     transactionId: t.exposeString("transactionId", { nullable: true }),
     clientId: t.exposeString("clientId", { nullable: true }),
     investorId: t.exposeString("investorId", { nullable: true }),
+    mandateId: t.exposeString("mandateId", { nullable: true }),
     // Relations
     uploadedBy: t.relation("uploadedBy", { nullable: true }),
     reviewer: t.relation("reviewer", { nullable: true }),
@@ -461,6 +465,7 @@ export const DocumentRef = builder.prismaObject("Document", {
     transaction: t.relation("transaction", { nullable: true }),
     client: t.relation("client", { nullable: true }),
     investor: t.relation("investor", { nullable: true }),
+    mandate: t.relation("mandate", { nullable: true }),
   }),
 });
 

@@ -10,6 +10,7 @@ export interface DocumentFilter {
   transactionId?: string;
   clientId?: string;
   investorId?: string;
+  mandateId?: string;
 }
 
 export const listDocuments = (filter?: DocumentFilter) =>
@@ -18,6 +19,7 @@ export const listDocuments = (filter?: DocumentFilter) =>
       ...(filter?.transactionId != null && { transactionId: filter.transactionId }),
       ...(filter?.clientId != null && { clientId: filter.clientId }),
       ...(filter?.investorId != null && { investorId: filter.investorId }),
+      ...(filter?.mandateId != null && { mandateId: filter.mandateId }),
     },
     orderBy: { createdAt: "desc" },
     include: { uploadedBy: true, reviewer: true, approver: true, transaction: true, client: true, investor: true },

@@ -55,10 +55,10 @@ export default async function ClientDetailPage({ params }: PageProps) {
     coreProduct: c.coreProduct ?? "",
     description: c.description ?? "",
     founders: c.founders ?? "",
-    founderGender: c.founderGender ?? "",
+    founderGenders: (c.founderGenders ?? []) as string[],
     revenueLastYear: c.revenueLastYear == null ? undefined : Number(c.revenueLastYear),
     revenueForecast: c.revenueForecast == null ? undefined : Number(c.revenueForecast),
-    profitable: c.profitable ?? false,
+    profitability: c.profitability ?? "",
     existingInvestors: c.existingInvestors ?? "",
     source: c.source ?? "",
     pitchDeckUrl: c.pitchDeckUrl ?? "",
@@ -168,10 +168,10 @@ export default async function ClientDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {c.founderGender && (
+            {(c.founderGenders ?? []).length > 0 && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Founder Gender</dt>
-                <dd className="mt-1 text-sm text-zinc-900">{label("FounderGender", c.founderGender)}</dd>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Founders&apos; Gender</dt>
+                <dd className="mt-1 text-sm text-zinc-900">{(c.founderGenders ?? []).map((g: string) => label("FounderGender", g)).join(", ")}</dd>
               </div>
             )}
 
@@ -214,10 +214,10 @@ export default async function ClientDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {c.profitable != null && (
+            {c.profitability && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Profitable</dt>
-                <dd className="mt-1 text-sm text-zinc-900">{c.profitable ? "Yes" : "No"}</dd>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Profitability</dt>
+                <dd className="mt-1 text-sm text-zinc-900">{label("Profitability", c.profitability)}</dd>
               </div>
             )}
 

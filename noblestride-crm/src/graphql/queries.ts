@@ -433,12 +433,14 @@ builder.queryFields((t) => ({
       transactionId: t.arg.id({ required: false }),
       clientId: t.arg.id({ required: false }),
       investorId: t.arg.id({ required: false }),
+      mandateId: t.arg.id({ required: false }),
     },
     resolve: (_query, _root, args) =>
       listDocuments({
         transactionId: args.transactionId ?? undefined,
         clientId: args.clientId ?? undefined,
         investorId: args.investorId ?? undefined,
+        mandateId: args.mandateId ?? undefined,
       }),
   }),
 

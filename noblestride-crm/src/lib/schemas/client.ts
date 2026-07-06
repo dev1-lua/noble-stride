@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Sector, Geography, FounderGender, Source, ImpactFlag, ClientStatus } from "@prisma/client";
+import { Sector, Geography, FounderGender, Source, ImpactFlag, ClientStatus, Profitability } from "@prisma/client";
 
 export const clientCreateSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -11,11 +11,11 @@ export const clientCreateSchema = z.object({
   coreProduct: z.string().trim().optional(),
   description: z.string().trim().optional(),
   founders: z.string().trim().optional(),
-  founderGender: z.nativeEnum(FounderGender).optional(),
+  founderGenders: z.array(z.nativeEnum(FounderGender)).optional(),
   revenueLastYear: z.number().nonnegative().optional(),
   revenueForecast: z.number().nonnegative().optional(),
   currency: z.string().trim().min(1).optional(),
-  profitable: z.boolean().optional(),
+  profitability: z.nativeEnum(Profitability).optional(),
   existingInvestors: z.string().trim().optional(),
   source: z.nativeEnum(Source).optional(),
   pitchDeckUrl: z.string().trim().optional(),

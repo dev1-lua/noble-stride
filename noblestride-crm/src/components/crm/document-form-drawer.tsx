@@ -14,17 +14,18 @@ const UPDATE = `mutation UpdateDocument($id: ID!, $input: DocumentInput!) { upda
 
 const EMPTY: Record<string, unknown> = {
   name: "", type: "", version: "", accessLevel: "", status: "", fileUrl: "",
-  uploadedById: "", transactionId: "", clientId: "", investorId: "",
+  uploadedById: "", transactionId: "", clientId: "", investorId: "", mandateId: "",
   reviewerId: "", reviewedAt: "", approverId: "", approvedAt: "", clientReviewedAt: "",
 };
 
-export function DocumentFormDrawer({ mode, initial, transactions, clients, investors, users, triggerLabel }: {
+export function DocumentFormDrawer({ mode, initial, transactions, clients, investors, users, mandates, triggerLabel }: {
   mode: "create" | "edit";
   initial?: Record<string, unknown> & { id?: string };
   transactions: SelectOption[];
   clients: SelectOption[];
   investors: SelectOption[];
   users: SelectOption[];
+  mandates: SelectOption[];
   triggerLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -67,7 +68,10 @@ export function DocumentFormDrawer({ mode, initial, transactions, clients, inves
 
           {/* Linked records */}
           <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Linked Record</p>
-          <RelationSelect label="Transaction" value={v.transactionId as string} onChange={(x) => f.setValue("transactionId", x)} options={transactions} placeholder="Select transaction…" />
+          <div className="grid grid-cols-2 gap-3">
+            <RelationSelect label="Transaction" value={v.transactionId as string} onChange={(x) => f.setValue("transactionId", x)} options={transactions} placeholder="Select transaction…" />
+            <RelationSelect label="Mandate" value={v.mandateId as string} onChange={(x) => f.setValue("mandateId", x)} options={mandates} placeholder="Select mandate…" />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <RelationSelect label="Client" value={v.clientId as string} onChange={(x) => f.setValue("clientId", x)} options={clients} placeholder="Select client…" />
             <RelationSelect label="Investor" value={v.investorId as string} onChange={(x) => f.setValue("investorId", x)} options={investors} placeholder="Select investor…" />

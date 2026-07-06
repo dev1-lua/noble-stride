@@ -26,6 +26,8 @@ export const transactionCreateSchema = z.object({
   vdrLink: z.string().trim().optional(),
   probability: z.number().int().optional(),
   notes: z.string().trim().optional(),
+  referredById: z.string().trim().optional(),
+  serviceProviderIds: z.array(z.string()).optional(),
 });
 export const transactionUpdateSchema = transactionCreateSchema.partial();
 export type TransactionCreateInput = z.infer<typeof transactionCreateSchema>;

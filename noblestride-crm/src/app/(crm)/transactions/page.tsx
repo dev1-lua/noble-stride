@@ -92,7 +92,7 @@ export default async function TransactionsPage() {
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>
-          <TransactionFormDrawer mode="create" clients={rel.clients} users={rel.users} mandates={rel.mandates} />
+          <TransactionFormDrawer mode="create" clients={rel.clients} users={rel.users} mandates={rel.mandates} partners={rel.partners} serviceProviders={rel.serviceProviders} />
         </div>
       </div>
 

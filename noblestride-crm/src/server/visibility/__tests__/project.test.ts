@@ -74,7 +74,7 @@ describe("projectDealForInvestor — tier gating (§5.2)", () => {
         expect(p?.financialsSummary.disclosure).toBe("full");
         expect(p?.financialsSummary.revenueLastYear).toBe(7_200_000);
         expect(p?.financialsSummary.revenueForecast).toBe(12_500_000);
-        expect(p?.financialsSummary.profitable).toBe(true);
+        expect(p?.financialsSummary.profitability).toBe("Profitable");
       });
     }
   });

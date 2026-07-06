@@ -39,6 +39,7 @@ import {
   PartnerStatus,
   PartnerType,
   Prisma,
+  Profitability,
   Sector,
   ServiceProviderType,
   Source,
@@ -110,3 +111,4 @@ export const CommChannelEnum = builder.enumType(CommChannel, { name: "CommChanne
 export const CommDirectionEnum = builder.enumType(CommDirection, { name: "CommDirection" });
 export const ClientStatusEnum = builder.enumType(ClientStatus, { name: "ClientStatus" });
 export const ImpactFlagEnum = builder.enumType(ImpactFlag, { name: "ImpactFlag" });
+export const ProfitabilityEnum = builder.enumType(Profitability, { name: "Profitability" });

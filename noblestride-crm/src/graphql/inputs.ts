@@ -14,7 +14,7 @@ import {
   InvestorEngagementClassificationEnum, InvestorNdaStatusEnum,
   AdvisorTypeEnum, PartnerAgreementStatusEnum,
   DealStatusEnum, DealMilestoneEnum, DealFinancingTypeEnum, MaxSellingStakeEnum,
-  ImpactFlagEnum, ClientStatusEnum,
+  ImpactFlagEnum, ClientStatusEnum, ProfitabilityEnum,
   TaskStatusEnum, TaskSourceEnum,
   InteractionTypeEnum, CommChannelEnum, CommDirectionEnum,
 } from "./builder";
@@ -76,11 +76,11 @@ export const ClientInput = builder.inputType("ClientInput", {
     coreProduct: t.string({ required: false }),
     description: t.string({ required: false }),
     founders: t.string({ required: false }),
-    founderGender: t.field({ type: FounderGenderEnum, required: false }),
+    founderGenders: t.field({ type: [FounderGenderEnum], required: false }),
     revenueLastYear: t.float({ required: false }),
     revenueForecast: t.float({ required: false }),
     currency: t.string({ required: false }),
-    profitable: t.boolean({ required: false }),
+    profitability: t.field({ type: ProfitabilityEnum, required: false }),
     existingInvestors: t.string({ required: false }),
     source: t.field({ type: SourceEnum, required: false }),
     pitchDeckUrl: t.string({ required: false }),
@@ -154,6 +154,8 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     vdrLink: t.string({ required: false }),
     probability: t.int({ required: false }),
     notes: t.string({ required: false }),
+    referredById: t.id({ required: false }),
+    serviceProviderIds: t.field({ type: ["ID"], required: false }),
   }),
 });
 
@@ -209,6 +211,7 @@ export const DocumentInput = builder.inputType("DocumentInput", {
     transactionId: t.id({ required: false }),
     clientId: t.id({ required: false }),
     investorId: t.id({ required: false }),
+    mandateId: t.id({ required: false }),
   }),
 });
 
