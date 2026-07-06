@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
 import { formatDate } from "@/lib/format";
+import { EngagementFormDrawer } from "@/components/crm/engagement-form-drawer";
 
 export interface DisbursementRow {
   id: string;
@@ -17,6 +18,8 @@ export interface DisbursementRow {
   amountPending: number | null;
   disbursementStatus: string | null;
   dateReceived: Date | null;
+  /** Prebuilt EngagementFormDrawer initial (plain serializable values). */
+  editInitial: Record<string, unknown> & { id: string; transactionId: string; investorId: string };
 }
 
 const sum = (rows: DisbursementRow[], key: "totalAmount" | "amountDisbursed" | "amountPending") =>
@@ -47,6 +50,7 @@ export function DisbursementTable({ rows }: { rows: DisbursementRow[] }) {
             <Th>Pending</Th>
             <Th>Status</Th>
             <Th>Received</Th>
+            <Th>{null}</Th>
           </Tr>
         </THead>
         <TBody>
@@ -79,6 +83,9 @@ export function DisbursementTable({ rows }: { rows: DisbursementRow[] }) {
                 )}
               </Td>
               <Td className="text-zinc-600">{formatDate(r.dateReceived) || "—"}</Td>
+              <Td>
+                <EngagementFormDrawer initial={r.editInitial} triggerLabel="Edit" />
+              </Td>
             </Tr>
           ))}
           {/* Column totals */}
@@ -88,6 +95,7 @@ export function DisbursementTable({ rows }: { rows: DisbursementRow[] }) {
             <Td className="font-semibold text-zinc-900">{formatMoney(sum(rows, "totalAmount"))}</Td>
             <Td className="font-semibold text-zinc-900">{formatMoney(sum(rows, "amountDisbursed"))}</Td>
             <Td className="font-semibold text-zinc-900">{formatMoney(sum(rows, "amountPending"))}</Td>
+            <Td />
             <Td />
             <Td />
           </Tr>

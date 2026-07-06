@@ -11,6 +11,7 @@ import { StageHistory } from "@/components/crm/stage-history";
 import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { formatDate, daysAgoLabel } from "@/lib/format";
 import { RecordClosedNdaButton } from "@/components/crm/nda-actions";
+import { EngagementFormDrawer } from "@/components/crm/engagement-form-drawer";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -40,6 +41,24 @@ export default async function EngagementDetailPage({ params }: PageProps) {
     createdSource: s.createdSource,
   }));
 
+  const toDate = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : "");
+  const editInitial = {
+    id: engagement.id,
+    transactionId: engagement.transactionId,
+    investorId: engagement.investorId,
+    interestLevel: engagement.interestLevel ?? "",
+    ndaType: engagement.ndaType ?? "",
+    termSheetIssued: engagement.termSheetIssued,
+    termSheetDate: toDate(engagement.termSheetDate),
+    totalAmount: engagement.totalAmount == null ? undefined : Number(engagement.totalAmount),
+    amountDisbursed: engagement.amountDisbursed == null ? undefined : Number(engagement.amountDisbursed),
+    disbursementStatus: engagement.disbursementStatus ?? "",
+    dateReceived: toDate(engagement.dateReceived),
+    probability: engagement.probability == null ? undefined : Number(engagement.probability),
+    feedback: engagement.feedback ?? "",
+    notes: engagement.notes ?? "",
+  };
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
@@ -62,6 +81,9 @@ export default async function EngagementDetailPage({ params }: PageProps) {
           <p className="mt-1 text-sm text-zinc-500">
             {engagement.investor.name} · {engagement.transaction.name}
           </p>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <EngagementFormDrawer initial={editInitial} />
         </div>
       </div>
 

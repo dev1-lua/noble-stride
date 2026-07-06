@@ -59,6 +59,7 @@ export default async function EngagementPage() {
   }));
 
   // Disbursement rows (Decimal → number)
+  const toDate = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : "");
   const disbursementRows: DisbursementRow[] = disbursements.map((eng) => ({
     id: eng.id,
     investorId: eng.investorId,
@@ -70,6 +71,22 @@ export default async function EngagementPage() {
     amountPending: eng.amountPending == null ? null : Number(eng.amountPending),
     disbursementStatus: eng.disbursementStatus,
     dateReceived: eng.dateReceived,
+    editInitial: {
+      id: eng.id,
+      transactionId: eng.transactionId,
+      investorId: eng.investorId,
+      interestLevel: eng.interestLevel ?? "",
+      ndaType: eng.ndaType ?? "",
+      termSheetIssued: eng.termSheetIssued,
+      termSheetDate: toDate(eng.termSheetDate),
+      totalAmount: eng.totalAmount == null ? undefined : Number(eng.totalAmount),
+      amountDisbursed: eng.amountDisbursed == null ? undefined : Number(eng.amountDisbursed),
+      disbursementStatus: eng.disbursementStatus ?? "",
+      dateReceived: toDate(eng.dateReceived),
+      probability: eng.probability == null ? undefined : Number(eng.probability),
+      feedback: eng.feedback ?? "",
+      notes: eng.notes ?? "",
+    },
   }));
 
   // Map timeline activities to ActivityTimelineItem
