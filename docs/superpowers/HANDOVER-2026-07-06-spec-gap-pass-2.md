@@ -1,0 +1,70 @@
+# HANDOVER — Spec-Gap Pass 2 (2026-07-06) — resume point
+
+**Read this whole file before doing anything.** It is the full context of an interrupted session. The user's PC lost power mid-work. Continue exactly from the resume point in §6.
+
+---
+
+## 1. The mission (user's original request + 4 rules)
+
+Convert every remaining 🟡/❌ in `docs/CRM-VS-BUILD-SPEC-COMPARATIVE-ANALYSIS-2026-07-06.md` (repo root `docs/`) to ✅ **by actually building the functionality** — no assumption-based doc edits. Compare against `docs/SOW.md` (= the build spec PDF). Verify against the live CRM at `http://localhost:3000/dashboard`.
+
+**User's rules (binding):**
+1. Superpowers **subagent-driven development**: Sonnet writes code, Opus reviews — both at **XHIGH** effort; Fable does the final whole-branch review at the end.
+2. Superpowers **brainstorm → plan → execute** cycle (brainstorm DONE, design approved & committed).
+3. A final **end-to-end verification step** driving the real app (user asked for Playwright against `http://localhost:3000/dashboard`) confirming everything is connected to the admin dashboard, nothing isolated. No Playwright MCP exists — plan was: install Playwright in the session scratchpad (`npm init -y && npm i playwright` there) and drive localhost:3000 via scripts. Also: `npx tsc --noEmit`, `pnpm test` (363-test baseline), `pnpm lint` (pre-existing failures: clients-table.tsx, count-up.tsx, prisma/seed.ts, investors-crud.smoke.test.ts — 3 errors/2 warnings, NOT ours), production build.
+4. **Update the comparative-analysis doc** after completion to reflect new state.
+
+## 2. Key discoveries already made (do NOT redo)
+
+- The tables the user originally pasted were the **pre-implementation** audit. The on-disk analysis doc is already post-pass-1 (commits `ae1f53e..f3419a0` closed most gaps: company/deal fields, picklists, Task CRUD, ServiceProvider UI, comm logging, stage audit, dashboard groupings).
+- **User decisions (asked & answered):** do ALL remaining actionable workstreams **except file upload/storage** ("leave file upload and storage for now" — stays 🟡). Client-question items (deal-stage vocab §4.4, deployment status §4.13, sub-sector, single-vs-multi sector, countries-vs-regions, teaser/IM/model derived-vs-stored, Advisory) **stay yellow** — recorded in `memory/client-meeting-questions.md` questions 7–14. Agents/WhatsApp/integrations/real-auth are roadmap, out of scope.
+- **Design approved by user and committed:** `docs/superpowers/specs/2026-07-06-spec-gap-pass-2-design.md` (commit `1f5ce0a`). READ IT — it defines the 6 workstreams A–F:
+  A. Person (contact) CRUD; B. Engagement edit drawer; C. §6.2 milestone write path (record/unrecord EngagementMilestone); D. remaining §13 dashboards (active-vs-inactive, stage-history roll-up, per-investor rollup, invested/completed, historical year/quarter summary, partner conversion funnel); E. §7.1 identifier audit (extend StageChange with client/investor/partner FKs) + immutability (dateOpened/source reject-once-set); F. small-field sweep (years-of-operation derived, Profitability enum replacing boolean, foundersGender→multi, Document.mandateId, create-task-from-comm, ssaRegionContact in drawer, Transaction.referredById, Transaction↔ServiceProvider writable, §6.1 valuation row hidden for Debt deals, logActivity subject required).
+
+## 3. Environment facts
+
+- Repo root: `D:\LuaWork\NobleStride\noble-stride`; **app root: `noblestride-crm/`** inside it. Branch: `test/comparisionAgainstTheBuildSpecs` (tracks upstream same-name).
+- Dev server usually already running on localhost:3000 — don't restart. **Windows quirk:** `npm run build` runs `prisma generate` which EPERMs while dev server holds the query-engine DLL; if schema unchanged use `npx next build`. After schema changes, the dev server may need a stop for `prisma migrate dev` / `generate` — coordinate carefully.
+- Demo lens: `GET /api/viewpoint?role=investor|partner|admin&recordId=<id>&next=<path>` sets `ns_viewpoint` cookie then redirects (chain `next=` in one navigation for headless browsing).
+- DB: docker postgres (`pnpm db:up`), **migrations** (`pnpm migrate` = prisma migrate dev), 12 existing migrations, latest `20260706120000_spec_gap_quick_wins`. Seed `pnpm seed`. Tests: `pnpm test` (vitest, `fileParallelism: false`, DB-backed `*.smoke.test.ts` in `src/server/**/__tests__/`). No typecheck script — `npx tsc --noEmit`.
+- `src/generated/pothos-types.ts` regenerates with machine-specific path — **revert that churn, never commit it**.
+
+## 4. Code map (verified 2026-07-06 — condensed; file:line may drift slightly)
+
+**CRUD pattern exemplar (copy for Person):** zod `src/lib/schemas/service-provider.ts` (createSchema + `.partial()` update) → Pothos input `src/graphql/inputs.ts` (single input serves create+update, only name required) → mutations `src/graphql/mutations.ts` (thin resolvers, `args.input as never`, `ctx.actor` on create) → service `src/server/services/service-providers.ts` (zod re-parse, `actorSource(actor)` → createdSource, `CrudError` from `./crud`) → drawer `src/components/crm/service-provider-form-drawer.tsx` (`"use client"`, inline GQL strings, EMPTY defaults, `useEntityForm` from `src/components/ui/use-entity-form.ts` — prunes blanks, safeParse, urql useMutation, router.refresh; supports controlled open/onOpenChange) → list page RSC calls service directly, Decimal→number DTO mapping. Relation pickers get options from `src/server/services/relation-options.ts` (`relationOptions()` returns clients/users/partners/mandates/transactions/investors {value,label}[]).
+
+**Person model** `prisma/schema.prisma:444-470`: firstName req, lastName/email/phone/jobTitle/linkedinUrl optional, isPrimaryContact/isSSAContact booleans, optional FKs investorId/clientId/partnerId (SetNull), reverse `ssaForInvestors` rel "InvestorSsaContact". NO zod/input/mutations/drawer exist. Rendered read-only: clients/[id]/page.tsx:325-345, investors/[id]/page.tsx:70+109+325-345, partners/[id]/page.tsx:136-155. Other writers: `src/server/onboarding/register-investor.ts:46-55`, `src/app/portal/investor/profile/actions.ts:68-105`.
+
+**Engagement** schema:699-739 (@@unique([transactionId,investorId])). Service `src/server/services/engagements-crud.ts`: updateEngagement parses `engagementUpdateSchema` (all fields partial), recomputes amountPending/year/quarter over MERGED state via `src/server/domain/disbursement.ts`, NDA-gates stage moves (`src/server/domain/nda-guard.ts` assertStageAllowed), records StageChange on engagementStage change in $transaction. `EngagementInput` inputs.ts:253-271. Existing edit UI ONLY: `engagement-restage-select.tsx` (on stage board) + `nda-actions.tsx` (investor + engagement detail). No deleteEngagement mutation. Engagement rows render: /engagement page (board + disbursement table + timeline), engagement/[id]/page.tsx, transactions/[id]/page.tsx:320-357, investors/[id]/page.tsx:382+.
+
+**Milestones:** `EngagementMilestone` schema:746-757 (key MilestoneKey, completedAt default now, notes, @@unique([engagementId,key])). `src/lib/milestones.ts`: MILESTONE_ORDER (15 keys TeaserReview→SuccessFeePaid), MILESTONE_LABELS, STAGE_MILESTONES (stage→implied), effectiveMilestones(stage, recorded), PREP_MILESTONES (5 rows w/ docType incl. Valuation "equity deals" + BusinessPlan "optional"). ZERO write paths to EngagementMilestone anywhere. Read merge: `src/server/visibility/project.ts:320-356`, load.ts:93-139. Portal stepper `src/components/portal/milestone-stepper.tsx` (pipeline page), checklist inline in portal/investor/deals/[id]/page.tsx:202-233. PrepMilestones component `src/components/crm/prep-milestones.tsx` fed docTypes at transactions/[id]/page.tsx:400-418; equity discriminator = `Transaction.financingType DealFinancingType?` (Debt/Equity/EquityAndDebt).
+
+**StageChange** schema:930-949: field String ("stage"|"dealStatus"|"engagementStage"|"dealMilestone"), fromValue?/toValue, changedAt, changedById→User rel "StageChangeActor", createdSource, FKs mandateId/transactionId/engagementId (Cascade) ONLY — **no client/investor/partner FKs yet** (workstream E adds them). Writer `src/server/services/stage-history.ts` `recordStageChange(tx, {field, fromValue, toValue, actor, ...targets})` — no-ops when toValue==null or unchanged; TS union `StageChangeField` at line 10. Callers: mandates.ts setMandateStage:86-96 + updateMandate:105-115 (dealStatus), transactions.ts setTransactionStage:122-134 + updateTransaction:143-156 (dealStatus+dealMilestone), engagements-crud.ts:53-65. Renderer `src/components/crm/stage-history.tsx` (StageHistoryItem, FIELD_LABELS map, vocabGroupFor switch — extend for new fields; used on mandate/transaction/engagement detail).
+
+**Services w/ update fns for immutability+audit (E):** `clients.ts` updateClient:38-41 plain update (name+registrationNo freely mutable — audit these); mandates.ts updateMandate (dateOpened+source in schema, mutable — make immutable-once-set); transactions.ts updateTransaction (dateOpened mutable; Transaction has NO source field, NO referredById — F adds referredById). Investor/partner update fns in `investors.ts`/`partners.ts` (not read this session — pattern same as clients).
+
+**Dashboard** `src/server/services/dashboard.ts`: exemplars pipelineOverview (groupBy + full-vocab-order map), pipelineBreakdowns:245-308 (groupBy scalars; scalar-list/derived buckets in-process from one findMany; owner names via one follow-up findMany), disbursementByPeriod:325-341 (groupBy year+quarter — consumed by /engagement page), teamWorkload:360-391, taskStatusByOwner:409-426, overdueTasks(Count). Dashboard page `src/app/(crm)/dashboard/page.tsx` = pure RSC, Promise.all over services → display components `pipeline-breakdown.tsx` (BreakdownBarList), `team-tasks-panel.tsx`, `disbursement-period-summary.tsx`.
+
+**Activity/logActivity** `src/server/services/engagements.ts:197-227`: requires ≥1 link of client/mandate/transaction/investor/engagement else CrudError; sets createdById from actor.userId. Zod `src/lib/schemas/activity.ts` (subject currently OPTIONAL — F makes it required). Log dialog `src/components/crm/log-engagement-dialog.tsx` (dual-path logEngagement vs logActivity; mounted /engagement page + client detail). Task drawer `src/components/crm/task-form-drawer.tsx` already accepts activityId in TaskInput (no visible field) — F's create-task-from-comm prefills it.
+
+**Client model** schema:547-596 (profitable Boolean? line 562 → F replaces with Profitability enum {Profitable, LossMaking}, spec §3.1 says "Profitable / loss-making"; founderGender FounderGender? line 558 → F makes array). Client zod `src/lib/schemas/client.ts`. Client drawer `client-form-drawer.tsx` (profitable CheckboxField line ~98; detail page seeds `profitable: c.profitable ?? false` — fix when migrating).
+
+**Document** schema:892-923: FKs transactionId/clientId/investorId only — F adds mandateId. Drawer `document-form-drawer.tsx` Linked Record section lines 69-75.
+
+**Investor** schema:476-541: ssaRegionContactId/ssaRegionContact (rel "InvestorSsaContact") EXISTS in schema+InvestorInput+zod but NOT in investor-form-drawer nor detail — F exposes (options = the investor's own contacts).
+
+**GraphQL org:** single files — inputs.ts, mutations.ts (builder.mutationFields, 35 mutations), queries.ts, types.ts (PersonRef exists at types.ts:71-93), builder.ts (Pothos + enum refs — new enums like Profitability/MilestoneKey need refs here + labels in `src/lib/vocab.ts` LABELS/options/label).
+
+## 5. Session task list state (recreate in new session)
+
+1. ✅ Brainstorm/clarify/design (approved)
+2. ✅ Design doc committed (`1f5ce0a`)
+3. ⏳ **IN PROGRESS: write implementation plan** — `superpowers:writing-plans` skill, save to `docs/superpowers/plans/2026-07-06-spec-gap-pass-2.md` (repo-root docs/superpowers/plans is the convention for recent plans). Exemplar reading was ~90% done (everything in §4 above is verified fact — trust it). Still unread (read if needed while writing the plan): `src/server/services/investors.ts`/`partners.ts` update fns, `src/lib/vocab.ts` exact LABELS shape, `src/graphql/builder.ts` enum-ref pattern, one `*.smoke.test.ts` exemplar (e.g. `src/server/services/__tests__/tasks-crud.smoke.test.ts`), `src/lib/schemas/mandate.ts`/`transaction.ts`, detail pages to be edited, `src/components/ui/fields.tsx` available field components, `queries.ts` (for stage-history roll-up + any new list queries).
+4. ⬜ Execute plan via `superpowers:subagent-driven-development` — per task: Sonnet (model sonnet, effort xhigh) implements, Opus (model opus, effort xhigh) reviews the diff, fix loop; frequent commits.
+5. ⬜ Fable final whole-branch review (`superpowers:requesting-code-review` / direct review by main agent).
+6. ⬜ End-to-end live verification (rule 3): Playwright from scratchpad against localhost:3000 driving every new surface + tsc/test/lint/build (see §1 rule 3 details).
+7. ⬜ Update `docs/CRM-VS-BUILD-SPEC-COMPARATIVE-ANALYSIS-2026-07-06.md` (statuses + implementation-log banner + rewritten §16) and commit.
+
+## 6. RESUME POINT
+
+Continue task 3: invoke `superpowers:writing-plans`, write the full bite-sized plan for workstreams A–F using §4's verified code map (with real code in every step per the skill), self-review it, save + commit, then proceed to task 4 (subagent-driven execution) **without re-asking the user** — the design is already approved and the user said "yes go ahead now". Suggested plan task split: (1) Person CRUD data layer, (2) Person drawer + page wiring, (3) Engagement edit drawer, (4) Milestone write path + checklist UI, (5) StageChange extension migration + identifier audit + history panels, (6) Immutability guards, (7) Schema sweep migration (Profitability, founderGenders[], Document.mandateId, Transaction.referredById + SP linking) + form exposure, (8) Comm-task + valuation conditionality + ssaRegionContact + logActivity subject, (9) Dashboard functions + panels. Keep each subagent prompt self-contained (they don't see this file unless told — tell implementers to read the plan task + relevant files).
