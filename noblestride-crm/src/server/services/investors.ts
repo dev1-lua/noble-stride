@@ -104,6 +104,7 @@ export async function getInvestor(id: string) {
     where: { id },
     include: {
       contacts: true,
+      ssaRegionContact: true,
       engagements: { include: { transaction: true } },
       activities: { orderBy: { occurredAt: "desc" }, take: 20 },
       stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },

@@ -242,7 +242,7 @@ export const LogActivityInput = builder.inputType("LogActivityInput", {
     type: t.field({ type: InteractionTypeEnum, required: true }),
     channel: t.field({ type: CommChannelEnum, required: false }),
     direction: t.field({ type: CommDirectionEnum, required: false }),
-    subject: t.string({ required: false }),
+    subject: t.string({ required: true }),
     body: t.string({ required: false }),
     occurredAt: t.field({ type: "DateTime", required: false }),
     clientId: t.id({ required: false }),

@@ -2,7 +2,7 @@
 // The five target-company preparation milestones (PREP_MILESTONES) are derived
 // from the document register, not stored: a milestone is "done" when the
 // transaction has a document of the matching type. Server component.
-import { PREP_MILESTONES } from "@/lib/milestones";
+import { visiblePrepMilestones } from "@/lib/milestones";
 
 function CheckIcon() {
   return (
@@ -30,12 +30,12 @@ function EmptyIcon() {
 }
 
 /** `docTypes` = the DocumentType values of the transaction's linked documents. */
-export function PrepMilestones({ docTypes }: { docTypes: string[] }) {
+export function PrepMilestones({ docTypes, financingType }: { docTypes: string[]; financingType?: string | null }) {
   const present = new Set(docTypes);
 
   return (
     <ul className="divide-y divide-zinc-100">
-      {PREP_MILESTONES.map((m) => {
+      {visiblePrepMilestones(financingType).map((m) => {
         const done = present.has(m.docType);
         return (
           <li key={m.key} className="flex items-center gap-3 py-2.5">

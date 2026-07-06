@@ -42,7 +42,7 @@ describe("logActivity — generalized communication logging (smoke)", () => {
       const client = await createClient({ name: "__log_activity_client__" }, { type: "HUMAN" });
       try {
         const activity = await logActivity(
-          { type: "Outreach", channel: "WhatsApp", direction: "Inbound", body: "Bare-client note", clientId: client.id },
+          { type: "Outreach", subject: "Bare-client outreach", channel: "WhatsApp", direction: "Inbound", body: "Bare-client note", clientId: client.id },
           { type: "HUMAN" },
         );
         expect(activity.clientId).toBe(client.id);
@@ -63,10 +63,25 @@ describe("logActivity — generalized communication logging (smoke)", () => {
 
   it("rejects logging with no linked record at all", async () => {
     const ran = await withDb(async () => {
-      await expect(logActivity({ type: "Outreach" }, { type: "HUMAN" })).rejects.toThrow(CrudError);
+      await expect(logActivity({ type: "Outreach", subject: "Note" }, { type: "HUMAN" })).rejects.toThrow(CrudError);
       return true;
     });
     void ran;
+  });
+
+  it("rejects logActivity without a subject (spec §3.10 summary required)", async () => {
+    const out = await withDb(async () => {
+      const client = await createClient({ name: "__log_subject_client__" }, { type: "HUMAN" });
+      try {
+        await expect(
+          logActivity({ type: "Note", clientId: client.id } as never, { type: "HUMAN" }),
+        ).rejects.toThrow();
+      } finally {
+        await deleteClient(client.id);
+      }
+      return true;
+    });
+    if (out === null) return;
   });
 
   it("populates createdById from the acting user when present", async () => {
@@ -79,7 +94,7 @@ describe("logActivity — generalized communication logging (smoke)", () => {
       const client = await createClient({ name: "__log_activity_createdby_client__" }, { type: "HUMAN" });
       try {
         const activity = await logActivity(
-          { type: "Meeting", clientId: client.id },
+          { type: "Meeting", subject: "Kickoff meeting", clientId: client.id },
           { type: "HUMAN", userId: user.id },
         );
         expect(activity.createdById).toBe(user.id);

@@ -7,6 +7,7 @@ import { engagementCounters, activityTimeline } from "@/server/services/activiti
 import { listTransactions } from "@/server/services/transactions";
 import { listInvestors } from "@/server/services/investors";
 import { disbursementByPeriod } from "@/server/services/dashboard";
+import { relationOptions } from "@/server/services/relation-options";
 import { StatCard } from "@/components/ui";
 import { options } from "@/lib/vocab";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
@@ -20,7 +21,7 @@ import { DisbursementPeriodSummary } from "@/components/crm/disbursement-period-
 
 export default async function EngagementPage() {
   // Parallel fetches
-  const [counters, stageColumns, disbursements, periodSummary, timeline, transactions, investors] =
+  const [counters, stageColumns, disbursements, periodSummary, timeline, transactions, investors, rel] =
     await Promise.all([
       engagementCounters(),
       engagementsByStage(),
@@ -29,6 +30,7 @@ export default async function EngagementPage() {
       activityTimeline(),
       listTransactions(),
       listInvestors({}),
+      relationOptions(),
     ]);
 
   // "Deals rejected" — engagements that reached the Declined stage. Reuses the
@@ -98,6 +100,8 @@ export default async function EngagementPage() {
     context: [a.investor?.name, a.transaction?.name].filter(Boolean).join(" · ") || null,
     channel: a.channel,
     direction: a.direction,
+    links: { clientId: a.clientId, mandateId: a.mandateId, transactionId: a.transactionId, investorId: a.investorId },
+    tasks: (a.tasks ?? []).map((t) => ({ id: t.id, title: t.title, status: t.status })),
   }));
 
   return (
@@ -153,6 +157,7 @@ export default async function EngagementPage() {
             activities={timelineItems}
             title="Activity Timeline"
             emptyText="No activity recorded yet."
+            taskOptions={{ mandates: rel.mandates, transactions: rel.transactions, investors: rel.investors, clients: rel.clients, users: rel.users }}
           />
         </div>
       </div>

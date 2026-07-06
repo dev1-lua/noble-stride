@@ -26,7 +26,7 @@ export async function getClient(id: string) {
       contacts: true,
       mandates: true,
       transactions: true,
-      activities: { orderBy: { occurredAt: "desc" } },
+      activities: { orderBy: { occurredAt: "desc" }, include: { tasks: { select: { id: true, title: true, status: true } } } },
       stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
     },
   });

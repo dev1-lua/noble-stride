@@ -106,7 +106,7 @@ export async function getTransaction(id: string) {
       assistant: true,
       referredBy: true,
       engagements: { include: { investor: true } },
-      activities: { orderBy: { occurredAt: "desc" } },
+      activities: { orderBy: { occurredAt: "desc" }, include: { tasks: { select: { id: true, title: true, status: true } } } },
       stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
       serviceProviders: { orderBy: { name: "asc" } },
     },

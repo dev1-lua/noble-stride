@@ -85,7 +85,7 @@ export async function getEngagement(id: string) {
       transaction: true,
       investor: true,
       owner: true,
-      activities: { orderBy: { occurredAt: "desc" } },
+      activities: { orderBy: { occurredAt: "desc" }, include: { tasks: { select: { id: true, title: true, status: true } } } },
       stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
       milestones: true,
     },

@@ -5,6 +5,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getClient } from "@/server/services/clients";
+import { relationOptions } from "@/server/services/relation-options";
 import { Chip, Card, CardHeader, CardBody, Avatar, Badge } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
 import { label } from "@/lib/vocab";
@@ -27,6 +28,8 @@ export default async function ClientDetailPage({ params }: PageProps) {
   const client = await getClient(id);
 
   if (!client) notFound();
+
+  const rel = await relationOptions();
 
   // Decimal → number conversions
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,6 +95,8 @@ export default async function ClientDetailPage({ params }: PageProps) {
     occurredAt: a.occurredAt,
     channel: a.channel,
     direction: a.direction,
+    links: { clientId: client.id, mandateId: a.mandateId, transactionId: a.transactionId, investorId: a.investorId },
+    tasks: (a.tasks ?? []).map((t: { id: string; title: string; status: string }) => ({ id: t.id, title: t.title, status: t.status })),
   }));
 
   const changeHistoryItems: StageHistoryItem[] = (client.stageChanges ?? []).map((s) => ({
@@ -186,6 +191,13 @@ export default async function ClientDetailPage({ params }: PageProps) {
               <div>
                 <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Registration No.</dt>
                 <dd className="mt-1 text-sm text-zinc-900">{c.registrationNo}</dd>
+              </div>
+            )}
+
+            {c.yearFounded && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Years of Operation</dt>
+                <dd className="mt-1 text-sm text-zinc-900">{new Date().getFullYear() - c.yearFounded}</dd>
               </div>
             )}
 
@@ -411,6 +423,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
         activities={timelineItems}
         title="Communications"
         emptyText="No communications logged."
+        taskOptions={{ mandates: rel.mandates, transactions: rel.transactions, investors: rel.investors, clients: rel.clients, users: rel.users }}
       />
 
       <StageHistory title="Change History" items={changeHistoryItems} />

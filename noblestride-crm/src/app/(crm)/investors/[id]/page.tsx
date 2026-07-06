@@ -51,6 +51,7 @@ export default async function InvestorDetailPage({ params }: PageProps) {
     shareholdingPreference: investor.shareholdingPreference ?? "",
     nextActionDate: investor.nextActionDate ? investor.nextActionDate.toISOString().slice(0, 10) : "",
     feedback: investor.feedback ?? "",
+    ssaRegionContactId: investor.ssaRegionContactId ?? "",
   };
   const DELETE_INVESTOR = `mutation DeleteInvestor($id: ID!) { deleteInvestor(id: $id) { id } }`;
 
@@ -239,7 +240,11 @@ export default async function InvestorDetailPage({ params }: PageProps) {
           )}
         </div>
         <div className="flex shrink-0 gap-2">
-          <InvestorFormDrawer mode="edit" initial={initial} />
+          <InvestorFormDrawer
+            mode="edit"
+            initial={initial}
+            contacts={investor.contacts.map((p) => ({ value: p.id, label: [p.firstName, p.lastName].filter(Boolean).join(" ") }))}
+          />
           <DeleteConfirm mutation={DELETE_INVESTOR} recordId={investor.id} entityLabel="investor" redirectTo="/investors" />
         </div>
       </div>
@@ -310,6 +315,15 @@ export default async function InvestorDetailPage({ params }: PageProps) {
               <div>
                 <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Next Action Date</dt>
                 <dd className="mt-1 text-sm text-zinc-900">{formatDate(investor.nextActionDate)}</dd>
+              </div>
+            )}
+
+            {investor.ssaRegionContact && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">SSA Region Contact</dt>
+                <dd className="mt-1 text-sm text-zinc-900">
+                  {[investor.ssaRegionContact.firstName, investor.ssaRegionContact.lastName].filter(Boolean).join(" ")}
+                </dd>
               </div>
             )}
 

@@ -105,6 +105,7 @@ export function LogEngagementDialog({
   /** Returns a validation message, or null when the form is submittable. */
   function validate(): string | null {
     if (!type) return "Type is required.";
+    if (!subject.trim()) return "Subject is required.";
     if (transactionId && !investorId) return "Select an investor to pair with the transaction.";
     if (investorId && !transactionId) return "Select a transaction to pair with the investor.";
     if (!hasFixedLink && !hasTransactionInvestorPair) {
@@ -256,7 +257,7 @@ export function LogEngagementDialog({
                   />
                 </div>
                 <Input
-                  label="Subject"
+                  label="Subject *"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Brief subject…"

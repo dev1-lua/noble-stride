@@ -4,6 +4,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getEngagement } from "@/server/services/engagements";
+import { relationOptions } from "@/server/services/relation-options";
 import { Chip, Card, CardHeader, CardBody, Avatar } from "@/components/ui";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
@@ -27,11 +28,15 @@ export default async function EngagementDetailPage({ params }: PageProps) {
 
   if (!engagement) notFound();
 
+  const rel = await relationOptions();
+
   const activityItems: ActivityTimelineItem[] = engagement.activities.map((a) => ({
     id: a.id,
     type: a.type,
     subject: a.subject,
     occurredAt: a.occurredAt,
+    links: { transactionId: engagement.transactionId, investorId: engagement.investorId },
+    tasks: (a.tasks ?? []).map((t) => ({ id: t.id, title: t.title, status: t.status })),
   }));
 
   const stageHistoryItems: StageHistoryItem[] = engagement.stageChanges.map((s) => ({
@@ -205,7 +210,10 @@ export default async function EngagementDetailPage({ params }: PageProps) {
       <StageHistory stageGroup="EngagementStage" items={stageHistoryItems} />
 
       {/* Activity timeline */}
-      <ActivityTimeline activities={activityItems} />
+      <ActivityTimeline
+        activities={activityItems}
+        taskOptions={{ mandates: rel.mandates, transactions: rel.transactions, investors: rel.investors, clients: rel.clients, users: rel.users }}
+      />
     </div>
   );
 }

@@ -1,9 +1,12 @@
 // activity-timeline.tsx — Shared server component for rendering activity lists.
 // Server Component: no "use client". Receives pre-mapped ActivityTimelineItem[].
 
+import Link from "next/link";
 import { Card, CardHeader, CardBody } from "@/components/ui";
+import type { SelectOption } from "@/components/ui";
 import { label } from "@/lib/vocab";
 import { daysAgoLabel } from "@/lib/format";
+import { TaskFormDrawer } from "@/components/crm/task-form-drawer";
 
 export interface ActivityTimelineItem {
   id: string;
@@ -13,16 +16,30 @@ export interface ActivityTimelineItem {
   context?: string | null; // optional secondary line e.g. "Akili Kids · Acme Capital"
   channel?: string | null; // CommChannel enum value (spec §3.10)
   direction?: string | null; // CommDirection enum value (spec §3.10)
+  /** Record links copied onto tasks created from this activity (spec §3.10). */
+  links?: { clientId?: string | null; mandateId?: string | null; transactionId?: string | null; investorId?: string | null };
+  /** Tasks already extracted from this activity. */
+  tasks?: { id: string; title: string; status: string }[];
+}
+
+export interface ActivityTaskOptions {
+  mandates: SelectOption[];
+  transactions: SelectOption[];
+  investors: SelectOption[];
+  clients: SelectOption[];
+  users: SelectOption[];
 }
 
 export function ActivityTimeline({
   activities,
   title = "Recent Activity",
   emptyText = "No activity recorded.",
+  taskOptions,
 }: {
   activities: ActivityTimelineItem[];
   title?: string;
   emptyText?: string;
+  taskOptions?: ActivityTaskOptions;
 }) {
   return (
     <Card>
@@ -57,6 +74,38 @@ export function ActivityTimeline({
                     )}
                   </div>
                   <p className="text-xs text-zinc-400 mt-0.5">{daysAgoLabel(a.occurredAt)}</p>
+                  {(a.tasks ?? []).length > 0 && (
+                    <ul className="mt-1 space-y-0.5">
+                      {a.tasks!.map((task) => (
+                        <li key={task.id} className="flex items-center gap-1.5 text-xs text-zinc-500">
+                          <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" />
+                          <Link href="/tasks" className="hover:text-accent transition-colors">{task.title}</Link>
+                          <span className="text-zinc-400">· {label("TaskStatus", task.status)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {taskOptions && (
+                    <div className="mt-1.5">
+                      <TaskFormDrawer
+                        mode="create"
+                        triggerLabel="+ Task"
+                        initial={{
+                          title: a.subject ?? label("InteractionType", a.type),
+                          activityId: a.id,
+                          clientId: a.links?.clientId ?? "",
+                          mandateId: a.links?.mandateId ?? "",
+                          transactionId: a.links?.transactionId ?? "",
+                          investorId: a.links?.investorId ?? "",
+                        }}
+                        mandates={taskOptions.mandates}
+                        transactions={taskOptions.transactions}
+                        investors={taskOptions.investors}
+                        clients={taskOptions.clients}
+                        users={taskOptions.users}
+                      />
+                    </div>
+                  )}
                   {a.context && (
                     <p className="text-xs text-zinc-400 mt-0.5">{a.context}</p>
                   )}

@@ -17,7 +17,7 @@ import { StageHistory } from "@/components/crm/stage-history";
 import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { MatchInvestorsButton } from "@/components/crm/match-investors-button";
 import { PrepMilestones } from "@/components/crm/prep-milestones";
-import { PREP_MILESTONES } from "@/lib/milestones";
+import { visiblePrepMilestones } from "@/lib/milestones";
 import { TransactionFormDrawer } from "@/components/crm/transaction-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
 
@@ -412,13 +412,13 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           <h2 className="text-sm font-semibold text-zinc-900">
             Deal Preparation
             <Badge tone="neutral" className="ml-2">
-              {PREP_MILESTONES.filter((m) => documents.some((d) => d.type === m.docType)).length}
-              /{PREP_MILESTONES.length}
+              {visiblePrepMilestones(txn.financingType).filter((m) => documents.some((d) => d.type === m.docType)).length}
+              /{visiblePrepMilestones(txn.financingType).length}
             </Badge>
           </h2>
         </CardHeader>
         <CardBody>
-          <PrepMilestones docTypes={documents.map((d) => d.type)} />
+          <PrepMilestones docTypes={documents.map((d) => d.type)} financingType={txn.financingType} />
           <p className="mt-3 text-xs text-zinc-400">
             Derived from the document register: a milestone is complete once a document of the
             matching type is linked to this transaction.
@@ -488,14 +488,17 @@ export default async function TransactionDetailPage({ params }: PageProps) {
       />
 
       <ActivityTimeline
-        activities={(txn.activities ?? []).map((a: { id: string; type: string; subject?: string | null; occurredAt: Date; channel?: string | null; direction?: string | null }): ActivityTimelineItem => ({
+        activities={(txn.activities ?? []).map((a: { id: string; type: string; subject?: string | null; occurredAt: Date; channel?: string | null; direction?: string | null; investorId?: string | null; mandateId?: string | null; tasks?: { id: string; title: string; status: string }[] }): ActivityTimelineItem => ({
           id: a.id,
           type: a.type,
           subject: a.subject,
           occurredAt: a.occurredAt,
           channel: a.channel,
           direction: a.direction,
+          links: { clientId: txn.clientId, transactionId: txn.id, investorId: a.investorId, mandateId: a.mandateId },
+          tasks: (a.tasks ?? []).map((t) => ({ id: t.id, title: t.title, status: t.status })),
         }))}
+        taskOptions={{ mandates: rel.mandates, transactions: rel.transactions, investors: rel.investors, clients: rel.clients, users: rel.users }}
       />
     </div>
   );

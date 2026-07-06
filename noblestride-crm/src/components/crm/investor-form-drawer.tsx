@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui";
+import type { SelectOption } from "@/components/ui";
 import { Drawer } from "@/components/ui/drawer";
-import { TextField, TextAreaField, NumberField, MoneyField, SelectField, MultiSelectField, DateField } from "@/components/ui/fields";
+import { TextField, TextAreaField, NumberField, MoneyField, SelectField, MultiSelectField, DateField, RelationSelect } from "@/components/ui/fields";
 import { useEntityForm } from "@/components/ui/use-entity-form";
 import { investorCreateSchema, investorUpdateSchema } from "@/lib/schemas/investor";
 import { options } from "@/lib/vocab";
@@ -18,12 +19,14 @@ const EMPTY: Record<string, unknown> = {
   targetIrr: undefined, countryRestrictions: "", esgFocus: "", decisionProcess: "", notes: "",
   engagementClassification: "", ndaStatus: "",
   shareholdingPreference: "", nextActionDate: "", feedback: "",
+  ssaRegionContactId: "",
 };
 
-export function InvestorFormDrawer({ mode, initial, triggerLabel }: {
+export function InvestorFormDrawer({ mode, initial, triggerLabel, contacts = [] }: {
   mode: "create" | "edit";
   initial?: Record<string, unknown> & { id?: string };
   triggerLabel?: string;
+  contacts?: SelectOption[];
 }) {
   const [open, setOpen] = useState(false);
   const f = useEntityForm({
@@ -77,6 +80,9 @@ export function InvestorFormDrawer({ mode, initial, triggerLabel }: {
           <TextField label="Country Restrictions" value={v.countryRestrictions as string} onChange={(x) => f.setValue("countryRestrictions", x)} />
           <TextField label="ESG Focus" value={v.esgFocus as string} onChange={(x) => f.setValue("esgFocus", x)} />
           <TextField label="Shareholding Preference" value={v.shareholdingPreference as string} onChange={(x) => f.setValue("shareholdingPreference", x)} />
+          {contacts.length > 0 && (
+            <RelationSelect label="SSA Region Contact" value={v.ssaRegionContactId as string} onChange={(x) => f.setValue("ssaRegionContactId", x)} options={contacts} placeholder="Select contact…" />
+          )}
           <TextAreaField label="Decision Process" value={v.decisionProcess as string} onChange={(x) => f.setValue("decisionProcess", x)} />
           <DateField label="Next Action Date" value={v.nextActionDate as string} onChange={(x) => f.setValue("nextActionDate", x)} />
           <TextAreaField label="Feedback" value={v.feedback as string} onChange={(x) => f.setValue("feedback", x)} />

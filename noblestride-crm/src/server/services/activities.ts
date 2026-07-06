@@ -20,6 +20,7 @@ export async function activityTimeline(limit?: number) {
       mandate: true,
       engagement: true,
       createdBy: true,
+      tasks: { select: { id: true, title: true, status: true } },
     },
   });
 }
