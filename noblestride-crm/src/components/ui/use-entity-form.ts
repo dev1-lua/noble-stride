@@ -5,10 +5,14 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "urql";
 import type { ZodTypeAny } from "zod";
 
-/** Drop "" / null / undefined so optional Zod fields stay optional and we never send blanks. */
-function prune(values: Record<string, unknown>): Record<string, unknown> {
+/** Build the mutation input: drop blanks ("", null, undefined) so optional Zod
+ * fields stay optional, and strip `id` — the record id travels as its own $id
+ * variable, and an unknown `id` field inside a *Input type fails strict input
+ * coercion (graphql 17), nulling the whole input. */
+export function buildMutationInput(values: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(values)) {
+    if (k === "id") continue;
     if (v === "" || v === null || v === undefined) continue;
     out[k] = v;
   }
@@ -40,7 +44,7 @@ export function useEntityForm(opts: UseEntityFormOptions) {
   }, []);
 
   async function submit() {
-    const input = prune(values);
+    const input = buildMutationInput(values);
     const parsed = opts.schema.safeParse(input);
     if (!parsed.success) {
       const fieldErrors: Record<string, string> = {};
