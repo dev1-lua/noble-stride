@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parseViewpoint, serializeViewpoint, VIEWPOINT_COOKIE } from "@/lib/viewpoint";
+import { parseViewpoint, serializeViewpoint, viewpointHome, VIEWPOINT_COOKIE } from "@/lib/viewpoint";
 
 // Demo viewpoint switcher: sets the viewpoint cookie then redirects.
 // GET so the switcher can be plain links; this is a demo lens, not auth.
+// role=signout clears the cookie (back to the anonymous landing page).
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
+
+  if (params.get("role") === "signout") {
+    const res = NextResponse.redirect(new URL("/", req.url));
+    res.cookies.delete(VIEWPOINT_COOKIE);
+    return res;
+  }
+
   const vp = parseViewpoint(
     JSON.stringify({ role: params.get("role"), recordId: params.get("recordId") ?? undefined }),
   );
-  const dest =
-    vp.role === "investor" ? "/portal/investor" : vp.role === "partner" ? "/portal/partner" : "/dashboard";
-  const res = NextResponse.redirect(new URL(params.get("next") ?? dest, req.url));
+  const res = NextResponse.redirect(new URL(params.get("next") ?? viewpointHome(vp), req.url));
   res.cookies.set(VIEWPOINT_COOKIE, serializeViewpoint(vp), { path: "/", sameSite: "lax" });
   return res;
 }

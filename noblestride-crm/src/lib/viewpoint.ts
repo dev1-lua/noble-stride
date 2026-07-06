@@ -30,3 +30,12 @@ export function parseViewpoint(raw: string | undefined | null): Viewpoint {
 export function serializeViewpoint(vp: Viewpoint): string {
   return JSON.stringify(vp.role === "admin" ? { role: "admin" } : vp);
 }
+
+/** Home route for a viewpoint — where "/" forwards a signed-in lens (landing spec §3). */
+export function viewpointHome(vp: Viewpoint): string {
+  return vp.role === "investor"
+    ? "/portal/investor"
+    : vp.role === "partner"
+      ? "/portal/partner"
+      : "/dashboard";
+}

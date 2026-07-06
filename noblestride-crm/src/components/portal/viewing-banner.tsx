@@ -56,12 +56,20 @@ export async function ViewingBanner() {
           </span>
         )}
       </span>
-      <Link
-        href="/api/viewpoint?role=admin"
-        className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
-      >
-        Return to Admin
-      </Link>
+      <span className="inline-flex items-center gap-2">
+        <Link
+          href="/api/viewpoint?role=admin"
+          className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
+        >
+          Return to Admin
+        </Link>
+        <Link
+          href="/api/viewpoint?role=signout"
+          className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
+        >
+          Sign out
+        </Link>
+      </span>
     </div>
   );
 }
