@@ -4,6 +4,7 @@
 import { prisma } from "@/lib/db";
 import { clientCreateSchema, clientUpdateSchema, type ClientCreateInput, type ClientUpdateInput } from "@/lib/schemas/client";
 import { actorSource, CrudError } from "./crud";
+import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 
 /**
@@ -26,6 +27,7 @@ export async function getClient(id: string) {
       mandates: true,
       transactions: true,
       activities: { orderBy: { occurredAt: "desc" } },
+      stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
     },
   });
 }
@@ -35,9 +37,19 @@ export async function createClient(input: ClientCreateInput, actor: Actor) {
   return prisma.client.create({ data: { ...data, createdSource: actorSource(actor) } });
 }
 
-export async function updateClient(id: string, input: ClientUpdateInput) {
+export async function updateClient(id: string, input: ClientUpdateInput, actor: Actor = { type: "HUMAN" }) {
   const data = clientUpdateSchema.parse(input);
-  return prisma.client.update({ where: { id }, data });
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.client.findUniqueOrThrow({ where: { id }, select: { name: true, registrationNo: true } });
+    const updated = await tx.client.update({ where: { id }, data });
+    if (data.name !== undefined) {
+      await recordStageChange(tx, { field: "name", fromValue: existing.name, toValue: data.name, actor, clientId: id });
+    }
+    if (data.registrationNo !== undefined) {
+      await recordStageChange(tx, { field: "registrationNo", fromValue: existing.registrationNo, toValue: data.registrationNo, actor, clientId: id });
+    }
+    return updated;
+  });
 }
 
 export async function deleteClient(id: string) {

@@ -14,6 +14,8 @@ import { ContactsCard } from "@/components/crm/contacts-card";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { LogEngagementDialog } from "@/components/crm/log-engagement-dialog";
+import { StageHistory } from "@/components/crm/stage-history";
+import type { StageHistoryItem } from "@/components/crm/stage-history";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -90,6 +92,16 @@ export default async function ClientDetailPage({ params }: PageProps) {
     occurredAt: a.occurredAt,
     channel: a.channel,
     direction: a.direction,
+  }));
+
+  const changeHistoryItems: StageHistoryItem[] = (client.stageChanges ?? []).map((s) => ({
+    id: s.id,
+    field: s.field,
+    fromValue: s.fromValue,
+    toValue: s.toValue,
+    changedAt: s.changedAt,
+    changedByName: s.changedBy?.name,
+    createdSource: s.createdSource,
   }));
 
   return (
@@ -400,6 +412,8 @@ export default async function ClientDetailPage({ params }: PageProps) {
         title="Communications"
         emptyText="No communications logged."
       />
+
+      <StageHistory title="Change History" items={changeHistoryItems} />
     </div>
   );
 }

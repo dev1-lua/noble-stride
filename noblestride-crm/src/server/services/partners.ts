@@ -7,6 +7,7 @@ import type { PartnerReferralInput } from "@/server/domain/types";
 import type { PartnerType, PartnerStatus } from "@prisma/client";
 import { partnerCreateSchema, partnerUpdateSchema, type PartnerCreateInput, type PartnerUpdateInput } from "@/lib/schemas/partner";
 import { actorSource, CrudError } from "./crud";
+import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 
 // ─── Filter type ─────────────────────────────────────────────────────────────
@@ -63,6 +64,7 @@ export async function getPartner(id: string) {
           client: true,
         },
       },
+      stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
     },
   });
 }
@@ -135,9 +137,16 @@ export async function createPartner(input: PartnerCreateInput, actor: Actor) {
   return prisma.partner.create({ data: { ...data, createdSource: actorSource(actor) } });
 }
 
-export async function updatePartner(id: string, input: PartnerUpdateInput) {
+export async function updatePartner(id: string, input: PartnerUpdateInput, actor: Actor = { type: "HUMAN" }) {
   const data = partnerUpdateSchema.parse(input);
-  return prisma.partner.update({ where: { id }, data });
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.partner.findUniqueOrThrow({ where: { id }, select: { name: true } });
+    const updated = await tx.partner.update({ where: { id }, data });
+    if (data.name !== undefined) {
+      await recordStageChange(tx, { field: "name", fromValue: existing.name, toValue: data.name, actor, partnerId: id });
+    }
+    return updated;
+  });
 }
 
 export async function deletePartner(id: string) {

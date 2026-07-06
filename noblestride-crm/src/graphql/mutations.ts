@@ -86,7 +86,7 @@ builder.mutationFields((t) => ({
   updateInvestor: t.prismaField({
     type: "Investor", nullable: false,
     args: { id: t.arg.id({ required: true }), input: t.arg({ type: InvestorInput, required: true }) },
-    resolve: (_q, _r, args) => updateInvestor(args.id, args.input as never),
+    resolve: (_q, _r, args, ctx) => updateInvestor(args.id, args.input as never, ctx.actor),
   }),
   deleteInvestor: t.prismaField({
     type: "Investor", nullable: false,
@@ -121,7 +121,7 @@ builder.mutationFields((t) => ({
   updateClient: t.prismaField({
     type: "Client", nullable: false,
     args: { id: t.arg.id({ required: true }), input: t.arg({ type: ClientInput, required: true }) },
-    resolve: (_q, _r, args) => updateClient(args.id, args.input as never),
+    resolve: (_q, _r, args, ctx) => updateClient(args.id, args.input as never, ctx.actor),
   }),
   deleteClient: t.prismaField({
     type: "Client", nullable: false,
@@ -172,7 +172,7 @@ builder.mutationFields((t) => ({
   updatePartner: t.prismaField({
     type: "Partner", nullable: false,
     args: { id: t.arg.id({ required: true }), input: t.arg({ type: PartnerInput, required: true }) },
-    resolve: (_q, _r, args) => updatePartner(args.id, args.input as never),
+    resolve: (_q, _r, args, ctx) => updatePartner(args.id, args.input as never, ctx.actor),
   }),
   deletePartner: t.prismaField({
     type: "Partner", nullable: false,
@@ -247,12 +247,12 @@ builder.mutationFields((t) => ({
   createPerson: t.prismaField({
     type: "Person", nullable: false,
     args: { input: t.arg({ type: PersonInput, required: true }) },
-    resolve: (_q, _r, args) => createPerson(args.input as never),
+    resolve: (_q, _r, args, ctx) => createPerson(args.input as never, ctx.actor),
   }),
   updatePerson: t.prismaField({
     type: "Person", nullable: false,
     args: { id: t.arg.id({ required: true }), input: t.arg({ type: PersonInput, required: true }) },
-    resolve: (_q, _r, args) => updatePerson(args.id, args.input as never),
+    resolve: (_q, _r, args, ctx) => updatePerson(args.id, args.input as never, ctx.actor),
   }),
   deletePerson: t.prismaField({
     type: "Person", nullable: false,

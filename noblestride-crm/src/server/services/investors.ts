@@ -7,6 +7,7 @@ import { isActiveInvestorThisQuarter } from "@/server/domain/metrics";
 import type { InvestorFilter, InvestorSegments, Pagination } from "@/server/domain/types";
 import { investorCreateSchema, investorUpdateSchema, type InvestorCreateInput, type InvestorUpdateInput } from "@/lib/schemas/investor";
 import { actorSource, CrudError } from "./crud";
+import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 import type { OnboardingStatus } from "@prisma/client";
 
@@ -105,6 +106,7 @@ export async function getInvestor(id: string) {
       contacts: true,
       engagements: { include: { transaction: true } },
       activities: { orderBy: { occurredAt: "desc" }, take: 20 },
+      stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
     },
   });
 }
@@ -114,9 +116,16 @@ export async function createInvestor(input: InvestorCreateInput, actor: Actor) {
   return prisma.investor.create({ data: { ...data, createdSource: actorSource(actor) } });
 }
 
-export async function updateInvestor(id: string, input: InvestorUpdateInput) {
+export async function updateInvestor(id: string, input: InvestorUpdateInput, actor: Actor = { type: "HUMAN" }) {
   const data = investorUpdateSchema.parse(input);
-  return prisma.investor.update({ where: { id }, data });
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.investor.findUniqueOrThrow({ where: { id }, select: { name: true } });
+    const updated = await tx.investor.update({ where: { id }, data });
+    if (data.name !== undefined) {
+      await recordStageChange(tx, { field: "name", fromValue: existing.name, toValue: data.name, actor, investorId: id });
+    }
+    return updated;
+  });
 }
 
 const ONBOARDING_ACTIVITY_SUBJECT: Record<OnboardingStatus, string> = {

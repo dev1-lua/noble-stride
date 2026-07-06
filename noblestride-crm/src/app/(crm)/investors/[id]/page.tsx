@@ -14,6 +14,8 @@ import { ContactsCard } from "@/components/crm/contacts-card";
 import { OnboardingActions } from "@/components/crm/onboarding-actions";
 import { RecordOpenNdaButton } from "@/components/crm/nda-actions";
 import { formatDate } from "@/lib/format";
+import { StageHistory } from "@/components/crm/stage-history";
+import type { StageHistoryItem } from "@/components/crm/stage-history";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -71,6 +73,16 @@ export default async function InvestorDetailPage({ params }: PageProps) {
   const primaryContact = investor.contacts.find((c) => c.isPrimaryContact);
   const onboardingProminent = investor.onboardingStatus !== "Approved";
   const onboardingActionable = investor.onboardingStatus === "PendingReview" || investor.onboardingStatus === "Rejected";
+
+  const changeHistoryItems: StageHistoryItem[] = (investor.stageChanges ?? []).map((s) => ({
+    id: s.id,
+    field: s.field,
+    fromValue: s.fromValue,
+    toValue: s.toValue,
+    changedAt: s.changedAt,
+    changedByName: s.changedBy?.name,
+    createdSource: s.createdSource,
+  }));
 
   const onboardingPanel = (
     <Card className={onboardingProminent ? "border-amber-300 bg-amber-50/40" : undefined}>
@@ -383,6 +395,8 @@ export default async function InvestorDetailPage({ params }: PageProps) {
           direction: a.direction,
         }))}
       />
+
+      <StageHistory title="Change History" items={changeHistoryItems} />
     </div>
   );
 }

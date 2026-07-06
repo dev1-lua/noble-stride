@@ -20,6 +20,9 @@ const FIELD_LABELS: Record<string, string> = {
   dealStatus: "Deal Status",
   engagementStage: "Engagement Stage",
   dealMilestone: "Milestone",
+  name: "Name",
+  registrationNo: "Registration No.",
+  primaryContact: "Primary Contact",
 };
 
 /** Vocab group backing a StageChange.field value's from/to labels. */
@@ -45,7 +48,7 @@ export function StageHistory({
 }: {
   items: StageHistoryItem[];
   /** Vocab group for the entity's own "stage" field — "MandateStage" or "TransactionStage". */
-  stageGroup: "MandateStage" | "TransactionStage" | "EngagementStage";
+  stageGroup?: "MandateStage" | "TransactionStage" | "EngagementStage";
   title?: string;
 }) {
   return (
@@ -59,7 +62,7 @@ export function StageHistory({
         ) : (
           <ul className="space-y-3">
             {items.map((item) => {
-              const group = vocabGroupFor(item.field, stageGroup);
+              const group = vocabGroupFor(item.field, stageGroup ?? "MandateStage");
               const from = item.fromValue ? label(group, item.fromValue) : "—";
               const to = label(group, item.toValue);
               const actorLabel = item.changedByName ?? label("ActorSource", item.createdSource);

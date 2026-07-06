@@ -7,12 +7,17 @@ import type { Prisma } from "@prisma/client";
 import { actorSource } from "./crud";
 import type { Actor } from "@/graphql/context";
 
-export type StageChangeField = "stage" | "dealStatus" | "engagementStage" | "dealMilestone";
+export type StageChangeField =
+  | "stage" | "dealStatus" | "engagementStage" | "dealMilestone"
+  | "name" | "registrationNo" | "primaryContact";
 
 interface StageChangeTargets {
   mandateId?: string;
   transactionId?: string;
   engagementId?: string;
+  clientId?: string;
+  investorId?: string;
+  partnerId?: string;
 }
 
 interface RecordStageChangeParams extends StageChangeTargets {

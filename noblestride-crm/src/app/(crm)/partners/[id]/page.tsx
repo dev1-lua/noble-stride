@@ -10,6 +10,8 @@ import { label } from "@/lib/vocab";
 import { PartnerFormDrawer } from "@/components/crm/partner-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
 import { ContactsCard } from "@/components/crm/contacts-card";
+import { StageHistory } from "@/components/crm/stage-history";
+import type { StageHistoryItem } from "@/components/crm/stage-history";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -42,6 +44,16 @@ export default async function PartnerDetailPage({ params }: PageProps) {
   const DELETE_PARTNER = `mutation DeletePartner($id: ID!) { deletePartner(id: $id) { id } }`;
 
   const amount = partner.amount != null ? Number(partner.amount) : null;
+
+  const changeHistoryItems: StageHistoryItem[] = (partner.stageChanges ?? []).map((s) => ({
+    id: s.id,
+    field: s.field,
+    fromValue: s.fromValue,
+    toValue: s.toValue,
+    changedAt: s.changedAt,
+    changedByName: s.changedBy?.name,
+    createdSource: s.createdSource,
+  }));
 
   return (
     <div className="space-y-6">
@@ -196,6 +208,8 @@ export default async function PartnerDetailPage({ params }: PageProps) {
           )}
         </CardBody>
       </Card>
+
+      <StageHistory title="Change History" items={changeHistoryItems} />
     </div>
   );
 }

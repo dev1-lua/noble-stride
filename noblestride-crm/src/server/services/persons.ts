@@ -10,7 +10,9 @@
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { CrudError } from "./crud";
+import { recordStageChange } from "./stage-history";
 import { personCreateSchema, personUpdateSchema } from "@/lib/schemas/person";
+import type { Actor } from "@/graphql/context";
 
 const PARENT_FIELDS = ["clientId", "investorId", "partnerId"] as const;
 type ParentField = (typeof PARENT_FIELDS)[number];
@@ -18,30 +20,49 @@ type ParentLinks = Partial<Record<ParentField, string | null | undefined>>;
 
 const hasParent = (p: ParentLinks) => PARENT_FIELDS.some((f) => Boolean(p[f]));
 
-/** Demote every other primary contact of the same parent(s). */
-async function demoteSiblingPrimaries(tx: Prisma.TransactionClient, parents: ParentLinks, excludeId?: string) {
+const displayName = (p: { firstName: string; lastName: string | null }) =>
+  [p.firstName, p.lastName].filter(Boolean).join(" ");
+
+/** Demote the parent's current primary and audit the handover (spec §7.1). */
+async function reassignPrimary(
+  tx: Prisma.TransactionClient,
+  parents: ParentLinks,
+  person: { id: string; firstName: string; lastName: string | null },
+  actor: Actor,
+) {
   for (const field of PARENT_FIELDS) {
     const parentId = parents[field];
     if (!parentId) continue;
-    await tx.person.updateMany({
-      where: { [field]: parentId, isPrimaryContact: true, ...(excludeId ? { id: { not: excludeId } } : {}) },
-      data: { isPrimaryContact: false },
+    const prev = await tx.person.findFirst({
+      where: { [field]: parentId, isPrimaryContact: true, id: { not: person.id } },
+      select: { id: true, firstName: true, lastName: true },
+    });
+    if (prev) {
+      await tx.person.update({ where: { id: prev.id }, data: { isPrimaryContact: false } });
+    }
+    await recordStageChange(tx, {
+      field: "primaryContact",
+      fromValue: prev ? displayName(prev) : null,
+      toValue: displayName(person),
+      actor,
+      [field]: parentId,
     });
   }
 }
 
-export async function createPerson(raw: unknown) {
+export async function createPerson(raw: unknown, actor: Actor = { type: "HUMAN" }) {
   const input = personCreateSchema.parse(raw);
   if (!hasParent(input)) {
     throw new CrudError("A contact must be linked to a client, investor, or partner.");
   }
   return prisma.$transaction(async (tx) => {
-    if (input.isPrimaryContact) await demoteSiblingPrimaries(tx, input);
-    return tx.person.create({ data: input });
+    const created = await tx.person.create({ data: input });
+    if (input.isPrimaryContact) await reassignPrimary(tx, input, created, actor);
+    return created;
   });
 }
 
-export async function updatePerson(id: string, raw: unknown) {
+export async function updatePerson(id: string, raw: unknown, actor: Actor = { type: "HUMAN" }) {
   const input = personUpdateSchema.parse(raw);
   const existing = await prisma.person.findUnique({ where: { id } });
   if (!existing) throw new CrudError("Contact not found");
@@ -54,8 +75,9 @@ export async function updatePerson(id: string, raw: unknown) {
     throw new CrudError("A contact must remain linked to a client, investor, or partner.");
   }
   return prisma.$transaction(async (tx) => {
-    if (input.isPrimaryContact) await demoteSiblingPrimaries(tx, merged, id);
-    return tx.person.update({ where: { id }, data: input });
+    const updated = await tx.person.update({ where: { id }, data: input });
+    if (input.isPrimaryContact) await reassignPrimary(tx, merged, updated, actor);
+    return updated;
   });
 }
 
