@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/money";
 import { label } from "@/lib/vocab";
 import { ClientFormDrawer } from "@/components/crm/client-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
+import { ContactsCard } from "@/components/crm/contacts-card";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { LogEngagementDialog } from "@/components/crm/log-engagement-dialog";
@@ -317,50 +318,20 @@ export default async function ClientDetailPage({ params }: PageProps) {
         </Card>
       )}
 
-      {/* Contacts — will be empty for most seed clients; show empty state */}
-      <Card>
-        <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
-            Contacts
-            {client.contacts.length > 0 && (
-              <Badge tone="neutral" className="ml-2">{client.contacts.length}</Badge>
-            )}
-          </h2>
-        </CardHeader>
-        <CardBody>
-          {client.contacts.length === 0 ? (
-            <p className="text-sm text-zinc-400">No contacts on record.</p>
-          ) : (
-            <ul className="divide-y divide-zinc-100">
-              {client.contacts.map((contact) => (
-                <li key={contact.id} className="py-3 flex items-start gap-4">
-                  <Avatar name={`${contact.firstName} ${contact.lastName ?? ""}`} size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900">
-                      {contact.firstName} {contact.lastName ?? ""}
-                    </p>
-                    {contact.jobTitle && (
-                      <p className="text-xs text-zinc-500">{contact.jobTitle}</p>
-                    )}
-                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                      {contact.email && (
-                        <a href={`mailto:${contact.email}`} className="text-xs text-accent hover:underline">
-                          {contact.email}
-                        </a>
-                      )}
-                      {contact.phone && (
-                        <a href={`tel:${contact.phone}`} className="text-xs text-zinc-500 hover:underline">
-                          {contact.phone}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
+      <ContactsCard
+        contacts={client.contacts.map((p) => ({
+          id: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          email: p.email,
+          phone: p.phone,
+          jobTitle: p.jobTitle,
+          linkedinUrl: p.linkedinUrl,
+          isPrimaryContact: p.isPrimaryContact,
+          isSSAContact: p.isSSAContact,
+        }))}
+        parent={{ clientId: client.id }}
+      />
 
       {/* Mandates */}
       <Card>

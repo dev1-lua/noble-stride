@@ -9,6 +9,7 @@ import { formatMoney } from "@/lib/money";
 import { label } from "@/lib/vocab";
 import { PartnerFormDrawer } from "@/components/crm/partner-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
+import { ContactsCard } from "@/components/crm/contacts-card";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -128,50 +129,20 @@ export default async function PartnerDetailPage({ params }: PageProps) {
         </CardBody>
       </Card>
 
-      {/* Contacts */}
-      <Card>
-        <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
-            Contacts
-            {partner.contacts.length > 0 && (
-              <Badge tone="neutral" className="ml-2">{partner.contacts.length}</Badge>
-            )}
-          </h2>
-        </CardHeader>
-        <CardBody>
-          {partner.contacts.length === 0 ? (
-            <p className="text-sm text-zinc-400">No contacts on record.</p>
-          ) : (
-            <ul className="divide-y divide-zinc-100">
-              {partner.contacts.map((c) => (
-                <li key={c.id} className="py-3 flex items-start gap-4">
-                  <Avatar name={`${c.firstName} ${c.lastName ?? ""}`} size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900">
-                      {c.firstName} {c.lastName ?? ""}
-                    </p>
-                    {c.jobTitle && (
-                      <p className="text-xs text-zinc-500">{c.jobTitle}</p>
-                    )}
-                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                      {c.email && (
-                        <a href={`mailto:${c.email}`} className="text-xs text-accent hover:underline">
-                          {c.email}
-                        </a>
-                      )}
-                      {c.phone && (
-                        <a href={`tel:${c.phone}`} className="text-xs text-zinc-500 hover:underline">
-                          {c.phone}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
+      <ContactsCard
+        contacts={partner.contacts.map((p) => ({
+          id: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          email: p.email,
+          phone: p.phone,
+          jobTitle: p.jobTitle,
+          linkedinUrl: p.linkedinUrl,
+          isPrimaryContact: p.isPrimaryContact,
+          isSSAContact: p.isSSAContact,
+        }))}
+        parent={{ partnerId: partner.id }}
+      />
 
       {/* Referred mandates */}
       <Card>
