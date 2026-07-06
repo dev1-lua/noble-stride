@@ -16,4 +16,6 @@ Things intentionally stubbed or deferred; each needs real implementation before 
   domain regex (any noblestride.* email, including subdomain lookalikes like
   noblestride.attacker.com) — replaced by real auth.
 
+- **`/api/viewpoint` `next` param is an open redirect** (pre-existing, `new URL(next, req.url)` accepts absolute URLs → offsite). Demo lens only, but when real auth lands, constrain to `next.startsWith("/")`.
+
 *(Update this file whenever a new shortcut/deferral is introduced.)*

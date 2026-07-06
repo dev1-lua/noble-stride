@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { Search, Bell } from "lucide-react";
 import { Avatar } from "@/components/ui";
 import { AskBar } from "./ask-bar";
@@ -102,6 +103,14 @@ export function Topbar({
       <div className="flex flex-shrink-0 items-center gap-3">
         {/* View-as switcher (demo lens, spec §6) */}
         <ViewpointSwitcher investors={investors} partners={partners} />
+
+        {/* Sign out — clears demo viewpoint cookie, returns to public landing */}
+        <Link
+          href="/api/viewpoint?role=signout"
+          className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 transition-colors"
+        >
+          Sign out
+        </Link>
 
         {/* Search */}
         <div className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5">
