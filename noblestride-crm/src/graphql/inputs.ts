@@ -8,7 +8,7 @@ import {
   SectorEnum, InvestorTypeEnum, InvestorStatusEnum, InstrumentEnum, InvestmentStageEnum,
   GeographyEnum, SourceEnum, DocStatusEnum, DealTypeEnum, PartnerTypeEnum, PartnerStatusEnum,
   FounderGenderEnum,
-  EngagementStageEnum, InterestLevelEnum, NdaTypeEnum, DisbursementStatusEnum,
+  EngagementStageEnum, InterestLevelEnum, NdaTypeEnum, DisbursementStatusEnum, MilestoneKeyEnum,
   ServiceProviderTypeEnum,
   DocumentTypeEnum, DocumentAccessLevelEnum, DocumentStatusEnum,
   InvestorEngagementClassificationEnum, InvestorNdaStatusEnum,
@@ -285,5 +285,14 @@ export const PersonInput = builder.inputType("PersonInput", {
     investorId: t.id({ required: false }),
     clientId: t.id({ required: false }),
     partnerId: t.id({ required: false }),
+  }),
+});
+
+export const MilestoneInput = builder.inputType("MilestoneInput", {
+  fields: (t) => ({
+    engagementId: t.id({ required: true }),
+    key: t.field({ type: MilestoneKeyEnum, required: true }),
+    completedAt: t.field({ type: "DateTime", required: false }),
+    notes: t.string({ required: false }),
   }),
 });

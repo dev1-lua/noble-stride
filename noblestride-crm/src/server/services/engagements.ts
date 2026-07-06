@@ -87,6 +87,7 @@ export async function getEngagement(id: string) {
       owner: true,
       activities: { orderBy: { occurredAt: "desc" } },
       stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
+      milestones: true,
     },
   });
 }

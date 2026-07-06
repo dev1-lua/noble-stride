@@ -1,12 +1,13 @@
 // GraphQL mutations for the NobleStride Capital CRM.
 // Thin resolvers — each is a one-line call to the matching service.
 
-import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum } from "./builder";
+import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum, MilestoneKeyEnum } from "./builder";
 import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput } from "./inputs";
+import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
@@ -257,5 +258,20 @@ builder.mutationFields((t) => ({
     type: "Person", nullable: false,
     args: { id: t.arg.id({ required: true }) },
     resolve: (_q, _r, args) => deletePerson(args.id),
+  }),
+
+  // ── Engagement milestones (spec §6.2) ──
+  recordMilestone: t.prismaField({
+    type: "EngagementMilestone", nullable: false,
+    args: { input: t.arg({ type: MilestoneInput, required: true }) },
+    resolve: (_q, _r, args, ctx) => recordMilestone(args.input as never, ctx.actor),
+  }),
+  unrecordMilestone: t.boolean({
+    nullable: false,
+    args: {
+      engagementId: t.arg.id({ required: true }),
+      key: t.arg({ type: MilestoneKeyEnum, required: true }),
+    },
+    resolve: (_r, args) => unrecordMilestone(String(args.engagementId), args.key),
   }),
 }));

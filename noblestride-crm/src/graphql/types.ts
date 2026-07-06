@@ -14,6 +14,7 @@ import {
   EngagementStatusEnum,
   EngagementStageEnum,
   InterestLevelEnum,
+  MilestoneKeyEnum,
   NdaTypeEnum,
   DisbursementStatusEnum,
   SourceEnum,
@@ -493,5 +494,17 @@ export const TaskRef = builder.prismaObject("Task", {
     investor: t.relation("investor", { nullable: true }),
     client: t.relation("client", { nullable: true }),
     activity: t.relation("activity", { nullable: true }),
+  }),
+});
+
+// ─── EngagementMilestone ─────────────────────────────────────────────────────
+
+export const EngagementMilestoneRef = builder.prismaObject("EngagementMilestone", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    engagementId: t.exposeString("engagementId"),
+    key: t.field({ type: MilestoneKeyEnum, resolve: (m) => m.key }),
+    completedAt: t.field({ type: "DateTime", resolve: (m) => m.completedAt }),
+    notes: t.exposeString("notes", { nullable: true }),
   }),
 });

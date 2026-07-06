@@ -12,6 +12,9 @@ import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { formatDate, daysAgoLabel } from "@/lib/format";
 import { RecordClosedNdaButton } from "@/components/crm/nda-actions";
 import { EngagementFormDrawer } from "@/components/crm/engagement-form-drawer";
+import { MilestoneChecklist } from "@/components/crm/milestone-checklist";
+import type { MilestoneItemDTO } from "@/components/crm/milestone-checklist";
+import { MILESTONE_ORDER, MILESTONE_LABELS, effectiveMilestones } from "@/lib/milestones";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -40,6 +43,18 @@ export default async function EngagementDetailPage({ params }: PageProps) {
     changedByName: s.changedBy?.name,
     createdSource: s.createdSource,
   }));
+
+  const recordedByKey = new Map(engagement.milestones.map((m) => [m.key, m]));
+  const implied = effectiveMilestones(engagement.engagementStage, []);
+  const milestoneItems: MilestoneItemDTO[] = MILESTONE_ORDER.map((key) => {
+    const rec = recordedByKey.get(key);
+    return {
+      key,
+      label: MILESTONE_LABELS[key],
+      state: rec ? ("recorded" as const) : implied.has(key) ? ("implied" as const) : ("open" as const),
+      completedAt: rec ? rec.completedAt.toISOString().slice(0, 10) : null,
+    };
+  });
 
   const toDate = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : "");
   const editInitial = {
@@ -184,6 +199,8 @@ export default async function EngagementDetailPage({ params }: PageProps) {
           </p>
         </CardBody>
       </Card>
+
+      <MilestoneChecklist engagementId={engagement.id} items={milestoneItems} />
 
       <StageHistory stageGroup="EngagementStage" items={stageHistoryItems} />
 

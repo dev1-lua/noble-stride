@@ -32,6 +32,7 @@ import {
   InvestorType,
   MandateStage,
   MaxSellingStake,
+  MilestoneKey,
   NdaType,
   OnboardingStatus,
   PartnerAgreementStatus,
@@ -87,6 +88,7 @@ export const InteractionTypeEnum = builder.enumType(InteractionType, { name: "In
 export const ActorSourceEnum = builder.enumType(ActorSource, { name: "ActorSource" });
 export const EngagementStageEnum = builder.enumType(EngagementStage, { name: "EngagementStage" });
 export const InterestLevelEnum = builder.enumType(InterestLevel, { name: "InterestLevel" });
+export const MilestoneKeyEnum = builder.enumType(MilestoneKey, { name: "MilestoneKey" });
 export const NdaTypeEnum = builder.enumType(NdaType, { name: "NdaType" });
 export const DisbursementStatusEnum = builder.enumType(DisbursementStatus, { name: "DisbursementStatus" });
 export const InvestorEngagementClassificationEnum = builder.enumType(InvestorEngagementClassification, { name: "InvestorEngagementClassification" });

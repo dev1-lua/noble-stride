@@ -1,0 +1,42 @@
+// EngagementMilestone write path (spec §6.2) — record / re-date / unrecord the
+// fixed investor milestones per engagement. Display stays derived (stage-implied
+// ∪ recorded, see src/lib/milestones.ts); unrecording a stage-implied milestone
+// therefore does not hide it — it only removes the explicit record.
+
+import { z } from "zod";
+import { MilestoneKey } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { actorSource, CrudError } from "./crud";
+import type { Actor } from "@/graphql/context";
+
+const recordMilestoneSchema = z.object({
+  engagementId: z.string().min(1),
+  key: z.nativeEnum(MilestoneKey),
+  completedAt: z.coerce.date().optional(),
+  notes: z.string().trim().optional(),
+});
+
+export async function recordMilestone(raw: unknown, actor: Actor) {
+  const input = recordMilestoneSchema.parse(raw);
+  const engagement = await prisma.engagement.findUnique({ where: { id: input.engagementId }, select: { id: true } });
+  if (!engagement) throw new CrudError("Engagement not found");
+  return prisma.engagementMilestone.upsert({
+    where: { engagementId_key: { engagementId: input.engagementId, key: input.key } },
+    create: {
+      engagementId: input.engagementId,
+      key: input.key,
+      completedAt: input.completedAt ?? new Date(),
+      notes: input.notes,
+      createdSource: actorSource(actor),
+    },
+    update: {
+      ...(input.completedAt !== undefined ? { completedAt: input.completedAt } : {}),
+      ...(input.notes !== undefined ? { notes: input.notes } : {}),
+    },
+  });
+}
+
+export async function unrecordMilestone(engagementId: string, key: MilestoneKey): Promise<boolean> {
+  const res = await prisma.engagementMilestone.deleteMany({ where: { engagementId, key } });
+  return res.count > 0;
+}
