@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Briefcase,
+  Building,
   TrendingUp,
   Users,
   MessageSquare,
@@ -29,6 +30,7 @@ const MAIN_NAV = [
   { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/mandates", label: "Mandates", Icon: Briefcase },
   { href: "/transactions", label: "Transactions", Icon: TrendingUp },
+  { href: "/clients", label: "Clients", Icon: Building },
   { href: "/investors", label: "Investors", Icon: Users },
   { href: "/engagement", label: "Engagement", Icon: MessageSquare },
   { href: "/documents", label: "Documents", Icon: FileText },
