@@ -1,7 +1,8 @@
 "use client";
 // Approve / Reject / Greylist actions for a pending investor registration.
-// Greylist = engagementClassification "Greylisted" via the existing
-// updateInvestor mutation (zero visibility everywhere, SOW §06).
+// Greylist = dedicated greylistInvestor mutation: sets engagementClassification
+// "Greylisted" (zero visibility everywhere, SOW §06/§11.2) AND resolves the
+// registration as Rejected so it leaves the pending queue.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -13,8 +14,8 @@ const SET_STATUS = `
   }
 `;
 const GREYLIST = `
-  mutation Greylist($id: ID!, $input: InvestorInput!) {
-    updateInvestor(id: $id, input: $input) { id engagementClassification }
+  mutation Greylist($id: ID!) {
+    greylistInvestor(id: $id) { id onboardingStatus engagementClassification }
   }
 `;
 
@@ -55,7 +56,7 @@ export function OnboardingActions({ investorId }: { investorId: string }) {
         <button
           className={`${btn} border border-zinc-300 text-zinc-700 hover:bg-zinc-100`}
           disabled={pending !== null}
-          onClick={() => run("greylist", () => greylist({ id: investorId, input: { engagementClassification: "Greylisted" } }))}
+          onClick={() => run("greylist", () => greylist({ id: investorId }))}
         >
           {pending === "greylist" ? "…" : "Greylist"}
         </button>

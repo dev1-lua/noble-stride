@@ -18,4 +18,8 @@ Things intentionally stubbed or deferred; each needs real implementation before 
 
 - **`/api/viewpoint` `next` param is an open redirect** (pre-existing, `new URL(next, req.url)` accepts absolute URLs → offsite). Demo lens only, but when real auth lands, constrain to `next.startsWith("/")`.
 
+- **Approve after Greylist does not restore portal access.** Greylist (2026-07-07) sets `engagementClassification=Greylisted` AND `onboardingStatus=Rejected`; re-approving only flips the status — the classification stays Greylisted (blocked) until changed via the investor Edit form. The admin onboarding panel shows a note explaining this. Fine for the demo; a real un-greylist action may be wanted later.
+
+*(Resolved 2026-07-07: `graphql` was pinned to 17.0.1 while yoga/pothos/codegen target 16 — broke introspection and made mutation errors cryptic; downgraded to `^16.11.0`.)*
+
 *(Update this file whenever a new shortcut/deferral is introduced.)*

@@ -31,6 +31,7 @@ import {
   DocumentStatusEnum,
   InvestorEngagementClassificationEnum,
   InvestorNdaStatusEnum,
+  OnboardingStatusEnum,
   AdvisorTypeEnum,
   PartnerAgreementStatusEnum,
   DealStatusEnum,
@@ -121,6 +122,11 @@ export const InvestorRef = builder.prismaObject("Investor", {
     // Task 5: engagement classification, NDA status, profile fields
     engagementClassification: t.field({ type: InvestorEngagementClassificationEnum, resolve: (i) => i.engagementClassification }),
     ndaStatus: t.field({ type: InvestorNdaStatusEnum, resolve: (i) => i.ndaStatus }),
+    // Investor onboarding (design spec 2026-07-05): approval gate + demo-OTP stamps
+    onboardingStatus: t.field({ type: OnboardingStatusEnum, resolve: (i) => i.onboardingStatus }),
+    registeredAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.registeredAt }),
+    emailVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.emailVerifiedAt }),
+    phoneVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.phoneVerifiedAt }),
     shareholdingPreference: t.exposeString("shareholdingPreference", { nullable: true }),
     minRevenue: t.float({ nullable: true, resolve: (i) => (i.minRevenue == null ? null : Number(i.minRevenue)) }),
     minEbitda: t.float({ nullable: true, resolve: (i) => (i.minEbitda == null ? null : Number(i.minEbitda)) }),

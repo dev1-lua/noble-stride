@@ -91,7 +91,18 @@ export default async function InvestorDetailPage({ params }: PageProps) {
         <h2 className="text-sm font-semibold text-zinc-900">Onboarding</h2>
       </CardHeader>
       <CardBody className="space-y-4">
-        <Chip value={investor.onboardingStatus} group="OnboardingStatus" />
+        <div className="flex flex-wrap items-center gap-2">
+          <Chip value={investor.onboardingStatus} group="OnboardingStatus" />
+          {investor.engagementClassification === "Greylisted" && (
+            <>
+              <Chip value={investor.engagementClassification} group="InvestorEngagementClassification" />
+              <span className="text-xs text-zinc-500">
+                Portal access blocked — approving alone will not restore it; change the
+                classification via Edit.
+              </span>
+            </>
+          )}
+        </div>
 
         <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>

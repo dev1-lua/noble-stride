@@ -151,6 +151,32 @@ export async function setOnboardingStatus(id: string, status: OnboardingStatus, 
   });
 }
 
+/**
+ * Greylist an investor (SOW §11.2: greylisted funds never see opportunities).
+ * One decision, two fields: the classification blocks all portal visibility
+ * and the registration is resolved as Rejected so it leaves the pending
+ * queue. Reversible: re-approving restores the status, but portal access
+ * stays blocked until the classification is changed off Greylisted.
+ */
+export async function greylistInvestor(id: string, actor: Actor) {
+  return prisma.$transaction(async (tx) => {
+    const investor = await tx.investor.update({
+      where: { id },
+      data: { engagementClassification: "Greylisted", onboardingStatus: "Rejected" },
+    });
+    await tx.activity.create({
+      data: {
+        type: "Note",
+        subject: `Investor greylisted — ${investor.name}`,
+        body: "Portal access blocked; registration resolved as Rejected.",
+        investorId: id,
+        createdSource: actorSource(actor),
+      },
+    });
+    return investor;
+  });
+}
+
 export async function deleteInvestor(id: string) {
   const engagements = await prisma.engagement.count({ where: { investorId: id } });
   if (engagements > 0) {

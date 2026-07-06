@@ -8,7 +8,7 @@ import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
 import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput } from "./inputs";
-import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus } from "@/server/services/investors";
+import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
 import { createMandate, updateMandate, deleteMandate } from "@/server/services/mandates";
@@ -100,6 +100,13 @@ builder.mutationFields((t) => ({
       status: t.arg({ type: OnboardingStatusEnum, required: true }),
     },
     resolve: (_q, _r, args, ctx) => setOnboardingStatus(String(args.id), args.status, ctx.actor),
+  }),
+  // Greylist decision (SOW §11.2 — greylisted funds never see opportunities):
+  // blocks portal visibility AND resolves the registration as Rejected.
+  greylistInvestor: t.prismaField({
+    type: "Investor", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args, ctx) => greylistInvestor(String(args.id), ctx.actor),
   }),
   recordOpenNda: t.prismaField({
     type: "Investor", nullable: false,
