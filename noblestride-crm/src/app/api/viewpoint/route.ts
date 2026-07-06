@@ -3,7 +3,7 @@ import { parseViewpoint, serializeViewpoint, viewpointHome, VIEWPOINT_COOKIE } f
 
 // Demo viewpoint switcher: sets the viewpoint cookie then redirects.
 // GET so the switcher can be plain links; this is a demo lens, not auth.
-// role=signout clears the cookie (back to the anonymous landing page).
+// role=signout clears the cookie (back to the anonymous landing page); demo-only, see repo:memory/remaining-tasks.md.
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
 

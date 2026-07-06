@@ -9,5 +9,11 @@ Things intentionally stubbed or deferred; each needs real implementation before 
 - **Document storage is external links only** (`Document.fileUrl`); no upload, watermarking, or VDR activity tracking.
 - **The `/register?step=verify&rid=<id>` query param is unauthenticated.** Anyone with the URL (the investor id is guessable/enumerable) can submit the demo OTP and stamp `emailVerifiedAt`/`phoneVerifiedAt` for that registration — acceptable only while the whole app runs on the demo viewpoint lens instead of real auth.
 - **Registration has no rate-limiting or captcha.** `/register` accepts unlimited submissions from any client; needs abuse protection before this is public-internet-facing.
+- **Landing + login are demo glue.** `/` landing page and `/login` (email lookup, any
+  password) ride the viewpoint cookie — no credentials, no sessions, no rate limiting.
+  Replace both with real auth (registration/login/sessions/RBAC). Sign-out
+  (`/api/viewpoint?role=signout`) just clears the demo cookie. The team-login rule is a bare
+  domain regex (any noblestride.* email, including subdomain lookalikes like
+  noblestride.attacker.com) — replaced by real auth.
 
 *(Update this file whenever a new shortcut/deferral is introduced.)*

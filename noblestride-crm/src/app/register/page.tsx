@@ -36,7 +36,10 @@ export default async function RegisterPage({ searchParams }: PageProps) {
           </h1>
           {step === "form" && (
             <p className="mt-1 text-sm text-zinc-500">
-              NobleStride Capital — investor access request
+              NobleStride Capital — investor access request ·{" "}
+              <a href="/login" className="font-medium text-emerald-800 hover:underline">
+                Already registered? Sign in
+              </a>
             </p>
           )}
         </div>
@@ -273,6 +276,14 @@ export default async function RegisterPage({ searchParams }: PageProps) {
               Your registration is under review by the NobleStride team. You will be contacted at
               your corporate email once approved. No deal information is visible before approval.
             </p>
+            <div className="mt-6 flex items-center justify-center gap-4 text-sm font-medium">
+              <a href="/" className="text-zinc-600 hover:text-emerald-950">
+                ← Back to home
+              </a>
+              <a href="/login" className="text-emerald-800 hover:underline">
+                Sign in
+              </a>
+            </div>
           </section>
         )}
       </div>

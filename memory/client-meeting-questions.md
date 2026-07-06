@@ -48,4 +48,9 @@ Points we implemented with assumptions instead of guessing silently. Confirm eac
 14. **Advisory Engagement (spec §3.3) in or out of PoC scope.**
     Spec §17 item 1 leaves it to discovery. It is currently not built (correctly, per spec). If in: it needs its own entity, KES valuation, §4.8/§4.9 picklists and the Advisory dashboard (§13).
 
+15. **Landing-page copy & branding.**
+    Confirm the public value proposition wording, the "how onboarding works" step descriptions,
+    footer contact (investors@noblestride.co), and whether the team-login rule (any
+    noblestride.* email) matches reality.
+
 *(Add future open questions here rather than assuming.)*
