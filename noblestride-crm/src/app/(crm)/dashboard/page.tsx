@@ -12,6 +12,13 @@ import {
   taskStatusByOwner,
   overdueTasksCount,
   overdueTasks,
+  pipelineActiveSplit,
+  stageChangeFeed,
+  stageChangeCounts,
+  investorEngagementRollup,
+  investedSummary,
+  historicalEngagementSummary,
+  partnerConversionFunnel,
 } from "@/server/services/dashboard";
 import { aiOverviewInsights } from "@/server/services/ai";
 import { Card, CardHeader, CardBody } from "@/components/ui";
@@ -21,21 +28,51 @@ import { OverviewAgentCard } from "@/components/crm/overview-agent-card";
 import { DealPipelineTrendChart, PipelineOverviewChart } from "@/components/crm/pipeline-chart";
 import { BreakdownBarList } from "@/components/crm/pipeline-breakdown";
 import { TeamWorkloadTable, TaskStatusCrosstab, OverdueActionsList } from "@/components/crm/team-tasks-panel";
+import {
+  StageChangeFeedList,
+  InvestorRollupTable,
+  HistoricalEngagementTable,
+  PartnerFunnelTable,
+} from "@/components/crm/deal-analytics-panels";
 
 export default async function DashboardPage() {
-  const [s, insights, pipeline, breakdowns, trend, onboarding, workload, statusByOwner, overdueCount, overdueList] =
-    await Promise.all([
-      dashboardStats(),
-      aiOverviewInsights(),
-      pipelineOverview(),
-      pipelineBreakdowns(),
-      dealPipelineTrend(),
-      onboardingStats(),
-      teamWorkload(),
-      taskStatusByOwner(),
-      overdueTasksCount(),
-      overdueTasks(),
-    ]);
+  const [
+    s,
+    insights,
+    pipeline,
+    breakdowns,
+    trend,
+    onboarding,
+    workload,
+    statusByOwner,
+    overdueCount,
+    overdueList,
+    activeSplit,
+    feed,
+    feedCounts,
+    rollup,
+    invested,
+    history,
+    funnel,
+  ] = await Promise.all([
+    dashboardStats(),
+    aiOverviewInsights(),
+    pipelineOverview(),
+    pipelineBreakdowns(),
+    dealPipelineTrend(),
+    onboardingStats(),
+    teamWorkload(),
+    taskStatusByOwner(),
+    overdueTasksCount(),
+    overdueTasks(),
+    pipelineActiveSplit(),
+    stageChangeFeed(),
+    stageChangeCounts(),
+    investorEngagementRollup(),
+    investedSummary(),
+    historicalEngagementSummary(),
+    partnerConversionFunnel(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -165,6 +202,78 @@ export default async function DashboardPage() {
           </CardBody>
         </Card>
       </Stagger>
+
+      {/* Deal Status & Activity — active vs inactive split, invested summary, change feed */}
+      <Reveal delay={0.19}>
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900">Deal Status &amp; Activity</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">Active vs inactive pipeline, invested deals &amp; recent changes</p>
+        </div>
+      </Reveal>
+
+      <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <AnimatedStatCard
+          label="Active Pipeline"
+          value={activeSplit.mandates.active + activeSplit.transactions.active}
+          format="compact"
+          sub={`${activeSplit.mandates.active} mandates · ${activeSplit.transactions.active} transactions`}
+        />
+        <AnimatedStatCard
+          label="Inactive / On Hold"
+          value={activeSplit.mandates.inactive + activeSplit.transactions.inactive}
+          format="compact"
+          sub={`${activeSplit.mandates.inactive} mandates · ${activeSplit.transactions.inactive} transactions`}
+        />
+        <AnimatedStatCard
+          label="Invested / Completed"
+          value={invested.count}
+          format="compact"
+          sub={`$${Math.round(invested.totalDisbursed).toLocaleString()} disbursed`}
+        />
+      </Stagger>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <h3 className="text-sm font-semibold text-zinc-900">Recent Changes</h3>
+            <p className="mt-0.5 text-xs text-zinc-500">Stage, status &amp; identifier changes across all records</p>
+          </CardHeader>
+          <CardBody className="space-y-4">
+            <StageChangeFeedList items={feed} />
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">Transitions by field</p>
+              <BreakdownBarList rows={feedCounts} />
+            </div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader>
+            <h3 className="text-sm font-semibold text-zinc-900">Investor Engagement</h3>
+            <p className="mt-0.5 text-xs text-zinc-500">Per-investor deals under review, rejected &amp; invested</p>
+          </CardHeader>
+          <CardBody>
+            <InvestorRollupTable rows={rollup} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader>
+            <h3 className="text-sm font-semibold text-zinc-900">Historical Engagement</h3>
+            <p className="mt-0.5 text-xs text-zinc-500">Engagement outcomes by year &amp; quarter</p>
+          </CardHeader>
+          <CardBody>
+            <HistoricalEngagementTable rows={history} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader>
+            <h3 className="text-sm font-semibold text-zinc-900">Referral Conversion</h3>
+            <p className="mt-0.5 text-xs text-zinc-500">Per-partner funnel: introduced → progressed → won / lost</p>
+          </CardHeader>
+          <CardBody>
+            <PartnerFunnelTable rows={funnel} />
+          </CardBody>
+        </Card>
+      </div>
 
       {/* Investor Onboarding stat group */}
       <Reveal delay={0.2}>

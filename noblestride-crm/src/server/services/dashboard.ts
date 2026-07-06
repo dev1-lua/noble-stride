@@ -449,3 +449,226 @@ export async function onboardingStats(now: Date = new Date()) {
     ndaNone: byNda["None"] ?? 0,
   };
 }
+
+// ─── Spec-gap pass 2: remaining §13 dashboards ────────────────────────────────
+
+export interface ActiveInactiveSplit {
+  mandates: { active: number; inactive: number };
+  transactions: { active: number; inactive: number };
+}
+
+/** Active deal statuses per the design: Open + Closed & Reopened. */
+const ACTIVE_DEAL_STATUSES: string[] = ["Open", "ClosedReopened"];
+
+/**
+ * Pipeline activity split by dealStatus (spec §13 "active vs inactive").
+ * Two groupBy queries — no N+1.
+ */
+export async function pipelineActiveSplit(): Promise<ActiveInactiveSplit> {
+  const [mandateGroups, txnGroups] = await Promise.all([
+    prisma.mandate.groupBy({ by: ["dealStatus"], _count: { _all: true } }),
+    prisma.transaction.groupBy({ by: ["dealStatus"], _count: { _all: true } }),
+  ]);
+  const split = (groups: { dealStatus: string; _count: { _all: number } }[]) => {
+    let active = 0;
+    let inactive = 0;
+    for (const g of groups) {
+      if (ACTIVE_DEAL_STATUSES.includes(g.dealStatus)) active += g._count._all;
+      else inactive += g._count._all;
+    }
+    return { active, inactive };
+  };
+  return { mandates: split(mandateGroups), transactions: split(txnGroups) };
+}
+
+export interface StageChangeFeedItem {
+  id: string;
+  field: string;
+  fromValue: string | null;
+  toValue: string;
+  changedAt: Date;
+  actorName: string | null;
+  createdSource: string;
+  entityLabel: string;
+  entityHref: string | null;
+}
+
+/**
+ * Recent stage/status/identifier changes across ALL audited entities
+ * (spec §13 "stage history roll-up"). One findMany with narrow includes.
+ */
+export async function stageChangeFeed(limit = 12): Promise<StageChangeFeedItem[]> {
+  const rows = await prisma.stageChange.findMany({
+    orderBy: { changedAt: "desc" },
+    take: limit,
+    include: {
+      changedBy: { select: { name: true } },
+      mandate: { select: { id: true, name: true } },
+      transaction: { select: { id: true, name: true } },
+      engagement: { select: { id: true, name: true } },
+      client: { select: { id: true, name: true } },
+      investor: { select: { id: true, name: true } },
+      partner: { select: { id: true, name: true } },
+    },
+  });
+  return rows.map((r) => {
+    const target =
+      (r.mandate && { label: r.mandate.name, href: `/mandates/${r.mandate.id}` }) ||
+      (r.transaction && { label: r.transaction.name, href: `/transactions/${r.transaction.id}` }) ||
+      (r.engagement && { label: r.engagement.name, href: `/engagement/${r.engagement.id}` }) ||
+      (r.client && { label: r.client.name, href: `/clients/${r.client.id}` }) ||
+      (r.investor && { label: r.investor.name, href: `/investors/${r.investor.id}` }) ||
+      (r.partner && { label: r.partner.name, href: `/partners/${r.partner.id}` }) ||
+      { label: "—", href: null };
+    return {
+      id: r.id,
+      field: r.field,
+      fromValue: r.fromValue,
+      toValue: r.toValue,
+      changedAt: r.changedAt,
+      actorName: r.changedBy?.name ?? null,
+      createdSource: r.createdSource,
+      entityLabel: target.label,
+      entityHref: target.href,
+    };
+  });
+}
+
+/**
+ * Transition counts by audited field (spec §13 roll-up companion to the feed).
+ * One groupBy; labels via the same field map the feed uses.
+ */
+export async function stageChangeCounts(): Promise<CountBreakdown[]> {
+  const FIELD_LABELS: Record<string, string> = {
+    stage: "Stage",
+    dealStatus: "Deal Status",
+    engagementStage: "Engagement Stage",
+    dealMilestone: "Milestone",
+    name: "Name",
+    registrationNo: "Registration No.",
+    primaryContact: "Primary Contact",
+  };
+  const groups = await prisma.stageChange.groupBy({ by: ["field"], _count: { _all: true } });
+  return groups
+    .map((g) => ({ key: g.field, label: FIELD_LABELS[g.field] ?? g.field, count: g._count._all }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export interface InvestorEngagementRollupRow {
+  investorId: string;
+  name: string;
+  underReview: number;
+  rejected: number;
+  invested: number;
+}
+
+/**
+ * Per-investor engagement rollup (spec §13): deals under review / rejected /
+ * invested. One groupBy + one name lookup — no N+1.
+ */
+export async function investorEngagementRollup(limit = 10): Promise<InvestorEngagementRollupRow[]> {
+  const groups = await prisma.engagement.groupBy({
+    by: ["investorId", "engagementStage"],
+    _count: { _all: true },
+  });
+  const byInvestor = new Map<string, { underReview: number; rejected: number; invested: number }>();
+  for (const g of groups) {
+    const bucket = byInvestor.get(g.investorId) ?? { underReview: 0, rejected: 0, invested: 0 };
+    if (g.engagementStage === "Invested") bucket.invested += g._count._all;
+    else if (g.engagementStage === "Declined") bucket.rejected += g._count._all;
+    else bucket.underReview += g._count._all;
+    byInvestor.set(g.investorId, bucket);
+  }
+  const ids = [...byInvestor.keys()];
+  const investors = ids.length
+    ? await prisma.investor.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } })
+    : [];
+  const nameMap = new Map(investors.map((i) => [i.id, i.name]));
+  return [...byInvestor.entries()]
+    .map(([investorId, b]) => ({ investorId, name: nameMap.get(investorId) ?? "Unknown", ...b }))
+    .sort((a, b) => b.underReview + b.rejected + b.invested - (a.underReview + a.rejected + a.invested))
+    .slice(0, limit);
+}
+
+/**
+ * Invested/completed summary stat (spec §13): engagements that reached
+ * Invested or have money out the door.
+ */
+export async function investedSummary(): Promise<{ count: number; totalDisbursed: number }> {
+  const agg = await prisma.engagement.aggregate({
+    where: { OR: [{ engagementStage: "Invested" }, { disbursementStatus: "Disbursed" }] },
+    _count: { _all: true },
+    _sum: { amountDisbursed: true },
+  });
+  return { count: agg._count._all, totalDisbursed: Number(agg._sum.amountDisbursed ?? 0) };
+}
+
+export interface HistoricalEngagementRow {
+  year: number;
+  quarter: number;
+  active: number;
+  invested: number;
+  declined: number;
+}
+
+/**
+ * Historical engagement summary (spec §13, was ❌): outcome counts by the
+ * already-derived year/quarter. One groupBy, bucketed in-process.
+ */
+export async function historicalEngagementSummary(): Promise<HistoricalEngagementRow[]> {
+  const groups = await prisma.engagement.groupBy({
+    by: ["year", "quarter", "engagementStage"],
+    where: { year: { not: null }, quarter: { not: null } },
+    _count: { _all: true },
+  });
+  const byPeriod = new Map<string, HistoricalEngagementRow>();
+  for (const g of groups) {
+    const key = `${g.year}-${g.quarter}`;
+    const row = byPeriod.get(key) ?? {
+      year: g.year as number,
+      quarter: g.quarter as number,
+      active: 0,
+      invested: 0,
+      declined: 0,
+    };
+    if (g.engagementStage === "Invested") row.invested += g._count._all;
+    else if (g.engagementStage === "Declined") row.declined += g._count._all;
+    else row.active += g._count._all;
+    byPeriod.set(key, row);
+  }
+  return [...byPeriod.values()].sort((a, b) => a.year - b.year || a.quarter - b.quarter);
+}
+
+export interface PartnerFunnelRow {
+  partnerId: string;
+  name: string;
+  introduced: number;
+  progressed: number;
+  won: number;
+  lost: number;
+}
+
+/**
+ * Referral conversion funnel per partner (spec §13), replacing the single
+ * aggregate %: introduced → progressed (past NewLead) → Signed / Lost.
+ * One findMany with a stage-only select — rollup in-process.
+ */
+export async function partnerConversionFunnel(): Promise<PartnerFunnelRow[]> {
+  const partners = await prisma.partner.findMany({
+    include: { referredMandates: { select: { stage: true } } },
+    orderBy: { name: "asc" },
+  });
+  return partners
+    .map((p) => {
+      const stages = p.referredMandates.map((m) => m.stage as string);
+      return {
+        partnerId: p.id,
+        name: p.name,
+        introduced: stages.length,
+        progressed: stages.filter((s) => s !== "NewLead").length,
+        won: stages.filter((s) => s === "Signed").length,
+        lost: stages.filter((s) => s === "Lost").length,
+      };
+    })
+    .filter((r) => r.introduced > 0);
+}
