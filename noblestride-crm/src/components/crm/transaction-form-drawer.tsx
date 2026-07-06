@@ -38,6 +38,7 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
     onSuccess: () => setOpen(false),
   });
   const v = f.values;
+  const lockDateOpened = mode === "edit" && Boolean(initial?.dateOpened);
 
   return (
     <>
@@ -67,7 +68,10 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
           </div>
           <MultiSelectField label="Instrument" value={v.instrument as string[]} onChange={(x) => f.setValue("instrument", x)} options={options("Instrument")} />
           <MultiSelectField label="Sector" value={v.sector as string[]} onChange={(x) => f.setValue("sector", x)} options={options("Sector")} />
-          <DateField label="Date Opened" value={v.dateOpened as string} onChange={(x) => f.setValue("dateOpened", x)} />
+          <DateField label="Date Opened" value={v.dateOpened as string} onChange={(x) => f.setValue("dateOpened", x)} disabled={lockDateOpened} />
+          {lockDateOpened && (
+            <p className="text-xs text-zinc-400">Date opened is locked once set.</p>
+          )}
 
           <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Deal Status</p>
           <div className="grid grid-cols-2 gap-3">

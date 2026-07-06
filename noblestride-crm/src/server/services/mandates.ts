@@ -105,7 +105,20 @@ export async function createMandate(input: MandateCreateInput, actor: Actor) {
 export async function updateMandate(id: string, input: MandateUpdateInput, actor: Actor = { type: "HUMAN" }) {
   const data = mandateUpdateSchema.parse(input);
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.mandate.findUniqueOrThrow({ where: { id }, select: { dealStatus: true } });
+    const existing = await tx.mandate.findUniqueOrThrow({
+      where: { id },
+      select: { dealStatus: true, dateOpened: true, source: true },
+    });
+    if (
+      data.dateOpened !== undefined &&
+      existing.dateOpened != null &&
+      data.dateOpened.getTime() !== existing.dateOpened.getTime()
+    ) {
+      throw new CrudError("Date opened is locked once set (spec §7.1: creation date is immutable).");
+    }
+    if (data.source !== undefined && existing.source != null && data.source !== existing.source) {
+      throw new CrudError("Source is locked once set (spec §7.1: originating source is immutable).");
+    }
     const updated = await tx.mandate.update({ where: { id }, data });
     if (data.dealStatus !== undefined) {
       await recordStageChange(tx, { field: "dealStatus", fromValue: existing.dealStatus, toValue: data.dealStatus, actor, mandateId: id });

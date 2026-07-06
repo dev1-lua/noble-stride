@@ -65,9 +65,9 @@ export function NumberField({ label, value, onChange, error, required, placehold
 
 export const MoneyField = NumberField;
 
-export function SelectField({ label, value, onChange, options, error, required, placeholder }: {
+export function SelectField({ label, value, onChange, options, error, required, placeholder, disabled }: {
   label: string; value?: string; onChange: (v: string) => void; options: SelectOption[];
-  error?: string; required?: boolean; placeholder?: string;
+  error?: string; required?: boolean; placeholder?: string; disabled?: boolean;
 }) {
   return (
     <Select
@@ -77,6 +77,7 @@ export function SelectField({ label, value, onChange, options, error, required, 
       options={options}
       placeholder={placeholder ?? "Select…"}
       error={error}
+      disabled={disabled}
     />
   );
 }
@@ -84,12 +85,12 @@ export function SelectField({ label, value, onChange, options, error, required, 
 // RelationSelect is a SelectField fed dynamic record options (clients, users, …).
 export const RelationSelect = SelectField;
 
-export function DateField({ label, value, onChange, error }: {
-  label: string; value?: string; onChange: (v: string) => void; error?: string;
+export function DateField({ label, value, onChange, error, disabled }: {
+  label: string; value?: string; onChange: (v: string) => void; error?: string; disabled?: boolean;
 }) {
   // value is a yyyy-mm-dd string
   return (
-    <Input label={label} type="date" value={value ?? ""} onChange={(e) => onChange(e.target.value)} error={error} />
+    <Input label={label} type="date" value={value ?? ""} onChange={(e) => onChange(e.target.value)} error={error} disabled={disabled} />
   );
 }
 

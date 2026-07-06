@@ -143,7 +143,17 @@ export async function createTransaction(input: TransactionCreateInput, actor: Ac
 export async function updateTransaction(id: string, input: TransactionUpdateInput, actor: Actor = { type: "HUMAN" }) {
   const data = transactionUpdateSchema.parse(input);
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.transaction.findUniqueOrThrow({ where: { id }, select: { dealStatus: true, dealMilestone: true } });
+    const existing = await tx.transaction.findUniqueOrThrow({
+      where: { id },
+      select: { dealStatus: true, dealMilestone: true, dateOpened: true },
+    });
+    if (
+      data.dateOpened !== undefined &&
+      existing.dateOpened != null &&
+      data.dateOpened.getTime() !== existing.dateOpened.getTime()
+    ) {
+      throw new CrudError("Date opened is locked once set (spec §7.1: creation date is immutable).");
+    }
     const updated = await tx.transaction.update({ where: { id }, data });
     if (data.dealStatus !== undefined) {
       await recordStageChange(tx, { field: "dealStatus", fromValue: existing.dealStatus, toValue: data.dealStatus, actor, transactionId: id });

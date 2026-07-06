@@ -35,6 +35,8 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
     onSuccess: () => setOpen(false),
   });
   const v = f.values;
+  const lockDateOpened = mode === "edit" && Boolean(initial?.dateOpened);
+  const lockSource = mode === "edit" && Boolean(initial?.source);
 
   return (
     <>
@@ -60,10 +62,13 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
           <MultiSelectField label="Sector" value={v.sector as string[]} onChange={(x) => f.setValue("sector", x)} options={options("Sector")} />
           <div className="grid grid-cols-2 gap-3">
             <MoneyField label="Deal Size" value={v.dealSize as number} onChange={(x) => f.setValue("dealSize", x)} />
-            <SelectField label="Source" value={v.source as string} onChange={(x) => f.setValue("source", x)} options={options("Source")} />
+            <SelectField label="Source" value={v.source as string} onChange={(x) => f.setValue("source", x)} options={options("Source")} disabled={lockSource} />
           </div>
           <SelectField label="Deal Status" value={v.dealStatus as string} onChange={(x) => f.setValue("dealStatus", x)} options={options("DealStatus")} />
-          <DateField label="Date Opened" value={v.dateOpened as string} onChange={(x) => f.setValue("dateOpened", x)} />
+          <DateField label="Date Opened" value={v.dateOpened as string} onChange={(x) => f.setValue("dateOpened", x)} disabled={lockDateOpened} />
+          {(lockDateOpened || lockSource) && (
+            <p className="text-xs text-zinc-400">Date opened and source are locked once set.</p>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <SelectField label="NDA Status" value={v.ndaStatus as string} onChange={(x) => f.setValue("ndaStatus", x)} options={options("DocStatus")} />
             <SelectField label="EA Status" value={v.eaStatus as string} onChange={(x) => f.setValue("eaStatus", x)} options={options("DocStatus")} />
