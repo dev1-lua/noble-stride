@@ -47,6 +47,37 @@ describe("identifier immutability (smoke)", () => {
     if (out === null) return;
   });
 
+  it("allows an unchanged resend when the stored dateOpened carries a time-of-day (seeded/legacy rows)", async () => {
+    const out = await withDb(async () => {
+      const client = await createClient({ name: "__immutable_mandate_client_tod__" }, { type: "HUMAN" });
+      const mandate = await createMandate({ name: "__immutable_mandate_tod__", clientId: client.id }, { type: "HUMAN" });
+      try {
+        // Simulate a seeded/legacy row: dateOpened stored with a real time-of-day,
+        // bypassing the service layer (as a seed script or migration would).
+        await prisma.mandate.update({
+          where: { id: mandate.id },
+          data: { dateOpened: new Date("2026-01-01T14:23:11Z") },
+        });
+        // The edit drawer resends the date as yyyy-mm-dd, which the DateTime
+        // scalar coerces to UTC midnight of the same calendar day. This must
+        // be treated as an unchanged resend, not a date change.
+        await expect(
+          updateMandate(mandate.id, { dateOpened: new Date("2026-01-01T00:00:00Z") }, { type: "HUMAN" }),
+        ).resolves.not.toThrow();
+        // A genuinely different calendar day must still be rejected.
+        await expect(
+          updateMandate(mandate.id, { dateOpened: new Date("2026-01-02T00:00:00Z") }, { type: "HUMAN" }),
+        ).rejects.toThrow(/locked once set/i);
+      } finally {
+        await prisma.stageChange.deleteMany({ where: { mandateId: mandate.id } });
+        await deleteMandate(mandate.id);
+        await deleteClient(client.id);
+      }
+      return true;
+    });
+    if (out === null) return;
+  });
+
   it("locks Transaction.dateOpened once set", async () => {
     const out = await withDb(async () => {
       const client = await createClient({ name: "__immutable_txn_client__" }, { type: "HUMAN" });
@@ -57,6 +88,34 @@ describe("identifier immutability (smoke)", () => {
         await updateTransaction(txn.id, { dateOpened: d1 }, { type: "HUMAN" });
         await expect(
           updateTransaction(txn.id, { dateOpened: new Date("2026-03-03T00:00:00Z") }, { type: "HUMAN" }),
+        ).rejects.toThrow(/locked once set/i);
+      } finally {
+        await prisma.stageChange.deleteMany({ where: { transactionId: txn.id } });
+        await deleteTransaction(txn.id);
+        await deleteClient(client.id);
+      }
+      return true;
+    });
+    if (out === null) return;
+  });
+
+  it("allows an unchanged resend when the stored dateOpened carries a time-of-day (seeded/legacy rows)", async () => {
+    const out = await withDb(async () => {
+      const client = await createClient({ name: "__immutable_txn_client_tod__" }, { type: "HUMAN" });
+      const txn = await createTransaction({ name: "__immutable_txn_tod__", clientId: client.id }, { type: "HUMAN" });
+      try {
+        // Simulate a seeded/legacy row: dateOpened stored with a real time-of-day.
+        await prisma.transaction.update({
+          where: { id: txn.id },
+          data: { dateOpened: new Date("2026-01-01T14:23:11Z") },
+        });
+        // The edit drawer resends UTC-midnight of the same calendar day — must succeed.
+        await expect(
+          updateTransaction(txn.id, { dateOpened: new Date("2026-01-01T00:00:00Z") }, { type: "HUMAN" }),
+        ).resolves.not.toThrow();
+        // A genuinely different calendar day must still be rejected.
+        await expect(
+          updateTransaction(txn.id, { dateOpened: new Date("2026-01-02T00:00:00Z") }, { type: "HUMAN" }),
         ).rejects.toThrow(/locked once set/i);
       } finally {
         await prisma.stageChange.deleteMany({ where: { transactionId: txn.id } });

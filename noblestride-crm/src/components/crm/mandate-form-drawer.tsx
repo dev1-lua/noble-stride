@@ -67,7 +67,13 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
           <SelectField label="Deal Status" value={v.dealStatus as string} onChange={(x) => f.setValue("dealStatus", x)} options={options("DealStatus")} />
           <DateField label="Date Opened" value={v.dateOpened as string} onChange={(x) => f.setValue("dateOpened", x)} disabled={lockDateOpened} />
           {(lockDateOpened || lockSource) && (
-            <p className="text-xs text-zinc-400">Date opened and source are locked once set.</p>
+            <p className="text-xs text-zinc-400">
+              {lockDateOpened && lockSource
+                ? "Date opened and source are locked once set."
+                : lockDateOpened
+                  ? "Date opened is locked once set."
+                  : "Source is locked once set."}
+            </p>
           )}
           <div className="grid grid-cols-2 gap-3">
             <SelectField label="NDA Status" value={v.ndaStatus as string} onChange={(x) => f.setValue("ndaStatus", x)} options={options("DocStatus")} />

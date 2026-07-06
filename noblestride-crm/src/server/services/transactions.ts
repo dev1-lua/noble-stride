@@ -10,7 +10,7 @@ import {
 import type { KanbanColumn, TransactionStage } from "@/server/domain/types";
 import type { Prisma } from "@prisma/client";
 import { transactionCreateSchema, transactionUpdateSchema, type TransactionCreateInput, type TransactionUpdateInput } from "@/lib/schemas/transaction";
-import { actorSource, CrudError } from "./crud";
+import { actorSource, CrudError, sameCalendarDate } from "./crud";
 import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 
@@ -150,7 +150,7 @@ export async function updateTransaction(id: string, input: TransactionUpdateInpu
     if (
       data.dateOpened !== undefined &&
       existing.dateOpened != null &&
-      data.dateOpened.getTime() !== existing.dateOpened.getTime()
+      !sameCalendarDate(data.dateOpened, existing.dateOpened)
     ) {
       throw new CrudError("Date opened is locked once set (spec §7.1: creation date is immutable).");
     }

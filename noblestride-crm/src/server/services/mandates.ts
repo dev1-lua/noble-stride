@@ -6,7 +6,7 @@ import { LABELS, label } from "@/lib/vocab";
 import type { KanbanColumn, MandateStage } from "@/server/domain/types";
 import type { Mandate } from "@prisma/client";
 import { mandateCreateSchema, mandateUpdateSchema, type MandateCreateInput, type MandateUpdateInput } from "@/lib/schemas/mandate";
-import { actorSource, CrudError } from "./crud";
+import { actorSource, CrudError, sameCalendarDate } from "./crud";
 import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 
@@ -112,7 +112,7 @@ export async function updateMandate(id: string, input: MandateUpdateInput, actor
     if (
       data.dateOpened !== undefined &&
       existing.dateOpened != null &&
-      data.dateOpened.getTime() !== existing.dateOpened.getTime()
+      !sameCalendarDate(data.dateOpened, existing.dateOpened)
     ) {
       throw new CrudError("Date opened is locked once set (spec §7.1: creation date is immutable).");
     }
