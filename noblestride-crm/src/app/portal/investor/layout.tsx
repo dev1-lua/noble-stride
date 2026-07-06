@@ -4,6 +4,7 @@
 // portal-only and every page still renders only visibility-projected data.
 import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
+import { isBlockedClassification } from "@/server/visibility/tiers";
 import { ViewingBanner } from "@/components/portal/viewing-banner";
 import { InvestorSidebar } from "@/components/portal/investor-sidebar";
 import { InvestorTopbar } from "@/components/portal/investor-topbar";
@@ -20,9 +21,35 @@ export default async function InvestorPortalLayout({
     vp.role === "investor" && vp.recordId
       ? await prisma.investor.findUnique({
           where: { id: vp.recordId },
-          select: { name: true, onboardingStatus: true },
+          select: { name: true, onboardingStatus: true, engagementClassification: true },
         })
       : null;
+
+  // Blocked classification wins over onboarding status (build spec §11.2:
+  // excluded/greylisted funds never see opportunities): a greylisted
+  // registration is also Rejected, but must NOT see the "not approved" copy.
+  // Deliberately neutral — never reveals the classification.
+  if (investor && isBlockedClassification(investor.engagementClassification)) {
+    return (
+      <div className="flex h-screen flex-col overflow-hidden bg-zinc-50">
+        <div className="flex-shrink-0">
+          <ViewingBanner />
+        </div>
+        <main className="flex flex-1 items-center justify-center p-6">
+          <div className="max-w-md rounded-xl border border-zinc-200 bg-white p-8 text-center shadow-sm">
+            <h1 className="text-xl font-semibold text-zinc-900">Portal access restricted</h1>
+            <p className="mt-3 text-sm text-zinc-500">
+              Your portal access is currently restricted. Contact NobleStride Capital if you believe
+              this is an error.
+            </p>
+            <p className="mt-6 text-xs text-zinc-400">
+              No opportunity information is available for this account.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (investor && investor.onboardingStatus !== "Approved") {
     const pending = investor.onboardingStatus === "PendingReview";
