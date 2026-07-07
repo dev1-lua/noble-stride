@@ -122,11 +122,12 @@ export const InvestorRef = builder.prismaObject("Investor", {
     // Task 5: engagement classification, NDA status, profile fields
     engagementClassification: t.field({ type: InvestorEngagementClassificationEnum, resolve: (i) => i.engagementClassification }),
     ndaStatus: t.field({ type: InvestorNdaStatusEnum, resolve: (i) => i.ndaStatus }),
-    // Investor onboarding (design spec 2026-07-05): approval gate + demo-OTP stamps
+    // Investor onboarding (design spec 2026-07-05): approval gate + demo-OTP stamps + open-NDA record
     onboardingStatus: t.field({ type: OnboardingStatusEnum, resolve: (i) => i.onboardingStatus }),
     registeredAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.registeredAt }),
     emailVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.emailVerifiedAt }),
     phoneVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.phoneVerifiedAt }),
+    openNdaSignedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.openNdaSignedAt }),
     shareholdingPreference: t.exposeString("shareholdingPreference", { nullable: true }),
     minRevenue: t.float({ nullable: true, resolve: (i) => (i.minRevenue == null ? null : Number(i.minRevenue)) }),
     minEbitda: t.float({ nullable: true, resolve: (i) => (i.minEbitda == null ? null : Number(i.minEbitda)) }),
@@ -327,6 +328,7 @@ export const EngagementRef = builder.prismaObject("Engagement", {
     engagementStage: t.field({ type: EngagementStageEnum, resolve: (e) => e.engagementStage }),
     interestLevel: t.field({ type: InterestLevelEnum, nullable: true, resolve: (e) => e.interestLevel }),
     ndaType: t.field({ type: NdaTypeEnum, nullable: true, resolve: (e) => e.ndaType }),
+    ndaSignedAt: t.field({ type: "DateTime", nullable: true, resolve: (e) => e.ndaSignedAt }),
     termSheetIssued: t.exposeBoolean("termSheetIssued"),
     termSheetDate: t.field({ type: "DateTime", nullable: true, resolve: (e) => e.termSheetDate }),
     totalAmount: t.float({ nullable: true, resolve: (e) => (e.totalAmount == null ? null : Number(e.totalAmount)) }),

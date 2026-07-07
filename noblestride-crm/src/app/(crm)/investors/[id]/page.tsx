@@ -180,7 +180,10 @@ export default async function InvestorDetailPage({ params }: PageProps) {
         <div>
           <p className="mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wide">Closed NDAs</p>
           {closedNdaEngagements.length === 0 ? (
-            <p className="text-sm text-zinc-400">No closed-NDA engagements on record.</p>
+            <p className="text-sm text-zinc-400">
+              No closed-NDA engagements on record. Closed NDAs are recorded per deal from an
+              engagement page — link this investor to a deal first (Engagement → Log Engagement).
+            </p>
           ) : (
             <ul className="divide-y divide-zinc-100">
               {closedNdaEngagements.map((eng) => (
