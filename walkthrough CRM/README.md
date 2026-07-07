@@ -24,6 +24,8 @@ Admins decide from `/investors/[id]` → Onboarding panel → **Approve / Reject
 
 ## Sections
 
+- [Sidebar definitions](sidebar-definitions.md) — what every admin-CRM and portal sidebar item is, in one page
+
 ### Part I–II · Scope & data model
 - [§1 Purpose and scope](01-purpose-and-scope.md)
 - [§2 Entity catalogue and relationships](02-entity-catalogue.md)
