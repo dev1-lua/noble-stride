@@ -26,6 +26,7 @@ import type { Tier } from "./tiers";
 import { isBlockedClassification, isOnboardingBlocked } from "./tiers";
 import { fieldAccess, isFieldVisible } from "./matrix";
 import { dealCodename } from "./codename";
+import { label } from "@/lib/vocab";
 
 // ─── Numeric helpers ─────────────────────────────────────────────────────────
 
@@ -201,7 +202,9 @@ function projectDocuments(
   documents: DocumentInput[],
   tier: Exclude<Tier, "NONE">,
   ndaSatisfied: boolean,
+  codename: string,
 ): ProjectedDocument[] {
+  const masked = tier === "PRE_INTEREST";
   return documents
     .filter((doc) => {
       if (NEVER_SHARED_DOC_TYPES.includes(doc.type)) return false;
@@ -216,11 +219,14 @@ function projectDocuments(
     })
     .map((doc) => ({
       id: doc.id,
-      name: doc.name,
+      // §11: at PRE_INTEREST the document title must not carry the real client
+      // identity — replace it with the doc-type label + deal codename, and drop
+      // fileUrl (a path could embed the real name).
+      name: masked ? `${label("DocumentType", doc.type)} — ${codename}` : doc.name,
       type: doc.type,
       version: doc.version ?? null,
       status: doc.status ?? null,
-      fileUrl: doc.fileUrl ?? null,
+      fileUrl: masked ? null : (doc.fileUrl ?? null),
     }));
 }
 
@@ -296,7 +302,7 @@ export function projectDealForInvestor(
           profitability: client?.profitability ?? null,
         },
     matchingMandateStatus: deal.mandate?.stage ?? null,
-    documents: projectDocuments(deal.documents ?? [], tier, ndaSatisfied),
+    documents: projectDocuments(deal.documents ?? [], tier, ndaSatisfied, displayName),
     advisorClientContacts: isFieldVisible("advisorClientContacts", tier)
       ? (client?.contacts ?? []).map((c) => ({
           name: [c.firstName, c.lastName ?? ""].join(" ").trim(),

@@ -78,10 +78,14 @@ export function Topbar({
   investors = [],
   partners = [],
   users = [],
+  activeOrgRole,
+  activeUserId,
 }: {
   investors?: ViewpointOption[];
   partners?: ViewpointOption[];
   users?: ViewpointOption[];
+  activeOrgRole?: string;
+  activeUserId?: string;
 }) {
   const pathname = usePathname();
   const { title, subtitle } = derivePageMeta(pathname);
@@ -104,7 +108,13 @@ export function Topbar({
       {/* Right controls */}
       <div className="flex flex-shrink-0 items-center gap-3">
         {/* View-as switcher (demo lens, spec §6 + §7.2 org roles) */}
-        <ViewpointSwitcher investors={investors} partners={partners} users={users} />
+        <ViewpointSwitcher
+          investors={investors}
+          partners={partners}
+          users={users}
+          activeOrgRole={activeOrgRole}
+          activeUserId={activeUserId}
+        />
 
         {/* Sign out — clears demo viewpoint cookie, returns to public landing */}
         <Link

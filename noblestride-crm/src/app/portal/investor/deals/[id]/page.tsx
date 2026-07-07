@@ -237,38 +237,35 @@ export default async function InvestorDealPage({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-emerald-700/70">
           {journey ? "Request More Information" : "Express Interest"}
         </h2>
-        {interest ? (
-          <p className="mt-2 text-sm font-medium text-emerald-900">
+        {interest && (
+          <p className="mt-2 rounded-md bg-emerald-100/70 px-3 py-2 text-sm font-medium text-emerald-900">
             Thank you — your request has been sent to the NobleStride team. They will follow up
             shortly.
           </p>
-        ) : (
-          <>
-            <p className="mt-2 text-sm text-emerald-900">
-              {journey
-                ? "Need something specific — data room access, a management call, updated financials? Let the deal team know."
-                : "Interested in this opportunity? Register your interest and the NobleStride team will start your process."}
-            </p>
-            <form action={expressInterest} className="mt-3 space-y-3">
-              <input type="hidden" name="dealId" value={deal.id} />
-              <textarea
-                name="message"
-                rows={3}
-                placeholder="Optional message for the deal team…"
-                className="w-full rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              />
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="text-xs text-emerald-800/70">{deal.contact}</span>
-                <button
-                  type="submit"
-                  className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
-                >
-                  {journey ? "Send request" : "Express interest"}
-                </button>
-              </div>
-            </form>
-          </>
         )}
+        <p className="mt-2 text-sm text-emerald-900">
+          {journey
+            ? "Need something specific — data room access, a management call, updated financials? Let the deal team know."
+            : "Interested in this opportunity? Register your interest and the NobleStride team will start your process."}
+        </p>
+        <form action={expressInterest} className="mt-3 space-y-3">
+          <input type="hidden" name="dealId" value={deal.id} />
+          <textarea
+            name="message"
+            rows={3}
+            placeholder="Optional message for the deal team…"
+            className="w-full rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-xs text-emerald-800/70">{deal.contact}</span>
+            <button
+              type="submit"
+              className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+            >
+              {journey ? "Send request" : "Express interest"}
+            </button>
+          </div>
+        </form>
       </section>
     </div>
   );

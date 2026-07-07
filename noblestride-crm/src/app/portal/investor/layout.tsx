@@ -21,7 +21,7 @@ export default async function InvestorPortalLayout({
     vp.role === "investor" && vp.recordId
       ? await prisma.investor.findUnique({
           where: { id: vp.recordId },
-          select: { name: true, onboardingStatus: true, engagementClassification: true },
+          select: { name: true, onboardingStatus: true, engagementClassification: true, ndaStatus: true },
         })
       : null;
 
@@ -89,7 +89,9 @@ export default async function InvestorPortalLayout({
           <main className="flex-1 overflow-y-auto p-6">
             {children}
             <p className="pt-8 text-xs text-zinc-400">
-              Confidential — shared under the terms of your NDA with NobleStride Capital.
+              {investor && investor.ndaStatus !== "None"
+                ? "Confidential — shared under the terms of your NDA with NobleStride Capital."
+                : "Confidential — for your review only. Please do not distribute."}
             </p>
           </main>
         </div>

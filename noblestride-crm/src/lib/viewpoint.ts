@@ -15,6 +15,9 @@ export type Viewpoint = {
   orgRole?: OrgRoleLens;
   /** Impersonated User id for DealLead/TeamMember lenses. */
   userId?: string;
+  /** True only for admin-initiated portal impersonation (via /api/viewpoint);
+   *  absent for a real /login. Gates the in-portal "view as" switcher. */
+  impersonating?: boolean;
 };
 
 export const VIEWPOINT_COOKIE = "ns_viewpoint";
@@ -29,10 +32,13 @@ export function parseViewpoint(raw: string | undefined | null): Viewpoint {
       recordId?: string;
       orgRole?: string;
       userId?: string;
+      impersonating?: boolean;
     };
     if (parsed.role === "investor" || parsed.role === "partner") {
       if (!parsed.recordId) return ADMIN_VIEWPOINT;
-      return { role: parsed.role, recordId: parsed.recordId };
+      const vp: Viewpoint = { role: parsed.role, recordId: parsed.recordId };
+      if (parsed.impersonating === true) vp.impersonating = true;
+      return vp;
     }
     const orgRole = ORG_ROLES.includes(parsed.orgRole as OrgRoleLens)
       ? (parsed.orgRole as OrgRoleLens)
@@ -45,7 +51,13 @@ export function parseViewpoint(raw: string | undefined | null): Viewpoint {
 }
 
 export function serializeViewpoint(vp: Viewpoint): string {
-  if (vp.role !== "admin") return JSON.stringify({ role: vp.role, recordId: vp.recordId });
+  if (vp.role !== "admin") {
+    return JSON.stringify(
+      vp.impersonating
+        ? { role: vp.role, recordId: vp.recordId, impersonating: true }
+        : { role: vp.role, recordId: vp.recordId },
+    );
+  }
   if (!vp.orgRole || vp.orgRole === "Admin") return JSON.stringify({ role: "admin" });
   return JSON.stringify({ role: "admin", orgRole: vp.orgRole, userId: vp.userId });
 }

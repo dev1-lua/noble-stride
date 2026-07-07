@@ -13,12 +13,14 @@ export async function GET(req: NextRequest) {
     return res;
   }
 
+  const roleParam = params.get("role");
   const vp = parseViewpoint(
     JSON.stringify({
-      role: params.get("role"),
+      role: roleParam,
       recordId: params.get("recordId") ?? undefined,
       orgRole: params.get("orgRole") ?? undefined,
       userId: params.get("userId") ?? undefined,
+      impersonating: roleParam === "investor" || roleParam === "partner" ? true : undefined,
     }),
   );
   const res = NextResponse.redirect(new URL(params.get("next") ?? viewpointHome(vp), req.url));

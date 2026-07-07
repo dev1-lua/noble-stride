@@ -6,6 +6,7 @@ import {
 } from "@/server/visibility/project";
 import type { Tier } from "@/server/visibility/tiers";
 import { dealCodename } from "@/server/visibility/codename";
+import { label } from "@/lib/vocab";
 import { CAK_SENTINEL, FORBIDDEN_STRINGS, makeDealFixture } from "./fixtures";
 
 const VISIBLE_TIERS: Exclude<Tier, "NONE">[] = ["PRE_INTEREST", "AFTER_NDA", "DD"];
@@ -150,6 +151,43 @@ describe("projectDealForInvestor — tier gating (§5.2)", () => {
         expect(p?.companyProfile.youthLed).toBe(false);
       });
     }
+  });
+});
+
+describe("BUG-01 — document titles must not leak client identity at PRE_INTEREST (§11)", () => {
+  it("masks the document title with the deal codename and drops fileUrl", () => {
+    const deal = makeDealFixture();
+    deal.documents = [
+      {
+        id: "doc-teaser",
+        name: "Teaser — SECRETCO Holdings Ltd",
+        type: "Teaser",
+        accessLevel: "InvestorShared",
+        fileUrl: "https://vdr.example/SECRETCO-teaser.pdf",
+      },
+    ];
+    const p = projectDealForInvestor(deal, "PRE_INTEREST");
+    const teaser = p!.documents.find((d) => d.id === "doc-teaser")!;
+    expect(teaser.name).toBe(`${label("DocumentType", "Teaser")} — ${dealCodename("txn-1")}`);
+    expect(teaser.fileUrl).toBeNull();
+    expect(JSON.stringify(p)).not.toContain("SECRETCO");
+  });
+
+  it("shows the real document title + fileUrl once past PRE_INTEREST", () => {
+    const deal = makeDealFixture();
+    deal.documents = [
+      {
+        id: "doc-teaser",
+        name: "Teaser — Acme Agri Ltd",
+        type: "Teaser",
+        accessLevel: "InvestorShared",
+        fileUrl: "https://vdr.example/acme.pdf",
+      },
+    ];
+    const p = projectDealForInvestor(deal, "AFTER_NDA");
+    const teaser = p!.documents.find((d) => d.id === "doc-teaser")!;
+    expect(teaser.name).toBe("Teaser — Acme Agri Ltd");
+    expect(teaser.fileUrl).toBe("https://vdr.example/acme.pdf");
   });
 });
 

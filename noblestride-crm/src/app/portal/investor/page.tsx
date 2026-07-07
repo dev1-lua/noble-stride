@@ -28,7 +28,7 @@ export default async function InvestorPortalPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900">Investment Opportunities</h1>
+        <h2 className="text-2xl font-bold text-zinc-900">Investment Opportunities</h2>
         <p className="mt-1 text-sm text-zinc-500">
           Prepared for <span className="font-medium text-zinc-700">{investor.name}</span> — showing
           opportunities matching your mandate

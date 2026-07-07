@@ -71,6 +71,9 @@ export function TaskFormDrawer({
             <SelectField label="Status" value={v.status as string} onChange={(x) => f.setValue("status", x)} options={options("TaskStatus")} />
             <SelectField label="Source" value={v.source as string} onChange={(x) => f.setValue("source", x)} options={options("TaskSource")} />
           </div>
+          {f.errors._ && (
+            <p className="rounded-md bg-rose-50 px-3 py-2 text-xs text-rose-600">{f.errors._}</p>
+          )}
           <RelationSelect label="Mandate" value={v.mandateId as string} onChange={(x) => f.setValue("mandateId", x)} options={mandates} placeholder="Select mandate…" />
           <RelationSelect label="Transaction" value={v.transactionId as string} onChange={(x) => f.setValue("transactionId", x)} options={transactions} placeholder="Select transaction…" />
           <RelationSelect label="Investor" value={v.investorId as string} onChange={(x) => f.setValue("investorId", x)} options={investors} placeholder="Select investor…" />

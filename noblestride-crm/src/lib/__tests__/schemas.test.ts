@@ -232,7 +232,7 @@ describe("entity create schemas", () => {
 
   it("task: requires title", () => {
     expect(taskCreateSchema.safeParse({}).success).toBe(false);
-    expect(taskCreateSchema.safeParse({ title: "Follow up" }).success).toBe(true);
+    expect(taskCreateSchema.safeParse({ title: "Follow up", clientId: "c1" }).success).toBe(true);
   });
 
   it("task: accepts all optional link ids + source, strips caller-supplied escalated", () => {
@@ -270,7 +270,7 @@ describe("entity create schemas", () => {
   });
 
   it("task: strips unknown keys", () => {
-    const r = taskCreateSchema.safeParse({ title: "X", notAField: "nope" });
+    const r = taskCreateSchema.safeParse({ title: "X", notAField: "nope", clientId: "c1" });
     expect(r.success).toBe(true);
     if (r.success) {
       expect((r.data as Record<string, unknown>).notAField).toBeUndefined();

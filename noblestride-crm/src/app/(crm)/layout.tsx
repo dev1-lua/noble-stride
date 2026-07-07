@@ -36,7 +36,13 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
       {/* Main content region */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         {/* Sticky topbar */}
-        <Topbar investors={investors} partners={partners} users={users} />
+        <Topbar
+          investors={investors}
+          partners={partners}
+          users={users}
+          activeOrgRole={vp.orgRole ?? "Admin"}
+          activeUserId={vp.userId}
+        />
 
         {/* Org-role lens banner (demo lens, spec §7.2) */}
         {lens.orgRole !== "Admin" && (

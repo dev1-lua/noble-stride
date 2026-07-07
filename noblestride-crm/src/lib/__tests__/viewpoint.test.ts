@@ -24,3 +24,15 @@ describe("viewpoint org-role lens (§7.2 demo lens)", () => {
     expect(parseViewpoint("not-json")).toEqual(ADMIN_VIEWPOINT);
   });
 });
+
+describe("viewpoint impersonation flag (BLOCKER-A gate)", () => {
+  it("round-trips impersonating=true for a portal role", () => {
+    const raw = serializeViewpoint({ role: "investor", recordId: "i1", impersonating: true });
+    expect(parseViewpoint(raw)).toEqual({ role: "investor", recordId: "i1", impersonating: true });
+  });
+
+  it("a real login (no flag) has no impersonating key", () => {
+    const raw = serializeViewpoint({ role: "investor", recordId: "i1" });
+    expect(parseViewpoint(raw)).toEqual({ role: "investor", recordId: "i1" });
+  });
+});

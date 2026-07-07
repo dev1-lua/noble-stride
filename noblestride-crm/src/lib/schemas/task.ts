@@ -1,15 +1,10 @@
 import { z } from "zod";
 import { TaskStatus, TaskSource } from "@prisma/client";
 
-// Spec §3.10: "extracted action items" — a lightweight task, optionally sourced
-// from a communication/activity and linked to at most the caller's choice of
-// mandate/transaction/investor/client (all optional; no one-of enforcement here,
-// matching Task's existing free-linking convention in schema.prisma).
-//
-// Note: `escalated` is intentionally NOT a field here — spec §3.8 marks it
-// Auto, so it is computed by the task service (createTask/updateTask), never
-// caller-settable. Any `escalated` key on the input is stripped by zod.
-export const taskCreateSchema = z.object({
+// Spec §3.8: a task must be linked to at least one record (mandate,
+// transaction, investor, or client). `escalated` is intentionally NOT a field
+// (spec §3.8 marks it Auto — computed by the task service, never caller-set).
+const taskBaseSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
   status: z.nativeEnum(TaskStatus).optional(),
   source: z.nativeEnum(TaskSource).optional(),
@@ -23,6 +18,17 @@ export const taskCreateSchema = z.object({
   clientId: z.string().trim().optional(),
   activityId: z.string().trim().optional(),
 });
-export const taskUpdateSchema = taskCreateSchema.partial();
+
+const hasLinkedRecord = (v: {
+  mandateId?: string;
+  transactionId?: string;
+  investorId?: string;
+  clientId?: string;
+}) => Boolean(v.mandateId || v.transactionId || v.investorId || v.clientId);
+
+export const taskCreateSchema = taskBaseSchema.refine(hasLinkedRecord, {
+  message: "Link the task to at least one record (mandate, transaction, investor, or client).",
+});
+export const taskUpdateSchema = taskBaseSchema.partial();
 export type TaskCreateInput = z.infer<typeof taskCreateSchema>;
 export type TaskUpdateInput = z.infer<typeof taskUpdateSchema>;

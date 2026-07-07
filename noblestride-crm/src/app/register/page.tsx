@@ -4,10 +4,9 @@
 // until a team member approves (anti-broker gate).
 
 import { CheckCircle2 } from "lucide-react";
-import { options } from "@/lib/vocab";
-import { TICKET_BANDS } from "@/lib/ticket-bands";
 import { DEMO_OTP } from "@/server/onboarding/register-investor";
-import { registerAction, verifyOtpAction } from "./actions";
+import { verifyOtpAction } from "./actions";
+import RegisterWizard from "./register-wizard";
 
 export const dynamic = "force-dynamic";
 
@@ -28,21 +27,14 @@ export default async function RegisterPage({ searchParams }: PageProps) {
   return (
     <div className="flex min-h-screen items-start justify-center bg-zinc-50 px-4 py-12">
       <div className="w-full max-w-2xl space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-zinc-900">
-            {step === "form" && "Register as an Investor"}
-            {step === "verify" && "Verify your registration"}
-            {step === "done" && "Registration received"}
-          </h1>
-          {step === "form" && (
-            <p className="mt-1 text-sm text-zinc-500">
-              NobleStride Capital — investor access request ·{" "}
-              <a href="/login" className="font-medium text-emerald-800 hover:underline">
-                Already registered? Sign in
-              </a>
-            </p>
-          )}
-        </div>
+        {step !== "form" && (
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-zinc-900">
+              {step === "verify" && "Verify your registration"}
+              {step === "done" && "Registration received"}
+            </h1>
+          </div>
+        )}
 
         {sp.error && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
@@ -50,170 +42,7 @@ export default async function RegisterPage({ searchParams }: PageProps) {
           </div>
         )}
 
-        {step === "form" && (
-          <section className="rounded-xl border border-zinc-200 bg-white p-5">
-            <form action={registerAction} className="space-y-4">
-              <div>
-                <label htmlFor="fundName" className={labelClass}>
-                  Fund / entity name <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  id="fundName"
-                  name="fundName"
-                  type="text"
-                  required
-                  placeholder="e.g. Savannah Growth Partners"
-                  className={"mt-1 " + inputClass}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="contactPerson" className={labelClass}>
-                  Contact person <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  id="contactPerson"
-                  name="contactPerson"
-                  type="text"
-                  required
-                  placeholder="Full name"
-                  className={"mt-1 " + inputClass}
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="email" className={labelClass}>
-                    Email <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    placeholder="name@fund.com"
-                    className={"mt-1 " + inputClass}
-                  />
-                  <p className="mt-1 text-xs text-zinc-400">
-                    Corporate email only — free providers are not accepted
-                  </p>
-                </div>
-                <div>
-                  <label htmlFor="phone" className={labelClass}>
-                    Phone <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    placeholder="+254 700 000000"
-                    className={"mt-1 " + inputClass}
-                  />
-                  <p className="mt-1 text-xs text-zinc-400">Used for OTP verification</p>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="investorType" className={labelClass}>
-                  Investor type <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  id="investorType"
-                  name="investorType"
-                  required
-                  defaultValue=""
-                  className={"mt-1 " + inputClass}
-                >
-                  <option value="" disabled>
-                    — Select investor type —
-                  </option>
-                  {options("InvestorType").map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <span className={labelClass}>
-                  Sector preference <span className="text-rose-500">*</span>
-                </span>
-                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {options("Sector").map((o) => (
-                    <label
-                      key={o.value}
-                      className="flex items-center gap-2 rounded-md border border-zinc-200 px-2 py-1.5 text-sm text-zinc-700"
-                    >
-                      <input
-                        type="checkbox"
-                        name="sectorPreference"
-                        value={o.value}
-                        className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-600"
-                      />
-                      {o.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="dealType" className={labelClass}>
-                    Deal type <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    id="dealType"
-                    name="dealType"
-                    required
-                    defaultValue=""
-                    className={"mt-1 " + inputClass}
-                  >
-                    <option value="" disabled>
-                      — Select deal type —
-                    </option>
-                    {options("Instrument").map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="dealSizeBand" className={labelClass}>
-                    Deal size <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    id="dealSizeBand"
-                    name="dealSizeBand"
-                    required
-                    defaultValue=""
-                    className={"mt-1 " + inputClass}
-                  >
-                    <option value="" disabled>
-                      — Select deal size —
-                    </option>
-                    {TICKET_BANDS.map((b) => (
-                      <option key={b.key} value={b.key}>
-                        {b.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-4 border-t border-zinc-100 pt-4">
-                <button
-                  type="submit"
-                  className="rounded-full bg-emerald-950 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
-                >
-                  Continue to verification
-                </button>
-              </div>
-            </form>
-          </section>
-        )}
+        {step === "form" && <RegisterWizard />}
 
         {step === "verify" && (
           <section className="rounded-xl border border-zinc-200 bg-white p-5">

@@ -36,6 +36,46 @@ export async function registerAction(formData: FormData): Promise<void> {
   redirect(`/register?step=verify&rid=${investorId}`);
 }
 
+export interface WizardActionState {
+  error?: string;
+}
+
+/**
+ * Wizard submit: same core as registerAction, but returns an inline error
+ * (so the client wizard keeps its state) instead of redirecting to ?error=.
+ * Redirects to the OTP step on success.
+ */
+export async function registerWizardAction(
+  _prev: WizardActionState,
+  formData: FormData,
+): Promise<WizardActionState> {
+  const raw = {
+    fundName: String(formData.get("fundName") ?? "").trim(),
+    contactPerson: String(formData.get("contactPerson") ?? "").trim(),
+    email: String(formData.get("email") ?? "").trim(),
+    phone: String(formData.get("phone") ?? "").trim(),
+    investorType: String(formData.get("investorType") ?? "").trim(),
+    sectorPreference: formData.getAll("sectorPreference").map(String),
+    dealType: String(formData.get("dealType") ?? "").trim(),
+    dealSizeBand: String(formData.get("dealSizeBand") ?? "").trim(),
+  };
+
+  let investorId: string;
+  try {
+    const investor = await registerInvestor(raw);
+    investorId = investor.id;
+  } catch (err) {
+    if (err instanceof ZodError) {
+      return { error: err.issues[0]?.message ?? "Check the form and try again" };
+    }
+    if (err instanceof RegistrationError) {
+      return { error: err.message };
+    }
+    throw err;
+  }
+  redirect(`/register?step=verify&rid=${investorId}`);
+}
+
 export async function verifyOtpAction(formData: FormData): Promise<void> {
   const rid = String(formData.get("rid") ?? "");
   if (!rid) redirect("/register");

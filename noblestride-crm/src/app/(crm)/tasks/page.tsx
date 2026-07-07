@@ -72,7 +72,7 @@ export default async function TasksPage() {
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">Tasks</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {tasks.length} action points across the team
+            {tasks.length} action point{tasks.length === 1 ? "" : "s"} across the team
           </p>
         </div>
         <TaskFormDrawer

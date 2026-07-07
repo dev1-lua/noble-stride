@@ -40,12 +40,16 @@ export async function ViewingBanner() {
         <span>
           Viewing as{" "}
           {vp.role === "investor" || vp.role === "partner" ? (
-            <PortalSwitcher
-              role={vp.role}
-              recordId={vp.recordId ?? ""}
-              investors={investorOptions}
-              partners={partnerOptions}
-            />
+            vp.impersonating ? (
+              <PortalSwitcher
+                role={vp.role}
+                recordId={vp.recordId ?? ""}
+                investors={investorOptions}
+                partners={partnerOptions}
+              />
+            ) : (
+              <span className="font-semibold">{current?.name ?? "Your account"}</span>
+            )
           ) : (
             <span className="font-semibold capitalize">{vp.role}</span>
           )}
@@ -57,12 +61,14 @@ export async function ViewingBanner() {
         )}
       </span>
       <span className="inline-flex items-center gap-2">
-        <Link
-          href="/api/viewpoint?role=admin"
-          className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
-        >
-          Return to Admin
-        </Link>
+        {vp.impersonating && (
+          <Link
+            href="/api/viewpoint?role=admin"
+            className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
+          >
+            Return to Admin
+          </Link>
+        )}
         <Link
           href="/api/viewpoint?role=signout"
           className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"

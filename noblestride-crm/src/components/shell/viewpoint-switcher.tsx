@@ -24,13 +24,17 @@ export function ViewpointSwitcher({
   investors,
   partners,
   users = [],
+  activeOrgRole = "Admin",
+  activeUserId,
 }: {
   investors: ViewpointOption[];
   partners: ViewpointOption[];
   users?: ViewpointOption[];
+  activeOrgRole?: string;
+  activeUserId?: string;
 }) {
   const [role, setRole] = useState<"admin" | "investor" | "partner">("admin");
-  const [orgRole, setOrgRole] = useState<string>("Admin");
+  const [orgRole, setOrgRole] = useState<string>(activeOrgRole);
   const records = role === "investor" ? investors : role === "partner" ? partners : [];
 
   function go(nextRole: string, recordId?: string, nextOrgRole?: string, userId?: string) {
@@ -79,7 +83,7 @@ export function ViewpointSwitcher({
       )}
       {role === "admin" && orgRole !== "Admin" && (
         <select
-          defaultValue=""
+          defaultValue={activeUserId ?? ""}
           onChange={(e) => e.target.value && go("admin", undefined, orgRole, e.target.value)}
           className="max-w-36 bg-transparent text-xs text-zinc-600 focus:outline-none"
           aria-label="Choose team member to view as"
