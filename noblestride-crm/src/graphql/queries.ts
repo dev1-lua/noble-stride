@@ -22,6 +22,7 @@ import {
   PartnerRef,
   ActivityRef,
   DocumentRef,
+  SavedViewRef,
 } from "./types";
 import type { StatValue, DashboardStats, InvestorSegments, Insight } from "@/server/domain/types";
 import type { InvestorMatch } from "@/server/domain/ranking";
@@ -48,6 +49,7 @@ import { listDocuments, getDocument } from "@/server/services/documents";
 import { listPartners, getPartner, partnerReferralStats } from "@/server/services/partners";
 import { dashboardStats, pipelineOverview, dealPipelineTrend } from "@/server/services/dashboard";
 import { aiOverviewInsights, aiMatchInvestors, aiFindProspects, aiAsk } from "@/server/services/ai";
+import { listSavedViews } from "@/server/services/saved-views";
 
 // ── Input types ───────────────────────────────────────────────────────────────
 
@@ -509,5 +511,14 @@ builder.queryFields((t) => ({
       question: t.arg.string({ required: true }),
     },
     resolve: (_root, args) => aiAsk(args.question),
+  }),
+
+  // 25. savedViews(entity: String): [SavedView] — team-shared deals-queue views
+  savedViews: t.field({
+    type: [SavedViewRef],
+    args: {
+      entity: t.arg.string({ required: false }),
+    },
+    resolve: (_root, args) => listSavedViews(args.entity ?? undefined),
   }),
 }));

@@ -20,6 +20,10 @@ const ROUTE_META: Record<string, PageMeta> = {
     title: "Dashboard",
     subtitle: "Overview of your deal pipeline and investor activity",
   },
+  "/deals": {
+    title: "Deals",
+    subtitle: "Mandates and transactions in one unified queue",
+  },
   "/mandates": {
     title: "Mandates",
     subtitle: "Advisory mandates across all stages",

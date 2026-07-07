@@ -8,7 +8,7 @@ import { loginAction } from "./actions";
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: Promise<{ error?: string; email?: string }>;
+  searchParams: Promise<{ error?: string; email?: string; as?: string }>;
 }
 
 const inputClass =
@@ -19,6 +19,7 @@ const labelClass = "block text-xs font-medium uppercase tracking-wide text-zinc-
 
 export default async function LoginPage({ searchParams }: PageProps) {
   const sp = await searchParams;
+  const isInvestor = sp.as === "investor";
 
   return (
     <div className="flex min-h-screen items-start justify-center bg-zinc-50 px-4 py-12">
@@ -27,8 +28,12 @@ export default async function LoginPage({ searchParams }: PageProps) {
           <Link href="/" className="text-sm font-semibold tracking-tight text-emerald-950">
             NobleStride Capital
           </Link>
-          <h1 className="mt-3 text-2xl font-bold text-zinc-900">Sign in</h1>
-          <p className="mt-1 text-sm text-zinc-500">Investor &amp; partner portal access</p>
+          <h1 className="mt-3 text-2xl font-bold text-zinc-900">
+            {isInvestor ? "Investor sign in" : "Sign in"}
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            {isInvestor ? "Investor & partner portal access" : "NobleStride team workspace"}
+          </p>
         </div>
 
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
@@ -76,10 +81,20 @@ export default async function LoginPage({ searchParams }: PageProps) {
                 className={"mt-1 " + inputClass}
               />
             </div>
-            <div className="flex items-center justify-between gap-4 border-t border-zinc-100 pt-4">
-              <Link href="/register" className="text-xs font-medium text-emerald-800 hover:underline">
-                New here? Register your fund
-              </Link>
+            <div
+              className={
+                "flex items-center gap-4 border-t border-zinc-100 pt-4 " +
+                (isInvestor ? "justify-between" : "justify-end")
+              }
+            >
+              {isInvestor && (
+                <Link
+                  href="/register"
+                  className="text-xs font-medium text-emerald-800 hover:underline"
+                >
+                  New here? Register your fund →
+                </Link>
+              )}
               <button
                 type="submit"
                 className="rounded-full bg-emerald-950 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-900"

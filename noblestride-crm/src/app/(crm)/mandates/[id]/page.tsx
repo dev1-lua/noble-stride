@@ -8,8 +8,13 @@ import { listDocuments } from "@/server/services/documents";
 import { relationOptions } from "@/server/services/relation-options";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/format";
-import { options } from "@/lib/vocab";
+import { label, options } from "@/lib/vocab";
+import { daysInStage } from "@/server/domain/metrics";
 import { RestageSelect } from "@/components/crm/restage-select";
+import { DealSummaryPanel } from "@/components/crm/deal-summary-panel";
+import type { DealSummaryProps } from "@/components/crm/deal-summary-panel";
+import { DocumentsByStage } from "@/components/crm/documents-by-stage";
+import type { DocsByStageProps } from "@/components/crm/documents-by-stage";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { StageHistory } from "@/components/crm/stage-history";
@@ -71,6 +76,46 @@ export default async function MandateDetailPage({ params }: PageProps) {
 
   const stageOptions = options("MandateStage");
 
+  // Task 13: Deal-summary header panel — plain DTO built here (no Prisma
+  // types/Decimals cross the RSC boundary into the presentational panel).
+  // Mandate has no `assistant` relation (only Transaction does).
+  const dealSummary: DealSummaryProps = {
+    kind: "mandate",
+    statusLabel: label("DealStatus", m.dealStatus),
+    statusValue: m.dealStatus ?? null,
+    stageLabel: label("MandateStage", m.stage),
+    daysInStage: daysInStage(m.stageEnteredAt ?? new Date()),
+    leadName,
+    assistantName: null,
+    nextAction: m.nextAction ?? null,
+    dateOnboarded: m.dateOpened ? m.dateOpened.toISOString() : null,
+    dealSize: m.dealSize != null ? Number(m.dealSize) : null,
+    sectors,
+    ndaStatusLabel: label("DocStatus", m.ndaStatus),
+    eaStatusLabel: label("DocStatus", m.eaStatus),
+    referrer: referredBy,
+  };
+
+  // Task 14: Documents-by-stage panel — plain DTO from the already-loaded
+  // `documents` array (no second fetch) + the mandate's NDA/EA date-pair
+  // status. Mandates have no `vdrLink` (Transaction-only), so Data Room
+  // always renders as not-linked here.
+  const docsByStage: DocsByStageProps = {
+    documents: documents.map((doc) => ({
+      id: doc.id,
+      type: doc.type,
+      typeLabel: label("DocumentType", doc.type),
+      statusLabel: label("DocumentStatus", doc.status),
+      statusValue: doc.status ?? "",
+      href: doc.fileUrl ?? null,
+    })),
+    ndaStatusLabel: label("DocStatus", m.ndaStatus),
+    ndaStatusValue: m.ndaStatus ?? "",
+    eaStatusLabel: label("DocStatus", m.eaStatus),
+    eaStatusValue: m.eaStatus ?? "",
+    vdrLinked: false,
+  };
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
@@ -108,6 +153,12 @@ export default async function MandateDetailPage({ params }: PageProps) {
           )}
         </div>
       </div>
+
+      {/* Deal-summary header panel (Task 13) */}
+      <DealSummaryPanel {...dealSummary} />
+
+      {/* Documents-by-stage panel (Task 14) */}
+      <DocumentsByStage {...docsByStage} />
 
       {/* Restage control + key facts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

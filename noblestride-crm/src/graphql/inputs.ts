@@ -219,6 +219,7 @@ export const DocumentInput = builder.inputType("DocumentInput", {
     clientId: t.id({ required: false }),
     investorId: t.id({ required: false }),
     mandateId: t.id({ required: false }),
+    partnerId: t.id({ required: false }),
   }),
 });
 

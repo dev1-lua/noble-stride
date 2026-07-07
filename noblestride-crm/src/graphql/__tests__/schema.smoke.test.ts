@@ -31,7 +31,7 @@ async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 describe("graphql schema", () => {
-  it("builds without errors and exposes a query type with 26 queries and 41 mutations", async () => {
+  it("builds without errors and exposes a query type with 27 queries and 44 mutations", async () => {
     // Dynamic import so the module graph is resolved lazily — errors surface here.
     const { schema } = await import("@/graphql/schema");
     expect(schema).toBeTruthy();
@@ -39,12 +39,12 @@ describe("graphql schema", () => {
     const queryType = schema.getQueryType();
     expect(queryType).toBeTruthy();
     const queryFields = Object.keys(queryType?.getFields() ?? {});
-    expect(queryFields).toHaveLength(26);
+    expect(queryFields).toHaveLength(27);
 
     const mutationType = schema.getMutationType();
     expect(mutationType).toBeTruthy();
     const mutationFields = Object.keys(mutationType?.getFields() ?? {});
-    expect(mutationFields).toHaveLength(41);
+    expect(mutationFields).toHaveLength(44);
 
     // Spot-check that key query fields exist
     expect(queryFields).toContain("dashboardStats");
@@ -53,6 +53,7 @@ describe("graphql schema", () => {
     expect(queryFields).toContain("aiAsk");
     expect(queryFields).toContain("documents");
     expect(queryFields).toContain("document");
+    expect(queryFields).toContain("savedViews");
 
     // Spot-check mutation fields
     expect(mutationFields).toContain("updateMandateStage");
@@ -81,6 +82,9 @@ describe("graphql schema", () => {
     expect(mutationFields).toContain("unrecordMilestone");
     expect(mutationFields).toContain("upsertDueDiligenceTrack");
     expect(mutationFields).toContain("deleteDueDiligenceTrack");
+    expect(mutationFields).toContain("createSavedView");
+    expect(mutationFields).toContain("renameSavedView");
+    expect(mutationFields).toContain("deleteSavedView");
   });
 
   it("dashboardStats service resolves correctly (DB-guarded)", async () => {

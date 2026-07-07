@@ -19,6 +19,8 @@ import { createDocument, updateDocument, deleteDocument } from "@/server/service
 import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
 import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
+import { createSavedView, renameSavedView, deleteSavedView, type SavedViewConfig } from "@/server/services/saved-views";
+import { SavedViewRef } from "./types";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -293,5 +295,31 @@ builder.mutationFields((t) => ({
     type: "DueDiligenceTrack", nullable: false,
     args: { transactionId: t.arg.id({ required: true }), track: t.arg({ type: DDTrackEnum, required: true }) },
     resolve: (_q, _r, args) => deleteDDTrack(String(args.transactionId), args.track),
+  }),
+
+  // ── SavedView (deals-queue, team-shared) ──
+  createSavedView: t.field({
+    type: SavedViewRef, nullable: false,
+    args: {
+      name: t.arg.string({ required: true }),
+      config: t.arg.string({ required: true }),
+      entity: t.arg.string({ required: false }),
+    },
+    resolve: (_r, args) =>
+      createSavedView({
+        name: args.name,
+        entity: args.entity ?? undefined,
+        config: JSON.parse(args.config) as SavedViewConfig,
+      }),
+  }),
+  renameSavedView: t.field({
+    type: SavedViewRef, nullable: false,
+    args: { id: t.arg.id({ required: true }), name: t.arg.string({ required: true }) },
+    resolve: (_r, args) => renameSavedView(String(args.id), args.name),
+  }),
+  deleteSavedView: t.field({
+    type: SavedViewRef, nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_r, args) => deleteSavedView(String(args.id)),
   }),
 }));

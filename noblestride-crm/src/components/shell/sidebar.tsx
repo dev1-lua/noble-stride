@@ -28,8 +28,7 @@ export const SIDEBAR_FG = "#cbd5cf"; // --color-sidebar-fg
 
 const MAIN_NAV = [
   { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
-  { href: "/mandates", label: "Mandates", Icon: Briefcase },
-  { href: "/transactions", label: "Transactions", Icon: TrendingUp },
+  { href: "/deals", label: "Deals", Icon: Briefcase },
   { href: "/clients", label: "Clients", Icon: Building },
   { href: "/investors", label: "Investors", Icon: Users },
   { href: "/engagement", label: "Engagement", Icon: MessageSquare },

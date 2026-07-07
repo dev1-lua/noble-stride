@@ -31,6 +31,7 @@ import type {
 // so import the disbursement helpers via a relative path (single source of truth).
 import { amountPending, deriveYearQuarter } from "../src/server/domain/disbursement";
 import seedData from "./seed-data.json";
+import { CLIENT_FINANCIALS, MANDATE_DEAL_SIZES, INVESTOR_TICKETS } from "./demo-financials";
 
 const prisma = new PrismaClient();
 
@@ -206,8 +207,8 @@ async function main() {
         sectorFocus: inv.sectorFocus as Sector[],
         geographicFocus: inv.geographicFocus as Geography[],
         instruments: inv.instruments as Instrument[],
-        ticketMin: inv.ticketMin ?? null,
-        ticketMax: inv.ticketMax ?? null,
+        ticketMin: inv.ticketMin ?? INVESTOR_TICKETS[inv.name]?.ticketMin ?? null,
+        ticketMax: inv.ticketMax ?? INVESTOR_TICKETS[inv.name]?.ticketMax ?? null,
         engagementClassification: classificationFor(invIdx),
         ndaStatus: ndaStatusFor(invIdx),
         notes: inv.notes ?? null,
@@ -226,8 +227,8 @@ async function main() {
       id: created.id,
       sectorFocus: inv.sectorFocus as Sector[],
       geographicFocus: inv.geographicFocus as Geography[],
-      ticketMin: inv.ticketMin ?? null,
-      ticketMax: inv.ticketMax ?? null,
+      ticketMin: inv.ticketMin ?? INVESTOR_TICKETS[inv.name]?.ticketMin ?? null,
+      ticketMax: inv.ticketMax ?? INVESTOR_TICKETS[inv.name]?.ticketMax ?? null,
     });
   }
 
@@ -274,11 +275,15 @@ async function main() {
   const clients: Array<{ id: string; sector: Sector[] }> = [];
 
   for (const cl of seedData.clients) {
+    const financials = CLIENT_FINANCIALS[cl.name];
     const created = await prisma.client.create({
       data: {
         name: cl.name,
         sector: cl.sector as Sector[],
         countries: cl.countries as Geography[],
+        hqCity: financials?.hqCity ?? null,
+        hqCountry: financials?.hqCountry ?? null,
+        revenueLastYear: financials?.revenueLastYear ?? null,
       },
     });
     clients.push({ id: created.id, sector: cl.sector as Sector[] });
@@ -310,6 +315,7 @@ async function main() {
         clientId: client.id,
         leadId: leadId ?? null,
         sector: client.sector,
+        dealSize: MANDATE_DEAL_SIZES[m.name] ?? null,
         dateOpened: m.dateOpened ? new Date(m.dateOpened) : null,
         ndaStatus: m.ndaStatus as DocStatus,
         ndaSentDate: m.ndaSentDate ? new Date(m.ndaSentDate) : null,
@@ -772,6 +778,30 @@ async function main() {
     where: { founderGenders: { has: "Female" } },
     data: { impactFlags: { set: ["WomenLed"] } },
   });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // §7c  SAVED VIEWS — starter views for the unified deals queue.
+  // Idempotent by (name, entity) since this seed can re-run against a DB
+  // that already has team-created views.
+  // ─────────────────────────────────────────────────────────────────────────
+  const starterViews = [
+    {
+      name: "Active mandates",
+      config: { filters: { type: "mandate" }, sort: "dateOnboarded", dir: "desc", columns: [], groupBy: "stage", view: "list" },
+    },
+    {
+      name: "Live transactions",
+      config: { filters: { type: "transaction" }, sort: "ticket", dir: "desc", columns: [], groupBy: "stage", view: "list" },
+    },
+    {
+      name: "Closing this quarter",
+      config: { filters: { type: "transaction", stage: "Closing" }, sort: "daysInStage", dir: "desc", columns: [], groupBy: "", view: "list" },
+    },
+  ];
+  for (const v of starterViews) {
+    const existing = await prisma.savedView.findFirst({ where: { name: v.name, entity: "deals" } });
+    if (!existing) await prisma.savedView.create({ data: { name: v.name, entity: "deals", config: v.config } });
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // §8  SUMMARY

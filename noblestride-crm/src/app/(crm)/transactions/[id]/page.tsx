@@ -14,7 +14,12 @@ import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/compo
 import { formatDate } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
 import { label, options } from "@/lib/vocab";
+import { daysInStage } from "@/server/domain/metrics";
 import { RestageSelect } from "@/components/crm/restage-select";
+import { DealSummaryPanel } from "@/components/crm/deal-summary-panel";
+import type { DealSummaryProps } from "@/components/crm/deal-summary-panel";
+import { DocumentsByStage } from "@/components/crm/documents-by-stage";
+import type { DocsByStageProps } from "@/components/crm/documents-by-stage";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { StageHistory } from "@/components/crm/stage-history";
@@ -118,6 +123,63 @@ export default async function TransactionDetailPage({ params }: PageProps) {
 
   const stageOptions = options("TransactionStage");
 
+  // Task 13: Deal-summary header panel — plain DTO built here (no Prisma
+  // types/Decimals cross the RSC boundary into the presentational panel).
+  // Transaction has no `lead` relation — `owner` is the lead-equivalent
+  // (see src/server/services/deals-queue.ts for the same convention).
+  const engagementsList: { totalAmount: unknown; amountDisbursed: unknown; amountPending: unknown }[] =
+    txn.engagements ?? [];
+  const engagementRollup =
+    engagementsList.length > 0
+      ? engagementsList.reduce(
+          (acc, e) => ({
+            investors: acc.investors + 1,
+            total: acc.total + (e.totalAmount != null ? Number(e.totalAmount) : 0),
+            disbursed: acc.disbursed + (e.amountDisbursed != null ? Number(e.amountDisbursed) : 0),
+            pending: acc.pending + (e.amountPending != null ? Number(e.amountPending) : 0),
+          }),
+          { investors: 0, total: 0, disbursed: 0, pending: 0 }
+        )
+      : null;
+
+  const dealSummary: DealSummaryProps = {
+    kind: "transaction",
+    statusLabel: txn.dealStatus ? label("DealStatus", txn.dealStatus) : "",
+    statusValue: txn.dealStatus ?? null,
+    stageLabel: label("TransactionStage", txn.stage),
+    daysInStage: daysInStage(txn.stageEnteredAt ?? new Date()),
+    leadName: ownerName,
+    assistantName,
+    nextAction: null, // Transaction has no next-action field (mandate-only)
+    dateOnboarded: txn.dateOpened ? txn.dateOpened.toISOString() : null,
+    targetRaise: targetRaiseNum,
+    instruments,
+    milestoneLabel: txn.dealMilestone ? label("DealMilestone", txn.dealMilestone) : undefined,
+    probability: probabilityNum,
+    engagement: engagementRollup,
+  };
+
+  // Task 14: Documents-by-stage panel — plain DTO from the already-loaded
+  // `documents` array (no second fetch). NDA/EA status is derived from the
+  // linked mandate when present, else "Not sent" (DocStatus default).
+  const mandateNdaStatus: string = txn.mandate?.ndaStatus ?? "NotSent";
+  const mandateEaStatus: string = txn.mandate?.eaStatus ?? "NotSent";
+  const docsByStage: DocsByStageProps = {
+    documents: documents.map((doc) => ({
+      id: doc.id,
+      type: doc.type,
+      typeLabel: label("DocumentType", doc.type),
+      statusLabel: label("DocumentStatus", doc.status),
+      statusValue: doc.status ?? "",
+      href: doc.fileUrl ?? null,
+    })),
+    ndaStatusLabel: label("DocStatus", mandateNdaStatus),
+    ndaStatusValue: mandateNdaStatus,
+    eaStatusLabel: label("DocStatus", mandateEaStatus),
+    eaStatusValue: mandateEaStatus,
+    vdrLinked: Boolean(txn.vdrLink),
+  };
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
@@ -155,6 +217,12 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           )}
         </div>
       </div>
+
+      {/* Deal-summary header panel (Task 13) */}
+      <DealSummaryPanel {...dealSummary} />
+
+      {/* Documents-by-stage panel (Task 14) */}
+      <DocumentsByStage {...docsByStage} />
 
       {/* Restage control + key facts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

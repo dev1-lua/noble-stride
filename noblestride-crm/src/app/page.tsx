@@ -1,5 +1,7 @@
-// page.tsx — public landing page (landing spec §5). Anonymous front door for
-// the investor-onboarding flow: Become an Investor → /register, Sign in → /login.
+// page.tsx — public landing page (landing spec §5 / queue-rework Task 15).
+// Internal-first front door: the NobleStride deal team signs in to the
+// workspace; investors get secondary "Login as an investor" / "Sign up as
+// an investor" entry points into the existing registration/NDA-gated flow.
 // A visitor with a viewpoint cookie is forwarded home (§3): the cookie's
 // PRESENCE is the signed-in signal (a missing cookie parses as admin, so we
 // check the raw cookie, not the parsed role).
@@ -7,47 +9,48 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowRight, FileCheck2, Handshake, ShieldCheck, UserPlus } from "lucide-react";
+import {
+  ArrowRight,
+  Briefcase,
+  FileCheck2,
+  Handshake,
+  LayoutDashboard,
+  MessageSquare,
+  ShieldCheck,
+  UserPlus,
+} from "lucide-react";
 import { parseViewpoint, viewpointHome, VIEWPOINT_COOKIE } from "@/lib/viewpoint";
 
 export const dynamic = "force-dynamic";
 
-const STEPS = [
+const CAPABILITIES = [
   {
-    icon: UserPlus,
-    title: "Register your fund",
-    body: "Tell us who you are — sectors, instruments, and ticket size. Corporate email required.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "NobleStride review",
-    body: "Our team reviews every registration. Nothing is visible until you are approved.",
+    icon: Briefcase,
+    title: "Deal queue & pipeline",
+    body: "One unified queue for mandates and transactions — search, filter, group, and track every stage from onboarding to close.",
   },
   {
     icon: FileCheck2,
-    title: "Sign an NDA",
-    body: "An open or per-deal NDA unlocks company identities and data-room access.",
+    title: "NDA-gated document workflow",
+    body: "Teasers, IMs, and data rooms stay masked until the right NDA is recorded, with every document tracked by stage.",
   },
   {
-    icon: Handshake,
-    title: "Access curated deals",
-    body: "Teasers matched to your mandate, structured engagement, and tracked milestones.",
+    icon: MessageSquare,
+    title: "Investor engagement tracking",
+    body: "See who's reviewing what, log outreach, and keep every fund relationship moving toward commitment.",
+  },
+  {
+    icon: LayoutDashboard,
+    title: "Dashboards & reporting",
+    body: "Live pipeline health, document readiness, and team activity — all in one view.",
   },
 ];
 
-const VALUE_PROPS = [
-  {
-    title: "Curated mandates",
-    body: "Every opportunity is a vetted NobleStride engagement — no marketplace noise.",
-  },
-  {
-    title: "NDA-gated data rooms",
-    body: "Company identities and financials stay masked until the right NDA is recorded.",
-  },
-  {
-    title: "Structured engagement",
-    body: "From teaser to term sheet, every stage is tracked with your deal team.",
-  },
+const INVESTOR_STEPS = [
+  { icon: UserPlus, title: "Register your fund" },
+  { icon: ShieldCheck, title: "NobleStride review" },
+  { icon: FileCheck2, title: "Sign an NDA" },
+  { icon: Handshake, title: "Access curated deals" },
 ];
 
 export default async function LandingPage() {
@@ -60,18 +63,24 @@ export default async function LandingPage() {
         <span className="text-sm font-semibold tracking-tight text-emerald-950">
           NobleStride Capital
         </span>
-        <nav className="flex items-center gap-3">
+        <nav className="flex items-center gap-4">
           <Link
-            href="/login"
-            className="rounded-full px-4 py-2 text-sm font-medium text-zinc-700 hover:text-emerald-950"
+            href="/login?as=investor"
+            className="text-xs font-medium text-zinc-500 hover:text-emerald-950"
           >
-            Sign in
+            Login as an investor
           </Link>
           <Link
             href="/register"
+            className="text-xs font-medium text-zinc-500 hover:text-emerald-950"
+          >
+            Sign up as an investor
+          </Link>
+          <Link
+            href="/login"
             className="rounded-full bg-emerald-950 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
           >
-            Become an Investor
+            Sign in
           </Link>
         </nav>
       </header>
@@ -79,45 +88,47 @@ export default async function LandingPage() {
       <main>
         <section className="mx-auto max-w-5xl px-6 pb-16 pt-14 text-center">
           <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">
-            SME growth capital · East Africa
+            NobleStride Capital · Deal Platform
           </p>
           <h1 className="mx-auto mt-4 max-w-3xl text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
-            Curated deal flow for investors backing East African growth
+            Your pipeline, documents, and investor engagement in one place
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-zinc-600">
-            NobleStride connects vetted SMEs raising growth capital with the funds that back them —
-            with NDA-gated data rooms and a structured path from teaser to term sheet.
+            The NobleStride deal team&apos;s workspace — mandates and transactions in one queue,
+            NDA-gated documents tracked by stage, and every investor relationship in view from
+            teaser to close.
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
             <Link
-              href="/register"
+              href="/login"
               className="inline-flex items-center gap-2 rounded-full bg-emerald-950 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-900"
             >
-              Become an Investor <ArrowRight className="h-4 w-4" />
+              Sign in to your workspace <ArrowRight className="h-4 w-4" />
             </Link>
+          </div>
+          <div className="mt-4 flex items-center justify-center gap-4 text-xs text-zinc-500">
             <Link
-              href="/login"
-              className="rounded-full border border-zinc-300 bg-white px-6 py-3 text-sm font-semibold text-zinc-800 hover:border-emerald-700 hover:text-emerald-950"
+              href="/login?as=investor"
+              className="font-medium hover:text-emerald-950 hover:underline"
             >
-              Sign in
+              Login as an investor
+            </Link>
+            <span className="text-zinc-300">·</span>
+            <Link href="/register" className="font-medium hover:text-emerald-950 hover:underline">
+              Sign up as an investor
             </Link>
           </div>
         </section>
 
         <section className="border-y border-zinc-200 bg-white">
           <div className="mx-auto max-w-5xl px-6 py-14">
-            <h2 className="text-center text-2xl font-bold text-zinc-900">How onboarding works</h2>
+            <h2 className="text-center text-2xl font-bold text-zinc-900">Built for the deal team</h2>
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {STEPS.map((s, i) => (
-                <div key={s.title} className="rounded-xl border border-zinc-200 bg-zinc-50 p-5">
-                  <div className="flex items-center gap-2">
-                    <s.icon className="h-5 w-5 text-emerald-700" />
-                    <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                      Step {i + 1}
-                    </span>
-                  </div>
-                  <h3 className="mt-3 text-sm font-semibold text-zinc-900">{s.title}</h3>
-                  <p className="mt-1 text-sm text-zinc-600">{s.body}</p>
+              {CAPABILITIES.map((c) => (
+                <div key={c.title} className="rounded-xl border border-zinc-200 bg-zinc-50 p-5">
+                  <c.icon className="h-5 w-5 text-emerald-700" />
+                  <h3 className="mt-3 text-sm font-semibold text-zinc-900">{c.title}</h3>
+                  <p className="mt-1 text-sm text-zinc-600">{c.body}</p>
                 </div>
               ))}
             </div>
@@ -125,13 +136,39 @@ export default async function LandingPage() {
         </section>
 
         <section className="mx-auto max-w-5xl px-6 py-14">
-          <div className="grid gap-6 sm:grid-cols-3">
-            {VALUE_PROPS.map((v) => (
-              <div key={v.title} className="rounded-xl border border-zinc-200 bg-white p-5">
-                <h3 className="text-sm font-semibold text-zinc-900">{v.title}</h3>
-                <p className="mt-1 text-sm text-zinc-600">{v.body}</p>
+          <div className="rounded-xl border border-zinc-200 bg-white p-6 sm:flex sm:items-center sm:justify-between sm:gap-8">
+            <div>
+              <h2 className="text-lg font-bold text-zinc-900">Are you an investor?</h2>
+              <p className="mt-1 max-w-xl text-sm text-zinc-600">
+                Register your fund, pass NobleStride review, sign an NDA, and get access to curated
+                deals matched to your mandate.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
+                {INVESTOR_STEPS.map((s, i) => (
+                  <span key={s.title} className="inline-flex items-center gap-1.5">
+                    <s.icon className="h-3.5 w-3.5 text-emerald-700" />
+                    {s.title}
+                    {i < INVESTOR_STEPS.length - 1 && (
+                      <ArrowRight className="h-3 w-3 text-zinc-300" />
+                    )}
+                  </span>
+                ))}
               </div>
-            ))}
+            </div>
+            <div className="mt-4 flex shrink-0 items-center gap-3 sm:mt-0">
+              <Link
+                href="/login?as=investor"
+                className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:border-emerald-700 hover:text-emerald-950"
+              >
+                Login as an investor
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-full bg-emerald-950 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
+              >
+                Sign up as an investor
+              </Link>
+            </div>
           </div>
         </section>
       </main>

@@ -178,7 +178,7 @@ export const LABELS: Record<string, Record<string, string>> = {
   AdvisorType: { Lawyer: "Lawyer", Investor: "Investor", Consultant: "Consultant", TransactionAdvisor: "Transaction Advisor", AdvisoryFirm: "Advisory Firm", Other: "Other" },
   ServiceProviderType: { LawFirm: "Law Firm", Audit: "Audit (Big 4)", Tax: "Tax", ESG: "ESG", Technical: "Technical", Other: "Other" },
   DocumentType: {
-    NDA: "NDA", EngagementContract: "Engagement Contract", Teaser: "Teaser", IM: "Information Memorandum",
+    NDA: "NDA", EngagementContract: "Engagement Contract", FeeShareAgreement: "Fee-Share Agreement", Teaser: "Teaser", IM: "Information Memorandum",
     FinancialModel: "Financial Model", Valuation: "Valuation", PitchDeck: "Pitch Deck", AuditedAccounts: "Audited Accounts",
     CR12: "CR12", TermSheet: "Term Sheet", LoanAgreement: "Loan Agreement", SPA: "SPA", SHA: "SHA", BusinessPlan: "Business Plan", Other: "Other",
   },
@@ -219,6 +219,7 @@ export const LABELS: Record<string, Record<string, string>> = {
   DDTrack: { Financial: "Financial", Tax: "Tax", Commercial: "Commercial", ESG: "ESG", Legal: "Legal" },
   DDStatus: { NotStarted: "Not Started", InProgress: "In Progress", Complete: "Complete", Flagged: "Flagged", NotApplicable: "N/A" },
   OrgRole: { Admin: "Admin", DealLead: "Deal Lead", TeamMember: "Team Member" },
+  DealQueueGroupBy: { stage: "Stage", lead: "Lead", sector: "Sector", type: "Type", status: "Status" },
 };
 
 /** Human label for an enum value; falls back to the raw value. */

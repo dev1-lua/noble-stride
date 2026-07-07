@@ -478,6 +478,7 @@ export const DocumentRef = builder.prismaObject("Document", {
     clientId: t.exposeString("clientId", { nullable: true }),
     investorId: t.exposeString("investorId", { nullable: true }),
     mandateId: t.exposeString("mandateId", { nullable: true }),
+    partnerId: t.exposeString("partnerId", { nullable: true }),
     // Relations
     uploadedBy: t.relation("uploadedBy", { nullable: true }),
     reviewer: t.relation("reviewer", { nullable: true }),
@@ -486,6 +487,7 @@ export const DocumentRef = builder.prismaObject("Document", {
     client: t.relation("client", { nullable: true }),
     investor: t.relation("investor", { nullable: true }),
     mandate: t.relation("mandate", { nullable: true }),
+    partner: t.relation("partner", { nullable: true }),
   }),
 });
 
@@ -554,5 +556,30 @@ export const DueDiligenceTrackRef = builder.prismaObject("DueDiligenceTrack", {
     transaction: t.relation("transaction"),
     owner: t.relation("owner", { nullable: true }),
     serviceProvider: t.relation("serviceProvider", { nullable: true }),
+  }),
+});
+
+// ─── SavedView ───────────────────────────────────────────────────────────────
+// Domain-shaped (builder.objectRef, not builder.prismaObject) because the
+// service layer (src/server/services/saved-views.ts) parses/normalizes the
+// underlying Json `config` column into a typed object before it ever reaches
+// this layer — same "non-Prisma output" convention used in queries.ts for
+// other service-shaped results. No JSON scalar is registered on the builder,
+// so `config` is exposed as a JSON string (parsed/stringified at the resolver
+// boundary), matching this schema's existing scalar conventions.
+
+export interface SavedViewData {
+  id: string;
+  name: string;
+  entity: string;
+  config: unknown;
+}
+
+export const SavedViewRef = builder.objectRef<SavedViewData>("SavedView").implement({
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    name: t.exposeString("name"),
+    entity: t.exposeString("entity"),
+    config: t.string({ resolve: (v) => JSON.stringify(v.config) }),
   }),
 });

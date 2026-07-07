@@ -287,6 +287,7 @@ enum ServiceProviderType {
 enum DocumentType {
   NDA
   EngagementContract
+  FeeShareAgreement
   Teaser
   IM
   FinancialModel
@@ -478,6 +479,7 @@ model User {
   assistantTransactions Transaction[] @relation("TransactionAssistant")
   assistantTasks        Task[]        @relation("TaskAssistant")
   stageChanges          StageChange[] @relation("StageChangeActor")
+  savedViews   SavedView[] @relation("SavedViewCreatedBy")
 }
 
 model Person {
@@ -863,6 +865,7 @@ model Partner {
   referredMandates Mandate[] @relation("PartnerReferral")
   referredTransactions Transaction[] @relation("PartnerTransactionReferral")
   stageChanges     StageChange[]
+  documents            Document[]
 
   @@index([partnerType])
   @@index([status])
@@ -996,6 +999,8 @@ model Document {
   investor      Investor?           @relation(fields: [investorId], references: [id], onDelete: SetNull)
   mandateId     String?
   mandate       Mandate?            @relation(fields: [mandateId], references: [id], onDelete: SetNull)
+  partnerId     String?
+  partner       Partner?            @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   createdSource ActorSource         @default(HUMAN)
   createdAt     DateTime            @default(now())
 
@@ -1038,4 +1043,21 @@ model StageChange {
   @@index([clientId])
   @@index([investorId])
   @@index([partnerId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SavedView — team-shared queue views (name + serialized filter/sort/columns).
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SavedView {
+  id          String   @id @default(cuid())
+  name        String
+  entity      String   @default("deals") // future-proof; only "deals" today
+  config      Json     // { filters, sort, dir, columns, groupBy, view }
+  createdById String?
+  createdBy   User?    @relation("SavedViewCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entity])
 }

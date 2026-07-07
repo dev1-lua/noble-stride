@@ -14,11 +14,11 @@ const UPDATE = `mutation UpdateDocument($id: ID!, $input: DocumentInput!) { upda
 
 const EMPTY: Record<string, unknown> = {
   name: "", type: "", version: "", accessLevel: "", status: "", fileUrl: "",
-  uploadedById: "", transactionId: "", clientId: "", investorId: "", mandateId: "",
+  uploadedById: "", transactionId: "", clientId: "", investorId: "", mandateId: "", partnerId: "",
   reviewerId: "", reviewedAt: "", approverId: "", approvedAt: "", clientReviewedAt: "",
 };
 
-export function DocumentFormDrawer({ mode, initial, transactions, clients, investors, users, mandates, triggerLabel }: {
+export function DocumentFormDrawer({ mode, initial, transactions, clients, investors, users, mandates, partners, triggerLabel }: {
   mode: "create" | "edit";
   initial?: Record<string, unknown> & { id?: string };
   transactions: SelectOption[];
@@ -26,6 +26,7 @@ export function DocumentFormDrawer({ mode, initial, transactions, clients, inves
   investors: SelectOption[];
   users: SelectOption[];
   mandates: SelectOption[];
+  partners: SelectOption[];
   triggerLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -76,6 +77,9 @@ export function DocumentFormDrawer({ mode, initial, transactions, clients, inves
             <RelationSelect label="Client" value={v.clientId as string} onChange={(x) => f.setValue("clientId", x)} options={clients} placeholder="Select client…" />
             <RelationSelect label="Investor" value={v.investorId as string} onChange={(x) => f.setValue("investorId", x)} options={investors} placeholder="Select investor…" />
           </div>
+          {v.type === "FeeShareAgreement" && (
+            <RelationSelect label="Partner" value={v.partnerId as string} onChange={(x) => f.setValue("partnerId", x)} options={partners} placeholder="Select partner…" />
+          )}
           <RelationSelect label="Uploaded By" value={v.uploadedById as string} onChange={(x) => f.setValue("uploadedById", x)} options={users} placeholder="Select user…" />
 
           {/* Review chain: peer review → MD approval → client review */}

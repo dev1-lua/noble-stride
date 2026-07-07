@@ -46,6 +46,27 @@ A full inventory of everything walked through, mapped to the spec, so you can se
 | Service Providers | ✅ 4 providers (Law/Audit/Tax/ESG) — matches §3.7 |
 | Access Matrix | ✅ Renders §7.2 CRUD grid per lens (display-only, self-declared) |
 
+## Queue rework (2026-07-08) — new & changed surfaces
+
+Verified live via Playwright (browser MCP), logged in as `demo@noblestride.com` (admin/internal lens) unless noted. Screenshots at repo root as `verify-Q-*.png`. Gates: `npx vitest run` 472/472 pass (64 files); `npx tsc --noEmit` clean; `npx next build` clean.
+
+| Surface | Result |
+|---------|--------|
+| `/` landing (anonymous) — internal-first | ✅ Rewritten (Task 15): hero "Your pipeline, documents, and investor engagement in one place", primary CTA "Sign in to your workspace" → `/login`; investor CTAs ("Login as an investor" / "Sign up as an investor") secondary; feature grid (deal queue, NDA-gated docs, investor engagement, dashboards). `verify-Q-landing-internal-first.png` |
+| `/login?as=investor` | ✅ "Investor sign in" / "Investor & partner portal access" variant copy. `verify-Q-login-as-investor.png` |
+| `/deals` unified queue (list default) | ✅ Mandates + transactions in one queue; sortable column headers (param-preserving hrefs), type/status/sector/ticket/lead filters, group-by (stage/lead/sector/type/status). 20 mandates / 12 transactions / 32 all. |
+| `/deals` filtered + grouped | ✅ `?status=Open&group=stage` renders grouped sections. `verify-Q-deals-grouped-by-stage.png` |
+| `/deals` board (Kanban) toggle | ✅ List⇄Board toggle; Mandates\|Transactions sub-toggle; transaction board columns Deal Preparation→Closed-Lost with per-card contacted/active counts. `verify-Q-deals-board-transactions.png`. (T10 fixes: `key={boardType}` remount + column-popover `left-0` — `verify-Q-board-mandate-subtoggle-fixed.png`, `verify-Q-columns-popover-fixed.png`) |
+| `/deals` column chooser | ✅ Columns popover toggles table columns → `cols=` URL param (T10). |
+| Saved views (team-shared) | ✅ Full CRUD round-trip GraphQL-persisted (CREATE→APPLY→RENAME→DELETE) verified in T10; 3 seeded starter views (Active mandates / Live transactions / Closing this quarter). |
+| Export CSV | ✅ `/deals/export` link honors active filters (filtered 11 / full 33 rows), `text/csv`. |
+| `/mandates`, `/transactions` (list) | ✅ 307-redirect to `/deals?type=mandate` / `?type=transaction` (Task 12 nav consolidation); sidebar/topbar updated. Detail routes `/mandates/[id]`, `/transactions/[id]` still 200. |
+| Mandate detail — Deal Summary + Documents by Stage | ✅ Summary header panel (Task 13) + Documents-by-Stage (Task 14): Onboarding NDA/EA from mandate date-pairs, Fee-Share=Missing; Deal-Prep/Term-Sheet/DD/Closing/Data-Room slots show linked-doc status or "Missing". `verify-Q-mandate-docs-by-stage.png` |
+| Transaction detail — Deal Summary + Documents by Stage | ✅ NDA/EA **derived from linked mandate**; engagement rollup (investors/total/disbursed/pending); doc-matched rows render as clickable VDR links (Teaser="Approved"); Data Room from `vdrLink`. `verify-Q-transaction-docs-by-stage.png` |
+| Fee-share add path (document drawer) | ✅ Type dropdown lists "Fee-Share Agreement"; selecting it reveals a Partner combobox from `relationOptions().partners` (15 partners), hidden for other types. Server `partnerId` persistence wired (not saved in test — kept demo DB clean). `verify-Q-feeshare-partner-selector.png` |
+
+Note: the historical "Mandates (Kanban)" / "Transactions (Kanban)" rows above (2026-07-07) are superseded by the unified `/deals` queue; the standalone list routes now redirect.
+
 ## Spec coverage (Build Spec §-by-§)
 
 | § | Area | Status |

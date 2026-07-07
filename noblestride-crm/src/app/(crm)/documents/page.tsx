@@ -9,6 +9,7 @@ import { listClients } from "@/server/services/clients";
 import { listInvestors } from "@/server/services/investors";
 import { listUsers } from "@/server/services/users";
 import { listMandates } from "@/server/services/mandates";
+import { relationOptions } from "@/server/services/relation-options";
 import { StatCard, Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { DocumentFormDrawer } from "@/components/crm/document-form-drawer";
@@ -17,13 +18,14 @@ import { can } from "@/server/rbac/matrix";
 
 export default async function DocumentsPage() {
   const lens = await getOrgLens();
-  const [documents, transactions, clients, investors, users, mandates] = await Promise.all([
+  const [documents, transactions, clients, investors, users, mandates, rel] = await Promise.all([
     listDocuments(),
     listTransactions(),
     listClients(),
     listInvestors({}),
     listUsers(),
     listMandates(),
+    relationOptions(),
   ]);
 
   // SelectOption[] for the drawer (plain strings — safe to pass to client component)
@@ -32,6 +34,7 @@ export default async function DocumentsPage() {
   const invOptions = investors.map((i) => ({ value: i.id, label: i.name }));
   const userOptions = users.map((u) => ({ value: u.id, label: u.name }));
   const mandateOptions = mandates.map((m) => ({ value: m.id, label: m.name }));
+  const partnerOptions = rel.partners;
 
   const underReview = documents.filter((d) => d.status === "UnderReview").length;
   const executed = documents.filter((d) => d.status === "Executed").length;
@@ -57,6 +60,7 @@ export default async function DocumentsPage() {
             investors={invOptions}
             users={userOptions}
             mandates={mandateOptions}
+            partners={partnerOptions}
           />
         )}
       </div>
