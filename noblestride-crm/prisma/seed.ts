@@ -769,8 +769,8 @@ async function main() {
   // Impact flags: derive women-led from founder gender so the investor
   // impact filter has demo data.
   await prisma.client.updateMany({
-    where: { founderGender: "Female" },
-    data: { womenLed: true },
+    where: { founderGenders: { has: "Female" } },
+    data: { impactFlags: { set: ["WomenLed"] } },
   });
 
   // ─────────────────────────────────────────────────────────────────────────
