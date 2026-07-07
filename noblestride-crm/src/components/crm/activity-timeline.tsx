@@ -12,6 +12,8 @@ export interface ActivityTimelineItem {
   id: string;
   type: string;            // InteractionType enum value
   subject?: string | null;
+  /** Free-text detail, e.g. the message an investor typed with an EOI. */
+  body?: string | null;
   occurredAt: Date;
   context?: string | null; // optional secondary line e.g. "Akili Kids · Acme Capital"
   channel?: string | null; // CommChannel enum value (spec §3.10)
@@ -73,6 +75,11 @@ export function ActivityTimeline({
                       <span className="text-sm text-zinc-900 truncate">{a.subject}</span>
                     )}
                   </div>
+                  {a.body && (
+                    <p className="mt-0.5 text-sm text-zinc-600 whitespace-pre-line line-clamp-3">
+                      {a.body}
+                    </p>
+                  )}
                   <p className="text-xs text-zinc-400 mt-0.5">{daysAgoLabel(a.occurredAt)}</p>
                   {(a.tasks ?? []).length > 0 && (
                     <ul className="mt-1 space-y-0.5">

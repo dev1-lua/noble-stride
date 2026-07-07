@@ -398,9 +398,12 @@ export default async function InvestorDetailPage({ params }: PageProps) {
               {investor.engagements.map((eng) => (
                 <li key={eng.id} className="py-3 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900 truncate">
+                    <Link
+                      href={`/engagement/${eng.id}`}
+                      className="block text-sm font-medium text-zinc-900 truncate hover:text-accent transition-colors"
+                    >
                       {eng.transaction.name}
-                    </p>
+                    </Link>
                     {eng.notes && (
                       <p className="mt-0.5 text-xs text-zinc-500 line-clamp-2">{eng.notes}</p>
                     )}
@@ -418,6 +421,7 @@ export default async function InvestorDetailPage({ params }: PageProps) {
           id: a.id,
           type: a.type,
           subject: a.subject,
+          body: a.body,
           occurredAt: a.occurredAt,
           channel: a.channel,
           direction: a.direction,

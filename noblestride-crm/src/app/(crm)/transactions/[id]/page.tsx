@@ -359,7 +359,15 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                       )}
                     </div>
                   </div>
-                  <Chip value={eng.status} group="EngagementStatus" />
+                  <div className="flex shrink-0 items-center gap-3">
+                    <Chip value={eng.status} group="EngagementStatus" />
+                    <Link
+                      href={`/engagement/${eng.id}`}
+                      className="text-xs font-medium text-accent hover:underline"
+                    >
+                      Open →
+                    </Link>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -488,10 +496,11 @@ export default async function TransactionDetailPage({ params }: PageProps) {
       />
 
       <ActivityTimeline
-        activities={(txn.activities ?? []).map((a: { id: string; type: string; subject?: string | null; occurredAt: Date; channel?: string | null; direction?: string | null; investorId?: string | null; mandateId?: string | null; tasks?: { id: string; title: string; status: string }[] }): ActivityTimelineItem => ({
+        activities={(txn.activities ?? []).map((a: { id: string; type: string; subject?: string | null; body?: string | null; occurredAt: Date; channel?: string | null; direction?: string | null; investorId?: string | null; mandateId?: string | null; tasks?: { id: string; title: string; status: string }[] }): ActivityTimelineItem => ({
           id: a.id,
           type: a.type,
           subject: a.subject,
+          body: a.body,
           occurredAt: a.occurredAt,
           channel: a.channel,
           direction: a.direction,

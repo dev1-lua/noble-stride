@@ -37,6 +37,15 @@ export async function expressInterest(formData: FormData): Promise<void> {
   });
 
   // (a) Upsert the engagement — first touch starts the journey at "Shared".
+  // An inbound EOI also flips status to "Interested" so admins see it on the
+  // board/detail chip — but never downgrades a status an admin has already
+  // progressed past the early contact states.
+  const existing = await prisma.engagement.findUnique({
+    where: { transactionId_investorId: { transactionId: dealId, investorId } },
+    select: { status: true },
+  });
+  const bumpStatus =
+    !existing || existing.status === "NotContacted" || existing.status === "Contacted";
   const engagement = await prisma.engagement.upsert({
     where: { transactionId_investorId: { transactionId: dealId, investorId } },
     create: {
@@ -44,10 +53,11 @@ export async function expressInterest(formData: FormData): Promise<void> {
       transactionId: dealId,
       investorId,
       engagementStage: "Shared",
+      status: "Interested",
       lastContact: new Date(),
       createdSource: "API",
     },
-    update: { lastContact: new Date() },
+    update: { lastContact: new Date(), ...(bumpStatus ? { status: "Interested" as const } : {}) },
   });
 
   // (b) Log the request on the timeline. (InteractionType has no dedicated

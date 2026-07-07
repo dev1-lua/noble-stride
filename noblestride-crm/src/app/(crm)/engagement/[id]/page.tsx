@@ -34,6 +34,7 @@ export default async function EngagementDetailPage({ params }: PageProps) {
     id: a.id,
     type: a.type,
     subject: a.subject,
+    body: a.body,
     occurredAt: a.occurredAt,
     links: { transactionId: engagement.transactionId, investorId: engagement.investorId },
     tasks: (a.tasks ?? []).map((t) => ({ id: t.id, title: t.title, status: t.status })),

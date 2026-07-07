@@ -96,6 +96,7 @@ export default async function EngagementPage() {
     id: a.id,
     type: a.type,
     subject: a.subject,
+    body: a.body,
     occurredAt: a.occurredAt,
     context: [a.investor?.name, a.transaction?.name].filter(Boolean).join(" · ") || null,
     channel: a.channel,

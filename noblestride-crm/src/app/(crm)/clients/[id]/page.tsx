@@ -92,6 +92,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
     id: a.id,
     type: a.type,
     subject: a.subject,
+    body: a.body,
     occurredAt: a.occurredAt,
     channel: a.channel,
     direction: a.direction,

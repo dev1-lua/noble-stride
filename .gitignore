@@ -6,3 +6,4 @@ twenty-main/
 .claude/
 .superpowers/
 .DS_Store
+node_modules/

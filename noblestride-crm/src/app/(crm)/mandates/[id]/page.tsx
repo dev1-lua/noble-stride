@@ -276,10 +276,11 @@ export default async function MandateDetailPage({ params }: PageProps) {
       />
 
       <ActivityTimeline
-        activities={(m.activities ?? []).map((a: { id: string; type: string; subject?: string | null; occurredAt: Date; channel?: string | null; direction?: string | null }): ActivityTimelineItem => ({
+        activities={(m.activities ?? []).map((a: { id: string; type: string; subject?: string | null; body?: string | null; occurredAt: Date; channel?: string | null; direction?: string | null }): ActivityTimelineItem => ({
           id: a.id,
           type: a.type,
           subject: a.subject,
+          body: a.body,
           occurredAt: a.occurredAt,
           channel: a.channel,
           direction: a.direction,

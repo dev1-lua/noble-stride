@@ -102,6 +102,14 @@ function EngagementStageCard({
         currentStage={stage}
         stageOptions={stageOptions}
       />
+
+      {/* Detail page: NDA recording, milestones, timeline */}
+      <Link
+        href={`/engagement/${card.id}`}
+        className="block text-xs font-medium text-accent hover:underline"
+      >
+        Open engagement →
+      </Link>
     </div>
   );
 }
