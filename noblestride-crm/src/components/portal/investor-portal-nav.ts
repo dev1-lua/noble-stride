@@ -16,6 +16,12 @@ export const INVESTOR_NAV = [
     subtitle: "Your journey on each opportunity",
   },
   {
+    href: "/portal/investor/dashboard",
+    label: "Dashboard",
+    title: "Dashboard",
+    subtitle: "Your engagement across NobleStride deals",
+  },
+  {
     href: "/portal/investor/profile",
     label: "Fund Profile",
     title: "Fund Profile",

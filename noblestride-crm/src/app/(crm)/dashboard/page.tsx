@@ -19,6 +19,7 @@ import {
   investedSummary,
   historicalEngagementSummary,
   partnerConversionFunnel,
+  disbursementByPeriod,
 } from "@/server/services/dashboard";
 import { aiOverviewInsights } from "@/server/services/ai";
 import { Card, CardHeader, CardBody } from "@/components/ui";
@@ -34,6 +35,7 @@ import {
   HistoricalEngagementTable,
   PartnerFunnelTable,
 } from "@/components/crm/deal-analytics-panels";
+import { DisbursementPeriodChart } from "@/components/crm/disbursement-period-chart";
 
 export default async function DashboardPage() {
   const [
@@ -54,6 +56,7 @@ export default async function DashboardPage() {
     invested,
     history,
     funnel,
+    disbursements,
   ] = await Promise.all([
     dashboardStats(),
     aiOverviewInsights(),
@@ -72,6 +75,7 @@ export default async function DashboardPage() {
     investedSummary(),
     historicalEngagementSummary(),
     partnerConversionFunnel(),
+    disbursementByPeriod(),
   ]);
 
   return (
@@ -351,6 +355,22 @@ export default async function DashboardPage() {
           </CardBody>
         </Card>
       </div>
+      {/* Disbursements by quarter (§13) */}
+      <Reveal delay={0.2}>
+        <Card className="transition-shadow duration-300 hover:shadow-md">
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-zinc-900">Disbursements by Quarter</h2>
+            <p className="mt-0.5 text-xs text-zinc-500">Investor funds disbursed vs pending, per calendar quarter</p>
+          </CardHeader>
+          <CardBody>
+            {disbursements.length === 0 ? (
+              <p className="text-sm text-zinc-400">No disbursements recorded.</p>
+            ) : (
+              <DisbursementPeriodChart data={disbursements} />
+            )}
+          </CardBody>
+        </Card>
+      </Reveal>
     </div>
   );
 }

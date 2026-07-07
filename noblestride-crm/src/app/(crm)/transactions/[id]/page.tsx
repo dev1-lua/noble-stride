@@ -5,7 +5,11 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTransaction } from "@/server/services/transactions";
 import { listDocuments } from "@/server/services/documents";
+import { listDDTracks } from "@/server/services/due-diligence";
+import { listServiceProviders } from "@/server/services/service-providers";
 import { relationOptions } from "@/server/services/relation-options";
+import { DDTrack } from "@prisma/client";
+import { DDTracksPanel, type DDTrackRow } from "@/components/crm/dd-tracks-panel";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
@@ -20,6 +24,8 @@ import { PrepMilestones } from "@/components/crm/prep-milestones";
 import { visiblePrepMilestones } from "@/lib/milestones";
 import { TransactionFormDrawer } from "@/components/crm/transaction-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
+import { getOrgLens } from "@/server/rbac/context";
+import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -28,13 +34,16 @@ interface PageProps {
 
 export default async function TransactionDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const lens = await getOrgLens();
   const transaction = await getTransaction(id);
 
   if (!transaction) notFound();
 
-  const [rel, documents] = await Promise.all([
+  const [rel, documents, ddTracks, serviceProviders] = await Promise.all([
     relationOptions(),
     listDocuments({ transactionId: id }),
+    listDDTracks(id),
+    listServiceProviders(),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,8 +77,32 @@ export default async function TransactionDetailPage({ params }: PageProps) {
     notes: txn.notes ?? "",
     referredById: txn.referredById ?? "",
     serviceProviderIds: (txn.serviceProviders ?? []).map((sp: { id: string }) => sp.id),
+    icFirstApprovalDate: toDate(txn.icFirstApprovalDate),
+    icSecondApprovalDate: toDate(txn.icSecondApprovalDate),
+    cakComesaStatus: txn.cakComesaStatus ?? "",
+    cakComesaFiledDate: toDate(txn.cakComesaFiledDate),
+    cakComesaApprovedDate: toDate(txn.cakComesaApprovedDate),
   };
+
+  // §6.2 DD workstreams: one row per track, whether or not a DB row exists yet.
+  const ddByTrack = new Map(ddTracks.map((t) => [t.track, t]));
+  const ddRows: DDTrackRow[] = Object.values(DDTrack).map((track) => {
+    const row = ddByTrack.get(track);
+    return {
+      track,
+      status: row?.status ?? "NotStarted",
+      ownerId: row?.ownerId ?? "",
+      serviceProviderId: row?.serviceProviderId ?? "",
+      startedAt: toDate(row?.startedAt),
+      completedAt: toDate(row?.completedAt),
+      notes: row?.notes ?? "",
+    };
+  });
   const DELETE_TRANSACTION = `mutation DeleteTransaction($id: ID!) { deleteTransaction(id: $id) { id } }`;
+
+  // §7.2 lens: Deal Leads edit only their own transactions; only Admin deletes.
+  const mayEdit = canUpdateRecord(lens.orgRole, "Transactions", lens.userId, { ownerId: txn.ownerId });
+  const mayDelete = canDeleteRecord(lens.orgRole, "Transactions");
 
   const clientName: string = txn.client?.name ?? txn.name;
   const ownerName: string | null = txn.owner?.name ?? null;
@@ -114,8 +147,12 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>
-          <TransactionFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} mandates={rel.mandates} partners={rel.partners} serviceProviders={rel.serviceProviders} />
-          <DeleteConfirm mutation={DELETE_TRANSACTION} recordId={txn.id} entityLabel="transaction" redirectTo="/transactions" />
+          {mayEdit && (
+            <TransactionFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} mandates={rel.mandates} partners={rel.partners} serviceProviders={rel.serviceProviders} />
+          )}
+          {mayDelete && (
+            <DeleteConfirm mutation={DELETE_TRANSACTION} recordId={txn.id} entityLabel="transaction" redirectTo="/transactions" />
+          )}
         </div>
       </div>
 
@@ -297,6 +334,36 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                   <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{txn.useOfFunds}</dd>
                 </div>
               )}
+              {/* IC approvals */}
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">IC Approvals</dt>
+                <dd className="mt-1 text-sm text-zinc-900">
+                  {txn.icFirstApprovalDate || txn.icSecondApprovalDate ? (
+                    <>
+                      {txn.icFirstApprovalDate && <>First {formatDate(txn.icFirstApprovalDate)}</>}
+                      {txn.icFirstApprovalDate && txn.icSecondApprovalDate && " · "}
+                      {txn.icSecondApprovalDate && <>Second {formatDate(txn.icSecondApprovalDate)}</>}
+                    </>
+                  ) : (
+                    <span className="text-zinc-400">—</span>
+                  )}
+                </dd>
+              </div>
+
+              {/* CAK / COMESA */}
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">CAK / COMESA</dt>
+                <dd className="mt-1 text-sm text-zinc-900">
+                  {label("RegulatoryStatus", txn.cakComesaStatus)}
+                </dd>
+                {(txn.cakComesaFiledDate || txn.cakComesaApprovedDate) && (
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    {txn.cakComesaFiledDate && <>Filed {formatDate(txn.cakComesaFiledDate)}</>}
+                    {txn.cakComesaFiledDate && txn.cakComesaApprovedDate && " · "}
+                    {txn.cakComesaApprovedDate && <>Approved {formatDate(txn.cakComesaApprovedDate)}</>}
+                  </p>
+                )}
+              </div>
 
               {/* Notes */}
               {txn.notes && (
@@ -315,15 +382,24 @@ export default async function TransactionDetailPage({ params }: PageProps) {
             <h2 className="text-sm font-semibold text-zinc-900">Stage</h2>
           </CardHeader>
           <CardBody>
-            <RestageSelect
-              kind="transaction"
-              id={txn.id}
-              currentStage={txn.stage}
-              stageOptions={stageOptions}
-            />
-            <p className="mt-3 text-xs text-zinc-400">
-              Changing stage immediately persists to the database and resets the stage timer.
-            </p>
+            {mayEdit ? (
+              <>
+                <RestageSelect
+                  kind="transaction"
+                  id={txn.id}
+                  currentStage={txn.stage}
+                  stageOptions={stageOptions}
+                />
+                <p className="mt-3 text-xs text-zinc-400">
+                  Changing stage immediately persists to the database and resets the stage timer.
+                </p>
+              </>
+            ) : (
+              <>
+                <Chip value={txn.stage} group="TransactionStage" />
+                <p className="mt-3 text-xs text-zinc-400">Read-only in current view.</p>
+              </>
+            )}
           </CardBody>
         </Card>
       </div>
@@ -430,6 +506,41 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           <p className="mt-3 text-xs text-zinc-400">
             Derived from the document register: a milestone is complete once a document of the
             matching type is linked to this transaction.
+          </p>
+        </CardBody>
+      </Card>
+
+      {/* Due-diligence workstreams (§6.2) */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Due Diligence Workstreams
+            <Badge tone="neutral" className="ml-2">
+              {ddRows.filter((r) => r.status === "Complete").length}/{ddRows.length}
+            </Badge>
+          </h2>
+        </CardHeader>
+        <CardBody>
+          {mayEdit ? (
+            <DDTracksPanel
+              transactionId={txn.id}
+              tracks={ddRows}
+              users={rel.users.map((u: { value: string; label: string }) => ({ id: u.value, name: u.label }))}
+              serviceProviders={serviceProviders.map((p) => ({ id: p.id, name: p.name }))}
+            />
+          ) : (
+            <ul className="divide-y divide-zinc-100">
+              {ddRows.map((row) => (
+                <li key={row.track} className="flex items-center justify-between gap-4 py-2.5">
+                  <span className="text-sm font-medium text-zinc-900">{label("DDTrack", row.track)}</span>
+                  <Chip value={row.status} group="DDStatus" />
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-xs text-zinc-400">
+            Deal-level workstreams (financial / tax / commercial / ESG / legal). Internal only —
+            never shared with investors or partners.
           </p>
         </CardBody>
       </Card>

@@ -12,6 +12,8 @@ import { DeleteConfirm } from "@/components/crm/delete-confirm";
 import { ContactsCard } from "@/components/crm/contacts-card";
 import { StageHistory } from "@/components/crm/stage-history";
 import type { StageHistoryItem } from "@/components/crm/stage-history";
+import { getOrgLens } from "@/server/rbac/context";
+import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -20,6 +22,7 @@ interface PageProps {
 
 export default async function PartnerDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const lens = await getOrgLens();
   const partner = await getPartner(id);
 
   if (!partner) notFound();
@@ -93,8 +96,12 @@ export default async function PartnerDetailPage({ params }: PageProps) {
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
-          <PartnerFormDrawer mode="edit" initial={initial} />
-          <DeleteConfirm mutation={DELETE_PARTNER} recordId={partner.id} entityLabel="partner" redirectTo="/partners" />
+          {canUpdateRecord(lens.orgRole, "Partners", lens.userId, {}) && (
+            <PartnerFormDrawer mode="edit" initial={initial} />
+          )}
+          {canDeleteRecord(lens.orgRole, "Partners") && (
+            <DeleteConfirm mutation={DELETE_PARTNER} recordId={partner.id} entityLabel="partner" redirectTo="/partners" />
+          )}
         </div>
       </div>
 

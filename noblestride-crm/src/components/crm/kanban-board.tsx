@@ -42,11 +42,15 @@ export interface KanbanColumnDTO<T> {
 type MandateKanbanProps = {
   kind: "mandate";
   columns: KanbanColumnDTO<MandateCardDTO>[];
+  /** §7.2 lens: disables drag restaging when the active org-role lacks Update. */
+  readOnly?: boolean;
 };
 
 type TransactionKanbanProps = {
   kind: "transaction";
   columns: KanbanColumnDTO<TransactionCardDTO>[];
+  /** §7.2 lens: disables drag restaging when the active org-role lacks Update. */
+  readOnly?: boolean;
 };
 
 type KanbanBoardProps = MandateKanbanProps | TransactionKanbanProps;
@@ -84,6 +88,7 @@ export function KanbanBoard(props: KanbanBoardProps) {
 
   const onDragEnd = useCallback(
     async (result: DropResult) => {
+      if (props.readOnly) return;
       const { source, destination, draggableId } = result;
 
       // Dropped outside a list or in the same column at same position
@@ -137,7 +142,7 @@ export function KanbanBoard(props: KanbanBoardProps) {
       // Success: refresh RSC so authoritative state + daysInStage recalculate
       router.refresh();
     },
-    [columns, props.kind, executeMandateMutation, executeTransactionMutation, router]
+    [columns, props.kind, props.readOnly, executeMandateMutation, executeTransactionMutation, router]
   );
 
   return (
@@ -178,7 +183,7 @@ export function KanbanBoard(props: KanbanBoardProps) {
                   }`}
                 >
                   {col.items.map((item, idx) => (
-                    <Draggable key={item.id} draggableId={item.id} index={idx}>
+                    <Draggable key={item.id} draggableId={item.id} index={idx} isDragDisabled={props.readOnly}>
                       {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}

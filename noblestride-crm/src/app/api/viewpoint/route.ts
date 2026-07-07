@@ -14,7 +14,12 @@ export async function GET(req: NextRequest) {
   }
 
   const vp = parseViewpoint(
-    JSON.stringify({ role: params.get("role"), recordId: params.get("recordId") ?? undefined }),
+    JSON.stringify({
+      role: params.get("role"),
+      recordId: params.get("recordId") ?? undefined,
+      orgRole: params.get("orgRole") ?? undefined,
+      userId: params.get("userId") ?? undefined,
+    }),
   );
   const res = NextResponse.redirect(new URL(params.get("next") ?? viewpointHome(vp), req.url));
   res.cookies.set(VIEWPOINT_COOKIE, serializeViewpoint(vp), { path: "/", sameSite: "lax" });

@@ -18,8 +18,11 @@ import type { EngagementStageColumnDTO } from "@/components/crm/engagement-stage
 import { DisbursementTable } from "@/components/crm/disbursement-table";
 import type { DisbursementRow } from "@/components/crm/disbursement-table";
 import { DisbursementPeriodSummary } from "@/components/crm/disbursement-period-summary";
+import { getOrgLens } from "@/server/rbac/context";
+import { can, canUpdateRecord } from "@/server/rbac/matrix";
 
 export default async function EngagementPage() {
+  const lens = await getOrgLens();
   // Parallel fetches
   const [counters, stageColumns, disbursements, periodSummary, timeline, transactions, investors, rel] =
     await Promise.all([
@@ -57,6 +60,9 @@ export default async function EngagementPage() {
       ndaType: eng.ndaType,
       termSheetIssued: eng.termSheetIssued,
       probability: eng.probability,
+      canRestage: canUpdateRecord(lens.orgRole, "Engagements", lens.userId, {
+        ownerId: eng.ownerId,
+      }),
     })),
   }));
 
@@ -115,7 +121,9 @@ export default async function EngagementPage() {
             Investor interactions across all active deals
           </p>
         </div>
-        <LogEngagementDialog transactions={txnOptions} investors={invOptions} />
+        {can(lens.orgRole, "Engagements", "C") && (
+          <LogEngagementDialog transactions={txnOptions} investors={invOptions} />
+        )}
       </div>
 
       {/* Counters strip — 6 activity-driven tiles + deals rejected (stage-driven) */}

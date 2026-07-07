@@ -2,7 +2,7 @@
 
 One-page record of what was built in the 2026-07-03 session, on top of the Plan-1 data layer
 (2026-06-26). App: `noblestride-crm/` (Next.js 16 + Prisma 6 + Postgres + Pothos GraphQL).
-**State: all committed on local `main`, NOT pushed to origin. 270/270 tests green.**
+**State: all committed on local `main`, NOT pushed to origin. 304/304 tests green.**
 
 ---
 
@@ -86,9 +86,32 @@ Transaction success-fee fields · `DocumentType.BusinessPlan` · shared lib `src
    the referral is in New Lead
 6. `/access-matrix` → in-org who-sees-what
 
+### 7. Dashboards, company/deal fields, DD tracks, in-org RBAC lens (2026-07-03, second batch)
+Section-9 priority points **4 & 5** + in-org RBAC views (spec: `docs/superpowers/specs/2026-07-03-crm-dashboards-rbac-design.md`):
+- **§3.1 company fields**: `projectCodename` (required in the create drawer, lenient API),
+  EBITDA / existing debt / total assets, women-led / youth-led impact flags — drawer + detail UI
+- **§3.2 deal fields**: first/second IC-approval dates, CAK/COMESA status + filed/approved dates
+- **§6.2 DD workstreams**: `DueDiligenceTrack` model (financial/tax/commercial/ESG/legal ×
+  status/owner/provider/dates/notes), editable panel on the transaction detail page,
+  `upsertDueDiligenceTrack`/`deleteDueDiligenceTrack` mutations
+- **§11.1 investor filters**: sector/country/deal-type/instrument/ticket/revenue/impact filters on
+  the Opportunities tab — pure **narrow-only** step on top of discovery/tier gating, defensive
+  URL parsing; impact flags projected in `companyProfile` at all tiers
+- **§13 dashboards**: investor **Dashboard tab** (own-only KPIs, pipeline by stage, own
+  disbursements by quarter via `loadInvestorDashboard`); partner **referrals-by-stage** chart;
+  internal `/dashboard` **disbursements-by-quarter** chart (`disbursementByPeriod` +
+  `groupDisbursementsByPeriod`)
+- **§7.2 in-org RBAC lens**: `User.role` (Admin/DealLead/TeamMember), shared matrix module
+  `src/server/rbac/matrix.ts` (single source of truth — also drives `/access-matrix`), viewpoint
+  cookie extended with `orgRole`/`userId`, switcher org-role + user picker, amber lens banner,
+  UI-level enforcement across all CRM pages (create/edit/delete/restage/kanban-drag gated;
+  Deal Lead own-scope via `leadId`/`ownerId`; Team Member read-only except own engagements/tasks)
+- Leak guards extended: DD-track / IC / CAK sentinels asserted absent from every external
+  projection at every tier
+
 ## How to run
 - `docker compose up -d` (Postgres on **5544**) → `npm run dev` → http://localhost:3000
-- Tests: `npm run test` (270) · Reseed: `npm run seed` then `npm run import:real`,
+- Tests: `npm run test` (304) · Reseed: `npm run seed` then `npm run import:real`,
   `npx tsx scripts/plant-portal-data.ts`, `npx tsx scripts/seed-milestones.ts`
 
 ## Known gotchas
@@ -103,12 +126,11 @@ Transaction success-fee fields · `DocumentType.BusinessPlan` · shared lib `src
 - **The 4 Lua agents** (Client, Investor, Investor Tracker, Referral) — `src/server/services/ai.ts`
   functions are heuristic stubs with `SEAM` comments; agent guides in `noblestride-crm/docs/agents/`
 - WhatsApp + Email (Outlook) capture; website intake/qualification agent (SOW components 6–8)
-- Real authentication + enforced RBAC + audit trail (switcher is a demo lens; matrix display-only)
+- Real authentication + audit trail (RBAC is now a **UI-enforced demo lens** driven by the shared
+  matrix; still not backed by login)
 - File upload/storage (Document = metadata + URL)
-- Guided flows on top of existing fields: document review chain UI, DD workstream checklist
-  (fin/tax/commercial/ESG/legal as separate tracks), IC-approval + CAK/COMESA fields on deals
+- Guided flows on top of existing fields: document review chain UI
 - Sub-sector taxonomy (4 levels, "Sectors and Milestones" doc) — deliberately deferred (spec §11)
-- Client/company gaps: project codename field, EBITDA/debt/assets, women-led/youth-led impact flags
 - Tasks are view-only (no create/edit UI); success-fee invoice generation
 - `noblestride-crm/docs/GAP-ANALYSIS-vs-SOW.md` is **stale** (2026-06-26, pre–this-session)
 - **Push to origin** (triggers Vercel deploy) — everything is local-only

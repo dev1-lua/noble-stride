@@ -9,6 +9,8 @@ import { SegmentRow } from "@/components/crm/segment-row";
 import { FilterBar } from "@/components/crm/filter-bar";
 import { RecordTable } from "@/components/crm/record-table";
 import { InvestorFormDrawer } from "@/components/crm/investor-form-drawer";
+import { getOrgLens } from "@/server/rbac/context";
+import { can } from "@/server/rbac/matrix";
 
 // Next 16: searchParams is a Promise
 interface PageProps {
@@ -17,6 +19,7 @@ interface PageProps {
 
 export default async function InvestorsPage({ searchParams }: PageProps) {
   const sp = await searchParams;
+  const lens = await getOrgLens();
 
   // Build filter from URL params — leave undefined when param is absent
   const filter: InvestorFilter = {
@@ -45,7 +48,7 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
           </p>
         </div>
         <div className="flex gap-2">
-          <InvestorFormDrawer mode="create" />
+          {can(lens.orgRole, "Investors", "C") && <InvestorFormDrawer mode="create" />}
         </div>
       </div>
 

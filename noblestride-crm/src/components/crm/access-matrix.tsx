@@ -1,59 +1,25 @@
 "use client";
 
-// access-matrix.tsx — display-only in-org access matrix (design spec §7).
-// Cells are toggleable in-session for illustration; nothing is persisted or enforced.
+// access-matrix.tsx — in-org access matrix display (design spec §7.2).
+// The grid comes from src/server/rbac/matrix.ts — the SAME table that drives
+// the in-org view lens. Cells are toggleable in-session for illustration only;
+// toggles are not persisted and do not affect the lens.
 
 import { useState } from "react";
+import { RBAC_ENTITIES, RBAC_MATRIX, type Perm } from "@/server/rbac/matrix";
+import { label } from "@/lib/vocab";
 
-const ROLES = ["Admin", "Deal Lead", "Team Member"] as const;
+const ROLES = ["Admin", "DealLead", "TeamMember"] as const;
 type OrgRole = (typeof ROLES)[number];
 
-const ENTITIES = [
-  "Investors",
-  "Clients",
-  "Mandates",
-  "Transactions",
-  "Engagements",
-  "Partners",
-  "Documents",
-  "Service Providers",
-  "Tasks",
-] as const;
-
-type Perm = "C" | "R" | "U" | "D";
+const ENTITIES = RBAC_ENTITIES;
 const PERMS: Perm[] = ["C", "R", "U", "D"];
 type Grid = Record<string, Perm[]>;
 
-// Defaults per spec §7: Admin full CRUD; Deal Lead CRUD own deals + read all;
-// Team Member read all, update assigned work.
-const DEFAULTS: Record<OrgRole, Grid> = {
-  Admin: Object.fromEntries(ENTITIES.map((e) => [e, ["C", "R", "U", "D"] as Perm[]])),
-  "Deal Lead": {
-    Investors: ["C", "R", "U"],
-    Clients: ["C", "R", "U"],
-    Mandates: ["C", "R", "U"],
-    Transactions: ["C", "R", "U"],
-    Engagements: ["C", "R", "U"],
-    Partners: ["R"],
-    Documents: ["C", "R", "U"],
-    "Service Providers": ["R"],
-    Tasks: ["C", "R", "U"],
-  },
-  "Team Member": {
-    Investors: ["R"],
-    Clients: ["R"],
-    Mandates: ["R"],
-    Transactions: ["R"],
-    Engagements: ["R", "U"],
-    Partners: ["R"],
-    Documents: ["R"],
-    "Service Providers": ["R"],
-    Tasks: ["R", "U"],
-  },
-};
+const DEFAULTS: Record<OrgRole, Grid> = RBAC_MATRIX as unknown as Record<OrgRole, Grid>;
 
 export function AccessMatrix() {
-  const [role, setRole] = useState<OrgRole>("Deal Lead");
+  const [role, setRole] = useState<OrgRole>("DealLead");
   const [grids, setGrids] = useState<Record<OrgRole, Grid>>(() =>
     JSON.parse(JSON.stringify(DEFAULTS)),
   );
@@ -74,8 +40,9 @@ export function AccessMatrix() {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        Illustrative only — this matrix shows the intended in-organisation access model. Changes
-        here are not saved and nothing is enforced yet.
+        This matrix drives the in-org view lens (demo — not backed by real login). Use the
+        viewpoint switcher in the top bar to see the CRM as each role. In-session toggles below
+        are illustrative and not persisted.
       </div>
 
       <div className="flex items-center gap-3">
@@ -86,7 +53,9 @@ export function AccessMatrix() {
           className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm"
         >
           {ROLES.map((r) => (
-            <option key={r}>{r}</option>
+            <option key={r} value={r}>
+              {label("OrgRole", r)}
+            </option>
           ))}
         </select>
         <button

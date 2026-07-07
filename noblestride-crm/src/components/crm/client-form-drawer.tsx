@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { z } from "zod";
 import { Button } from "@/components/ui";
 import { Drawer } from "@/components/ui/drawer";
 import { TextField, TextAreaField, NumberField, MoneyField, SelectField, MultiSelectField } from "@/components/ui/fields";
@@ -10,6 +11,13 @@ import { options } from "@/lib/vocab";
 
 const CREATE = `mutation CreateClient($input: ClientInput!) { createClient(input: $input) { id } }`;
 const UPDATE = `mutation UpdateClient($id: ID!, $input: ClientInput!) { updateClient(id: $id, input: $input) { id } }`;
+
+// UI-only rule (SPEC §3.1): codename is required when creating a company; the
+// API stays lenient because imported legacy rows and agent-created records may
+// lack one.
+const clientCreateUiSchema = clientCreateSchema.extend({
+  projectCodename: z.string().trim().min(1, "Project codename is required"),
+});
 
 const EMPTY: Record<string, unknown> = {
   name: "", yearFounded: undefined, hqCity: "", countries: [], website: "", sector: [],
@@ -31,7 +39,7 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
   const [open, setOpen] = useState(false);
   const f = useEntityForm({
     initial: { ...EMPTY, ...(initial ?? {}) },
-    schema: mode === "create" ? clientCreateSchema : clientUpdateSchema,
+    schema: mode === "create" ? clientCreateUiSchema : clientUpdateSchema,
     createMutation: CREATE, updateMutation: UPDATE,
     mode, recordId: initial?.id as string | undefined,
     onSuccess: () => setOpen(false),
@@ -56,6 +64,7 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
       >
         <div className="space-y-4">
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
+          <TextField label="Project Codename" required={mode === "create"} value={v.projectCodename as string} onChange={(x) => f.setValue("projectCodename", x)} error={f.errors.projectCodename} />
           <div className="grid grid-cols-2 gap-3">
             <NumberField label="Year Founded" value={v.yearFounded as number} onChange={(x) => f.setValue("yearFounded", x)} />
             <TextField label="HQ City" value={v.hqCity as string} onChange={(x) => f.setValue("hqCity", x)} />

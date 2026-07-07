@@ -17,6 +17,7 @@ import {
   ImpactFlagEnum, ClientStatusEnum, ProfitabilityEnum,
   TaskStatusEnum, TaskSourceEnum,
   InteractionTypeEnum, CommChannelEnum, CommDirectionEnum,
+  RegulatoryStatusEnum, DDTrackEnum, DDStatusEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -156,6 +157,12 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     notes: t.string({ required: false }),
     referredById: t.id({ required: false }),
     serviceProviderIds: t.field({ type: ["ID"], required: false }),
+    // §3.2 IC approvals + CAK/COMESA regulatory tracking
+    icFirstApprovalDate: t.field({ type: "DateTime", required: false }),
+    icSecondApprovalDate: t.field({ type: "DateTime", required: false }),
+    cakComesaStatus: t.field({ type: RegulatoryStatusEnum, required: false }),
+    cakComesaFiledDate: t.field({ type: "DateTime", required: false }),
+    cakComesaApprovedDate: t.field({ type: "DateTime", required: false }),
   }),
 });
 
@@ -295,6 +302,19 @@ export const MilestoneInput = builder.inputType("MilestoneInput", {
   fields: (t) => ({
     engagementId: t.id({ required: true }),
     key: t.field({ type: MilestoneKeyEnum, required: true }),
+    completedAt: t.field({ type: "DateTime", required: false }),
+    notes: t.string({ required: false }),
+  }),
+});
+
+export const DueDiligenceTrackInput = builder.inputType("DueDiligenceTrackInput", {
+  fields: (t) => ({
+    transactionId: t.id({ required: true }),
+    track: t.field({ type: DDTrackEnum, required: true }),
+    status: t.field({ type: DDStatusEnum, required: false }),
+    ownerId: t.id({ required: false }),
+    serviceProviderId: t.id({ required: false }),
+    startedAt: t.field({ type: "DateTime", required: false }),
     completedAt: t.field({ type: "DateTime", required: false }),
     notes: t.string({ required: false }),
   }),

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Sector, DealType, Instrument, DealStatus, DealMilestone, DealFinancingType, MaxSellingStake } from "@prisma/client";
+import { Sector, DealType, Instrument, DealStatus, DealMilestone, DealFinancingType, MaxSellingStake, RegulatoryStatus } from "@prisma/client";
 
 export const transactionCreateSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -28,6 +28,12 @@ export const transactionCreateSchema = z.object({
   notes: z.string().trim().optional(),
   referredById: z.string().trim().optional(),
   serviceProviderIds: z.array(z.string()).optional(),
+  // §3.2 IC approvals + CAK/COMESA regulatory tracking
+  icFirstApprovalDate: z.coerce.date().optional(),
+  icSecondApprovalDate: z.coerce.date().optional(),
+  cakComesaStatus: z.nativeEnum(RegulatoryStatus).optional(),
+  cakComesaFiledDate: z.coerce.date().optional(),
+  cakComesaApprovedDate: z.coerce.date().optional(),
 });
 export const transactionUpdateSchema = transactionCreateSchema.partial();
 export type TransactionCreateInput = z.infer<typeof transactionCreateSchema>;

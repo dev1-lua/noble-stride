@@ -11,6 +11,8 @@ import {
   DealFinancingType,
   DealMilestone,
   DealStatus,
+  DDStatus,
+  DDTrack,
   DealType,
   DisbursementStatus,
   DocStatus,
@@ -35,11 +37,13 @@ import {
   MilestoneKey,
   NdaType,
   OnboardingStatus,
+  OrgRole,
   PartnerAgreementStatus,
   PartnerStatus,
   PartnerType,
   Prisma,
   Profitability,
+  RegulatoryStatus,
   Sector,
   ServiceProviderType,
   Source,
@@ -112,3 +116,7 @@ export const CommDirectionEnum = builder.enumType(CommDirection, { name: "CommDi
 export const ClientStatusEnum = builder.enumType(ClientStatus, { name: "ClientStatus" });
 export const ImpactFlagEnum = builder.enumType(ImpactFlag, { name: "ImpactFlag" });
 export const ProfitabilityEnum = builder.enumType(Profitability, { name: "Profitability" });
+export const RegulatoryStatusEnum = builder.enumType(RegulatoryStatus, { name: "RegulatoryStatus" });
+export const DDTrackEnum = builder.enumType(DDTrack, { name: "DDTrack" });
+export const DDStatusEnum = builder.enumType(DDStatus, { name: "DDStatus" });
+export const OrgRoleEnum = builder.enumType(OrgRole, { name: "OrgRole" });

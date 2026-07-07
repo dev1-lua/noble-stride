@@ -3,6 +3,7 @@
 // never touch raw records for external roles.
 
 import type {
+  EngagementStage,
   InvestorEngagementClassification,
   MilestoneKey,
   PrismaClient,
@@ -10,11 +11,14 @@ import type {
 } from "@prisma/client";
 import { ndaSatisfied } from "@/server/domain/nda-guard";
 import { investorTier, isBlockedClassification, isOnboardingBlocked, type Tier } from "./tiers";
+import { groupDisbursementsByPeriod, type DisbursementPeriodRow } from "@/server/domain/disbursement";
+import { applyOpportunityFilters, type OpportunityFilters } from "./filters";
 import {
   discoverableDealsForInvestor,
   projectDealForInvestor,
   projectForPartner,
   projectOwnEngagement,
+  toNum,
   type ProjectedDeal,
   type ProjectedOwnEngagement,
   type ProjectedPartnerView,
@@ -38,10 +42,13 @@ export interface InvestorPortalData {
  * Deal set = deals the investor is engaged on (at their engagement tier)
  * ∪ discovery matches (at PRE_INTEREST). Blocked classifications and
  * Declined engagements project to nothing, so they simply drop out.
+ * Optional filters (§11.1) intersect that candidate set — they can only
+ * narrow it, never widen it.
  */
 export async function loadInvestorPortalData(
   prisma: PrismaClient,
   investorId: string,
+  filters: OpportunityFilters = {},
 ): Promise<InvestorPortalData> {
   const investor = await prisma.investor.findUniqueOrThrow({
     where: { id: investorId },
@@ -60,6 +67,7 @@ export async function loadInvestorPortalData(
 
   const engagementByTxn = new Map(investor.engagements.map((e) => [e.transactionId, e]));
   const discoverableIds = new Set(discoverableDealsForInvestor(investor, deals).map((d) => d.id));
+  const filteredIds = new Set(applyOpportunityFilters(deals, filters).map((d) => d.id));
 
   const projected: ProjectedDeal[] = [];
   for (const deal of deals) {
@@ -67,6 +75,8 @@ export async function loadInvestorPortalData(
     // Engaged deals are always candidates (tier gates them); otherwise the
     // deal must match the investor's discovery filters.
     if (!engagement && !discoverableIds.has(deal.id)) continue;
+    // §11.1 interactive filters narrow the candidate set, never widen it.
+    if (!filteredIds.has(deal.id)) continue;
     const projection = projectDealForInvestor(deal, investorTier(investor, engagement), {
       ndaSatisfied: ndaSatisfied(investor, engagement),
     });
@@ -158,6 +168,89 @@ export async function loadOwnEngagementForDeal(
 ): Promise<InvestorPipelineItem | null> {
   const items = await loadInvestorPipeline(prisma, investorId);
   return items.find((item) => item.deal.id === dealId) ?? null;
+}
+
+// ─── Investor dashboard (§13) ────────────────────────────────────────────────
+
+export interface InvestorDashboardData {
+  investor: { id: string; name: string };
+  /** Deals the investor could discover today (same gating as the portal list). */
+  matchingOpportunities: number;
+  /** Count of the investor's own non-declined engagements. */
+  engagedDeals: number;
+  /** Own engagements by stage (no deal names, no amounts per deal). */
+  pipeline: { stage: EngagementStage; count: number }[];
+  /** Aggregate totals over the investor's OWN engagements only. */
+  disbursement: { committed: number; disbursed: number; pending: number };
+  /** Own disbursements bucketed by calendar quarter. */
+  disbursementByPeriod: DisbursementPeriodRow[];
+}
+
+/**
+ * Aggregates for the investor dashboard (§13). OWN data only: pipeline and
+ * disbursement numbers are computed exclusively from the investor's own
+ * engagements; the opportunity count reuses the same discovery gating as the
+ * portal list. Blocked classifications get zeros. Never contains: deal-level
+ * amounts of others, feedback, probability, notes, or team identities.
+ */
+export async function loadInvestorDashboard(
+  prisma: PrismaClient,
+  investorId: string,
+): Promise<InvestorDashboardData> {
+  const investor = await prisma.investor.findUniqueOrThrow({
+    where: { id: investorId },
+    include: { engagements: true },
+  });
+  const base = { investor: { id: investor.id, name: investor.name } };
+  if (isBlockedClassification(investor.engagementClassification)) {
+    return {
+      ...base,
+      matchingOpportunities: 0,
+      engagedDeals: 0,
+      pipeline: [],
+      disbursement: { committed: 0, disbursed: 0, pending: 0 },
+      disbursementByPeriod: [],
+    };
+  }
+
+  const deals = await prisma.transaction.findMany({
+    where: { stage: ACTIVE_STAGES_FILTER },
+    include: { client: true },
+  });
+  const matchingOpportunities = discoverableDealsForInvestor(investor, deals).length;
+
+  const own = investor.engagements.filter((e) => e.engagementStage !== "Declined");
+  const stageCounts = new Map<EngagementStage, number>();
+  for (const e of own) stageCounts.set(e.engagementStage, (stageCounts.get(e.engagementStage) ?? 0) + 1);
+
+  let committed = 0;
+  let disbursed = 0;
+  let pending = 0;
+  for (const e of own) {
+    const total = toNum(e.totalAmount);
+    const d = toNum(e.amountDisbursed);
+    committed += total ?? 0;
+    disbursed += d ?? 0;
+    pending += toNum(e.amountPending) ?? (total != null ? total - (d ?? 0) : 0);
+  }
+
+  return {
+    ...base,
+    matchingOpportunities,
+    engagedDeals: own.length,
+    pipeline: [...stageCounts.entries()].map(([stage, count]) => ({ stage, count })),
+    disbursement: { committed, disbursed, pending },
+    disbursementByPeriod: groupDisbursementsByPeriod(
+      own.map((e) => ({
+        totalAmount: toNum(e.totalAmount),
+        amountDisbursed: toNum(e.amountDisbursed),
+        amountPending: toNum(e.amountPending),
+        dateReceived: e.dateReceived,
+        year: e.year,
+        quarter: e.quarter,
+      })),
+    ),
+  };
 }
 
 /** Everything the partner portal renders, pre-projected (§5.4). */

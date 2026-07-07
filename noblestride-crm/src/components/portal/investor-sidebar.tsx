@@ -6,13 +6,14 @@
 // h-full instead of h-screen: the demo-lens banner sits above it in the
 // investor layout's flex column.
 import { usePathname } from "next/navigation";
-import { LayoutGrid, TrendingUp, Building2, ChevronLeft } from "lucide-react";
+import { LayoutGrid, TrendingUp, BarChart3, Building2, ChevronLeft } from "lucide-react";
 import { BrandMark, NavItem, SIDEBAR_FG } from "@/components/shell/sidebar";
 import { INVESTOR_NAV, isInvestorNavActive } from "./investor-portal-nav";
 
 const NAV_ICONS = {
   "/portal/investor": LayoutGrid,
   "/portal/investor/pipeline": TrendingUp,
+  "/portal/investor/dashboard": BarChart3,
   "/portal/investor/profile": Building2,
 } as const;
 

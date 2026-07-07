@@ -17,6 +17,8 @@ import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { LogEngagementDialog } from "@/components/crm/log-engagement-dialog";
 import { StageHistory } from "@/components/crm/stage-history";
 import type { StageHistoryItem } from "@/components/crm/stage-history";
+import { getOrgLens } from "@/server/rbac/context";
+import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -25,6 +27,7 @@ interface PageProps {
 
 export default async function ClientDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const lens = await getOrgLens();
   const client = await getClient(id);
 
   if (!client) notFound();
@@ -137,8 +140,12 @@ export default async function ClientDetailPage({ params }: PageProps) {
         </div>
         <div className="flex shrink-0 gap-2">
           <LogEngagementDialog clientId={client.id} triggerLabel="Log Communication" dialogTitle="Log Communication" />
-          <ClientFormDrawer mode="edit" initial={initial} />
-          <DeleteConfirm mutation={DELETE_CLIENT} recordId={client.id} entityLabel="client" redirectTo="/clients" />
+          {canUpdateRecord(lens.orgRole, "Clients", lens.userId, {}) && (
+            <ClientFormDrawer mode="edit" initial={initial} />
+          )}
+          {canDeleteRecord(lens.orgRole, "Clients") && (
+            <DeleteConfirm mutation={DELETE_CLIENT} recordId={client.id} entityLabel="client" redirectTo="/clients" />
+          )}
         </div>
       </div>
 
@@ -231,6 +238,27 @@ export default async function ClientDetailPage({ params }: PageProps) {
               <div>
                 <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Profitability</dt>
                 <dd className="mt-1 text-sm text-zinc-900">{label("Profitability", c.profitability)}</dd>
+              </div>
+            )}
+
+            {c.ebitda != null && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">EBITDA</dt>
+                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(Number(c.ebitda))}</dd>
+              </div>
+            )}
+
+            {c.existingDebt != null && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Existing Debt</dt>
+                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(Number(c.existingDebt))}</dd>
+              </div>
+            )}
+
+            {c.totalAssets != null && (
+              <div>
+                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Total Assets</dt>
+                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(Number(c.totalAssets))}</dd>
               </div>
             )}
 

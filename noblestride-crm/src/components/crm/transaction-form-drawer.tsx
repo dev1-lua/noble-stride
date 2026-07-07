@@ -20,6 +20,8 @@ const EMPTY: Record<string, unknown> = {
   dealStatus: "", dealMilestone: "", financingType: "", maxSellingStake: "",
   targetProfile: "", useOfFunds: "", vdrLink: "", probability: undefined, notes: "",
   referredById: "", serviceProviderIds: [],
+  icFirstApprovalDate: "", icSecondApprovalDate: "",
+  cakComesaStatus: "", cakComesaFiledDate: "", cakComesaApprovedDate: "",
 };
 
 export function TransactionFormDrawer({ mode, initial, clients, users, mandates, partners, serviceProviders, triggerLabel }: {
@@ -98,6 +100,16 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
             <DateField label="Success Fee Paid" value={v.successFeePaidDate as string} onChange={(x) => f.setValue("successFeePaidDate", x)} />
           </div>
           <TextAreaField label="Notes" value={v.notes as string} onChange={(x) => f.setValue("notes", x)} />
+          <p className="pt-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">IC &amp; Regulatory</p>
+          <div className="grid grid-cols-2 gap-3">
+            <DateField label="First IC Approval" value={v.icFirstApprovalDate as string} onChange={(x) => f.setValue("icFirstApprovalDate", x)} />
+            <DateField label="Second IC Approval" value={v.icSecondApprovalDate as string} onChange={(x) => f.setValue("icSecondApprovalDate", x)} />
+          </div>
+          <SelectField label="CAK / COMESA Status" value={v.cakComesaStatus as string} onChange={(x) => f.setValue("cakComesaStatus", x)} options={options("RegulatoryStatus")} />
+          <div className="grid grid-cols-2 gap-3">
+            <DateField label="CAK/COMESA Filed" value={v.cakComesaFiledDate as string} onChange={(x) => f.setValue("cakComesaFiledDate", x)} />
+            <DateField label="CAK/COMESA Approved" value={v.cakComesaApprovedDate as string} onChange={(x) => f.setValue("cakComesaApprovedDate", x)} />
+          </div>
           {f.formError && <p className="text-xs text-rose-600">{f.formError}</p>}
         </div>
       </Drawer>

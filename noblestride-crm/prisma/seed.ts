@@ -753,6 +753,27 @@ async function main() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // §7b  ORG ROLES + IMPACT FLAGS (SPEC §7.2, §3.1)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Org roles (demo lens): mandate leads become Deal Leads, the first two seed
+  // users are Admins, everyone else Team Member.
+  await prisma.user.updateMany({ data: { role: "TeamMember" } });
+  await prisma.user.updateMany({
+    where: { ledMandates: { some: {} } },
+    data: { role: "DealLead" },
+  });
+  const adminEmails = seedData.users.slice(0, 2).map((u) => u.email);
+  await prisma.user.updateMany({ where: { email: { in: adminEmails } }, data: { role: "Admin" } });
+
+  // Impact flags: derive women-led from founder gender so the investor
+  // impact filter has demo data.
+  await prisma.client.updateMany({
+    where: { founderGender: "Female" },
+    data: { womenLed: true },
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
   // §8  SUMMARY
   // ─────────────────────────────────────────────────────────────────────────
 

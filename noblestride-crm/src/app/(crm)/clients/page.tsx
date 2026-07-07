@@ -2,8 +2,11 @@
 import { prisma } from "@/lib/db";
 import { ClientsTable } from "@/components/crm/clients-table";
 import { ClientFormDrawer } from "@/components/crm/client-form-drawer";
+import { getOrgLens } from "@/server/rbac/context";
+import { can } from "@/server/rbac/matrix";
 
 export default async function ClientsPage() {
+  const lens = await getOrgLens();
   const rows = await prisma.client.findMany({
     orderBy: { name: "asc" },
     select: {
@@ -29,7 +32,7 @@ export default async function ClientsPage() {
           <h1 className="text-2xl font-bold text-zinc-900">Clients</h1>
           <p className="mt-1 text-sm text-zinc-500">{clients.length} portfolio companies</p>
         </div>
-        <ClientFormDrawer mode="create" />
+        {can(lens.orgRole, "Clients", "C") && <ClientFormDrawer mode="create" />}
       </div>
       <ClientsTable clients={clients} />
     </div>

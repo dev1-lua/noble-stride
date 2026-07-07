@@ -45,6 +45,10 @@ import {
   CommDirectionEnum,
   TaskStatusEnum,
   TaskSourceEnum,
+  RegulatoryStatusEnum,
+  DDTrackEnum,
+  DDStatusEnum,
+  OrgRoleEnum,
 } from "./builder";
 import { daysInStage } from "@/server/domain/metrics";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
@@ -59,6 +63,7 @@ export const UserRef = builder.prismaObject("User", {
     jobTitle: t.exposeString("jobTitle", { nullable: true }),
     avatarColor: t.exposeString("avatarColor", { nullable: true }),
     isActive: t.exposeBoolean("isActive"),
+    role: t.field({ type: OrgRoleEnum, resolve: (u) => u.role }),
     createdAt: t.field({ type: "DateTime", resolve: (u) => u.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (u) => u.updatedAt }),
     // Relations — tasks excluded per brief
@@ -287,6 +292,12 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     vdrLink: t.exposeString("vdrLink", { nullable: true }),
     probability: t.exposeInt("probability", { nullable: true }),
     notes: t.exposeString("notes", { nullable: true }),
+    // §3.2 IC approvals + CAK/COMESA regulatory tracking
+    icFirstApprovalDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.icFirstApprovalDate }),
+    icSecondApprovalDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.icSecondApprovalDate }),
+    cakComesaStatus: t.field({ type: RegulatoryStatusEnum, resolve: (tx) => tx.cakComesaStatus }),
+    cakComesaFiledDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.cakComesaFiledDate }),
+    cakComesaApprovedDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.cakComesaApprovedDate }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (tx) => tx.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (tx) => tx.updatedAt }),
@@ -305,6 +316,7 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     engagements: t.relation("engagements"),
     activities: t.relation("activities"),
     serviceProviders: t.relation("serviceProviders"),
+    ddTracks: t.relation("ddTracks"),
     // Derived counts
     investorsContacted: t.relationCount("engagements"),
     activeConversations: t.int({
@@ -519,5 +531,28 @@ export const EngagementMilestoneRef = builder.prismaObject("EngagementMilestone"
     key: t.field({ type: MilestoneKeyEnum, resolve: (m) => m.key }),
     completedAt: t.field({ type: "DateTime", resolve: (m) => m.completedAt }),
     notes: t.exposeString("notes", { nullable: true }),
+  }),
+});
+
+// ─── DueDiligenceTrack ───────────────────────────────────────────────────────
+
+export const DueDiligenceTrackRef = builder.prismaObject("DueDiligenceTrack", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    track: t.field({ type: DDTrackEnum, resolve: (d) => d.track }),
+    status: t.field({ type: DDStatusEnum, resolve: (d) => d.status }),
+    startedAt: t.field({ type: "DateTime", nullable: true, resolve: (d) => d.startedAt }),
+    completedAt: t.field({ type: "DateTime", nullable: true, resolve: (d) => d.completedAt }),
+    notes: t.exposeString("notes", { nullable: true }),
+    createdAt: t.field({ type: "DateTime", resolve: (d) => d.createdAt }),
+    updatedAt: t.field({ type: "DateTime", resolve: (d) => d.updatedAt }),
+    // FK scalars
+    transactionId: t.exposeString("transactionId"),
+    ownerId: t.exposeString("ownerId", { nullable: true }),
+    serviceProviderId: t.exposeString("serviceProviderId", { nullable: true }),
+    // Relations
+    transaction: t.relation("transaction"),
+    owner: t.relation("owner", { nullable: true }),
+    serviceProvider: t.relation("serviceProvider", { nullable: true }),
   }),
 });

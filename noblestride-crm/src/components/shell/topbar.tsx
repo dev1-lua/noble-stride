@@ -77,9 +77,11 @@ function derivePageMeta(pathname: string): PageMeta {
 export function Topbar({
   investors = [],
   partners = [],
+  users = [],
 }: {
   investors?: ViewpointOption[];
   partners?: ViewpointOption[];
+  users?: ViewpointOption[];
 }) {
   const pathname = usePathname();
   const { title, subtitle } = derivePageMeta(pathname);
@@ -101,8 +103,8 @@ export function Topbar({
 
       {/* Right controls */}
       <div className="flex flex-shrink-0 items-center gap-3">
-        {/* View-as switcher (demo lens, spec §6) */}
-        <ViewpointSwitcher investors={investors} partners={partners} />
+        {/* View-as switcher (demo lens, spec §6 + §7.2 org roles) */}
+        <ViewpointSwitcher investors={investors} partners={partners} users={users} />
 
         {/* Sign out — clears demo viewpoint cookie, returns to public landing */}
         <Link

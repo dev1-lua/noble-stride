@@ -1,13 +1,13 @@
 // GraphQL mutations for the NobleStride Capital CRM.
 // Thin resolvers — each is a one-line call to the matching service.
 
-import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum, MilestoneKeyEnum } from "./builder";
+import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum, MilestoneKeyEnum, DDTrackEnum } from "./builder";
 import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
@@ -18,6 +18,7 @@ import { createServiceProvider, updateServiceProvider, deleteServiceProvider } f
 import { createDocument, updateDocument, deleteDocument } from "@/server/services/documents";
 import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
+import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -280,5 +281,17 @@ builder.mutationFields((t) => ({
       key: t.arg({ type: MilestoneKeyEnum, required: true }),
     },
     resolve: (_r, args) => unrecordMilestone(String(args.engagementId), args.key),
+  }),
+
+  // ── DueDiligenceTrack ──
+  upsertDueDiligenceTrack: t.prismaField({
+    type: "DueDiligenceTrack", nullable: false,
+    args: { input: t.arg({ type: DueDiligenceTrackInput, required: true }) },
+    resolve: (_q, _r, args) => upsertDDTrack(args.input as never),
+  }),
+  deleteDueDiligenceTrack: t.prismaField({
+    type: "DueDiligenceTrack", nullable: false,
+    args: { transactionId: t.arg.id({ required: true }), track: t.arg({ type: DDTrackEnum, required: true }) },
+    resolve: (_q, _r, args) => deleteDDTrack(String(args.transactionId), args.track),
   }),
 }));
