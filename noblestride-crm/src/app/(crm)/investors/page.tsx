@@ -55,8 +55,9 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
       {/* Segment counters row */}
       <SegmentRow segments={segments} />
 
-      {/* Onboarding review queue callout — only shown when registrations are pending */}
-      {segments.pendingReview > 0 && (
+      {/* Onboarding review queue callout — amber when registrations are
+          pending, muted otherwise so the queue stays discoverable at zero */}
+      {segments.pendingReview > 0 ? (
         <a
           href="/investors?onboarding=PendingReview"
           className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 hover:bg-amber-100"
@@ -64,6 +65,14 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
           <span>
             <strong>{segments.pendingReview}</strong> investor registration{segments.pendingReview === 1 ? "" : "s"} awaiting review
           </span>
+          <span className="font-medium">Review queue →</span>
+        </a>
+      ) : (
+        <a
+          href="/investors?onboarding=PendingReview"
+          className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-500 hover:bg-zinc-100"
+        >
+          <span>No investor registrations awaiting review</span>
           <span className="font-medium">Review queue →</span>
         </a>
       )}
