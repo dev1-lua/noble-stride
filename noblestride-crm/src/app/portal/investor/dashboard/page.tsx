@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function InvestorDashboardPage() {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
   const data = await loadInvestorDashboard(prisma, vp.recordId);

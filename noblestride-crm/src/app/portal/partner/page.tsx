@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PartnerPortalPage() {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "partner" || !vp.recordId) redirect("/dashboard");
 
   const view = await loadPartnerPortalData(prisma, vp.recordId);

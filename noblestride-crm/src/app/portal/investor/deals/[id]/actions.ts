@@ -13,6 +13,7 @@ import { notify } from "@/server/services/notifications";
 
 export async function expressInterest(formData: FormData): Promise<void> {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
   const investorId = vp.recordId as string;
 

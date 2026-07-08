@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { registrationSchema } from "@/lib/schemas/registration";
+import { registrationSchema, registrationAccountSchema } from "@/lib/schemas/registration";
 
 const valid = {
   fundName: "Acme Capital",
@@ -37,5 +37,27 @@ describe("registrationSchema", () => {
 
   it("rejects an unknown deal-size band", () => {
     expect(registrationSchema.safeParse({ ...valid, dealSizeBand: "gt50m" }).success).toBe(false);
+  });
+});
+
+describe("registrationAccountSchema", () => {
+  it("requires matching passwords meeting policy", () => {
+    expect(
+      registrationAccountSchema.safeParse({ ...valid, password: "short", confirmPassword: "short" }).success,
+    ).toBe(false);
+    expect(
+      registrationAccountSchema.safeParse({
+        ...valid,
+        password: "long-enough-pass-1",
+        confirmPassword: "different-pass-1",
+      }).success,
+    ).toBe(false);
+    expect(
+      registrationAccountSchema.safeParse({
+        ...valid,
+        password: "long-enough-pass-1",
+        confirmPassword: "long-enough-pass-1",
+      }).success,
+    ).toBe(true);
   });
 });

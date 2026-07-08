@@ -60,6 +60,7 @@ export default async function InvestorDealPage({
   searchParams: Promise<{ interest?: string }>;
 }) {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
   const { id } = await params;

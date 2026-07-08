@@ -1,5 +1,6 @@
 // Viewpoint = which lens the CRM is being viewed through (design spec §6).
-// Demo construct: carried in a cookie, not real authentication.
+// The ns_viewpoint cookie is now a signed admin "view as" impersonation lens
+// (see src/server/auth/impersonation.ts) — not the caller's real identity.
 
 export type ViewpointRole = "admin" | "investor" | "partner";
 
@@ -24,8 +25,8 @@ export const VIEWPOINT_COOKIE = "ns_viewpoint";
 
 export const ADMIN_VIEWPOINT: Viewpoint = { role: "admin", orgRole: "Admin" };
 
-export function parseViewpoint(raw: string | undefined | null): Viewpoint {
-  if (!raw) return ADMIN_VIEWPOINT;
+export function parseViewpoint(raw: string | undefined | null): Viewpoint | null {
+  if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as {
       role?: string;
@@ -35,18 +36,19 @@ export function parseViewpoint(raw: string | undefined | null): Viewpoint {
       impersonating?: boolean;
     };
     if (parsed.role === "investor" || parsed.role === "partner") {
-      if (!parsed.recordId) return ADMIN_VIEWPOINT;
+      if (!parsed.recordId) return null;
       const vp: Viewpoint = { role: parsed.role, recordId: parsed.recordId };
       if (parsed.impersonating === true) vp.impersonating = true;
       return vp;
     }
+    if (parsed.role !== "admin") return null;
     const orgRole = ORG_ROLES.includes(parsed.orgRole as OrgRoleLens)
       ? (parsed.orgRole as OrgRoleLens)
       : "Admin";
     if (orgRole === "Admin") return ADMIN_VIEWPOINT;
     return { role: "admin", orgRole, userId: parsed.userId };
   } catch {
-    return ADMIN_VIEWPOINT;
+    return null;
   }
 }
 

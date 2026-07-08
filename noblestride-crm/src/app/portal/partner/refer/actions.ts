@@ -9,6 +9,7 @@ import { submitReferral } from "./submit-referral";
 
 export async function submitReferralAction(formData: FormData): Promise<void> {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "partner" || !vp.recordId) redirect("/dashboard");
 
   const companyName = String(formData.get("companyName") ?? "").trim();

@@ -89,6 +89,7 @@ export default async function FundProfilePage({
   searchParams: Promise<{ saved?: string }>;
 }) {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
   const { saved } = await searchParams;

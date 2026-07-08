@@ -1,6 +1,6 @@
 import { describe, it, expect, afterAll } from "vitest";
 import { prisma } from "@/lib/db";
-import { registerInvestor, confirmRegistrationOtp, DEMO_OTP, RegistrationError } from "@/server/onboarding/register-investor";
+import { registerInvestorWithAccount, RegistrationError } from "@/server/onboarding/register-investor";
 import { greylistInvestor } from "@/server/services/investors";
 
 async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
@@ -14,19 +14,23 @@ async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 const UNIQ = `smoke-${Date.now()}`;
+const FIXTURE_EMAIL = `ada@${UNIQ}.example.com`;
 const input = {
   fundName: `Smoke Fund ${UNIQ}`,
   contactPerson: "Ada Lovelace",
-  email: `ada@${UNIQ}.example.com`,
+  email: FIXTURE_EMAIL,
   phone: "+254711111111",
   investorType: "PrivateEquity",
   sectorPreference: ["Technology"],
   dealType: "Equity",
   dealSizeBand: "1m-5m",
+  password: "long-enough-pass-1",
+  confirmPassword: "long-enough-pass-1",
 };
 
 afterAll(async () => {
   await withDb(async () => {
+    await prisma.authAccount.deleteMany({ where: { email: { contains: UNIQ } } });
     await prisma.activity.deleteMany({ where: { investor: { name: { contains: UNIQ } } } });
     await prisma.person.deleteMany({ where: { investor: { name: { contains: UNIQ } } } });
     await prisma.blockedRegistration.deleteMany({ where: { reason: { contains: UNIQ } } });
@@ -35,10 +39,10 @@ afterAll(async () => {
   });
 });
 
-describe("registerInvestor (smoke)", () => {
-  it("creates a PendingReview investor with primary contact + activity", async () => {
+describe("registerInvestorWithAccount (smoke)", () => {
+  it("creates a PendingReview investor with primary contact + activity + PENDING auth account", async () => {
     const out = await withDb(async () => {
-      const investor = await registerInvestor(input);
+      const investor = await registerInvestorWithAccount(input);
       expect(investor.onboardingStatus).toBe("PendingReview");
       expect(investor.registeredAt).toBeInstanceOf(Date);
       expect(investor.createdSource).toBe("API");
@@ -53,6 +57,12 @@ describe("registerInvestor (smoke)", () => {
 
       const activity = await prisma.activity.findFirst({ where: { investorId: investor.id } });
       expect(activity?.subject).toContain("self-registered");
+
+      const account = await prisma.authAccount.findUnique({ where: { email: FIXTURE_EMAIL.toLowerCase() } });
+      expect(account?.status).toBe("PENDING");
+      expect(account?.kind).toBe("INVESTOR");
+      expect(account?.personId).toBe(contact?.id);
+      expect(account?.passwordHash).not.toBe(input.password);
       return true;
     });
     if (out === null) return; // DB down — skip
@@ -60,31 +70,20 @@ describe("registerInvestor (smoke)", () => {
 
   it("rejects a duplicate contact email", async () => {
     const out = await withDb(async () => {
-      await expect(registerInvestor({ ...input, fundName: `Other ${UNIQ}` })).rejects.toThrow(RegistrationError);
-      return true;
-    });
-    if (out === null) return; // DB down — skip
-  });
-
-  it("confirmRegistrationOtp stamps verification with the demo code", async () => {
-    const out = await withDb(async () => {
-      const investor = await prisma.investor.findFirstOrThrow({ where: { name: { contains: UNIQ } } });
-      await expect(confirmRegistrationOtp(investor.id, "123456", DEMO_OTP)).rejects.toThrow(RegistrationError);
-      await confirmRegistrationOtp(investor.id, DEMO_OTP, DEMO_OTP);
-      const updated = await prisma.investor.findUniqueOrThrow({ where: { id: investor.id } });
-      expect(updated.emailVerifiedAt).toBeInstanceOf(Date);
-      expect(updated.phoneVerifiedAt).toBeInstanceOf(Date);
+      await expect(
+        registerInvestorWithAccount({ ...input, fundName: `Other ${UNIQ}` }),
+      ).rejects.toThrow(RegistrationError);
       return true;
     });
     if (out === null) return; // DB down — skip
   });
 });
 
-describe("registerInvestor — greylist domain block", () => {
+describe("registerInvestorWithAccount — greylist domain block", () => {
   it("blocks re-registration on the whole domain after a corporate-email greylist", async () => {
     const out = await withDb(async () => {
       const domain = `brokers-${UNIQ}.example.com`;
-      const first = await registerInvestor({
+      const first = await registerInvestorWithAccount({
         ...input,
         fundName: `Broker One ${UNIQ}`,
         email: `jane@${domain}`,
@@ -93,7 +92,7 @@ describe("registerInvestor — greylist domain block", () => {
 
       // a DIFFERENT address on the SAME domain is now barred at registration
       await expect(
-        registerInvestor({ ...input, fundName: `Broker Two ${UNIQ}`, email: `bob@${domain}` }),
+        registerInvestorWithAccount({ ...input, fundName: `Broker Two ${UNIQ}`, email: `bob@${domain}` }),
       ).rejects.toThrow(RegistrationError);
       return true;
     });

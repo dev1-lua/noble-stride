@@ -31,6 +31,7 @@ import type {
 // so import the disbursement helpers via a relative path (single source of truth).
 import { amountPending, deriveYearQuarter } from "../src/server/domain/disbursement";
 import { stageRequiresNda } from "../src/server/domain/nda-guard";
+import { hashPassword } from "../src/server/auth/password";
 import seedData from "./seed-data.json";
 
 const prisma = new PrismaClient();
@@ -154,6 +155,9 @@ async function main() {
   // ─────────────────────────────────────────────────────────────────────────
   // §1  IDEMPOTENCY — delete child → parent
   // ─────────────────────────────────────────────────────────────────────────
+  // AuthAccount FKs to User/Person — delete first so no FK dangles when those
+  // are recreated below (cascades AuthSession/AuthToken at the DB level).
+  await prisma.authAccount.deleteMany();
   // Documents FK to transactions/clients/investors/users — delete first.
   await prisma.document.deleteMany();
   await prisma.activity.deleteMany();
@@ -173,19 +177,31 @@ async function main() {
   // §3  INSERT REAL ENTITIES
   // ─────────────────────────────────────────────────────────────────────────
 
-  // USERS
+  // USERS — real-auth role bootstrap (spec §11): Evans & Solomon are the
+  // full-access admins; "Deal Lead" job titles map to DealLead; rest TeamMember.
+  const ADMIN_EMAILS = new Set(["evans@noblestride.capital", "solomon@noblestride.capital"]);
+  const seedPassword = process.env.SEED_USER_PASSWORD ?? "NobleStride!Demo2026";
+  const seedPasswordHash = await hashPassword(seedPassword);
+
   const usersByFirst = new Map<string, string>();
   for (const u of seedData.users) {
+    const email = u.email.toLowerCase();
+    const role = ADMIN_EMAILS.has(email) ? "Admin" : u.jobTitle === "Deal Lead" ? "DealLead" : "TeamMember";
     const user = await prisma.user.create({
       data: {
         name: u.name,
         email: u.email,
         jobTitle: u.jobTitle,
         avatarColor: u.avatarColor,
+        role,
       },
+    });
+    await prisma.authAccount.create({
+      data: { email, passwordHash: seedPasswordHash, kind: "INTERNAL", status: "ACTIVE", userId: user.id },
     });
     usersByFirst.set(u.name.split(" ")[0].toLowerCase(), user.id);
   }
+  console.log(`Seeded ${seedData.users.length} internal accounts (password: ${seedPassword})`);
 
   // INVESTORS
   const investors: Array<{
@@ -230,6 +246,28 @@ async function main() {
       ticketMin: inv.ticketMin ?? null,
       ticketMax: inv.ticketMax ?? null,
     });
+  }
+
+  // One ACTIVE investor account so the portal is directly loggable-into (spec §11).
+  // Uses the first contact with an email of the first Approved investor.
+  const demoContact = await prisma.person.findFirst({
+    where: { email: { not: null }, investor: { onboardingStatus: "Approved" } },
+    orderBy: { createdAt: "asc" },
+    include: { investor: { select: { name: true } } },
+  });
+  if (demoContact?.email) {
+    await prisma.authAccount.create({
+      data: {
+        email: demoContact.email.toLowerCase(),
+        passwordHash: seedPasswordHash,
+        kind: "INVESTOR",
+        status: "ACTIVE",
+        personId: demoContact.id,
+      },
+    });
+    console.log(`Seeded investor account: ${demoContact.email} (${demoContact.investor?.name})`);
+  } else {
+    console.log("No demo investor account seeded: no Person with an email found on an Approved investor.");
   }
 
   // PARTNERS
@@ -764,18 +802,12 @@ async function main() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // §7b  ORG ROLES + IMPACT FLAGS (SPEC §7.2, §3.1)
+  // §7b  IMPACT FLAGS (SPEC §3.1)
+  // Org roles are now set at USER creation time (real-auth role bootstrap,
+  // spec §11) — evans@/solomon@ = Admin, jobTitle "Deal Lead" = DealLead,
+  // rest TeamMember. Do NOT re-derive roles here (the old ledMandates/
+  // first-two-users heuristic below was superseded and would clobber that).
   // ─────────────────────────────────────────────────────────────────────────
-
-  // Org roles (demo lens): mandate leads become Deal Leads, the first two seed
-  // users are Admins, everyone else Team Member.
-  await prisma.user.updateMany({ data: { role: "TeamMember" } });
-  await prisma.user.updateMany({
-    where: { ledMandates: { some: {} } },
-    data: { role: "DealLead" },
-  });
-  const adminEmails = seedData.users.slice(0, 2).map((u) => u.email);
-  await prisma.user.updateMany({ where: { email: { in: adminEmails } }, data: { role: "Admin" } });
 
   // Impact flags: derive women-led from founder gender so the investor
   // impact filter has demo data.

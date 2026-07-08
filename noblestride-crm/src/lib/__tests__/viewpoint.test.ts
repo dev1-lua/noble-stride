@@ -20,8 +20,16 @@ describe("viewpoint org-role lens (§7.2 demo lens)", () => {
       role: "investor",
       recordId: "i1",
     });
-    expect(parseViewpoint(JSON.stringify({ role: "investor" }))).toEqual(ADMIN_VIEWPOINT);
-    expect(parseViewpoint("not-json")).toEqual(ADMIN_VIEWPOINT);
+    expect(parseViewpoint(JSON.stringify({ role: "investor" }))).toBeNull();
+    expect(parseViewpoint("not-json")).toBeNull();
+  });
+
+  it("returns null for missing or malformed input (real-auth: no default identity)", () => {
+    expect(parseViewpoint(undefined)).toBeNull();
+    expect(parseViewpoint(null)).toBeNull();
+    expect(parseViewpoint("")).toBeNull();
+    expect(parseViewpoint("not-json")).toBeNull();
+    expect(parseViewpoint(JSON.stringify({ role: "investor" }))).toBeNull(); // external without recordId
   });
 });
 

@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { Search, Bell } from "lucide-react";
 import { Avatar } from "@/components/ui";
 import { deriveInvestorPageMeta } from "./investor-portal-nav";
+import { logoutAction } from "@/app/logout/actions";
 
 export function InvestorTopbar({ investorName }: { investorName: string }) {
   const pathname = usePathname();
@@ -39,6 +40,16 @@ export function InvestorTopbar({ investorName }: { investorName: string }) {
         >
           <Bell className="h-4 w-4" />
         </button>
+
+        {/* Sign out — real logout: revokes the DB session, clears cookies */}
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            className="rounded border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)]"
+          >
+            Sign out
+          </button>
+        </form>
 
         <Avatar name={investorName} size="sm" color="bg-emerald-600" />
       </div>

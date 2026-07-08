@@ -21,6 +21,7 @@ const DATE_FMT = new Intl.DateTimeFormat("en-GB", {
 
 export default async function InvestorPipelinePage() {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
   const items = await loadInvestorPipeline(prisma, vp.recordId);

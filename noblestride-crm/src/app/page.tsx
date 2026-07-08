@@ -2,21 +2,19 @@
 // Internal-first front door: NobleStride's internal team (admins + internal
 // members) signs in to the workspace; investors get small secondary
 // "Login as an investor" / "Sign up as an investor" entry points.
-// A visitor with a viewpoint cookie is forwarded home (the cookie's PRESENCE
-// is the signed-in signal — a missing cookie parses as admin, so we check the
-// raw cookie, not the parsed role).
+// A signed-in visitor is forwarded to their viewpoint's home.
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { ArrowRight } from "lucide-react";
-import { parseViewpoint, viewpointHome, VIEWPOINT_COOKIE } from "@/lib/viewpoint";
+import { viewpointHome } from "@/lib/viewpoint";
+import { getViewpoint } from "@/server/viewpoint";
 
 export const dynamic = "force-dynamic";
 
 export default async function LandingPage() {
-  const raw = (await cookies()).get(VIEWPOINT_COOKIE)?.value;
-  if (raw) redirect(viewpointHome(parseViewpoint(raw)));
+  const vp = await getViewpoint();
+  if (vp) redirect(viewpointHome(vp));
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--bg-secondary)]">

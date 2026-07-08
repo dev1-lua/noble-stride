@@ -13,6 +13,7 @@ import {
   Scale,
   FileText,
   ListChecks,
+  UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -29,6 +30,15 @@ const MAIN_NAV = [
   { href: "/partners", label: "Partners", Icon: Building2, iconColor: "text-[var(--t-tag-text-violet)]" },
   { href: "/service-providers", label: "Service Providers", Icon: Scale, iconColor: "text-[var(--t-tag-text-gray)]" },
 ];
+
+// Admin-only — rendered only when Sidebar receives isAdmin (real role, never
+// the impersonation lens; see requireRealAdmin in settings/users/actions.ts).
+const ADMIN_NAV_ITEM = {
+  href: "/settings/users",
+  label: "Users",
+  Icon: UserCog,
+  iconColor: "text-[var(--t-tag-text-gray)]",
+};
 
 // ─── Brand mark ───────────────────────────────────────────────────────────────
 
@@ -87,8 +97,15 @@ export function NavItem({ href, label, Icon, active, badge, iconColor }: NavItem
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
-export function Sidebar({ pendingReview = 0 }: { pendingReview?: number }) {
+export function Sidebar({
+  pendingReview = 0,
+  isAdmin = false,
+}: {
+  pendingReview?: number;
+  isAdmin?: boolean;
+}) {
   const pathname = usePathname();
+  const navItems = isAdmin ? [...MAIN_NAV, ADMIN_NAV_ITEM] : MAIN_NAV;
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + "/");
@@ -107,7 +124,7 @@ export function Sidebar({ pendingReview = 0 }: { pendingReview?: number }) {
         </p>
 
         <nav className="flex flex-col gap-0.5">
-          {MAIN_NAV.map(({ href, label, Icon, iconColor }) => (
+          {navItems.map(({ href, label, Icon, iconColor }) => (
             <NavItem
               key={href}
               href={href}

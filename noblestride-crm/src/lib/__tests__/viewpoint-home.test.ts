@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { viewpointHome, parseViewpoint } from "@/lib/viewpoint";
+import { ADMIN_VIEWPOINT, viewpointHome, parseViewpoint } from "@/lib/viewpoint";
 
 describe("viewpointHome", () => {
   it("routes admin to the CRM dashboard", () => {
@@ -11,7 +11,8 @@ describe("viewpointHome", () => {
     expect(viewpointHome({ role: "partner", recordId: "y" })).toBe("/portal/partner");
   });
 
-  it("composes with parseViewpoint: missing cookie parses as admin → dashboard", () => {
-    expect(viewpointHome(parseViewpoint(undefined))).toBe("/dashboard");
+  it("composes with parseViewpoint: missing cookie parses as null, no default identity (real-auth)", () => {
+    expect(parseViewpoint(undefined)).toBeNull();
+    expect(viewpointHome(parseViewpoint(undefined) ?? ADMIN_VIEWPOINT)).toBe("/dashboard");
   });
 });

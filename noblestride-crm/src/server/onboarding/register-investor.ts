@@ -8,13 +8,11 @@
 
 import type { Investor } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { registrationSchema } from "@/lib/schemas/registration";
+import { registrationAccountSchema } from "@/lib/schemas/registration";
 import { ticketBand } from "@/lib/ticket-bands";
 import { emailDomain } from "@/lib/corporate-email";
 import { notify, adminUserIds } from "@/server/services/notifications";
-
-/** DEMO ONLY — static OTP; no email/SMS is sent (see repo:memory/remaining-tasks.md). */
-export const DEMO_OTP = "000000";
+import { hashPassword } from "@/server/auth/password";
 
 export class RegistrationError extends Error {}
 
@@ -37,8 +35,14 @@ export async function isRegistrationBlocked(email: string): Promise<boolean> {
   return hit !== null;
 }
 
-export async function registerInvestor(raw: unknown): Promise<Investor> {
-  const input = registrationSchema.parse(raw);
+/**
+ * Registers a new fund/investor: creates the Investor (PendingReview), its
+ * primary-contact Person, an activity note, and a PENDING AuthAccount with a
+ * hashed password — the contact can sign in once the team approves.
+ */
+export async function registerInvestorWithAccount(raw: unknown): Promise<Investor> {
+  const input = registrationAccountSchema.parse(raw);
+  const email = input.email.toLowerCase();
 
   if (await isRegistrationBlocked(input.email)) {
     throw new RegistrationError(
@@ -53,8 +57,14 @@ export async function registerInvestor(raw: unknown): Promise<Investor> {
     throw new RegistrationError("A registration with this contact email already exists. Contact NobleStride if you need access.");
   }
 
+  const existingAccount = await prisma.authAccount.findUnique({ where: { email }, select: { id: true } });
+  if (existingAccount) {
+    throw new RegistrationError("A registration with this contact email already exists. Contact NobleStride if you need access.");
+  }
+
   const band = ticketBand(input.dealSizeBand);
   const [firstName, ...restName] = input.contactPerson.split(/\s+/);
+  const passwordHash = await hashPassword(input.password);
 
   const investor = await prisma.$transaction(async (tx) => {
     const investor = await tx.investor.create({
@@ -70,7 +80,7 @@ export async function registerInvestor(raw: unknown): Promise<Investor> {
         createdSource: "API",
       },
     });
-    await tx.person.create({
+    const person = await tx.person.create({
       data: {
         firstName,
         lastName: restName.join(" ") || null,
@@ -78,6 +88,15 @@ export async function registerInvestor(raw: unknown): Promise<Investor> {
         phone: input.phone,
         isPrimaryContact: true,
         investorId: investor.id,
+      },
+    });
+    await tx.authAccount.create({
+      data: {
+        email,
+        passwordHash,
+        kind: "INVESTOR",
+        status: "PENDING",
+        personId: person.id,
       },
     });
     await tx.activity.create({
@@ -109,19 +128,4 @@ export async function registerInvestor(raw: unknown): Promise<Investor> {
   }
 
   return investor;
-}
-
-/**
- * DEMO 2FA: both codes must equal DEMO_OTP; stamps email/phone verification.
- * Only meaningful while the registration is PendingReview.
- */
-export async function confirmRegistrationOtp(investorId: string, emailCode: string, phoneCode: string): Promise<void> {
-  if (emailCode.trim() !== DEMO_OTP || phoneCode.trim() !== DEMO_OTP) {
-    throw new RegistrationError("Invalid verification code.");
-  }
-  const now = new Date();
-  await prisma.investor.update({
-    where: { id: investorId },
-    data: { emailVerifiedAt: now, phoneVerifiedAt: now },
-  });
 }

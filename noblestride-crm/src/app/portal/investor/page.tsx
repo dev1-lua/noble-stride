@@ -19,6 +19,7 @@ export default async function InvestorPortalPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
   const filters = parseOpportunityFilters(await searchParams);
