@@ -30,9 +30,9 @@ const STEP_TITLES = [
   "Review your details",
 ];
 
-export default function RegisterWizard() {
+export default function RegisterWizard({ initialEmail = "" }: { initialEmail?: string }) {
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState<WizardValues>(EMPTY_WIZARD_VALUES);
+  const [values, setValues] = useState<WizardValues>({ ...EMPTY_WIZARD_VALUES, email: initialEmail });
   const [errors, setErrors] = useState<Partial<Record<keyof WizardValues, string>>>({});
   const [serverState, submitAction, isPending] = useActionState<WizardActionState, FormData>(
     registerWizardAction,
@@ -255,7 +255,33 @@ export default function RegisterWizard() {
               )}
 
               {isReview && (
-                <Review values={values} onEdit={goTo} serverError={serverState.error} />
+                <>
+                  <Review values={values} onEdit={goTo} serverError={serverState.error} />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Create a password">
+                      <input
+                        type="password"
+                        name="password"
+                        form="register-wizard-submit"
+                        required
+                        minLength={10}
+                        placeholder="At least 10 characters"
+                        className={inputClass}
+                      />
+                    </Field>
+                    <Field label="Confirm password">
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        form="register-wizard-submit"
+                        required
+                        minLength={10}
+                        placeholder="Re-enter your password"
+                        className={inputClass}
+                      />
+                    </Field>
+                  </div>
+                </>
               )}
             </div>
 
@@ -279,7 +305,7 @@ export default function RegisterWizard() {
                   Next →
                 </button>
               ) : (
-                <form action={submitAction}>
+                <form id="register-wizard-submit" action={submitAction}>
                   <input type="hidden" name="fundName" value={values.fundName} />
                   <input type="hidden" name="contactPerson" value={values.contactPerson} />
                   <input type="hidden" name="email" value={values.email} />

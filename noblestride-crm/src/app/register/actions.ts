@@ -1,54 +1,98 @@
 "use server";
-// Server actions for the public /register flow. Thin wrappers over the
-// testable core in src/server/onboarding/register-investor.ts.
-// Errors round-trip via query params (same convention as portal/partner/refer).
+// Server actions for the public /register flow (real-auth spec §10).
+// Email-first fork: internal → staff signup; existing investor contact →
+// password-only account request; new investor → wizard; blocked → error.
 
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
-import { registerInvestor, confirmRegistrationOtp, RegistrationError } from "@/server/onboarding/register-investor";
-
-export async function registerAction(formData: FormData): Promise<void> {
-  const raw = {
-    fundName: String(formData.get("fundName") ?? "").trim(),
-    contactPerson: String(formData.get("contactPerson") ?? "").trim(),
-    email: String(formData.get("email") ?? "").trim(),
-    phone: String(formData.get("phone") ?? "").trim(),
-    investorType: String(formData.get("investorType") ?? "").trim(),
-    sectorPreference: formData.getAll("sectorPreference").map(String),
-    dealType: String(formData.get("dealType") ?? "").trim(),
-    dealSizeBand: String(formData.get("dealSizeBand") ?? "").trim(),
-  };
-
-  let investorId: string;
-  try {
-    const investor = await registerInvestor(raw);
-    investorId = investor.id;
-  } catch (err) {
-    if (err instanceof ZodError) {
-      const first = err.issues[0];
-      redirect(`/register?error=${encodeURIComponent(first?.message ?? "Check the form and try again")}`);
-    }
-    if (err instanceof RegistrationError) {
-      redirect(`/register?error=${encodeURIComponent(err.message)}`);
-    }
-    throw err;
-  }
-  redirect(`/register?step=verify&rid=${investorId}`);
-}
+import { headers } from "next/headers";
+import { prisma } from "@/lib/db";
+import { classifyEmailForSignup, normalizeEmail } from "@/server/auth/guardrails";
+import { AuthFlowError, signupExistingContact, signupInternal } from "@/server/auth/accounts";
+import { registerInvestorWithAccount, RegistrationError } from "@/server/onboarding/register-investor";
+import { rateLimit } from "@/server/auth/rate-limit";
 
 export interface WizardActionState {
   error?: string;
 }
 
-/**
- * Wizard submit: same core as registerAction, but returns an inline error
- * (so the client wizard keeps its state) instead of redirecting to ?error=.
- * Redirects to the OTP step on success.
- */
-export async function registerWizardAction(
-  _prev: WizardActionState,
-  formData: FormData,
-): Promise<WizardActionState> {
+async function checkRate(scope: string): Promise<boolean> {
+  const hdrs = await headers();
+  const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+  return rateLimit(`${scope}:${ip}`, { max: 10, windowMs: 10 * 60 * 1000 });
+}
+
+/** Step 0: classify the email and route to the right path. */
+export async function routeEmailAction(formData: FormData): Promise<void> {
+  const email = normalizeEmail(String(formData.get("email") ?? ""));
+  if (!email) redirect("/register");
+
+  const cls = await classifyEmailForSignup(email);
+  if (cls.kind === "blocked") {
+    const msg =
+      cls.reason === "free-provider"
+        ? "Please use your official company email address — free providers (Gmail, Yahoo, …) are not accepted."
+        : cls.reason === "greylisted"
+          ? "This email is not eligible to register. Contact NobleStride if you believe this is an error."
+          : "Enter a valid email address.";
+    redirect(`/register?error=${encodeURIComponent(msg)}&email=${encodeURIComponent(email)}`);
+  }
+  if (cls.kind === "internal") {
+    redirect(`/register?path=internal&email=${encodeURIComponent(email)}`);
+  }
+
+  const contact = await prisma.person.findFirst({
+    where: { email: { equals: email, mode: "insensitive" }, investorId: { not: null } },
+    select: { id: true },
+  });
+  redirect(
+    contact
+      ? `/register?path=contact&email=${encodeURIComponent(email)}`
+      : `/register?path=fund&email=${encodeURIComponent(email)}`,
+  );
+}
+
+/** Internal staff signup. */
+export async function internalSignupAction(_prev: WizardActionState, formData: FormData): Promise<WizardActionState> {
+  if (!(await checkRate("signup"))) return { error: "Too many attempts — try again later." };
+  const password = String(formData.get("password") ?? "");
+  if (password !== String(formData.get("confirm") ?? "")) return { error: "Passwords do not match." };
+
+  let target: string;
+  try {
+    const res = await signupInternal({
+      email: String(formData.get("email") ?? ""),
+      name: String(formData.get("name") ?? "").trim(),
+      jobTitle: String(formData.get("jobTitle") ?? "").trim() || undefined,
+      password,
+    });
+    target =
+      res.status === "active" ? `/login?error=${encodeURIComponent("Account created — sign in.")}` : "/register?step=pending";
+  } catch (err) {
+    if (err instanceof AuthFlowError) return { error: err.message };
+    throw err;
+  }
+  redirect(target);
+}
+
+/** Existing investor-contact account request. */
+export async function contactSignupAction(_prev: WizardActionState, formData: FormData): Promise<WizardActionState> {
+  if (!(await checkRate("signup"))) return { error: "Too many attempts — try again later." };
+  const password = String(formData.get("password") ?? "");
+  if (password !== String(formData.get("confirm") ?? "")) return { error: "Passwords do not match." };
+
+  try {
+    await signupExistingContact({ email: String(formData.get("email") ?? ""), password });
+  } catch (err) {
+    if (err instanceof AuthFlowError) return { error: err.message };
+    throw err;
+  }
+  redirect("/register?step=pending");
+}
+
+/** New-fund wizard submit (replaces the old registerWizardAction). */
+export async function registerWizardAction(_prev: WizardActionState, formData: FormData): Promise<WizardActionState> {
+  if (!(await checkRate("signup"))) return { error: "Too many attempts — try again later." };
   const raw = {
     fundName: String(formData.get("fundName") ?? "").trim(),
     contactPerson: String(formData.get("contactPerson") ?? "").trim(),
@@ -58,34 +102,15 @@ export async function registerWizardAction(
     sectorPreference: formData.getAll("sectorPreference").map(String),
     dealType: String(formData.get("dealType") ?? "").trim(),
     dealSizeBand: String(formData.get("dealSizeBand") ?? "").trim(),
+    password: String(formData.get("password") ?? ""),
+    confirmPassword: String(formData.get("confirmPassword") ?? ""),
   };
-
-  let investorId: string;
   try {
-    const investor = await registerInvestor(raw);
-    investorId = investor.id;
+    await registerInvestorWithAccount(raw);
   } catch (err) {
-    if (err instanceof ZodError) {
-      return { error: err.issues[0]?.message ?? "Check the form and try again" };
-    }
-    if (err instanceof RegistrationError) {
-      return { error: err.message };
-    }
+    if (err instanceof ZodError) return { error: err.issues[0]?.message ?? "Check the form and try again" };
+    if (err instanceof RegistrationError) return { error: err.message };
     throw err;
   }
-  redirect(`/register?step=verify&rid=${investorId}`);
-}
-
-export async function verifyOtpAction(formData: FormData): Promise<void> {
-  const rid = String(formData.get("rid") ?? "");
-  if (!rid) redirect("/register");
-  try {
-    await confirmRegistrationOtp(rid, String(formData.get("emailOtp") ?? ""), String(formData.get("phoneOtp") ?? ""));
-  } catch (err) {
-    if (err instanceof RegistrationError) {
-      redirect(`/register?step=verify&rid=${rid}&error=${encodeURIComponent(err.message)}`);
-    }
-    throw err;
-  }
-  redirect("/register?step=done");
+  redirect("/register?step=pending");
 }
