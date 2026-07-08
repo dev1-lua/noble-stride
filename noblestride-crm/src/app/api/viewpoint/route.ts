@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       impersonating: roleParam === "investor" || roleParam === "partner" ? true : undefined,
     }),
   );
+  if (!vp) return NextResponse.redirect(new URL("/", req.url));
   const res = NextResponse.redirect(new URL(params.get("next") ?? viewpointHome(vp), req.url));
   res.cookies.set(VIEWPOINT_COOKIE, serializeViewpoint(vp), { path: "/", sameSite: "lax" });
   return res;

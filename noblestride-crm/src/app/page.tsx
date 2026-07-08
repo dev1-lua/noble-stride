@@ -16,7 +16,10 @@ export const dynamic = "force-dynamic";
 
 export default async function LandingPage() {
   const raw = (await cookies()).get(VIEWPOINT_COOKIE)?.value;
-  if (raw) redirect(viewpointHome(parseViewpoint(raw)));
+  if (raw) {
+    const vp = parseViewpoint(raw);
+    if (vp) redirect(viewpointHome(vp));
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--bg-secondary)]">
