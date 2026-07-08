@@ -98,3 +98,18 @@ Note: the historical "Mandates (Kanban)" / "Transactions (Kanban)" rows above (2
 - App: Next.js 16 / React 19 / Prisma 6 / GraphQL (Pothos + graphql-yoga + urql) / Tailwind 4 / `jose` / `motion`.
 - No client-side JS console errors and no failed network requests observed across the entire session. Data fetching is server-rendered (RSC) — GraphQL runs server-side.
 - Auth model: `ns_viewpoint` cookie is the "session" (demo).
+
+## Engagement restage restore (2026-07-08 PM) — BUG-18 fix verification
+
+Verified live via Playwright (browser MCP) on `integration/all-features` at `0c5d86e`. Gates before this pass: tsc 0 errors, lint pre-existing-only (8E/3W, none in touched files), vitest 491/491 (489 + 2 new helper tests). Screenshot at repo root: `verify-RS1-board-inline-restage.png`.
+
+| Scenario | Result |
+|----------|--------|
+| Investor expresses interest (responsAbility → masked "Project Jade Marula" = Chipori Ltd – Series A) | ✅ Redirects with `?interest=sent`; engagement created at **Shared / Interested**; portal note ("Investor expressed interest via portal" + message) on the activity timeline |
+| By Deal board reflects new engagement | ✅ Chipori group went 5→6 investors, Shared·1→Shared·2; expanded row shows 12-option stage select at Shared with InterestLevel chips and Open → link intact |
+| Restage from board row (Shared → Teaser Sent) | ✅ Select fires `updateEngagement`; after refresh the group distribution bar/pills recompute (Shared·1, Teaser Sent·2) |
+| Restage from detail page (Teaser Sent → Meeting) | ✅ New "Stage" entry is the FIRST Details item; Stage History records both changes ("Shared → Teaser Sent", "Teaser Sent → Meeting", today · Team); milestone checklist auto-advanced 1/15 → 3/15 via stage-implied entries |
+| NDA guard (Uqalo Capital × Chipori, investor NDA = None, Shared → NDA Signed) | ✅ Inline rose error `Stage "NDASigned" requires a signed NDA…` rendered under the select; select reverted to Shared; no data written |
+| Read-only lenses | ✅ TeamMember (Irine M, non-owner): detail page shows static Shared chip, no stage select, no Edit drawer. DealLead (Brenda C): board rows she owns (5/6 in Chipori group) show selects; the unowned responsAbility row shows a static chip — own-scope split matches DB ownership exactly |
+
+Data changed by this pass (intentional, demo-safe): new engagement responsAbility × Chipori Ltd (Shared→TeaserSent→Meeting, status Interested) + its portal-interest activity; no other rows mutated (guard attempt reverted).
