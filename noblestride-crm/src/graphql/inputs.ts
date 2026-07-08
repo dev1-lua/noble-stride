@@ -333,6 +333,24 @@ export const MilestoneInput = builder.inputType("MilestoneInput", {
   }),
 });
 
+// E-sign envelope send (Task 7). `kind` mirrors ESignKind in
+// src/server/integrations/esign/provider.ts (OpenNda | ClosedNda | TermSheet);
+// left as a plain string here rather than a new Pothos enum since the
+// service layer already validates/narrows it.
+export const SendEsignInput = builder.inputType("SendEsignInput", {
+  fields: (t) => ({
+    kind: t.string({ required: true }),
+    documentBase64: t.string({ required: true }),
+    documentName: t.string({ required: true }),
+    signerEmail: t.string({ required: true }),
+    signerName: t.string({ required: true }),
+    subject: t.string({ required: true }),
+    investorId: t.id({ required: false }),
+    engagementId: t.id({ required: false }),
+    transactionId: t.id({ required: false }),
+  }),
+});
+
 export const DueDiligenceTrackInput = builder.inputType("DueDiligenceTrackInput", {
   fields: (t) => ({
     transactionId: t.id({ required: true }),

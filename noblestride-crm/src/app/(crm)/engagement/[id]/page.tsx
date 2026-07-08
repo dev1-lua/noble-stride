@@ -12,6 +12,8 @@ import { StageHistory } from "@/components/crm/stage-history";
 import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { formatDate, daysAgoLabel } from "@/lib/format";
 import { RecordClosedNdaButton } from "@/components/crm/nda-actions";
+import { SendEsignButton } from "@/components/crm/send-esign-button";
+import { isConfigured } from "@/server/integrations/config";
 import { EngagementFormDrawer } from "@/components/crm/engagement-form-drawer";
 import { MilestoneChecklist } from "@/components/crm/milestone-checklist";
 import type { MilestoneItemDTO } from "@/components/crm/milestone-checklist";
@@ -37,6 +39,16 @@ export default async function EngagementDetailPage({ params }: PageProps) {
   const lens = await getOrgLens();
   const canRestage = canUpdateRecord(lens.orgRole, "Engagements", lens.userId, { ownerId: engagement.ownerId });
   const stageOptions = engagementStageOptions();
+
+  // E-sign signer (Task 7): prefer the investor's primary contact's email;
+  // otherwise the first investor contact with an email on file. No fake/
+  // placeholder email — if none resolves, the Send-for-e-signature button
+  // is simply not rendered below.
+  const esignContact =
+    engagement.investor.contacts.find((c) => c.isPrimaryContact && c.email) ??
+    engagement.investor.contacts.find((c) => c.email);
+  const esignSignerEmail = esignContact?.email ?? null;
+  const esignSignerName = esignContact ? [esignContact.firstName, esignContact.lastName].filter(Boolean).join(" ") : "";
 
   const activityItems: ActivityTimelineItem[] = engagement.activities.map((a) => ({
     id: a.id,
@@ -226,6 +238,15 @@ export default async function EngagementDetailPage({ params }: PageProps) {
           </dl>
 
           {engagement.ndaType == null && <RecordClosedNdaButton engagementId={engagement.id} />}
+          {isConfigured("docusign") && esignSignerEmail && (
+            <SendEsignButton
+              kind="ClosedNda"
+              subject={`NDA — ${engagement.name}`}
+              signerEmail={esignSignerEmail}
+              signerName={esignSignerName}
+              engagementId={engagement.id}
+            />
+          )}
 
           <p className="text-xs text-[var(--text-tertiary)]">
             Stage changes past Teaser require an NDA (Open on the investor, or Closed here).

@@ -14,6 +14,8 @@ import { ContactsCard } from "@/components/crm/contacts-card";
 import { OnboardingActions } from "@/components/crm/onboarding-actions";
 import { RecordOpenNdaButton } from "@/components/crm/nda-actions";
 import { MarkCriteriaVerifiedButton } from "@/components/crm/mark-criteria-verified-button";
+import { SendEsignButton } from "@/components/crm/send-esign-button";
+import { isConfigured } from "@/server/integrations/config";
 import { formatDate } from "@/lib/format";
 import { StageHistory } from "@/components/crm/stage-history";
 import type { StageHistoryItem } from "@/components/crm/stage-history";
@@ -78,6 +80,13 @@ export default async function InvestorDetailPage({ params }: PageProps) {
   const primaryContact = investor.contacts.find((c) => c.isPrimaryContact);
   const onboardingProminent = investor.onboardingStatus !== "Approved";
   const onboardingActionable = investor.onboardingStatus === "PendingReview" || investor.onboardingStatus === "Rejected";
+
+  // E-sign signer (Task 7): prefer the primary contact's email; otherwise the
+  // first contact with an email on file. No fake/placeholder email — if none
+  // resolves, the Send-for-e-signature button is simply not rendered below.
+  const esignContact = primaryContact?.email ? primaryContact : investor.contacts.find((c) => c.email);
+  const esignSignerEmail = esignContact?.email ?? null;
+  const esignSignerName = esignContact ? [esignContact.firstName, esignContact.lastName].filter(Boolean).join(" ") : "";
 
   const changeHistoryItems: StageHistoryItem[] = (investor.stageChanges ?? []).map((s) => ({
     id: s.id,
@@ -212,6 +221,15 @@ export default async function InvestorDetailPage({ params }: PageProps) {
         </div>
 
         {investor.ndaStatus !== "OpenNDA" && <RecordOpenNdaButton investorId={investor.id} />}
+        {isConfigured("docusign") && esignSignerEmail && (
+          <SendEsignButton
+            kind="OpenNda"
+            subject={`NDA — ${investor.name}`}
+            signerEmail={esignSignerEmail}
+            signerName={esignSignerName}
+            investorId={investor.id}
+          />
+        )}
 
         <p className="text-xs text-[var(--text-tertiary)]">
           Open NDA covers every data room (per-deal access still requires internal approval). Closed NDA covers one

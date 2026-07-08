@@ -630,3 +630,23 @@ export const SavedViewRef = builder.objectRef<SavedViewData>("SavedView").implem
     config: t.string({ resolve: (v) => JSON.stringify(v.config) }),
   }),
 });
+
+// ─── EsignEnvelopeResult ─────────────────────────────────────────────────────
+// Domain-shaped (builder.objectRef, not builder.prismaObject) — the sendEsignEnvelope
+// mutation (Task 7) returns the thin tracking-row projection built by
+// src/server/services/esign.ts's sendEsignEnvelope, not the raw Prisma
+// eSignEnvelope row. Same non-Prisma-output convention as SavedViewRef above.
+
+export interface EsignEnvelopeResultData {
+  id: string;
+  externalId: string;
+  status: string;
+}
+
+export const EsignEnvelopeResult = builder.objectRef<EsignEnvelopeResultData>("EsignEnvelopeResult").implement({
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    externalId: t.exposeString("externalId"),
+    status: t.exposeString("status"),
+  }),
+});

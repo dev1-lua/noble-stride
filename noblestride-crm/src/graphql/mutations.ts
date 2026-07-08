@@ -7,7 +7,7 @@ import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor, markInvestorCriteriaVerified } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
@@ -20,11 +20,13 @@ import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
 import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
 import { createSavedView, renameSavedView, deleteSavedView, type SavedViewConfig } from "@/server/services/saved-views";
-import { SavedViewRef } from "./types";
+import { SavedViewRef, EsignEnvelopeResult } from "./types";
 import { markNotificationsRead, markAllNotificationsRead } from "@/server/services/notifications";
 import { getOrgLens } from "@/server/rbac/context";
 import { assertAdmin, assertCan, assertCanDelete, assertCanUpdateOwnScoped } from "@/server/rbac/enforce";
 import { prisma } from "@/lib/db";
+import { sendEsignEnvelope } from "@/server/services/esign";
+import type { ESignKind } from "@/server/integrations/esign/provider";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -164,6 +166,30 @@ builder.mutationFields((t) => ({
     resolve: async (_q, _r, args, ctx) => {
       assertCan(ctx.actor, "Engagements", "U");
       return recordClosedNda(String(args.engagementId), ctx.actor);
+    },
+  }),
+
+  // ── E-sign (Task 7) — sends an envelope via the configured provider seam
+  // (manual no-op fallback when DocuSign is unconfigured; see
+  // src/server/integrations/esign/provider.ts). Guarded the same as
+  // recordClosedNda: a staff-write check on Engagements.
+  sendEsignEnvelope: t.field({
+    type: EsignEnvelopeResult, nullable: false,
+    args: { input: t.arg({ type: SendEsignInput, required: true }) },
+    resolve: async (_r, { input }, ctx) => {
+      assertCan(ctx.actor, "Engagements", "U");
+      return sendEsignEnvelope({
+        kind: input.kind as ESignKind,
+        documentBase64: input.documentBase64,
+        documentName: input.documentName,
+        signer: { email: input.signerEmail, name: input.signerName },
+        subject: input.subject,
+        linkRecord: {
+          investorId: input.investorId != null ? String(input.investorId) : undefined,
+          engagementId: input.engagementId != null ? String(input.engagementId) : undefined,
+          transactionId: input.transactionId != null ? String(input.transactionId) : undefined,
+        },
+      }, ctx.actor);
     },
   }),
 
