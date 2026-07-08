@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-08
 **Branch:** `feat/real-auth` (worktree, based on `integration/all-features` @ 833de8f)
-**Status:** Approved for implementation (decisions delegated to Claude's best recommendation by Shaurya, 2026-07-08)
+**Status:** Implemented on `feat/real-auth` (15-task SDD build, 2026-07-08). All static gates green (tsc 0, vitest 541/541, next build ✓) and an 11-flow browser verification pass completed — see `playwright assessment/2026-07-08-real-auth-verification.md`. Minor implementation divergences (all documented in per-task reports under `.superpowers/sdd/`): `safeNext` redirect guard hardened beyond the spec (backslash + control-char open-redirect); the seed demo-investor query was relaxed off the never-set `isPrimaryContact` flag; `Actor.authenticated` is an optional field (fail-closed); and a stale-session `/login` trap found in verification was fixed by moving the "already authenticated" redirect out of edge middleware into the page (validated) layer.
 
 ## 1. Problem
 
