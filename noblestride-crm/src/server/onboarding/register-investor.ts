@@ -10,14 +10,40 @@ import type { Investor } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { registrationSchema } from "@/lib/schemas/registration";
 import { ticketBand } from "@/lib/ticket-bands";
+import { emailDomain } from "@/lib/corporate-email";
 
 /** DEMO ONLY — static OTP; no email/SMS is sent (see repo:memory/remaining-tasks.md). */
 export const DEMO_OTP = "000000";
 
 export class RegistrationError extends Error {}
 
+/**
+ * True when the email's exact address or its domain has been blocked from
+ * self-registration (populated when an investor is greylisted).
+ */
+export async function isRegistrationBlocked(email: string): Promise<boolean> {
+  const normalized = email.trim().toLowerCase();
+  const domain = emailDomain(normalized);
+  const hit = await prisma.blockedRegistration.findFirst({
+    where: {
+      OR: [
+        { kind: "Email", value: normalized },
+        ...(domain ? [{ kind: "Domain" as const, value: domain }] : []),
+      ],
+    },
+    select: { id: true },
+  });
+  return hit !== null;
+}
+
 export async function registerInvestor(raw: unknown): Promise<Investor> {
   const input = registrationSchema.parse(raw);
+
+  if (await isRegistrationBlocked(input.email)) {
+    throw new RegistrationError(
+      "This email domain is not eligible to register. Contact NobleStride if you believe this is an error.",
+    );
+  }
 
   const existing = await prisma.person.findFirst({
     where: { email: { equals: input.email, mode: "insensitive" }, investorId: { not: null } },

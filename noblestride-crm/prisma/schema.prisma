@@ -266,6 +266,11 @@ enum OnboardingStatus {
   Rejected
 }
 
+enum BlockedRegistrationKind {
+  Domain
+  Email
+}
+
 enum AdvisorType {
   Lawyer
   Investor
@@ -575,11 +580,28 @@ model Investor {
   tasks       Task[]
   documents   Document[]
   stageChanges StageChange[]
+  blockedRegistrations BlockedRegistration[]
 
   @@index([investorType])
   @@index([status])
   @@index([engagementClassification])
   @@index([onboardingStatus])
+}
+
+// BlockedRegistration — email domains/addresses barred from self-registration.
+// Populated when an investor is greylisted (anti-broker guardrail): corporate
+// domains block the whole domain; free-provider addresses block the exact email.
+model BlockedRegistration {
+  id         String                  @id @default(cuid())
+  kind       BlockedRegistrationKind
+  value      String // normalized lower-case: domain ("acme.com") or full email
+  reason     String?
+  investorId String?
+  investor   Investor?               @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  createdAt  DateTime                @default(now())
+
+  @@unique([kind, value])
+  @@index([investorId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -14,11 +14,21 @@ const FREE_EMAIL_DOMAINS = new Set([
   "mail.com", "zoho.com",
 ]);
 
+/** Lower-cased domain part of an email, or null if the string isn't email-shaped. */
+export function emailDomain(email: string): string | null {
+  const at = email.lastIndexOf("@");
+  if (at < 1 || at === email.length - 1) return null;
+  const domain = email.slice(at + 1).trim().toLowerCase();
+  return domain.includes(".") ? domain : null;
+}
+
+/** True when `domain` is a known free/consumer provider. */
+export function isFreeEmailDomain(domain: string): boolean {
+  return FREE_EMAIL_DOMAINS.has(domain.toLowerCase());
+}
+
 /** True when the email has a domain that is not a known free provider. */
 export function isCorporateEmail(email: string): boolean {
-  const at = email.lastIndexOf("@");
-  if (at < 1 || at === email.length - 1) return false;
-  const domain = email.slice(at + 1).trim().toLowerCase();
-  if (!domain.includes(".")) return false;
-  return !FREE_EMAIL_DOMAINS.has(domain);
+  const domain = emailDomain(email);
+  return domain !== null && !isFreeEmailDomain(domain);
 }

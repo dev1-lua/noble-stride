@@ -10,6 +10,7 @@ import { actorSource, CrudError } from "./crud";
 import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 import type { OnboardingStatus } from "@prisma/client";
+import { emailDomain, isFreeEmailDomain } from "@/lib/corporate-email";
 
 /**
  * List investors matching the given filter, ordered by name asc.
@@ -164,11 +165,38 @@ export async function greylistInvestor(id: string, actor: Actor) {
       where: { id },
       data: { engagementClassification: "Greylisted", onboardingStatus: "Rejected" },
     });
+
+    // Find a contact email to block: prefer the primary contact, else any contact.
+    const contact = await tx.person.findFirst({
+      where: { investorId: id, email: { not: null } },
+      orderBy: { isPrimaryContact: "desc" },
+      select: { email: true },
+    });
+
+    let blockNote = "Portal access blocked; registration resolved as Rejected.";
+    const email = contact?.email?.trim().toLowerCase();
+    const domain = email ? emailDomain(email) : null;
+    if (email && domain) {
+      const block =
+        isFreeEmailDomain(domain)
+          ? { kind: "Email" as const, value: email }
+          : { kind: "Domain" as const, value: domain };
+      await tx.blockedRegistration.upsert({
+        where: { kind_value: { kind: block.kind, value: block.value } },
+        create: { ...block, reason: `Greylisted: ${investor.name}`, investorId: id },
+        update: { reason: `Greylisted: ${investor.name}`, investorId: id },
+      });
+      blockNote +=
+        block.kind === "Domain"
+          ? ` Domain ${block.value} blocked from re-registration.`
+          : ` Email ${block.value} blocked from re-registration.`;
+    }
+
     await tx.activity.create({
       data: {
         type: "Note",
         subject: `Investor greylisted — ${investor.name}`,
-        body: "Portal access blocked; registration resolved as Rejected.",
+        body: blockNote,
         investorId: id,
         createdSource: actorSource(actor),
       },

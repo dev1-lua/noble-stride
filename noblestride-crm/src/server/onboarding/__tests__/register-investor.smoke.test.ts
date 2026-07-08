@@ -1,6 +1,7 @@
 import { describe, it, expect, afterAll } from "vitest";
 import { prisma } from "@/lib/db";
 import { registerInvestor, confirmRegistrationOtp, DEMO_OTP, RegistrationError } from "@/server/onboarding/register-investor";
+import { greylistInvestor } from "@/server/services/investors";
 
 async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
   if (!process.env.DATABASE_URL) return null;
@@ -28,6 +29,7 @@ afterAll(async () => {
   await withDb(async () => {
     await prisma.activity.deleteMany({ where: { investor: { name: { contains: UNIQ } } } });
     await prisma.person.deleteMany({ where: { investor: { name: { contains: UNIQ } } } });
+    await prisma.blockedRegistration.deleteMany({ where: { reason: { contains: UNIQ } } });
     await prisma.investor.deleteMany({ where: { name: { contains: UNIQ } } });
     return true;
   });
@@ -72,6 +74,51 @@ describe("registerInvestor (smoke)", () => {
       const updated = await prisma.investor.findUniqueOrThrow({ where: { id: investor.id } });
       expect(updated.emailVerifiedAt).toBeInstanceOf(Date);
       expect(updated.phoneVerifiedAt).toBeInstanceOf(Date);
+      return true;
+    });
+    if (out === null) return; // DB down — skip
+  });
+});
+
+describe("registerInvestor — greylist domain block", () => {
+  it("blocks re-registration on the whole domain after a corporate-email greylist", async () => {
+    const out = await withDb(async () => {
+      const domain = `brokers-${UNIQ}.example.com`;
+      const first = await registerInvestor({
+        ...input,
+        fundName: `Broker One ${UNIQ}`,
+        email: `jane@${domain}`,
+      });
+      await greylistInvestor(first.id, { type: "HUMAN" });
+
+      // a DIFFERENT address on the SAME domain is now barred at registration
+      await expect(
+        registerInvestor({ ...input, fundName: `Broker Two ${UNIQ}`, email: `bob@${domain}` }),
+      ).rejects.toThrow(RegistrationError);
+      return true;
+    });
+    if (out === null) return; // DB down — skip
+  });
+
+  it("records an exact-email block (not a domain block) when greylisting a free-provider contact", async () => {
+    const out = await withDb(async () => {
+      const email = `greylist-${UNIQ}@gmail.com`;
+      // Gmail can't self-register (schema rejects free providers) — create directly.
+      const inv = await prisma.investor.create({
+        data: {
+          name: `Gmail Broker ${UNIQ}`,
+          investorType: "PrivateEquity",
+          onboardingStatus: "PendingReview",
+          contacts: { create: { firstName: "Gil", email, isPrimaryContact: true } },
+        },
+      });
+      await greylistInvestor(inv.id, { type: "HUMAN" });
+
+      // Scoped to this investor: `reason` alone is ambiguous here — the sibling
+      // domain-block test above also stamps a reason containing UNIQ.
+      const block = await prisma.blockedRegistration.findFirst({ where: { investorId: inv.id } });
+      expect(block?.kind).toBe("Email");
+      expect(block?.value).toBe(email);
       return true;
     });
     if (out === null) return; // DB down — skip
