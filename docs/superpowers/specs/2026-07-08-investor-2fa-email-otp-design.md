@@ -1,6 +1,6 @@
 # Investor Onboarding 2FA — Email OTP (Design Spec)
 
-**Status:** Draft — awaiting user review (user stepped away; author proceeding to plan/impl per explicit "keep working" instruction).
+**Status:** Implemented (feat/real-auth, tasks 1-7 complete; e2e verified 2026-07-08 — see `playwright assessment/2026-07-08-investor-2fa-verification.md`). Delivered as designed; no divergences beyond the owner-approved email channel (§2).
 **Date:** 2026-07-08
 **Branch:** `feat/real-auth` (worktree `.claude/worktrees/real-auth`), app root `noblestride-crm/`.
 **Author:** SDD build (brainstormed with user 2026-07-08).
