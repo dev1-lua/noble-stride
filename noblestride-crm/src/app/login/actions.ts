@@ -19,6 +19,7 @@ const MESSAGES: Record<string, string> = {
   locked: "Too many failed attempts. Try again in about 15 minutes.",
   pending: "Your account is awaiting review by the NobleStride team.",
   suspended: "This account is suspended. Contact NobleStride if you believe this is an error.",
+  otp_unavailable: "We couldn't send your verification code. Please try again in a moment.",
 };
 
 export async function loginAction(formData: FormData): Promise<void> {

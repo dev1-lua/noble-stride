@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 const ERRORS: Record<string, string> = {
   invalid: "That code is incorrect. Check your email and try again.",
   cooldown: "Please wait a minute before requesting another code.",
-  "too-many-codes": "Too many attempts. Please try signing in again.",
+  "send-failed": "We couldn't send a new code. Please try again shortly.",
 };
 
 interface PageProps {

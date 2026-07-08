@@ -15,6 +15,10 @@ export const TRUST_TTL_S = 30 * 24 * 60 * 60; // 30 days
 
 export type PendingPayload = { accountId: string; challengeId: string; emailMask: string };
 
+// Thrown by issueLoginOtp when sendMail fails (e.g. Resend outage/misconfig).
+// The OTP challenge row is already created and will simply expire unused.
+export class OtpDeliveryError extends Error {}
+
 function secret(): Uint8Array {
   const s = process.env.AUTH_SECRET;
   if (!s) throw new Error("AUTH_SECRET is not set");
@@ -79,6 +83,11 @@ export async function issueLoginOtp(account: { id: string; email: string }): Pro
   const { challengeId, code } = await createOtpChallenge(account.id, account.email);
   recordDevOtp(account.email, code); // no-op unless dev + console fallback
   const { subject, text } = renderOtpEmail(code);
-  await sendMail({ to: account.email, subject, text });
+  try {
+    await sendMail({ to: account.email, subject, text });
+  } catch (err) {
+    console.error("[2fa] OTP email send failed:", err);
+    throw new OtpDeliveryError("otp delivery failed");
+  }
   return { challengeId, emailMask: maskEmail(account.email) };
 }

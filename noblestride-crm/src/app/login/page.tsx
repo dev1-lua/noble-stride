@@ -20,6 +20,18 @@ const inputClass =
 
 const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]";
 
+// Machine slugs used by the 2FA bounce paths (login/verify/actions.ts,
+// login/verify/page.tsx) redirect here as `?error=<slug>` — map them to
+// human copy. Any other value (loginAction's `back()` already passes full
+// sentences) is rendered verbatim via the `?? error` fallback below.
+const ERROR_COPY: Record<string, string> = {
+  "session-expired": "Your sign-in session expired. Please sign in again.",
+  "code-expired": "Your code expired. Please sign in again to get a new one.",
+  "too-many-codes": "Too many incorrect codes. Please sign in again to get a new code.",
+  locked: "Too many attempts. Please try again in a little while.",
+  suspended: "This account is suspended. Contact NobleStride if you believe this is an error.",
+};
+
 export default async function LoginPage({ searchParams }: PageProps) {
   // Gate on the resolved VIEWPOINT (same predicate the CRM/portal layouts
   // use), not merely on auth existing. An ACTIVE account can still resolve
@@ -51,7 +63,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
 
         {sp.error && (
           <div className="rounded-lg border border-[var(--t-tag-bg-rose)] bg-[var(--t-tag-bg-rose)] p-4 text-sm text-[var(--t-tag-text-rose)]">
-            {sp.error}
+            {ERROR_COPY[sp.error] ?? sp.error}
           </div>
         )}
 

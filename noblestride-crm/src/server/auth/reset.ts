@@ -16,11 +16,18 @@ export async function requestPasswordReset(emailRaw: string, baseUrl: string): P
   const account = await prisma.authAccount.findUnique({ where: { email } });
   if (!account || account.status !== "ACTIVE") return; // silent — no enumeration
   const raw = await createAuthToken(account.id, "RESET_PASSWORD");
-  await sendMail({
-    to: email,
-    subject: "Reset your NobleStride password",
-    text: `Reset link (valid 60 minutes): ${baseUrl}/reset-password/${raw}`,
-  });
+  try {
+    await sendMail({
+      to: email,
+      subject: "Reset your NobleStride password",
+      text: `Reset link (valid 60 minutes): ${baseUrl}/reset-password/${raw}`,
+    });
+  } catch (err) {
+    // Preserve the no-enumeration contract: a send failure must not change
+    // the (silent-success) response, so we log and return normally.
+    console.error("[reset] password reset email send failed:", err);
+    return;
+  }
   await logAuthEvent(`Auth: password reset requested for ${email}`);
 }
 

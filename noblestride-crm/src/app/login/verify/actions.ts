@@ -11,7 +11,7 @@ import { rateLimit } from "@/server/auth/rate-limit";
 import { createSession } from "@/server/auth/session";
 import { setSessionCookie } from "@/server/auth/session-cookie";
 import {
-  PENDING_COOKIE, PENDING_TTL_S, TRUST_COOKIE, TRUST_TTL_S,
+  OtpDeliveryError, PENDING_COOKIE, PENDING_TTL_S, TRUST_COOKIE, TRUST_TTL_S,
   issueLoginOtp, signPending, signTrust, verifyPending,
 } from "@/server/auth/two-factor";
 import { safeNext } from "../safe-next";
@@ -61,6 +61,10 @@ export async function verifyLoginOtpAction(formData: FormData): Promise<void> {
     include: { person: true },
   });
   if (!account) redirect("/login?error=session-expired");
+  if (account!.status !== "ACTIVE") {
+    cookieStore.delete(PENDING_COOKIE);
+    redirect("/login?error=suspended");
+  }
 
   const h = await headers();
   const { token, expiresAt } = await createSession(account!.id, {
@@ -114,10 +118,15 @@ export async function resendLoginOtpAction(formData: FormData): Promise<void> {
   const account = await prisma.authAccount.findUnique({ where: { id: pending.accountId } });
   if (!account) redirect("/login?error=session-expired");
 
-  const { challengeId, emailMask } = await issueLoginOtp({ id: account!.id, email: account!.email });
-  cookieStore.set(PENDING_COOKIE, await signPending({ accountId: account!.id, challengeId, emailMask }), {
-    httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production",
-    path: "/", maxAge: PENDING_TTL_S,
-  });
+  try {
+    const { challengeId, emailMask } = await issueLoginOtp({ id: account!.id, email: account!.email });
+    cookieStore.set(PENDING_COOKIE, await signPending({ accountId: account!.id, challengeId, emailMask }), {
+      httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production",
+      path: "/", maxAge: PENDING_TTL_S,
+    });
+  } catch (err) {
+    if (err instanceof OtpDeliveryError) redirect(`/login/verify?error=send-failed${nextParam}`);
+    throw err;
+  }
   redirect(`/login/verify?resent=1${nextParam}`);
 }

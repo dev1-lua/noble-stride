@@ -7,14 +7,14 @@ import { normalizeEmail } from "./guardrails";
 import { DUMMY_HASH, verifyPassword } from "./password";
 import { createSession } from "./session";
 import { logAuthEvent } from "./audit";
-import { issueLoginOtp, signPending, verifyTrust } from "./two-factor";
+import { OtpDeliveryError, issueLoginOtp, signPending, verifyTrust } from "./two-factor";
 
 const MAX_FAILURES = 10;
 const LOCK_MS = 15 * 60 * 1000;
 
 export type LoginResult =
   | { ok: true; token: string; expiresAt: Date; home: string }
-  | { ok: false; reason: "invalid" | "locked" | "pending" | "suspended" }
+  | { ok: false; reason: "invalid" | "locked" | "pending" | "suspended" | "otp_unavailable" }
   | { ok: false; reason: "otp_required"; pendingToken: string; emailMask: string };
 
 export async function loginWithPassword(
@@ -62,10 +62,15 @@ export async function loginWithPassword(
         where: { id: account.id },
         data: { failedLogins: 0, lockedUntil: null },
       });
-      const { challengeId, emailMask } = await issueLoginOtp({ id: account.id, email: account.email });
-      const pendingToken = await signPending({ accountId: account.id, challengeId, emailMask });
-      await logAuthEvent(`Auth: 2FA challenge issued — ${email}`);
-      return { ok: false, reason: "otp_required", pendingToken, emailMask };
+      try {
+        const { challengeId, emailMask } = await issueLoginOtp({ id: account.id, email: account.email });
+        const pendingToken = await signPending({ accountId: account.id, challengeId, emailMask });
+        await logAuthEvent(`Auth: 2FA challenge issued — ${email}`);
+        return { ok: false, reason: "otp_required", pendingToken, emailMask };
+      } catch (err) {
+        if (err instanceof OtpDeliveryError) return { ok: false, reason: "otp_unavailable" };
+        throw err;
+      }
     }
   }
 
