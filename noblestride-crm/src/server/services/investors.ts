@@ -11,6 +11,7 @@ import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 import type { OnboardingStatus } from "@prisma/client";
 import { emailDomain, isFreeEmailDomain } from "@/lib/corporate-email";
+import { activateAccountsForInvestor, suspendAccountsForInvestor } from "@/server/auth/accounts";
 
 /**
  * List investors matching the given filter, ordered by name asc.
@@ -138,7 +139,7 @@ const ONBOARDING_ACTIVITY_SUBJECT: Record<OnboardingStatus, string> = {
 
 /** Approve/reject a registration; logs the decision on the timeline. */
 export async function setOnboardingStatus(id: string, status: OnboardingStatus, actor: Actor) {
-  return prisma.$transaction(async (tx) => {
+  const investor = await prisma.$transaction(async (tx) => {
     const investor = await tx.investor.update({ where: { id }, data: { onboardingStatus: status } });
     await tx.activity.create({
       data: {
@@ -150,6 +151,9 @@ export async function setOnboardingStatus(id: string, status: OnboardingStatus, 
     });
     return investor;
   });
+  if (status === "Approved") await activateAccountsForInvestor(id);
+  if (status === "Rejected") await suspendAccountsForInvestor(id);
+  return investor;
 }
 
 /**
@@ -160,7 +164,7 @@ export async function setOnboardingStatus(id: string, status: OnboardingStatus, 
  * stays blocked until the classification is changed off Greylisted.
  */
 export async function greylistInvestor(id: string, actor: Actor) {
-  return prisma.$transaction(async (tx) => {
+  const investor = await prisma.$transaction(async (tx) => {
     const investor = await tx.investor.update({
       where: { id },
       data: { engagementClassification: "Greylisted", onboardingStatus: "Rejected" },
@@ -203,6 +207,8 @@ export async function greylistInvestor(id: string, actor: Actor) {
     });
     return investor;
   });
+  await suspendAccountsForInvestor(id);
+  return investor;
 }
 
 export async function deleteInvestor(id: string) {
