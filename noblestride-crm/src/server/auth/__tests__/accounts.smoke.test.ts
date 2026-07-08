@@ -1,7 +1,26 @@
 import { afterAll, describe, expect, it } from "vitest";
+import { isUniqueViolation } from "../accounts";
 
 const hasDb = Boolean(process.env.DATABASE_URL);
 const d = hasDb ? describe : describe.skip;
+
+describe("isUniqueViolation", () => {
+  it("is true for a Prisma P2002 unique-constraint error", () => {
+    expect(isUniqueViolation({ code: "P2002" })).toBe(true);
+  });
+
+  it("is false for other Prisma error codes", () => {
+    expect(isUniqueViolation({ code: "P2025" })).toBe(false);
+  });
+
+  it("is false for null", () => {
+    expect(isUniqueViolation(null)).toBe(false);
+  });
+
+  it("is false for a plain Error without a code", () => {
+    expect(isUniqueViolation(new Error("x"))).toBe(false);
+  });
+});
 
 // Note: markers are kept lowercase — AuthAccount.email is always stored
 // lowercase (normalizeEmail), and Postgres string equality is case-sensitive,

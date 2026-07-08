@@ -18,6 +18,11 @@ async function assertNoAccount(email: string): Promise<void> {
   if (existing) throw new AuthFlowError(GENERIC_EXISTS);
 }
 
+/** True when `err` is a Prisma unique-constraint violation (P2002). */
+export function isUniqueViolation(err: unknown): boolean {
+  return typeof err === "object" && err !== null && (err as { code?: unknown }).code === "P2002";
+}
+
 function assertPassword(password: string, email: string): void {
   const err = validatePassword(password, email);
   if (err) throw new AuthFlowError(err);
@@ -42,15 +47,25 @@ export async function signupInternal(input: {
   });
   if (directoryUser) {
     if (!directoryUser.isActive) throw new AuthFlowError("This account is deactivated. Contact an administrator.");
-    await prisma.authAccount.create({
-      data: { email, passwordHash, kind: "INTERNAL", status: "ACTIVE", userId: directoryUser.id },
-    });
+    try {
+      await prisma.authAccount.create({
+        data: { email, passwordHash, kind: "INTERNAL", status: "ACTIVE", userId: directoryUser.id },
+      });
+    } catch (err) {
+      if (isUniqueViolation(err)) throw new AuthFlowError(GENERIC_EXISTS);
+      throw err;
+    }
     await logAuthEvent(`Auth: internal account activated (directory match) for ${email}`);
     return { status: "active" };
   }
-  await prisma.authAccount.create({
-    data: { email, passwordHash, kind: "INTERNAL", status: "PENDING", displayName: input.name, jobTitle: input.jobTitle },
-  });
+  try {
+    await prisma.authAccount.create({
+      data: { email, passwordHash, kind: "INTERNAL", status: "PENDING", displayName: input.name, jobTitle: input.jobTitle },
+    });
+  } catch (err) {
+    if (isUniqueViolation(err)) throw new AuthFlowError(GENERIC_EXISTS);
+    throw err;
+  }
   await logAuthEvent(`Auth: internal account requested for ${email} — awaiting admin approval`);
   return { status: "pending" };
 }
@@ -80,9 +95,14 @@ export async function signupExistingContact(input: {
     throw new AuthFlowError("No investor contact found for this email. Register your fund first.");
   }
   const passwordHash = await hashPassword(input.password);
-  await prisma.authAccount.create({
-    data: { email, passwordHash, kind: "INVESTOR", status: "PENDING", personId: person.id },
-  });
+  try {
+    await prisma.authAccount.create({
+      data: { email, passwordHash, kind: "INVESTOR", status: "PENDING", personId: person.id },
+    });
+  } catch (err) {
+    if (isUniqueViolation(err)) throw new AuthFlowError(GENERIC_EXISTS);
+    throw err;
+  }
   await logAuthEvent(
     `Auth: investor account requested for ${email} — awaiting review`,
     undefined,
@@ -96,20 +116,29 @@ export async function approveInternalAccount(accountId: string, role: OrgRole, a
   if (account.kind !== "INTERNAL" || account.status !== "PENDING") {
     throw new AuthFlowError("Only pending internal accounts can be approved this way.");
   }
-  await prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({
-      data: {
-        name: account.displayName ?? account.email.split("@")[0],
-        email: account.email,
-        jobTitle: account.jobTitle,
-        role,
-      },
+  try {
+    await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          name: account.displayName ?? account.email.split("@")[0],
+          email: account.email,
+          jobTitle: account.jobTitle,
+          role,
+        },
+      });
+      await tx.authAccount.update({
+        where: { id: account.id },
+        data: { status: "ACTIVE", userId: user.id },
+      });
     });
-    await tx.authAccount.update({
-      where: { id: account.id },
-      data: { status: "ACTIVE", userId: user.id },
-    });
-  });
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      throw new AuthFlowError(
+        "A directory user with this email already exists. Link it from the user management page or reject this request.",
+      );
+    }
+    throw err;
+  }
   await logAuthEvent(`Auth: internal account approved for ${account.email} (role ${role}) by user ${approvedByUserId}`);
 }
 
