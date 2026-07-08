@@ -184,11 +184,11 @@ export function DealsViewControls({ views }: { views: SavedViewOption[] }) {
             {/* left-0 (open rightward): the Columns button is the leftmost view
                 control, sitting at the sidebar edge — a right-0 popover would
                 extend left *under* the sidebar, making its checkboxes unclickable. */}
-            <div className="absolute left-0 top-full z-50 mt-2 max-h-96 w-64 overflow-y-auto rounded-lg border border-zinc-200 bg-white p-2 shadow-lg">
+            <div className="absolute left-0 top-full z-50 mt-2 max-h-96 w-64 overflow-y-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-2 shadow-lg">
               {DEAL_COLUMNS.map((c) => (
                 <label
                   key={c.key}
-                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50"
+                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
                 >
                   <input type="checkbox" checked={activeCols.includes(c.key)} onChange={() => toggleColumn(c.key)} />
                   {c.label}
@@ -224,12 +224,12 @@ export function DealsViewControls({ views }: { views: SavedViewOption[] }) {
       </div>
 
       {/* List | Board toggle */}
-      <div className="flex items-center rounded-md border border-zinc-200 bg-white p-0.5 text-xs font-medium">
+      <div className="flex items-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-0.5 text-xs font-medium">
         <button
           type="button"
           onClick={() => setView("list")}
           className={`rounded px-2.5 py-1 transition-colors ${
-            currentView === "list" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50"
+            currentView === "list" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
           }`}
         >
           List
@@ -238,7 +238,7 @@ export function DealsViewControls({ views }: { views: SavedViewOption[] }) {
           type="button"
           onClick={() => setView("board")}
           className={`rounded px-2.5 py-1 transition-colors ${
-            currentView === "board" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50"
+            currentView === "board" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
           }`}
         >
           Board

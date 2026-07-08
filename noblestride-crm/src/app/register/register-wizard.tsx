@@ -16,9 +16,9 @@ import {
 } from "./register-steps";
 
 const inputClass =
-  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 " +
-  "placeholder:text-zinc-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600";
-const labelClass = "block text-xs font-medium uppercase tracking-wide text-zinc-500";
+  "w-full rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] " +
+  "placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]";
+const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]";
 const errorClass = "mt-1 text-xs text-rose-600";
 
 const STEP_TITLES = [
@@ -84,15 +84,15 @@ export default function RegisterWizard() {
     <div className="w-full max-w-2xl space-y-6">
       {/* Progress */}
       <div>
-        <div className="flex items-center justify-between text-xs font-medium text-zinc-500">
+        <div className="flex items-center justify-between text-xs font-medium text-[var(--text-tertiary)]">
           <span aria-live="polite">Step {step + 1} of {STEP_COUNT}</span>
-          <a href="/login" className="text-emerald-800 hover:underline">
+          <a href="/login" className="text-[var(--accent)] hover:underline">
             Already registered? Sign in
           </a>
         </div>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--border-subtle)]">
           <motion.div
-            className="h-full rounded-full bg-emerald-600"
+            className="h-full rounded-full bg-[var(--accent)]"
             initial={false}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.4, ease: EASE }}
@@ -100,7 +100,7 @@ export default function RegisterWizard() {
         </div>
       </div>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-6">
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -117,7 +117,7 @@ export default function RegisterWizard() {
             <h2
               ref={headingRef}
               tabIndex={-1}
-              className="text-xl font-bold text-zinc-900 outline-none"
+              className="text-xl font-bold text-[var(--text-primary)] outline-none"
             >
               {STEP_TITLES[step]}
             </h2>
@@ -213,8 +213,8 @@ export default function RegisterWizard() {
                           className={
                             "rounded-md border px-2 py-1.5 text-left text-sm transition " +
                             (active
-                              ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                              : "border-zinc-200 text-zinc-700 hover:border-zinc-300")
+                              ? "border-[var(--accent)] bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
+                              : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]")
                           }
                         >
                           {o.label}
@@ -260,12 +260,12 @@ export default function RegisterWizard() {
             </div>
 
             {/* Nav */}
-            <div className="mt-6 flex items-center justify-between border-t border-zinc-100 pt-4">
+            <div className="mt-6 flex items-center justify-between border-t border-[var(--border-subtle)] pt-4">
               <button
                 type="button"
                 onClick={goBack}
                 disabled={step === 0}
-                className="rounded-full px-4 py-2 text-sm font-medium text-zinc-600 hover:text-emerald-950 disabled:opacity-0"
+                className="rounded border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-0"
               >
                 ← Back
               </button>
@@ -274,7 +274,7 @@ export default function RegisterWizard() {
                 <button
                   type="button"
                   onClick={goNext}
-                  className="rounded-full bg-emerald-950 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
+                  className="rounded bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
                 >
                   Next →
                 </button>
@@ -293,7 +293,7 @@ export default function RegisterWizard() {
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="rounded-full bg-emerald-950 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-60"
+                    className="rounded bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)] disabled:opacity-60"
                   >
                     {isPending ? "Submitting…" : "Submit registration"}
                   </button>
@@ -344,7 +344,7 @@ function Field({
         </label>
       )}
       <div className="mt-1">{child}</div>
-      {hint && !error && <p className="mt-1 text-xs text-zinc-400">{hint}</p>}
+      {hint && !error && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{hint}</p>}
       {error && <p className={errorClass}>{error}</p>}
     </div>
   );
@@ -366,8 +366,8 @@ function RadioCard({
       className={
         "flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition " +
         (checked
-          ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-          : "border-zinc-200 text-zinc-700 hover:border-zinc-300")
+          ? "border-[var(--accent)] bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
+          : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]")
       }
     >
       <input
@@ -375,7 +375,7 @@ function RadioCard({
         name={name}
         checked={checked}
         onChange={onSelect}
-        className="h-4 w-4 text-emerald-600 focus:ring-emerald-600"
+        className="h-4 w-4 text-[var(--accent)] focus:ring-[var(--accent)]"
       />
       {labelText}
     </label>
@@ -411,28 +411,28 @@ function Review({
   return (
     <div className="space-y-3">
       {serverError && (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        <div className="rounded-lg border border-[var(--t-tag-bg-rose)] bg-[var(--t-tag-bg-rose)] p-3 text-sm text-[var(--t-tag-text-rose)]">
           {serverError}
         </div>
       )}
-      <dl className="divide-y divide-zinc-100 rounded-lg border border-zinc-200">
+      <dl className="divide-y divide-[var(--border-subtle)] rounded-lg border border-[var(--border-subtle)]">
         {rows.map((r) => (
           <div key={r.label} className="flex items-start justify-between gap-4 px-4 py-3">
             <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">{r.label}</dt>
-              <dd className="mt-0.5 text-sm text-zinc-900">{r.value || "—"}</dd>
+              <dt className="text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]">{r.label}</dt>
+              <dd className="mt-0.5 text-sm text-[var(--text-primary)]">{r.value || "—"}</dd>
             </div>
             <button
               type="button"
               onClick={() => onEdit(r.step)}
-              className="shrink-0 text-xs font-medium text-emerald-800 hover:underline"
+              className="shrink-0 text-xs font-medium text-[var(--accent)] hover:underline"
             >
               Edit
             </button>
           </div>
         ))}
       </dl>
-      <p className="text-xs text-zinc-400">
+      <p className="text-xs text-[var(--text-tertiary)]">
         After you submit, we'll verify your email and phone, then a NobleStride team member reviews
         your request. No deal information is visible before approval.
       </p>

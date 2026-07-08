@@ -14,11 +14,11 @@ import { TaskFormDrawer } from "./task-form-drawer";
 import { DeleteConfirm } from "./delete-confirm";
 
 const STATUS_CHIP: Record<string, string> = {
-  Ongoing: "bg-amber-50 text-amber-700",
-  Pending: "bg-sky-50 text-sky-700",
-  NotStarted: "bg-zinc-100 text-zinc-500",
-  Done: "bg-emerald-50 text-emerald-700",
-  Dropped: "bg-zinc-100 text-zinc-400 line-through",
+  Ongoing: "bg-[var(--t-tag-bg-amber)] text-[var(--t-tag-text-amber)]",
+  Pending: "bg-[var(--t-tag-bg-sky)] text-[var(--t-tag-text-sky)]",
+  NotStarted: "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",
+  Done: "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]",
+  Dropped: "bg-[var(--t-tag-bg-gray)] text-[var(--text-tertiary)] line-through",
 };
 
 const DELETE_TASK = `mutation DeleteTask($id: ID!) { deleteTask(id: $id) { id } }`;
@@ -54,10 +54,10 @@ export function TasksTable({ tasks, mandates, transactions, investors, clients, 
 
   return (
     <>
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
               <th className="px-4 py-3">Action point</th>
               <th className="px-4 py-3">Related to</th>
               <th className="px-4 py-3">Status</th>
@@ -70,7 +70,7 @@ export function TasksTable({ tasks, mandates, transactions, investors, clients, 
           <tbody>
             {tasks.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-zinc-400">
+                <td colSpan={7} className="px-4 py-10 text-center text-[var(--text-tertiary)]">
                   No tasks yet. Use &ldquo;+ New Task&rdquo; to add one.
                 </td>
               </tr>
@@ -79,23 +79,23 @@ export function TasksTable({ tasks, mandates, transactions, investors, clients, 
               <tr
                 key={t.id}
                 onClick={() => setEditing(t)}
-                className="cursor-pointer border-b border-zinc-100 last:border-0 hover:bg-zinc-50"
+                className="cursor-pointer border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--bg-secondary)]"
               >
                 <td className="max-w-md px-4 py-2.5">
-                  <div className="font-medium text-zinc-900">{t.title}</div>
-                  {t.body && <div className="truncate text-xs text-zinc-500">{t.body}</div>}
+                  <div className="font-medium text-[var(--text-primary)]">{t.title}</div>
+                  {t.body && <div className="truncate text-xs text-[var(--text-tertiary)]">{t.body}</div>}
                 </td>
                 <td className="px-4 py-2.5">
                   {t.related ? (
                     <Link
                       href={t.related.href}
                       onClick={(e) => e.stopPropagation()}
-                      className="text-emerald-700 hover:underline"
+                      className="text-[var(--accent)] hover:underline"
                     >
                       {t.related.name}
                     </Link>
                   ) : (
-                    <span className="text-zinc-400">—</span>
+                    <span className="text-[var(--text-tertiary)]">—</span>
                   )}
                 </td>
                 <td className="px-4 py-2.5">
@@ -103,23 +103,23 @@ export function TasksTable({ tasks, mandates, transactions, investors, clients, 
                     <span
                       className={cn(
                         "rounded-full px-2 py-0.5 text-xs font-medium",
-                        STATUS_CHIP[t.status] ?? "bg-zinc-100 text-zinc-500",
+                        STATUS_CHIP[t.status] ?? "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",
                       )}
                     >
                       {label("TaskStatus", t.status)}
                     </span>
                     {t.escalated && (
-                      <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
+                      <span className="rounded-full bg-[var(--t-tag-bg-rose)] px-2 py-0.5 text-xs font-medium text-[var(--t-tag-text-rose)]">
                         Overdue
                       </span>
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-2.5 text-zinc-600">
-                  {t.source ? label("TaskSource", t.source) : <span className="text-zinc-400">—</span>}
+                <td className="px-4 py-2.5 text-[var(--text-secondary)]">
+                  {t.source ? label("TaskSource", t.source) : <span className="text-[var(--text-tertiary)]">—</span>}
                 </td>
-                <td className="px-4 py-2.5 text-zinc-600">{t.assigneeName ?? "—"}</td>
-                <td className="px-4 py-2.5 text-zinc-600">{t.dueAtDisplay}</td>
+                <td className="px-4 py-2.5 text-[var(--text-secondary)]">{t.assigneeName ?? "—"}</td>
+                <td className="px-4 py-2.5 text-[var(--text-secondary)]">{t.dueAtDisplay}</td>
                 <td className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
                   <DeleteConfirm mutation={DELETE_TASK} recordId={t.id} entityLabel="task" redirectTo="/tasks" />
                 </td>

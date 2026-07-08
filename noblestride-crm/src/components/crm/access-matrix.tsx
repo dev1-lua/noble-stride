@@ -39,18 +39,18 @@ export function AccessMatrix() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      <div className="rounded-lg border border-[var(--t-tag-bg-amber)] bg-[var(--t-tag-bg-amber)] px-4 py-3 text-sm text-[var(--t-tag-text-amber)]">
         This matrix drives the in-org view lens (demo — not backed by real login). Use the
         viewpoint switcher in the top bar to see the CRM as each role. In-session toggles below
         are illustrative and not persisted.
       </div>
 
       <div className="flex items-center gap-3">
-        <label className="text-sm font-medium text-zinc-700">Organisation role</label>
+        <label className="text-sm font-medium text-[var(--text-secondary)]">Organisation role</label>
         <select
           value={role}
           onChange={(e) => setRole(e.target.value as OrgRole)}
-          className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm"
+          className="rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-3 py-1.5 text-sm text-[var(--text-primary)]"
         >
           {ROLES.map((r) => (
             <option key={r} value={r}>
@@ -60,16 +60,16 @@ export function AccessMatrix() {
         </select>
         <button
           onClick={() => setGrids(JSON.parse(JSON.stringify(DEFAULTS)))}
-          className="ml-auto rounded-md border border-zinc-300 px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-50"
+          className="ml-auto rounded-md border border-[var(--border-strong)] px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
         >
           Reset to defaults
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
               <th className="px-4 py-3">Entity</th>
               <th className="px-4 py-3">Create</th>
               <th className="px-4 py-3">Read</th>
@@ -79,8 +79,8 @@ export function AccessMatrix() {
           </thead>
           <tbody>
             {ENTITIES.map((entity) => (
-              <tr key={entity} className="border-b border-zinc-100 last:border-0">
-                <td className="px-4 py-2.5 font-medium text-zinc-900">{entity}</td>
+              <tr key={entity} className="border-b border-[var(--border-subtle)] last:border-0">
+                <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">{entity}</td>
                 {PERMS.map((perm) => {
                   const on = grid[entity]?.includes(perm);
                   return (
@@ -91,8 +91,8 @@ export function AccessMatrix() {
                         className={
                           "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-colors " +
                           (on
-                            ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                            : "bg-zinc-100 text-zinc-400 hover:bg-zinc-200")
+                            ? "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)] hover:opacity-80"
+                            : "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)] hover:opacity-80")
                         }
                       >
                         {on ? "✓" : "—"}

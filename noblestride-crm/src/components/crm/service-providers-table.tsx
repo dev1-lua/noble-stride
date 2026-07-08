@@ -47,16 +47,16 @@ export function ServiceProvidersTable({ providers }: { providers: ServiceProvide
           {providers.map((p) => (
             <Tr key={p.id} onClick={() => setEditing(p)} className="cursor-pointer">
               <Td>
-                <span className="font-medium text-zinc-900">{p.name}</span>
+                <span className="font-medium text-[var(--text-primary)]">{p.name}</span>
               </Td>
               <Td>
                 <Chip value={p.type} group="ServiceProviderType" />
               </Td>
               <Td>
-                <span className="text-zinc-600">{p.contactPerson ?? "—"}</span>
+                <span className="text-[var(--text-secondary)]">{p.contactPerson ?? "—"}</span>
               </Td>
               <Td>
-                <div className="text-xs text-zinc-500">
+                <div className="text-xs text-[var(--text-tertiary)]">
                   {p.email && <div>{p.email}</div>}
                   {p.phone && <div>{p.phone}</div>}
                   {!p.email && !p.phone && "—"}
@@ -65,7 +65,7 @@ export function ServiceProvidersTable({ providers }: { providers: ServiceProvide
               <Td>{p.fee != null ? formatMoney(p.fee, p.currency) : "—"}</Td>
               <Td>{p.engagedCount}</Td>
               <Td>
-                <span className="text-zinc-600">{p.status ?? "—"}</span>
+                <span className="text-[var(--text-secondary)]">{p.status ?? "—"}</span>
               </Td>
               <Td className="text-right" onClick={(e) => e.stopPropagation()}>
                 <DeleteConfirm
@@ -80,7 +80,7 @@ export function ServiceProvidersTable({ providers }: { providers: ServiceProvide
           {providers.length === 0 && (
             <Tr>
               <Td colSpan={8}>
-                <span className="text-zinc-400">No service providers on record.</span>
+                <span className="text-[var(--text-tertiary)]">No service providers on record.</span>
               </Td>
             </Tr>
           )}

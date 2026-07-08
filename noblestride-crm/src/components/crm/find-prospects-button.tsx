@@ -79,31 +79,31 @@ export function FindProspectsButton({ mandateId }: FindProspectsButtonProps) {
       </Button>
 
       {open && !loading && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-96 max-w-[90vw] rounded-xl border border-zinc-200 bg-white shadow-lg">
-          <div className="border-b border-zinc-100 px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+        <div className="absolute right-0 top-full mt-2 z-50 w-96 max-w-[90vw] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-lg">
+          <div className="border-b border-[var(--border-subtle)] px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
               Prospect Clients
             </p>
           </div>
-          <div className="max-h-80 overflow-y-auto divide-y divide-zinc-100">
+          <div className="max-h-80 overflow-y-auto divide-y divide-[var(--border-subtle)]">
             {error ? (
               <div className="px-4 py-3 text-sm text-red-500">{error}</div>
             ) : !prospects || prospects.length === 0 ? (
-              <div className="px-4 py-3 text-sm text-zinc-400">No prospects found for this mandate.</div>
+              <div className="px-4 py-3 text-sm text-[var(--text-tertiary)]">No prospects found for this mandate.</div>
             ) : (
               prospects.map((p, i) => (
                 <div key={i} className="px-4 py-3 flex items-start gap-3">
-                  <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-violet-50 text-[10px] font-bold text-violet-600">
+                  <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--t-tag-bg-violet)] text-[10px] font-bold text-[var(--t-tag-text-violet)]">
                     {i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-zinc-900 truncate">{p.name}</span>
-                      <span className="flex-shrink-0 rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] text-zinc-600">
+                      <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{p.name}</span>
+                      <span className="flex-shrink-0 rounded-full bg-[var(--t-tag-bg-gray)] px-2 py-0.5 text-[10px] text-[var(--t-tag-text-gray)]">
                         {p.sector}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-zinc-500 leading-relaxed">{p.rationale}</p>
+                    <p className="mt-1 text-xs text-[var(--text-tertiary)] leading-relaxed">{p.rationale}</p>
                   </div>
                 </div>
               ))

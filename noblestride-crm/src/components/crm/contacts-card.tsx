@@ -132,7 +132,7 @@ export function ContactsCard({ contacts, parent, showSSAFlag = false }: {
   return (
     <Card>
       <CardHeader className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-zinc-900">
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">
           Contacts
           {contacts.length > 0 && <Badge tone="neutral" className="ml-2">{contacts.length}</Badge>}
         </h2>
@@ -140,9 +140,9 @@ export function ContactsCard({ contacts, parent, showSSAFlag = false }: {
       </CardHeader>
       <CardBody>
         {contacts.length === 0 ? (
-          <p className="text-sm text-zinc-400">No contacts on record.</p>
+          <p className="text-sm text-[var(--text-tertiary)]">No contacts on record.</p>
         ) : (
-          <ul className="divide-y divide-zinc-100">
+          <ul className="divide-y divide-[var(--border-subtle)]">
             {contacts.map((contact) => (
               <li key={contact.id} className="py-3 flex items-start gap-4">
                 <Avatar name={`${contact.firstName} ${contact.lastName ?? ""}`} size="sm" />
@@ -151,20 +151,20 @@ export function ContactsCard({ contacts, parent, showSSAFlag = false }: {
                     <button
                       type="button"
                       onClick={() => setEditId(contact.id)}
-                      className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors text-left"
+                      className="text-sm font-medium text-[var(--text-primary)] hover:text-accent transition-colors text-left"
                     >
                       {contact.firstName} {contact.lastName ?? ""}
                     </button>
                     {contact.isPrimaryContact && <Badge tone="neutral">Primary</Badge>}
                     {showSSAFlag && contact.isSSAContact && <Badge tone="neutral">SSA</Badge>}
                   </div>
-                  {contact.jobTitle && <p className="text-xs text-zinc-500">{contact.jobTitle}</p>}
+                  {contact.jobTitle && <p className="text-xs text-[var(--text-tertiary)]">{contact.jobTitle}</p>}
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
                     {contact.email && (
                       <a href={`mailto:${contact.email}`} className="text-xs text-accent hover:underline">{contact.email}</a>
                     )}
                     {contact.phone && (
-                      <a href={`tel:${contact.phone}`} className="text-xs text-zinc-500 hover:underline">{contact.phone}</a>
+                      <a href={`tel:${contact.phone}`} className="text-xs text-[var(--text-tertiary)] hover:underline">{contact.phone}</a>
                     )}
                     {contact.linkedinUrl && (
                       <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline">LinkedIn</a>

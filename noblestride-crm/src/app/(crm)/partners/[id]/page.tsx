@@ -61,12 +61,12 @@ export default async function PartnerDetailPage({ params }: PageProps) {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-zinc-500">
-        <Link href="/partners" className="hover:text-zinc-700 transition-colors">
+      <nav className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
+        <Link href="/partners" className="hover:text-[var(--text-secondary)] transition-colors">
           Partners
         </Link>
         <span>/</span>
-        <span className="text-zinc-900 font-medium">{partner.name}</span>
+        <span className="text-[var(--text-primary)] font-medium">{partner.name}</span>
       </nav>
 
       {/* Header */}
@@ -74,7 +74,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
         <Avatar name={partner.name} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{partner.name}</h1>
+            <h1 className="text-2xl font-bold text-[var(--text-primary)] leading-tight">{partner.name}</h1>
             {partner.partnerType && (
               <Chip value={partner.partnerType} group="PartnerType" />
             )}
@@ -84,7 +84,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
             <Chip value={partner.status} group="PartnerStatus" />
             {partner.internalOnly && <Badge tone="neutral">Internal Only</Badge>}
           </div>
-          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-500">
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--text-tertiary)]">
             {partner.organization && <span>{partner.organization}</span>}
             {partner.location && <span>{partner.location}</span>}
             {partner.email && (
@@ -108,31 +108,31 @@ export default async function PartnerDetailPage({ params }: PageProps) {
       {/* Key facts */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">Profile</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Profile</h2>
         </CardHeader>
         <CardBody>
           <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {amount != null && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Amount</dt>
-                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(amount)}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Amount</dt>
+                <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{formatMoney(amount)}</dd>
               </div>
             )}
 
             {/* Fee sharing */}
             <div>
-              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Fee Sharing</dt>
-              <dd className="mt-1 text-sm font-semibold text-zinc-900">
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Fee Sharing</dt>
+              <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
                 {partner.feeSharingAgreement ? "Yes" : "No"}
               </dd>
               {partner.feeSharingAgreement && partner.feeSharingTerms && (
-                <p className="mt-0.5 text-xs text-zinc-500 whitespace-pre-line">{partner.feeSharingTerms}</p>
+                <p className="mt-0.5 text-xs text-[var(--text-tertiary)] whitespace-pre-line">{partner.feeSharingTerms}</p>
               )}
             </div>
 
             {/* Partner agreement status */}
             <div>
-              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Partner Agreement</dt>
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Partner Agreement</dt>
               <dd className="mt-1">
                 <Chip value={partner.partnerAgreementStatus} group="PartnerAgreementStatus" />
               </dd>
@@ -140,8 +140,8 @@ export default async function PartnerDetailPage({ params }: PageProps) {
 
             {partner.profile && (
               <div className="sm:col-span-2 lg:col-span-3">
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Profile</dt>
-                <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{partner.profile}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Profile</dt>
+                <dd className="mt-1 text-sm text-[var(--text-secondary)] whitespace-pre-line">{partner.profile}</dd>
               </div>
             )}
           </dl>
@@ -166,7 +166,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
       {/* Referred mandates */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Referred Mandates
             {partner.referredMandates.length > 0 && (
               <Badge tone="neutral" className="ml-2">{partner.referredMandates.length}</Badge>
@@ -175,16 +175,16 @@ export default async function PartnerDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardBody>
           {partner.referredMandates.length === 0 ? (
-            <p className="text-sm text-zinc-400">No mandates referred.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">No mandates referred.</p>
           ) : (
-            <ul className="divide-y divide-zinc-100">
+            <ul className="divide-y divide-[var(--border-subtle)]">
               {partner.referredMandates.map((mandate) => (
                 <li key={mandate.id} className="py-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <Link
                         href={`/mandates/${mandate.id}`}
-                        className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors"
+                        className="text-sm font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
                       >
                         {mandate.client?.name ?? mandate.name}
                       </Link>
@@ -195,14 +195,14 @@ export default async function PartnerDetailPage({ params }: PageProps) {
                     <ul className="mt-2 ml-3 space-y-1">
                       {mandate.transactions.map((txn) => (
                         <li key={txn.id} className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 rounded-full bg-zinc-300 flex-shrink-0" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--border-strong)] flex-shrink-0" />
                           <Link
                             href={`/transactions/${txn.id}`}
-                            className="text-xs text-zinc-600 hover:text-accent transition-colors"
+                            className="text-xs text-[var(--text-secondary)] hover:text-accent transition-colors"
                           >
                             {txn.name}
                           </Link>
-                          <span className="text-xs text-zinc-400">
+                          <span className="text-xs text-[var(--text-tertiary)]">
                             {label("TransactionStage", txn.stage)}
                           </span>
                         </li>

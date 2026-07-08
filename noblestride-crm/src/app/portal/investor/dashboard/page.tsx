@@ -8,6 +8,7 @@ import { loadInvestorDashboard } from "@/server/visibility";
 import { getViewpoint } from "@/server/viewpoint";
 import { LABELS, label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
+import { StatCard } from "@/components/ui/stat-card";
 
 export const dynamic = "force-dynamic";
 
@@ -35,44 +36,41 @@ export default async function InvestorDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Dashboard</h1>
+        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
           Your engagement summary with NobleStride Capital —{" "}
-          <span className="font-medium text-zinc-700">{data.investor.name}</span>
+          <span className="font-medium text-[var(--text-secondary)]">{data.investor.name}</span>
         </p>
       </div>
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {kpis.map((k) => (
-          <div key={k.label} className="rounded-xl border border-zinc-200 bg-white p-4">
-            <div className="text-xl font-bold text-zinc-900">{k.value}</div>
-            <div className="mt-0.5 text-xs text-zinc-500">{k.label}</div>
-          </div>
+          <StatCard key={k.label} label={k.label} value={k.value} />
         ))}
       </div>
 
       {/* Own pipeline by stage */}
-      <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
           Your Pipeline by Stage
         </h2>
         {pipeline.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-400">No active engagements yet.</p>
+          <p className="mt-3 text-sm text-[var(--text-tertiary)]">No active engagements yet.</p>
         ) : (
           <div className="mt-3 space-y-2">
             {pipeline.map((p) => (
               <div key={p.stage} className="flex items-center gap-3">
-                <span className="w-32 shrink-0 text-xs text-zinc-600">
+                <span className="w-32 shrink-0 text-xs text-[var(--text-secondary)]">
                   {label("EngagementStage", p.stage)}
                 </span>
-                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-zinc-100">
+                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
                   <div
-                    className="h-full rounded-full bg-emerald-600"
+                    className="h-full rounded-full bg-[var(--accent)]"
                     style={{ width: `${(p.count / maxStage) * 100}%` }}
                   />
                 </div>
-                <span className="w-6 text-right text-xs font-semibold tabular-nums text-zinc-900">
+                <span className="w-6 text-right text-xs font-semibold tabular-nums text-[var(--text-primary)]">
                   {p.count}
                 </span>
               </div>
@@ -82,16 +80,16 @@ export default async function InvestorDashboardPage() {
       </section>
 
       {/* Own disbursements by quarter */}
-      <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
           Your Disbursements by Quarter
         </h2>
         {data.disbursementByPeriod.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-400">No disbursements recorded.</p>
+          <p className="mt-3 text-sm text-[var(--text-tertiary)]">No disbursements recorded.</p>
         ) : (
           <table className="mt-3 w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-200 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              <tr className="border-b border-[var(--border-subtle)] text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
                 <th className="py-2">Period</th>
                 <th className="py-2">Disbursed</th>
                 <th className="py-2">Pending</th>
@@ -99,12 +97,12 @@ export default async function InvestorDashboardPage() {
             </thead>
             <tbody>
               {data.disbursementByPeriod.map((row) => (
-                <tr key={`${row.year}-${row.quarter}`} className="border-b border-zinc-100 last:border-0">
-                  <td className="py-2 font-medium text-zinc-900">
+                <tr key={`${row.year}-${row.quarter}`} className="border-b border-[var(--border-subtle)] last:border-0">
+                  <td className="py-2 font-medium text-[var(--text-primary)]">
                     Q{row.quarter} {row.year}
                   </td>
-                  <td className="py-2 text-zinc-600">{formatMoney(row.disbursed) || "$0"}</td>
-                  <td className="py-2 text-zinc-600">{formatMoney(row.pending) || "$0"}</td>
+                  <td className="py-2 text-[var(--text-secondary)]">{formatMoney(row.disbursed) || "$0"}</td>
+                  <td className="py-2 text-[var(--text-secondary)]">{formatMoney(row.pending) || "$0"}</td>
                 </tr>
               ))}
             </tbody>

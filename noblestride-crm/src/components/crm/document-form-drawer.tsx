@@ -68,7 +68,7 @@ export function DocumentFormDrawer({ mode, initial, transactions, clients, inves
           <TextField label="File URL" value={v.fileUrl as string} onChange={(x) => f.setValue("fileUrl", x)} placeholder="https://…" />
 
           {/* Linked records */}
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Linked Record</p>
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Linked Record</p>
           <div className="grid grid-cols-2 gap-3">
             <RelationSelect label="Transaction" value={v.transactionId as string} onChange={(x) => f.setValue("transactionId", x)} options={transactions} placeholder="Select transaction…" />
             <RelationSelect label="Mandate" value={v.mandateId as string} onChange={(x) => f.setValue("mandateId", x)} options={mandates} placeholder="Select mandate…" />
@@ -83,7 +83,7 @@ export function DocumentFormDrawer({ mode, initial, transactions, clients, inves
           <RelationSelect label="Uploaded By" value={v.uploadedById as string} onChange={(x) => f.setValue("uploadedById", x)} options={users} placeholder="Select user…" />
 
           {/* Review chain: peer review → MD approval → client review */}
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Review Chain</p>
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Review Chain</p>
           <div className="grid grid-cols-2 gap-3">
             <RelationSelect label="Reviewer" value={v.reviewerId as string} onChange={(x) => f.setValue("reviewerId", x)} options={users} placeholder="Select user…" />
             <DateField label="Reviewed At" value={v.reviewedAt as string} onChange={(x) => f.setValue("reviewedAt", x)} />

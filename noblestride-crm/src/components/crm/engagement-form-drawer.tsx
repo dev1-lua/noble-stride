@@ -62,7 +62,7 @@ export function EngagementFormDrawer({ initial, triggerLabel, open: controlledOp
           <CheckboxField label="Term sheet issued" value={v.termSheetIssued as boolean} onChange={(x) => f.setValue("termSheetIssued", x)} />
           <DateField label="Term Sheet Date" value={v.termSheetDate as string} onChange={(x) => f.setValue("termSheetDate", x)} />
 
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Disbursement</p>
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Disbursement</p>
           <div className="grid grid-cols-2 gap-3">
             <MoneyField label="Total Amount" value={v.totalAmount as number} onChange={(x) => f.setValue("totalAmount", x)} />
             <MoneyField label="Amount Disbursed" value={v.amountDisbursed as number} onChange={(x) => f.setValue("amountDisbursed", x)} />
@@ -71,7 +71,7 @@ export function EngagementFormDrawer({ initial, triggerLabel, open: controlledOp
             <SelectField label="Disbursement Status" value={v.disbursementStatus as string} onChange={(x) => f.setValue("disbursementStatus", x)} options={options("DisbursementStatus")} />
             <DateField label="Date Received" value={v.dateReceived as string} onChange={(x) => f.setValue("dateReceived", x)} />
           </div>
-          <p className="text-xs text-zinc-400">Pending amount and year/quarter are derived automatically on save.</p>
+          <p className="text-xs text-[var(--text-tertiary)]">Pending amount and year/quarter are derived automatically on save.</p>
 
           <NumberField label="Probability (%)" value={v.probability as number} onChange={(x) => f.setValue("probability", x)} min={0} max={100} />
           <TextAreaField label="Feedback" value={v.feedback as string} onChange={(x) => f.setValue("feedback", x)} />

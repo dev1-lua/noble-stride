@@ -57,16 +57,16 @@ export function MilestoneChecklist({ engagementId, items }: {
   return (
     <Card>
       <CardHeader>
-        <h2 className="text-sm font-semibold text-zinc-900">
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">
           Investor Milestones
           <Badge tone="neutral" className="ml-2">{doneCount}/{items.length}</Badge>
         </h2>
-        <p className="mt-0.5 text-xs text-zinc-500">
+        <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
           Record each milestone with its date; stage-implied milestones show automatically.
         </p>
       </CardHeader>
       <CardBody>
-        <ul className="divide-y divide-zinc-100">
+        <ul className="divide-y divide-[var(--border-subtle)]">
           {items.map((m) => {
             const busy = pendingKey === m.key;
             return (
@@ -77,7 +77,7 @@ export function MilestoneChecklist({ engagementId, items }: {
                     (m.state === "recorded" ? "bg-emerald-500" : m.state === "implied" ? "bg-sky-400" : "bg-zinc-200")
                   }
                 />
-                <span className={"flex-1 text-sm " + (m.state === "open" ? "text-zinc-500" : "font-medium text-zinc-900")}>
+                <span className={"flex-1 text-sm " + (m.state === "open" ? "text-[var(--text-tertiary)]" : "font-medium text-[var(--text-primary)]")}>
                   {m.label}
                 </span>
                 {m.state === "recorded" ? (
@@ -87,14 +87,14 @@ export function MilestoneChecklist({ engagementId, items }: {
                       value={m.completedAt ?? ""}
                       disabled={busy}
                       onChange={(e) => { if (e.target.value) record(m.key, e.target.value); }}
-                      className="rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-700"
+                      className="rounded-md border border-[var(--border-subtle)] px-2 py-1 text-xs text-[var(--text-secondary)]"
                     />
                     <Button variant="secondary" size="sm" disabled={busy} onClick={() => unrecord(m.key)}>Unrecord</Button>
                   </>
                 ) : (
                   <>
                     {m.state === "implied" && (
-                      <span className="text-xs uppercase tracking-wide text-sky-600">Implied by stage</span>
+                      <span className="text-xs uppercase tracking-wide text-[var(--t-tag-text-sky)]">Implied by stage</span>
                     )}
                     <Button variant="secondary" size="sm" disabled={busy} onClick={() => record(m.key)}>Record</Button>
                   </>
@@ -103,7 +103,7 @@ export function MilestoneChecklist({ engagementId, items }: {
             );
           })}
         </ul>
-        {error && <p className="mt-3 text-xs text-rose-600">{error}</p>}
+        {error && <p className="mt-3 text-xs text-[var(--t-tag-text-rose)]">{error}</p>}
       </CardBody>
     </Card>
   );

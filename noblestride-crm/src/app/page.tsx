@@ -58,7 +58,7 @@ export default async function LandingPage() {
   if (raw) redirect(viewpointHome(parseViewpoint(raw)));
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-[var(--bg-secondary)]">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
         <span className="text-sm font-semibold tracking-tight text-emerald-950">
           NobleStride Capital
@@ -66,19 +66,19 @@ export default async function LandingPage() {
         <nav className="flex items-center gap-4">
           <Link
             href="/login?as=investor"
-            className="text-xs font-medium text-zinc-500 hover:text-emerald-950"
+            className="text-xs font-medium text-[var(--text-tertiary)] hover:text-[var(--accent)]"
           >
             Login as an investor
           </Link>
           <Link
             href="/register"
-            className="text-xs font-medium text-zinc-500 hover:text-emerald-950"
+            className="text-xs font-medium text-[var(--text-tertiary)] hover:text-[var(--accent)]"
           >
             Sign up as an investor
           </Link>
           <Link
             href="/login"
-            className="rounded-full bg-emerald-950 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
+            className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
           >
             Sign in
           </Link>
@@ -87,13 +87,13 @@ export default async function LandingPage() {
 
       <main>
         <section className="mx-auto max-w-5xl px-6 pb-16 pt-14 text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">
             NobleStride Capital · Deal Platform
           </p>
-          <h1 className="mx-auto mt-4 max-w-3xl text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
+          <h1 className="mx-auto mt-4 max-w-3xl text-4xl font-bold tracking-tight text-[var(--text-primary)] sm:text-5xl">
             Your pipeline, documents, and investor engagement in one place
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base text-zinc-600">
+          <p className="mx-auto mt-4 max-w-2xl text-base text-[var(--text-secondary)]">
             The NobleStride deal team&apos;s workspace — mandates and transactions in one queue,
             NDA-gated documents tracked by stage, and every investor relationship in view from
             teaser to close.
@@ -101,34 +101,34 @@ export default async function LandingPage() {
           <div className="mt-8 flex items-center justify-center gap-3">
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-full bg-emerald-950 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-900"
+              className="inline-flex items-center gap-2 rounded bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
             >
               Sign in to your workspace <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="mt-4 flex items-center justify-center gap-4 text-xs text-zinc-500">
+          <div className="mt-4 flex items-center justify-center gap-4 text-xs text-[var(--text-tertiary)]">
             <Link
               href="/login?as=investor"
-              className="font-medium hover:text-emerald-950 hover:underline"
+              className="font-medium hover:text-[var(--accent)] hover:underline"
             >
               Login as an investor
             </Link>
-            <span className="text-zinc-300">·</span>
-            <Link href="/register" className="font-medium hover:text-emerald-950 hover:underline">
+            <span className="text-[var(--border-strong)]">·</span>
+            <Link href="/register" className="font-medium hover:text-[var(--accent)] hover:underline">
               Sign up as an investor
             </Link>
           </div>
         </section>
 
-        <section className="border-y border-zinc-200 bg-white">
+        <section className="border-y border-[var(--border-subtle)] bg-[var(--bg-primary)]">
           <div className="mx-auto max-w-5xl px-6 py-14">
-            <h2 className="text-center text-2xl font-bold text-zinc-900">Built for the deal team</h2>
+            <h2 className="text-center text-2xl font-bold text-[var(--text-primary)]">Built for the deal team</h2>
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {CAPABILITIES.map((c) => (
-                <div key={c.title} className="rounded-xl border border-zinc-200 bg-zinc-50 p-5">
-                  <c.icon className="h-5 w-5 text-emerald-700" />
-                  <h3 className="mt-3 text-sm font-semibold text-zinc-900">{c.title}</h3>
-                  <p className="mt-1 text-sm text-zinc-600">{c.body}</p>
+                <div key={c.title} className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-5">
+                  <c.icon className="h-5 w-5 text-[var(--accent)]" />
+                  <h3 className="mt-3 text-sm font-semibold text-[var(--text-primary)]">{c.title}</h3>
+                  <p className="mt-1 text-sm text-[var(--text-secondary)]">{c.body}</p>
                 </div>
               ))}
             </div>
@@ -136,20 +136,20 @@ export default async function LandingPage() {
         </section>
 
         <section className="mx-auto max-w-5xl px-6 py-14">
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 sm:flex sm:items-center sm:justify-between sm:gap-8">
+          <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-6 sm:flex sm:items-center sm:justify-between sm:gap-8">
             <div>
-              <h2 className="text-lg font-bold text-zinc-900">Are you an investor?</h2>
-              <p className="mt-1 max-w-xl text-sm text-zinc-600">
+              <h2 className="text-lg font-bold text-[var(--text-primary)]">Are you an investor?</h2>
+              <p className="mt-1 max-w-xl text-sm text-[var(--text-secondary)]">
                 Register your fund, pass NobleStride review, sign an NDA, and get access to curated
                 deals matched to your mandate.
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--text-tertiary)]">
                 {INVESTOR_STEPS.map((s, i) => (
                   <span key={s.title} className="inline-flex items-center gap-1.5">
-                    <s.icon className="h-3.5 w-3.5 text-emerald-700" />
+                    <s.icon className="h-3.5 w-3.5 text-[var(--accent)]" />
                     {s.title}
                     {i < INVESTOR_STEPS.length - 1 && (
-                      <ArrowRight className="h-3 w-3 text-zinc-300" />
+                      <ArrowRight className="h-3 w-3 text-[var(--border-strong)]" />
                     )}
                   </span>
                 ))}
@@ -158,13 +158,13 @@ export default async function LandingPage() {
             <div className="mt-4 flex shrink-0 items-center gap-3 sm:mt-0">
               <Link
                 href="/login?as=investor"
-                className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:border-emerald-700 hover:text-emerald-950"
+                className="rounded border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
               >
                 Login as an investor
               </Link>
               <Link
                 href="/register"
-                className="rounded-full bg-emerald-950 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
+                className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
               >
                 Sign up as an investor
               </Link>
@@ -173,8 +173,8 @@ export default async function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-6 py-6 text-xs text-zinc-500">
+      <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-6 py-6 text-xs text-[var(--text-tertiary)]">
           <span className="font-semibold text-emerald-950">NobleStride Capital</span>
           <span>Nairobi, Kenya · investors@noblestride.co</span>
         </div>

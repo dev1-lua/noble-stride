@@ -46,7 +46,7 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
 
         {/* Org-role lens banner (demo lens, spec §7.2) */}
         {lens.orgRole !== "Admin" && (
-          <div className="border-b border-amber-200 bg-amber-50 px-6 py-1.5 text-xs text-amber-800">
+          <div className="border-b border-[var(--t-tag-bg-amber)] bg-[var(--t-tag-bg-amber)] px-6 py-1.5 text-xs text-[var(--t-tag-text-amber)]">
             Viewing as <span className="font-semibold">{label("OrgRole", lens.orgRole)}</span>
             {lensUser ? <> — {lensUser.name}</> : null} · demo lens, controls hidden per the{" "}
             <a href="/access-matrix" className="underline">
@@ -56,7 +56,7 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto bg-zinc-50 p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-[var(--bg-secondary)] p-6">{children}</main>
       </div>
     </div>
   );

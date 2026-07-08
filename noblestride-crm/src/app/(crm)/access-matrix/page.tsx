@@ -5,8 +5,8 @@ export default function AccessMatrixPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900">Access Matrix</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Access Matrix</h1>
+        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
           Who sees what inside NobleStride — Admin, Deal Lead and Team Member lenses
         </p>
       </div>

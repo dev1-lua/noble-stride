@@ -77,10 +77,10 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
           <MultiSelectField label="Sector" value={v.sector as string[]} onChange={(x) => f.setValue("sector", x)} options={options("Sector")} />
           <DateField label="Date Opened" value={v.dateOpened as string} onChange={(x) => f.setValue("dateOpened", x)} disabled={lockDateOpened} />
           {lockDateOpened && (
-            <p className="text-xs text-zinc-400">Date opened is locked once set.</p>
+            <p className="text-xs text-[var(--text-tertiary)]">Date opened is locked once set.</p>
           )}
 
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Deal Status</p>
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Deal Status</p>
           <div className="grid grid-cols-2 gap-3">
             <SelectField label="Deal Status" value={v.dealStatus as string} onChange={(x) => f.setValue("dealStatus", x)} options={options("DealStatus")} />
             <SelectField label="Deal Milestone" value={v.dealMilestone as string} onChange={(x) => f.setValue("dealMilestone", x)} options={options("DealMilestone")} />
@@ -100,7 +100,7 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
             <DateField label="Success Fee Paid" value={v.successFeePaidDate as string} onChange={(x) => f.setValue("successFeePaidDate", x)} />
           </div>
           <TextAreaField label="Notes" value={v.notes as string} onChange={(x) => f.setValue("notes", x)} />
-          <p className="pt-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">IC &amp; Regulatory</p>
+          <p className="pt-1 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">IC &amp; Regulatory</p>
           <div className="grid grid-cols-2 gap-3">
             <DateField label="First IC Approval" value={v.icFirstApprovalDate as string} onChange={(x) => f.setValue("icFirstApprovalDate", x)} />
             <DateField label="Second IC Approval" value={v.icSecondApprovalDate as string} onChange={(x) => f.setValue("icSecondApprovalDate", x)} />

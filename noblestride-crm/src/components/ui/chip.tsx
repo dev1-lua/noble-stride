@@ -12,8 +12,8 @@ interface ChipProps {
 // Restrained category styling — no rainbow. The entity *type* (InvestorType /
 // PartnerType) carries a quiet brand tint so it reads as the primary qualifier;
 // everything else (sectors, geographies, instruments) is a calm neutral pill.
-const CATEGORY_BRAND = "bg-emerald-50 text-emerald-700 ring-emerald-600/20";
-const CATEGORY_NEUTRAL = "bg-zinc-100 text-zinc-600 ring-zinc-500/15";
+const CATEGORY_BRAND = "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]";
+const CATEGORY_NEUTRAL = "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]";
 
 function categoryClasses(group: string): string {
   return group === "InvestorType" || group === "PartnerType" ? CATEGORY_BRAND : CATEGORY_NEUTRAL;
@@ -37,7 +37,7 @@ export function Chip({ value, group, tone, className }: ChipProps) {
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-zinc-700",
+          "inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-[var(--text-secondary)]",
           className
         )}
       >
@@ -50,7 +50,7 @@ export function Chip({ value, group, tone, className }: ChipProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset",
+        "inline-flex items-center whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium",
         categoryClasses(group),
         className
       )}

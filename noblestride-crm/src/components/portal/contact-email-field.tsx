@@ -22,10 +22,10 @@ export function ContactEmailField({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="contact@yourfund.com"
-        className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+        className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
       />
       {FREE_MAIL.test(value) && (
-        <p className="mt-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800">
+        <p className="mt-1.5 rounded-md border border-[var(--t-tag-bg-amber)] bg-[var(--t-tag-bg-amber)] px-2.5 py-1.5 text-xs text-[var(--t-tag-text-amber)]">
           Please use a fund domain email (Gmail/Yahoo addresses are excluded per NobleStride
           policy).
         </p>

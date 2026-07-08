@@ -26,12 +26,12 @@ export function TextAreaField({ label, value, onChange, error, rows = 3 }: {
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-zinc-700">{label}</label>
+      <label className="text-xs font-medium text-[var(--text-secondary)]">{label}</label>
       <textarea
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
-        className="w-full resize-none rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
+        className="w-full resize-none rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
       />
       {error && <p className="text-xs text-rose-600">{error}</p>}
     </div>
@@ -98,12 +98,12 @@ export function CheckboxField({ label, value, onChange }: {
   label: string; value?: boolean; onChange: (v: boolean) => void;
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-zinc-700">
+    <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
       <input
         type="checkbox"
         checked={!!value}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-accent"
+        className="h-4 w-4 rounded border-[var(--border-strong)] text-[var(--accent)] focus:ring-accent"
       />
       {label}
     </label>
@@ -122,7 +122,7 @@ export function MultiSelectField({ label, value, onChange, options }: {
   };
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium text-zinc-700">{label}</label>
+      <label className="text-xs font-medium text-[var(--text-secondary)]">{label}</label>
       <div className="flex flex-wrap gap-1.5">
         {options.map((o) => (
           <button
@@ -132,8 +132,8 @@ export function MultiSelectField({ label, value, onChange, options }: {
             className={cn(
               "rounded-full px-2.5 py-1 text-xs ring-1 ring-inset transition-colors",
               selected.has(o.value)
-                ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                : "bg-white text-zinc-600 ring-zinc-200 hover:bg-zinc-50"
+                ? "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)] ring-[var(--accent)]"
+                : "bg-[var(--bg-primary)] text-[var(--text-secondary)] ring-[var(--border-subtle)] hover:bg-[var(--bg-secondary)]"
             )}
           >
             {o.label}

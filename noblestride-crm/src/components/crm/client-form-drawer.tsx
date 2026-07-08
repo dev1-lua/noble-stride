@@ -80,7 +80,7 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
           <TextField label="Pitch Deck URL" value={v.pitchDeckUrl as string} onChange={(x) => f.setValue("pitchDeckUrl", x)} />
           <TextAreaField label="Description" value={v.description as string} onChange={(x) => f.setValue("description", x)} />
 
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Identity</p>
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Identity</p>
           <div className="grid grid-cols-2 gap-3">
             <TextField label="Codename" value={v.codename as string} onChange={(x) => f.setValue("codename", x)} />
             <SelectField label="Status" value={v.status as string} onChange={(x) => f.setValue("status", x)} options={options("ClientStatus")} />
@@ -92,7 +92,7 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
           <TextField label="Founders' Nationality" value={v.foundersNationality as string} onChange={(x) => f.setValue("foundersNationality", x)} />
           <MultiSelectField label="Impact Flags" value={v.impactFlags as string[]} onChange={(x) => f.setValue("impactFlags", x)} options={options("ImpactFlag")} />
 
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Financials</p>
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Financials</p>
           <div className="grid grid-cols-2 gap-3">
             <MoneyField label="Revenue (Last Year)" value={v.revenueLastYear as number} onChange={(x) => f.setValue("revenueLastYear", x)} />
             <MoneyField label="Revenue (Forecast)" value={v.revenueForecast as number} onChange={(x) => f.setValue("revenueForecast", x)} />
@@ -106,7 +106,7 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
           </div>
           <SelectField label="Profitability" value={v.profitability as string} onChange={(x) => f.setValue("profitability", x)} options={options("Profitability")} />
 
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide pt-1">Governance</p>
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Governance</p>
           <TextAreaField label="Business Model" value={v.businessModel as string} onChange={(x) => f.setValue("businessModel", x)} />
           <TextAreaField label="Ownership Structure" value={v.ownershipStructure as string} onChange={(x) => f.setValue("ownershipStructure", x)} />
           <TextAreaField label="Directors / Management" value={v.directorsManagement as string} onChange={(x) => f.setValue("directorsManagement", x)} />

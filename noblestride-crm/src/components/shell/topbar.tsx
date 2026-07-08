@@ -95,12 +95,12 @@ export function Topbar({
   const { title, subtitle } = derivePageMeta(pathname);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-zinc-200 bg-white px-6">
+    <header className="sticky top-0 z-30 flex h-12 items-center gap-4 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] px-6">
       {/* Page title block */}
-      <div className="flex flex-col justify-center min-w-0 flex-shrink-0 w-52">
-        <h1 className="text-lg font-bold leading-tight text-zinc-900 truncate">{title}</h1>
+      <div className="flex flex-col justify-center min-w-0 flex-shrink-0 w-auto">
+        <h1 className="text-sm font-semibold leading-tight text-[var(--text-primary)] truncate">{title}</h1>
         {subtitle && (
-          <p className="text-xs text-zinc-500 leading-tight truncate">{subtitle}</p>
+          <p className="text-[11px] text-[var(--text-tertiary)] leading-tight truncate hidden lg:block">{subtitle}</p>
         )}
       </div>
 
@@ -123,18 +123,18 @@ export function Topbar({
         {/* Sign out — clears demo viewpoint cookie, returns to public landing */}
         <Link
           href="/api/viewpoint?role=signout"
-          className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 transition-colors"
+          className="rounded border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] transition-colors"
         >
           Sign out
         </Link>
 
         {/* Search */}
-        <div className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5">
-          <Search className="h-3.5 w-3.5 text-zinc-400 flex-shrink-0" />
+        <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-3 py-1.5">
+          <Search className="h-3.5 w-3.5 text-[var(--text-tertiary)] flex-shrink-0" />
           <input
             type="text"
             placeholder="Search…"
-            className="w-28 bg-transparent text-xs text-zinc-600 placeholder:text-zinc-400 focus:outline-none"
+            className="w-28 bg-transparent text-xs text-[var(--text-secondary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
           />
         </div>
 
@@ -143,8 +143,8 @@ export function Topbar({
           <button
             type="button"
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full",
-              "text-zinc-500 hover:bg-zinc-100 transition-colors"
+              "flex h-8 w-8 items-center justify-center rounded",
+              "text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] transition-colors"
             )}
             aria-label="Notifications"
           >

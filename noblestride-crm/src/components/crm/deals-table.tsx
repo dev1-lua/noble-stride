@@ -26,8 +26,10 @@ function TypeBadge({ kind }: { kind: DealRow["kind"] }) {
   return (
     <span
       className={
-        "inline-flex items-center whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset " +
-        (isMandate ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20" : "bg-zinc-100 text-zinc-600 ring-zinc-500/15")
+        "inline-flex items-center whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium " +
+        (isMandate
+          ? "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
+          : "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]")
       }
     >
       {isMandate ? "Mandate" : "Transaction"}
@@ -37,7 +39,7 @@ function TypeBadge({ kind }: { kind: DealRow["kind"] }) {
 
 function cell(r: DealRow, key: string): React.ReactNode {
   switch (key) {
-    case "name": return <Link href={r.href} className="font-medium text-emerald-700 hover:underline">{r.name}</Link>;
+    case "name": return <Link href={r.href} className="font-medium text-[var(--accent)] hover:underline">{r.name}</Link>;
     case "company": return r.company;
     case "type": return <TypeBadge kind={r.kind} />;
     case "stage": return r.stageLabel;
@@ -64,7 +66,7 @@ export function DealsTable({
   sortHref: (key: DealsSortKey) => string;
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-zinc-200">
+    <div className="overflow-x-auto rounded-lg border border-[var(--border-subtle)]">
       <Table>
         <THead>
           <Tr>
@@ -74,7 +76,7 @@ export function DealsTable({
               const active = k === sort;
               return (
                 <Th key={k}>
-                  <Link href={sortHref(k)} className="inline-flex items-center gap-1 hover:text-zinc-600">
+                  <Link href={sortHref(k)} className="inline-flex items-center gap-1 hover:text-[var(--text-secondary)]">
                     {text}
                     {active && <span aria-hidden="true">{dir === "asc" ? "▲" : "▼"}</span>}
                   </Link>
@@ -85,7 +87,7 @@ export function DealsTable({
         </THead>
         <TBody>
           {rows.length === 0 ? (
-            <Tr><Td colSpan={columns.length}><span className="text-zinc-400">No deals match these filters.</span></Td></Tr>
+            <Tr><Td colSpan={columns.length}><span className="text-[var(--text-tertiary)]">No deals match these filters.</span></Td></Tr>
           ) : rows.map((r) => (
             <Tr key={`${r.kind}-${r.id}`}>{columns.map((k) => <Td key={k}>{cell(r, k)}</Td>)}</Tr>
           ))}

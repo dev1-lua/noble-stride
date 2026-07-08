@@ -12,37 +12,37 @@ interface PageProps {
 }
 
 const inputClass =
-  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 " +
-  "placeholder:text-zinc-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600";
+  "w-full rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] " +
+  "placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]";
 
-const labelClass = "block text-xs font-medium uppercase tracking-wide text-zinc-500";
+const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]";
 
 export default async function LoginPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const isInvestor = sp.as === "investor";
 
   return (
-    <div className="flex min-h-screen items-start justify-center bg-zinc-50 px-4 py-12">
+    <div className="flex min-h-screen items-start justify-center bg-[var(--bg-secondary)] px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <Link href="/" className="text-sm font-semibold tracking-tight text-emerald-950">
             NobleStride Capital
           </Link>
-          <h1 className="mt-3 text-2xl font-bold text-zinc-900">
+          <h1 className="mt-3 text-2xl font-bold text-[var(--text-primary)]">
             {isInvestor ? "Investor sign in" : "Sign in"}
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             {isInvestor ? "Investor & partner portal access" : "NobleStride team workspace"}
           </p>
         </div>
 
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="rounded-lg border border-[var(--t-tag-bg-amber)] bg-[var(--t-tag-bg-amber)] p-4 text-sm text-[var(--t-tag-text-amber)]">
           Demo mode — any password works. Your email decides where you land: investor and partner
           contacts go to their portal, NobleStride team emails go to the CRM.
         </div>
 
         {sp.error && (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          <div className="rounded-lg border border-[var(--t-tag-bg-rose)] bg-[var(--t-tag-bg-rose)] p-4 text-sm text-[var(--t-tag-text-rose)]">
             {sp.error}{" "}
             {sp.error.startsWith("No account") && (
               <Link href="/register" className="font-semibold underline">
@@ -52,7 +52,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
           </div>
         )}
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-5">
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
           <form action={loginAction} className="space-y-4">
             <div>
               <label htmlFor="email" className={labelClass}>
@@ -83,21 +83,21 @@ export default async function LoginPage({ searchParams }: PageProps) {
             </div>
             <div
               className={
-                "flex items-center gap-4 border-t border-zinc-100 pt-4 " +
+                "flex items-center gap-4 border-t border-[var(--border-subtle)] pt-4 " +
                 (isInvestor ? "justify-between" : "justify-end")
               }
             >
               {isInvestor && (
                 <Link
                   href="/register"
-                  className="text-xs font-medium text-emerald-800 hover:underline"
+                  className="text-xs font-medium text-[var(--accent)] hover:underline"
                 >
                   New here? Register your fund →
                 </Link>
               )}
               <button
                 type="submit"
-                className="rounded-full bg-emerald-950 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
+                className="rounded bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
               >
                 Sign in
               </button>

@@ -46,10 +46,10 @@ export function DeleteConfirm({ mutation, recordId, entityLabel, redirectTo }: D
         >
           <Card className="mx-4 w-full max-w-sm shadow-xl">
             <CardHeader>
-              <h2 className="text-sm font-semibold text-zinc-900">Delete {entityLabel}?</h2>
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">Delete {entityLabel}?</h2>
             </CardHeader>
             <CardBody>
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-[var(--text-secondary)]">
                 This permanently removes the {entityLabel}. This cannot be undone.
               </p>
               {error && <p className="mt-3 text-xs text-rose-600">{error}</p>}

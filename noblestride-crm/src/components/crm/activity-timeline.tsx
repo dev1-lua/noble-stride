@@ -46,11 +46,11 @@ export function ActivityTimeline({
   return (
     <Card>
       <CardHeader>
-        <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">{title}</h2>
       </CardHeader>
       <CardBody>
         {activities.length === 0 ? (
-          <p className="text-sm text-zinc-400">{emptyText}</p>
+          <p className="text-sm text-[var(--text-tertiary)]">{emptyText}</p>
         ) : (
           <ul className="space-y-3">
             {activities.map((a) => (
@@ -58,36 +58,36 @@ export function ActivityTimeline({
                 <span className="mt-1.5 h-2 w-2 rounded-full bg-accent flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-medium text-zinc-700">
+                    <span className="text-xs font-medium text-[var(--text-secondary)]">
                       {label("InteractionType", a.type)}
                     </span>
                     {a.channel && (
-                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+                      <span className="rounded-full bg-[var(--t-tag-bg-gray)] px-2 py-0.5 text-[11px] font-medium text-[var(--t-tag-text-gray)]">
                         {label("CommChannel", a.channel)}
                       </span>
                     )}
                     {a.direction && (
-                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+                      <span className="rounded-full bg-[var(--t-tag-bg-gray)] px-2 py-0.5 text-[11px] font-medium text-[var(--t-tag-text-gray)]">
                         {label("CommDirection", a.direction)}
                       </span>
                     )}
                     {a.subject && (
-                      <span className="text-sm text-zinc-900 truncate">{a.subject}</span>
+                      <span className="text-sm text-[var(--text-primary)] truncate">{a.subject}</span>
                     )}
                   </div>
                   {a.body && (
-                    <p className="mt-0.5 text-sm text-zinc-600 whitespace-pre-line line-clamp-3">
+                    <p className="mt-0.5 text-sm text-[var(--text-secondary)] whitespace-pre-line line-clamp-3">
                       {a.body}
                     </p>
                   )}
-                  <p className="text-xs text-zinc-400 mt-0.5">{daysAgoLabel(a.occurredAt)}</p>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{daysAgoLabel(a.occurredAt)}</p>
                   {(a.tasks ?? []).length > 0 && (
                     <ul className="mt-1 space-y-0.5">
                       {a.tasks!.map((task) => (
-                        <li key={task.id} className="flex items-center gap-1.5 text-xs text-zinc-500">
-                          <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" />
+                        <li key={task.id} className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--border-strong)]" />
                           <Link href="/tasks" className="hover:text-accent transition-colors">{task.title}</Link>
-                          <span className="text-zinc-400">· {label("TaskStatus", task.status)}</span>
+                          <span className="text-[var(--text-tertiary)]">· {label("TaskStatus", task.status)}</span>
                         </li>
                       ))}
                     </ul>
@@ -114,7 +114,7 @@ export function ActivityTimeline({
                     </div>
                   )}
                   {a.context && (
-                    <p className="text-xs text-zinc-400 mt-0.5">{a.context}</p>
+                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{a.context}</p>
                   )}
                 </div>
               </li>

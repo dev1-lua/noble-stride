@@ -1,13 +1,14 @@
 "use client";
 
 // CRM-style sidebar for the investor portal — same visual system as the
-// internal shell sidebar (dark emerald, brand mark, accented nav), but
-// external-safe: portal-only nav, no internal routes, no agent cards.
+// internal shell sidebar (light Twenty-style panel, brand mark, accented
+// nav), but external-safe: portal-only nav, no internal routes, no agent
+// cards.
 // h-full instead of h-screen: the demo-lens banner sits above it in the
 // investor layout's flex column.
 import { usePathname } from "next/navigation";
 import { LayoutGrid, TrendingUp, BarChart3, Building2, ChevronLeft } from "lucide-react";
-import { BrandMark, NavItem, SIDEBAR_FG } from "@/components/shell/sidebar";
+import { BrandMark, NavItem } from "@/components/shell/sidebar";
 import { INVESTOR_NAV, isInvestorNavActive } from "./investor-portal-nav";
 
 const NAV_ICONS = {
@@ -21,17 +22,11 @@ export function InvestorSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside
-      className="flex h-full w-64 flex-shrink-0 flex-col overflow-hidden"
-      style={{ backgroundColor: "#0b1a14" }}
-    >
+    <aside className="flex h-full w-64 flex-shrink-0 flex-col overflow-hidden bg-[var(--bg-primary)] border-r border-[var(--border-subtle)]">
       <BrandMark />
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3">
-        <p
-          className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-widest opacity-60"
-          style={{ color: SIDEBAR_FG }}
-        >
+        <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
           Portal
         </p>
         <nav className="flex flex-col gap-0.5">
@@ -47,20 +42,16 @@ export function InvestorSidebar() {
         </nav>
       </div>
 
-      <div className="flex-shrink-0 border-t border-white/5 px-4 py-3">
-        <p
-          className="text-[10px] font-semibold uppercase tracking-widest opacity-60"
-          style={{ color: SIDEBAR_FG }}
-        >
+      <div className="flex-shrink-0 border-t border-[var(--border-subtle)] px-4 py-3">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
           Investor Portal
         </p>
       </div>
 
-      <div className="flex flex-shrink-0 items-center justify-center border-t border-white/5 py-3">
+      <div className="flex flex-shrink-0 items-center justify-center border-t border-[var(--border-subtle)] py-3">
         <button
           type="button"
-          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-white/5"
-          style={{ color: SIDEBAR_FG }}
+          className="flex h-7 w-7 items-center justify-center rounded text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)]"
           aria-label="Collapse sidebar"
         >
           <ChevronLeft className="h-4 w-4" />

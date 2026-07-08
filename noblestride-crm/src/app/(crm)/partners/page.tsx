@@ -27,8 +27,8 @@ export default async function PartnersPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Partners</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Partners</h1>
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             Referral partners, advisors, and deal sources
           </p>
         </div>
@@ -50,7 +50,7 @@ export default async function PartnersPage() {
 
       {/* Partners table */}
       <div>
-        <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3">
           Partner Directory
         </h2>
         <Table>
@@ -73,7 +73,7 @@ export default async function PartnersPage() {
                   <Td>
                     <Link
                       href={`/partners/${partner.id}`}
-                      className="font-medium text-zinc-900 hover:text-accent transition-colors"
+                      className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
                     >
                       {partner.name}
                     </Link>
@@ -82,11 +82,11 @@ export default async function PartnersPage() {
                     {partner.partnerType ? (
                       <Chip value={partner.partnerType} group="PartnerType" />
                     ) : (
-                      <span className="text-zinc-400">—</span>
+                      <span className="text-[var(--text-tertiary)]">—</span>
                     )}
                   </Td>
                   <Td>
-                    <span className="text-zinc-600">{partner.location ?? "—"}</span>
+                    <span className="text-[var(--text-secondary)]">{partner.location ?? "—"}</span>
                   </Td>
                   <Td>{row?.referred ?? 0}</Td>
                   <Td>{row?.active ?? 0}</Td>
@@ -98,7 +98,7 @@ export default async function PartnersPage() {
             {partners.length === 0 && (
               <Tr>
                 <Td colSpan={7}>
-                  <span className="text-zinc-400">No partners on record.</span>
+                  <span className="text-[var(--text-tertiary)]">No partners on record.</span>
                 </Td>
               </Tr>
             )}
@@ -109,22 +109,22 @@ export default async function PartnersPage() {
       {/* Referrals by Partner — CSS bar list */}
       {stats.byPartner.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-3">
+          <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3">
             Referrals by Partner
           </h2>
-          <div className="space-y-2 rounded-lg border border-zinc-200 bg-white p-4">
+          <div className="space-y-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4">
             {stats.byPartner.map((p) => (
               <div key={p.name} className="flex items-center gap-3">
-                <span className="w-36 flex-shrink-0 text-xs font-medium text-zinc-700 truncate">
+                <span className="w-36 flex-shrink-0 text-xs font-medium text-[var(--text-secondary)] truncate">
                   {p.name}
                 </span>
-                <div className="flex-1 bg-zinc-100 rounded-full h-2 overflow-hidden">
+                <div className="flex-1 bg-[var(--bg-tertiary)] rounded-full h-2 overflow-hidden">
                   <div
                     className="h-2 rounded-full bg-accent"
                     style={{ width: `${Math.round((p.referred / maxReferred) * 100)}%` }}
                   />
                 </div>
-                <span className="w-6 flex-shrink-0 text-xs text-zinc-500 text-right">
+                <span className="w-6 flex-shrink-0 text-xs text-[var(--text-tertiary)] text-right">
                   {p.referred}
                 </span>
               </div>

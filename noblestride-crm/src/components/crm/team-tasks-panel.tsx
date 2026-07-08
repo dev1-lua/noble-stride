@@ -14,7 +14,7 @@ const TASK_STATUSES = Object.keys(LABELS.TaskStatus);
 
 export function TeamWorkloadTable({ rows }: { rows: TeamWorkload[] }) {
   if (rows.length === 0) {
-    return <p className="text-xs text-zinc-400">No open mandates or active transactions assigned yet.</p>;
+    return <p className="text-xs text-[var(--text-tertiary)]">No open mandates or active transactions assigned yet.</p>;
   }
   return (
     <Table>
@@ -28,7 +28,7 @@ export function TeamWorkloadTable({ rows }: { rows: TeamWorkload[] }) {
       <TBody>
         {rows.map((r) => (
           <Tr key={r.userId}>
-            <Td className="font-medium text-zinc-900">{r.name}</Td>
+            <Td className="font-medium text-[var(--text-primary)]">{r.name}</Td>
             <Td className="text-right tabular-nums">{r.openMandates}</Td>
             <Td className="text-right tabular-nums">{r.activeTransactions}</Td>
           </Tr>
@@ -42,7 +42,7 @@ export function TeamWorkloadTable({ rows }: { rows: TeamWorkload[] }) {
 
 export function TaskStatusCrosstab({ rows }: { rows: TaskStatusByOwner[] }) {
   if (rows.length === 0) {
-    return <p className="text-xs text-zinc-400">No tasks assigned yet.</p>;
+    return <p className="text-xs text-[var(--text-tertiary)]">No tasks assigned yet.</p>;
   }
   return (
     <Table>
@@ -59,7 +59,7 @@ export function TaskStatusCrosstab({ rows }: { rows: TaskStatusByOwner[] }) {
       <TBody>
         {rows.map((r) => (
           <Tr key={r.userId}>
-            <Td className="font-medium text-zinc-900">{r.name}</Td>
+            <Td className="font-medium text-[var(--text-primary)]">{r.name}</Td>
             {TASK_STATUSES.map((s) => (
               <Td key={s} className="text-right tabular-nums">
                 {r.counts[s] ?? 0}
@@ -84,7 +84,7 @@ export function OverdueActionsList({ count, items }: { count: number; items: Ove
         </Link>
       </div>
       {items.length === 0 ? (
-        <p className="text-xs text-zinc-400">No overdue action points.</p>
+        <p className="text-xs text-[var(--text-tertiary)]">No overdue action points.</p>
       ) : (
         <ul className="space-y-2">
           {items.map((t) => (
@@ -92,7 +92,7 @@ export function OverdueActionsList({ count, items }: { count: number; items: Ove
               key={t.id}
               className="flex items-center justify-between gap-2 rounded-md bg-rose-50 px-2.5 py-1.5"
             >
-              <span className="truncate text-xs font-medium text-zinc-800" title={t.title}>
+              <span className="truncate text-xs font-medium text-[var(--text-secondary)]" title={t.title}>
                 {t.title}
               </span>
               <span className="flex shrink-0 items-center gap-2 text-[11px] text-rose-600">

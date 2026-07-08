@@ -34,8 +34,8 @@ export default async function ServiceProvidersPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Service Providers</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Service Providers</h1>
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             Law firms, auditors, tax advisors, and other transaction-level service providers
           </p>
         </div>
@@ -54,7 +54,7 @@ export default async function ServiceProvidersPage() {
 
       {/* Service provider directory */}
       <div>
-        <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3">
           Provider Directory
         </h2>
         <ServiceProvidersTable providers={rows} />

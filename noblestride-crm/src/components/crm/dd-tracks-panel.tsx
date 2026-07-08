@@ -33,7 +33,7 @@ interface Option {
 }
 
 const inputCls =
-  "w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-xs text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500";
+  "w-full rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]";
 
 function TrackRow({
   transactionId,
@@ -81,8 +81,8 @@ function TrackRow({
   }
 
   return (
-    <tr className="border-b border-zinc-100 last:border-0">
-      <td className="px-3 py-2.5 text-sm font-medium text-zinc-900">{label("DDTrack", values.track)}</td>
+    <tr className="border-b border-[var(--border-subtle)] last:border-0">
+      <td className="px-3 py-2.5 text-sm font-medium text-[var(--text-primary)]">{label("DDTrack", values.track)}</td>
       <td className="px-3 py-2.5">
         <select value={values.status} onChange={(e) => set("status", e.target.value)} className={inputCls} aria-label={`${values.track} status`}>
           {options("DDStatus").map((o) => (
@@ -119,7 +119,7 @@ function TrackRow({
         <Button variant={dirty ? "primary" : "secondary"} size="sm" onClick={save} disabled={fetching || !dirty}>
           {fetching ? "Saving…" : "Save"}
         </Button>
-        {error && <p className="mt-1 text-xs text-rose-600">{error}</p>}
+        {error && <p className="mt-1 text-xs text-[var(--t-tag-text-rose)]">{error}</p>}
       </td>
     </tr>
   );
@@ -140,7 +140,7 @@ export function DDTracksPanel({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[760px] text-sm">
         <thead>
-          <tr className="border-b border-zinc-200 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          <tr className="border-b border-[var(--border-subtle)] text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
             <th className="px-3 py-2">Workstream</th>
             <th className="px-3 py-2">Status</th>
             <th className="px-3 py-2">Owner</th>

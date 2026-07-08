@@ -41,15 +41,15 @@ export function OpportunityFilters() {
   const hasAny = [...SELECTS, ...NUMBERS, ...FLAGS].some((f) => params.get(f.key));
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4">
+    <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4">
       <div className="flex flex-wrap items-end gap-3">
         {SELECTS.map((f) => (
-          <label key={f.key} className="flex flex-col gap-1 text-xs font-medium text-zinc-500">
+          <label key={f.key} className="flex flex-col gap-1 text-xs font-medium text-[var(--text-tertiary)]">
             {f.label}
             <select
               value={params.get(f.key) ?? ""}
               onChange={(e) => setParam(f.key, e.target.value)}
-              className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900"
+              className="rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-2 py-1.5 text-sm text-[var(--text-primary)]"
             >
               <option value="">All</option>
               {options(f.group).map((o) => (
@@ -61,7 +61,7 @@ export function OpportunityFilters() {
           </label>
         ))}
         {NUMBERS.map((f) => (
-          <label key={f.key} className="flex flex-col gap-1 text-xs font-medium text-zinc-500">
+          <label key={f.key} className="flex flex-col gap-1 text-xs font-medium text-[var(--text-tertiary)]">
             {f.label}
             <input
               type="number"
@@ -70,17 +70,17 @@ export function OpportunityFilters() {
               defaultValue={params.get(f.key) ?? ""}
               onBlur={(e) => setParam(f.key, e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && setParam(f.key, (e.target as HTMLInputElement).value)}
-              className="w-32 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900"
+              className="w-32 rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-2 py-1.5 text-sm text-[var(--text-primary)]"
             />
           </label>
         ))}
         {FLAGS.map((f) => (
-          <label key={f.key} className="flex items-center gap-1.5 pb-1.5 text-sm text-zinc-700">
+          <label key={f.key} className="flex items-center gap-1.5 pb-1.5 text-sm text-[var(--text-secondary)]">
             <input
               type="checkbox"
               checked={params.get(f.key) === "1"}
               onChange={(e) => setParam(f.key, e.target.checked ? "1" : "")}
-              className="h-4 w-4 rounded border-zinc-300 text-emerald-700"
+              className="h-4 w-4 rounded border-[var(--border-strong)] text-[var(--accent)]"
             />
             {f.label}
           </label>
@@ -88,7 +88,7 @@ export function OpportunityFilters() {
         {hasAny && (
           <button
             onClick={() => router.replace("/portal/investor", { scroll: false })}
-            className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-50"
+            className="rounded-md border border-[var(--border-strong)] px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
           >
             Clear filters
           </button>

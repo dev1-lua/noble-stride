@@ -81,28 +81,28 @@ export function MatchInvestorsButton({ transactionId }: MatchInvestorsButtonProp
       </Button>
 
       {open && !loading && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-96 max-w-[90vw] rounded-xl border border-zinc-200 bg-white shadow-lg">
-          <div className="border-b border-zinc-100 px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+        <div className="absolute right-0 top-full mt-2 z-50 w-96 max-w-[90vw] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-lg">
+          <div className="border-b border-[var(--border-subtle)] px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
               Investor Matches
             </p>
           </div>
-          <div className="max-h-80 overflow-y-auto divide-y divide-zinc-100">
+          <div className="max-h-80 overflow-y-auto divide-y divide-[var(--border-subtle)]">
             {error ? (
               <div className="px-4 py-3 text-sm text-red-500">{error}</div>
             ) : !matches || matches.length === 0 ? (
-              <div className="px-4 py-3 text-sm text-zinc-400">No matching investors found.</div>
+              <div className="px-4 py-3 text-sm text-[var(--text-tertiary)]">No matching investors found.</div>
             ) : (
               matches.map((m, rank) => (
                 <div key={m.id} className="px-4 py-3 flex items-start gap-3">
                   {/* Rank number */}
-                  <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-zinc-100 text-[10px] font-bold text-zinc-500">
+                  <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--t-tag-bg-gray)] text-[10px] font-bold text-[var(--t-tag-text-gray)]">
                     {rank + 1}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-zinc-900 truncate">{m.name}</span>
-                      <span className="flex-shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
+                      <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{m.name}</span>
+                      <span className="flex-shrink-0 rounded-full bg-[var(--t-tag-bg-emerald)] px-2 py-0.5 text-xs font-bold text-[var(--t-tag-text-emerald)]">
                         {Math.round(m.score * 100)}%
                       </span>
                     </div>
@@ -111,7 +111,7 @@ export function MatchInvestorsButton({ transactionId }: MatchInvestorsButtonProp
                         {m.reasons.map((reason, ri) => (
                           <span
                             key={ri}
-                            className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] text-zinc-600"
+                            className="rounded-full bg-[var(--t-tag-bg-gray)] px-2 py-0.5 text-[10px] text-[var(--t-tag-text-gray)]"
                           >
                             {reason}
                           </span>

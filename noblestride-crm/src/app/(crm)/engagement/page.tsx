@@ -116,8 +116,8 @@ export default async function EngagementPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Engagement Tracker</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Engagement Tracker</h1>
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             Investor interactions across all active deals
           </p>
         </div>
@@ -139,7 +139,7 @@ export default async function EngagementPage() {
 
       {/* 12-stage engagement pipeline board */}
       <div>
-        <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3">
           Pipeline
         </h2>
         <EngagementStageBoard columns={columns} stageOptions={stageOptions} />
@@ -149,12 +149,12 @@ export default async function EngagementPage() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* LEFT: invested engagements with disbursement tracking */}
         <div className="lg:col-span-3 space-y-3">
-          <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide">
+          <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
             Disbursements
           </h2>
           <DisbursementTable rows={disbursementRows} />
 
-          <h3 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide pt-2">
+          <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide pt-2">
             By Year &amp; Quarter
           </h3>
           <DisbursementPeriodSummary rows={periodSummary} />

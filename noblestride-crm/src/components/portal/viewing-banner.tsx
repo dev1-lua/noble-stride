@@ -35,7 +35,7 @@ export async function ViewingBanner() {
   const hint = current && "hint" in current ? (current as { hint?: string }).hint : undefined;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-800">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--t-tag-bg-amber)] bg-[var(--t-tag-bg-amber)] px-6 py-2 text-sm text-[var(--t-tag-text-amber)]">
       <span className="inline-flex flex-wrap items-center gap-2">
         <span>
           Viewing as{" "}
@@ -64,14 +64,14 @@ export async function ViewingBanner() {
         {vp.impersonating && (
           <Link
             href="/api/viewpoint?role=admin"
-            className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
+            className="rounded-md border border-amber-300 bg-[var(--bg-primary)] px-2.5 py-1 text-xs font-medium text-[var(--t-tag-text-amber)] hover:bg-amber-100"
           >
             Return to Admin
           </Link>
         )}
         <Link
           href="/api/viewpoint?role=signout"
-          className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
+          className="rounded-md border border-amber-300 bg-[var(--bg-primary)] px-2.5 py-1 text-xs font-medium text-[var(--t-tag-text-amber)] hover:bg-amber-100"
         >
           Sign out
         </Link>

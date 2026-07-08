@@ -46,8 +46,8 @@ export function ViewpointSwitcher({
   }
 
   return (
-    <div className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1.5">
-      <Eye className="h-3.5 w-3.5 flex-shrink-0 text-zinc-400" />
+    <div className="flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-2.5 py-1.5">
+      <Eye className="h-3.5 w-3.5 flex-shrink-0 text-[var(--text-tertiary)]" />
       <select
         value={role}
         onChange={(e) => {
@@ -56,7 +56,7 @@ export function ViewpointSwitcher({
           setOrgRole("Admin");
           if (next === "admin") go("admin");
         }}
-        className="bg-transparent text-xs font-medium text-zinc-600 focus:outline-none"
+        className="bg-transparent text-xs font-medium text-[var(--text-secondary)] focus:outline-none"
         aria-label="View CRM as role"
       >
         <option value="admin">Admin</option>
@@ -71,7 +71,7 @@ export function ViewpointSwitcher({
             setOrgRole(next);
             if (next === "Admin") go("admin");
           }}
-          className="bg-transparent text-xs text-zinc-600 focus:outline-none"
+          className="bg-transparent text-xs text-[var(--text-secondary)] focus:outline-none"
           aria-label="Choose organisation role lens"
         >
           {ORG_ROLES.map((r) => (
@@ -85,7 +85,7 @@ export function ViewpointSwitcher({
         <select
           defaultValue={activeUserId ?? ""}
           onChange={(e) => e.target.value && go("admin", undefined, orgRole, e.target.value)}
-          className="max-w-36 bg-transparent text-xs text-zinc-600 focus:outline-none"
+          className="max-w-36 bg-transparent text-xs text-[var(--text-secondary)] focus:outline-none"
           aria-label="Choose team member to view as"
         >
           <option value="" disabled>
@@ -102,7 +102,7 @@ export function ViewpointSwitcher({
         <select
           defaultValue=""
           onChange={(e) => e.target.value && go(role, e.target.value)}
-          className="max-w-36 bg-transparent text-xs text-zinc-600 focus:outline-none"
+          className="max-w-36 bg-transparent text-xs text-[var(--text-secondary)] focus:outline-none"
           aria-label={`Choose ${role} to view as`}
         >
           <option value="" disabled>

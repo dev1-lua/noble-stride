@@ -28,26 +28,26 @@ export default async function InvestorPortalPage({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-zinc-900">Investment Opportunities</h2>
-        <p className="mt-1 text-sm text-zinc-500">
-          Prepared for <span className="font-medium text-zinc-700">{investor.name}</span> — showing
+        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Investment Opportunities</h2>
+        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+          Prepared for <span className="font-medium text-[var(--text-secondary)]">{investor.name}</span> — showing
           opportunities matching your mandate
         </p>
       </div>
 
       <OpportunityFilters />
-      <p className="text-xs text-zinc-400">
+      <p className="text-xs text-[var(--text-tertiary)]">
         {deals.length} opportunit{deals.length === 1 ? "y" : "ies"} match
       </p>
 
       {deals.length === 0 ? (
-        <div className="rounded-xl border border-zinc-200 bg-white px-6 py-16 text-center">
-          <p className="text-sm font-medium text-zinc-600">
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-6 py-16 text-center">
+          <p className="text-sm font-medium text-[var(--text-secondary)]">
             {filtering
               ? "No opportunities match your filters."
               : "No opportunities available right now."}
           </p>
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             {filtering
               ? "Try widening or clearing the filters above."
               : "Please contact your NobleStride advisor for more information."}
@@ -59,30 +59,30 @@ export default async function InvestorPortalPage({
             <Link
               key={deal.id}
               href={`/portal/investor/deals/${deal.id}`}
-              className="group rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+              className="group rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5 transition-colors hover:border-[var(--border-strong)]"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="font-semibold text-zinc-900 group-hover:text-emerald-800">
+                <div className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-hover)]">
                   {deal.name}
                 </div>
                 <TierBadge tier={deal.tier} />
               </div>
-              <div className="mt-1 text-sm text-zinc-500">{deal.companyProfile.clientName}</div>
+              <div className="mt-1 text-sm text-[var(--text-tertiary)]">{deal.companyProfile.clientName}</div>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {deal.companyProfile.womenLed && (
-                  <span className="rounded-full bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">
+                  <span className="rounded-full bg-[var(--t-tag-bg-gray)] px-2 py-0.5 text-xs font-medium text-[var(--t-tag-text-gray)]">
                     Women-led
                   </span>
                 )}
                 {deal.companyProfile.youthLed && (
-                  <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
+                  <span className="rounded-full bg-[var(--t-tag-bg-gray)] px-2 py-0.5 text-xs font-medium text-[var(--t-tag-text-gray)]">
                     Youth-led
                   </span>
                 )}
                 {deal.companyProfile.sector.slice(0, 3).map((s) => (
                   <span
                     key={s}
-                    className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700"
+                    className="rounded-full bg-[var(--t-tag-bg-gray)] px-2 py-0.5 text-xs font-medium text-[var(--t-tag-text-gray)]"
                   >
                     {label("Sector", s)}
                   </span>
@@ -90,15 +90,15 @@ export default async function InvestorPortalPage({
                 {deal.dealTypeTicket.instrument.map((i) => (
                   <span
                     key={i}
-                    className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600"
+                    className="rounded-full bg-[var(--t-tag-bg-gray)] px-2 py-0.5 text-xs font-medium text-[var(--t-tag-text-gray)]"
                   >
                     {label("Instrument", i)}
                   </span>
                 ))}
               </div>
               <div className="mt-4 flex items-center justify-between text-sm">
-                <span className="text-zinc-500">Target raise</span>
-                <span className="font-semibold text-zinc-900">
+                <span className="text-[var(--text-tertiary)]">Target raise</span>
+                <span className="font-semibold text-[var(--text-primary)]">
                   {deal.dealTypeTicket.targetRaise != null
                     ? formatMoney(deal.dealTypeTicket.targetRaise, deal.dealTypeTicket.currency)
                     : "On request"}

@@ -21,29 +21,26 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-// sidebar foreground color — Tailwind v4 CSS-var arbitrary syntax
-export const SIDEBAR_FG = "#cbd5cf"; // --color-sidebar-fg
-
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
 const MAIN_NAV = [
-  { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
-  { href: "/deals", label: "Deals", Icon: Briefcase },
-  { href: "/clients", label: "Clients", Icon: Building },
-  { href: "/investors", label: "Investors", Icon: Users },
-  { href: "/engagement", label: "Engagement", Icon: MessageSquare },
-  { href: "/documents", label: "Documents", Icon: FileText },
-  { href: "/tasks", label: "Tasks", Icon: ListChecks },
-  { href: "/partners", label: "Partners", Icon: Building2 },
-  { href: "/service-providers", label: "Service Providers", Icon: Scale },
-  { href: "/access-matrix", label: "Access Matrix", Icon: ShieldCheck },
+  { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard, iconColor: "text-[var(--t-tag-text-emerald)]" },
+  { href: "/deals", label: "Deals", Icon: Briefcase, iconColor: "text-[var(--t-tag-text-amber)]" },
+  { href: "/clients", label: "Clients", Icon: Building, iconColor: "text-[var(--t-tag-text-blue)]" },
+  { href: "/investors", label: "Investors", Icon: Users, iconColor: "text-[var(--t-tag-text-sky)]" },
+  { href: "/engagement", label: "Engagement", Icon: MessageSquare, iconColor: "text-[var(--t-tag-text-violet)]" },
+  { href: "/documents", label: "Documents", Icon: FileText, iconColor: "text-[var(--t-tag-text-orange)]" },
+  { href: "/tasks", label: "Tasks", Icon: ListChecks, iconColor: "text-[var(--t-tag-text-blue)]" },
+  { href: "/partners", label: "Partners", Icon: Building2, iconColor: "text-[var(--t-tag-text-violet)]" },
+  { href: "/service-providers", label: "Service Providers", Icon: Scale, iconColor: "text-[var(--t-tag-text-gray)]" },
+  { href: "/access-matrix", label: "Access Matrix", Icon: ShieldCheck, iconColor: "text-[var(--t-tag-text-rose)]" },
 ];
 
 const AGENT_CARDS = [
-  { label: "Overview", Icon: Activity },
-  { label: "Prospecting", Icon: Search },
-  { label: "CRM", Icon: Users },
-  { label: "Notes", Icon: FileText },
+  { label: "Overview", Icon: Activity, iconColor: "text-[var(--t-tag-text-emerald)]" },
+  { label: "Prospecting", Icon: Search, iconColor: "text-[var(--t-tag-text-sky)]" },
+  { label: "CRM", Icon: Users, iconColor: "text-[var(--t-tag-text-blue)]" },
+  { label: "Notes", Icon: FileText, iconColor: "text-[var(--t-tag-text-orange)]" },
 ];
 
 // ─── Brand mark ───────────────────────────────────────────────────────────────
@@ -56,10 +53,8 @@ export function BrandMark() {
         <TrendingUp className="h-5 w-5 text-white" strokeWidth={2.5} />
       </span>
       <div className="flex flex-col leading-tight">
-        <span className="text-sm font-bold text-white">NobleStride</span>
-        <span className="text-xs" style={{ color: SIDEBAR_FG }}>
-          Capital
-        </span>
+        <span className="text-sm font-bold text-[var(--text-primary)]">NobleStride</span>
+        <span className="text-xs text-[var(--text-tertiary)]">Capital</span>
       </div>
     </div>
   );
@@ -72,51 +67,47 @@ interface NavItemProps {
   label: string;
   Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   active: boolean;
+  iconColor?: string;
 }
 
-export function NavItem({ href, label, Icon, active }: NavItemProps) {
+// Shared base row classes for NavItem and the agent rows below.
+const NAV_ROW_BASE = "relative flex items-center gap-3 rounded px-3 py-1.5 text-sm transition-colors";
+
+export function NavItem({ href, label, Icon, active, iconColor }: NavItemProps) {
   return (
     <Link
       href={href}
       className={cn(
-        "relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+        NAV_ROW_BASE,
         active
-          ? "bg-white/10 font-medium"
-          : "hover:bg-white/5"
+          ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)] font-medium"
+          : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
       )}
-      style={{ color: active ? "#ffffff" : SIDEBAR_FG }}
     >
-      {/* Left accent bar for active */}
-      {active && (
-        <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-emerald-400" />
-      )}
       <Icon
-        className="h-4 w-4 flex-shrink-0"
-        style={{ color: active ? "#34d399" : SIDEBAR_FG }}
+        className={cn("h-4 w-4 flex-shrink-0", active ? "text-[var(--accent)]" : iconColor ?? "text-[var(--text-tertiary)]")}
       />
       {label}
     </Link>
   );
 }
 
-// ─── Agent card ───────────────────────────────────────────────────────────────
+// ─── Agent row ───────────────────────────────────────────────────────────────
 
-function AgentCard({
+function AgentRow({
   label,
   Icon,
+  iconColor,
 }: {
   label: string;
   Icon: React.ComponentType<{ className?: string }>;
+  iconColor: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1.5 rounded-lg bg-white/5 p-2.5 cursor-default hover:bg-white/10 transition-colors">
-      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/20">
-        <Icon className="h-3.5 w-3.5 text-emerald-400" />
-      </span>
-      <span className="text-[10px] font-medium leading-none" style={{ color: SIDEBAR_FG }}>
-        {label}
-      </span>
-    </div>
+    <button type="button" className={cn(NAV_ROW_BASE, "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]")}>
+      <Icon className={cn("h-4 w-4 flex-shrink-0", iconColor)} />
+      {label}
+    </button>
   );
 }
 
@@ -130,69 +121,58 @@ export function Sidebar() {
   }
 
   return (
-    <aside
-      className="flex flex-col w-64 flex-shrink-0 h-screen sticky top-0 overflow-hidden"
-      style={{ backgroundColor: "#0b1a14" }}
-    >
+    <aside className="flex flex-col w-64 flex-shrink-0 h-screen sticky top-0 overflow-hidden bg-[var(--bg-primary)] border-r border-[var(--border-subtle)]">
       {/* Brand */}
       <BrandMark />
 
       {/* Scrollable middle: MAIN nav + AGENTS */}
       <div className="flex-1 overflow-y-auto px-3 min-h-0">
         {/* MAIN section label */}
-        <p
-          className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-widest opacity-60"
-          style={{ color: SIDEBAR_FG }}
-        >
-          Main
+        <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
+          Workspace
         </p>
 
         <nav className="flex flex-col gap-0.5">
-          {MAIN_NAV.map(({ href, label, Icon }) => (
-            <NavItem key={href} href={href} label={label} Icon={Icon} active={isActive(href)} />
+          {MAIN_NAV.map(({ href, label, Icon, iconColor }) => (
+            <NavItem key={href} href={href} label={label} Icon={Icon} active={isActive(href)} iconColor={iconColor} />
           ))}
         </nav>
 
         {/* AGENTS section */}
         <div className="mt-6">
           <div className="mb-2 flex items-center justify-between px-1">
-            <p
-              className="text-[10px] font-semibold uppercase tracking-widest opacity-60"
-              style={{ color: SIDEBAR_FG }}
-            >
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
               Agents
             </p>
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[9px] font-bold text-white">
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[var(--accent)] text-[9px] font-bold text-white">
               3
             </span>
           </div>
-          {/* 2×2 agent card grid */}
-          <div className="grid grid-cols-2 gap-2 pb-2">
-            {AGENT_CARDS.map(({ label, Icon }) => (
-              <AgentCard key={label} label={label} Icon={Icon} />
+          {/* Agent rows, flattened to nav-style rows */}
+          <div className="flex flex-col gap-0.5 pb-2">
+            {AGENT_CARDS.map(({ label, Icon, iconColor }) => (
+              <AgentRow key={label} label={label} Icon={Icon} iconColor={iconColor} />
             ))}
           </div>
         </div>
       </div>
 
       {/* Settings pinned at bottom */}
-      <div className="flex-shrink-0 border-t border-white/5 px-3 pt-2 pb-1">
+      <div className="flex-shrink-0 border-t border-[var(--border-subtle)] px-3 pt-2 pb-1">
         <button
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-white/5 transition-colors"
-          style={{ color: SIDEBAR_FG }}
+          className="flex w-full items-center gap-3 rounded px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
           type="button"
         >
-          <Settings className="h-4 w-4 flex-shrink-0" style={{ color: SIDEBAR_FG }} />
+          <Settings className="h-4 w-4 flex-shrink-0 text-[var(--text-tertiary)]" />
           Settings
         </button>
       </div>
 
       {/* Collapse chevron */}
-      <div className="flex-shrink-0 flex items-center justify-center py-3 border-t border-white/5">
+      <div className="flex-shrink-0 flex items-center justify-center py-3 border-t border-[var(--border-subtle)]">
         <button
           type="button"
-          className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-white/5 transition-colors"
-          style={{ color: SIDEBAR_FG }}
+          className="flex h-7 w-7 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] transition-colors"
           aria-label="Collapse sidebar"
         >
           <ChevronLeft className="h-4 w-4" />

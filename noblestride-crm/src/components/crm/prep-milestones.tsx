@@ -6,7 +6,7 @@ import { visiblePrepMilestones } from "@/lib/milestones";
 
 function CheckIcon() {
   return (
-    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]">
       <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3" aria-hidden="true">
         <path
           d="M3.5 8.5l3 3 6-6"
@@ -23,7 +23,7 @@ function CheckIcon() {
 function EmptyIcon() {
   return (
     <span
-      className="h-5 w-5 shrink-0 rounded-full border-2 border-zinc-200 bg-white"
+      className="h-5 w-5 shrink-0 rounded-full border-2 border-[var(--border-subtle)] bg-[var(--bg-primary)]"
       aria-hidden="true"
     />
   );
@@ -34,7 +34,7 @@ export function PrepMilestones({ docTypes, financingType }: { docTypes: string[]
   const present = new Set(docTypes);
 
   return (
-    <ul className="divide-y divide-zinc-100">
+    <ul className="divide-y divide-[var(--border-subtle)]">
       {visiblePrepMilestones(financingType).map((m) => {
         const done = present.has(m.docType);
         return (
@@ -42,7 +42,7 @@ export function PrepMilestones({ docTypes, financingType }: { docTypes: string[]
             {done ? <CheckIcon /> : <EmptyIcon />}
             <span
               className={
-                "flex-1 text-sm " + (done ? "font-medium text-zinc-900" : "text-zinc-500")
+                "flex-1 text-sm " + (done ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")
               }
             >
               {m.label}
@@ -50,7 +50,7 @@ export function PrepMilestones({ docTypes, financingType }: { docTypes: string[]
             <span
               className={
                 "text-xs font-medium uppercase tracking-wide " +
-                (done ? "text-emerald-600" : "text-zinc-400")
+                (done ? "text-[var(--t-tag-text-emerald)]" : "text-[var(--text-tertiary)]")
               }
             >
               {done ? "Prepared" : "Pending"}

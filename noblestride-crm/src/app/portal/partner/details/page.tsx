@@ -14,10 +14,10 @@ interface PageProps {
 }
 
 const inputClass =
-  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 " +
-  "placeholder:text-zinc-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600";
+  "w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] " +
+  "placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]";
 
-const labelClass = "block text-xs font-medium uppercase tracking-wide text-zinc-500";
+const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]";
 
 export default async function PartnerDetailsPage({ searchParams }: PageProps) {
   const vp = await getViewpoint();
@@ -28,39 +28,39 @@ export default async function PartnerDetailsPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900">My Details</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">My Details</h1>
+        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
           Your partner record with NobleStride Capital. Keep your contact details current so we
           can reach you about referral progress and fee payouts.
         </p>
       </div>
 
       {saved === "1" && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-          <span className="font-semibold text-emerald-800">Saved</span> — your contact details
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] p-4 text-sm text-[var(--t-tag-text-emerald)]">
+          <span className="font-semibold text-[var(--t-tag-text-emerald)]">Saved</span> — your contact details
           have been updated.
         </div>
       )}
 
       {/* Read-only: agreement + fee-sharing, set by NobleStride */}
-      <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
           Partnership status
         </h2>
         <dl className="mt-3 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
           <div>
             <dt className={labelClass}>Partner</dt>
-            <dd className="mt-1 text-sm font-medium text-zinc-900">{partner.name}</dd>
+            <dd className="mt-1 text-sm font-medium text-[var(--text-primary)]">{partner.name}</dd>
           </div>
           <div>
             <dt className={labelClass}>Advisor type</dt>
-            <dd className="mt-1 text-sm text-zinc-900">
+            <dd className="mt-1 text-sm text-[var(--text-primary)]">
               {partner.advisorType ? label("AdvisorType", partner.advisorType) : "—"}
             </dd>
           </div>
           <div>
             <dt className={labelClass}>Partner agreement</dt>
-            <dd className="mt-1 text-sm text-zinc-900">
+            <dd className="mt-1 text-sm text-[var(--text-primary)]">
               {label("PartnerAgreementStatus", partner.partnerAgreementStatus)}
             </dd>
           </div>
@@ -71,8 +71,8 @@ export default async function PartnerDetailsPage({ searchParams }: PageProps) {
                 className={
                   "rounded-full px-2.5 py-1 text-xs font-medium " +
                   (partner.feeSharingAgreement
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-zinc-100 text-zinc-500")
+                    ? "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
+                    : "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]")
                 }
               >
                 {partner.feeSharingAgreement ? "Fee-sharing agreed" : "No fee-sharing agreement"}
@@ -82,21 +82,21 @@ export default async function PartnerDetailsPage({ searchParams }: PageProps) {
           {partner.feeSharingTerms && (
             <div className="sm:col-span-2">
               <dt className={labelClass}>Fee-sharing terms</dt>
-              <dd className="mt-1 rounded-md bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
+              <dd className="mt-1 rounded-md bg-[var(--bg-secondary)] px-3 py-2 text-sm text-[var(--text-secondary)]">
                 {partner.feeSharingTerms}
               </dd>
             </div>
           )}
         </dl>
-        <p className="mt-4 text-xs text-zinc-400">
+        <p className="mt-4 text-xs text-[var(--text-tertiary)]">
           Agreement status and fee-sharing terms are maintained by NobleStride. Contact the team
           if anything looks wrong.
         </p>
       </section>
 
       {/* Editable: own contact details */}
-      <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
           Contact details
         </h2>
         <form action={updateOwnDetailsAction} className="mt-4 space-y-4">
@@ -141,10 +141,10 @@ export default async function PartnerDetailsPage({ searchParams }: PageProps) {
               className={"mt-1 " + inputClass}
             />
           </div>
-          <div className="flex justify-end border-t border-zinc-100 pt-4">
+          <div className="flex justify-end border-t border-[var(--border-subtle)] pt-4">
             <button
               type="submit"
-              className="rounded-full bg-emerald-950 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
+              className="rounded bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
             >
               Save details
             </button>

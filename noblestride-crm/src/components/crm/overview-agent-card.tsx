@@ -13,19 +13,19 @@ interface OverviewAgentCardProps {
 export function OverviewAgentCard({ insights }: OverviewAgentCardProps) {
   return (
     <Card className="overflow-hidden">
-      {/* Header — subtle emerald→violet wash so the AI panel reads as special */}
-      <div className="flex items-start justify-between border-b border-zinc-100 bg-gradient-to-r from-emerald-50/60 via-white to-violet-50/50 px-5 py-4">
+      {/* Header */}
+      <div className="flex items-start justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-emerald-500 shadow-sm">
-            <Sparkles className="h-5 w-5 text-white" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--t-tag-bg-violet)] text-[var(--t-tag-text-violet)]">
+            <Sparkles className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-zinc-900">Overview Agent</h2>
-            <p className="text-xs text-zinc-500">Analyzing your pipeline and activity</p>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Overview Agent</h2>
+            <p className="text-xs text-[var(--text-tertiary)]">Analyzing your pipeline and activity</p>
           </div>
         </div>
-        {/* Active status with a soft pulsing halo */}
-        <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+        {/* Active status with a soft pulsing halo — status dot stays semantic emerald */}
+        <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-tertiary)]">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
@@ -39,10 +39,10 @@ export function OverviewAgentCard({ insights }: OverviewAgentCardProps) {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-zinc-100 bg-zinc-50/50 px-5 py-3 text-center">
+      <div className="border-t border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-5 py-3 text-center">
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-600 transition-colors hover:text-violet-700"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--accent)] transition-colors hover:text-[var(--accent-hover)]"
         >
           <Sparkles className="h-3 w-3" />
           Ask the Overview Agent a question

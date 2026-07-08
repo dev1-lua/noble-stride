@@ -152,8 +152,8 @@ export default async function DealsPage({ searchParams }: PageProps) {
   const header = (total: number) => (
     <div className="flex items-start justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900">Deals</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Deals</h1>
+        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
           Mandates and transactions in one queue — {total} deal{total === 1 ? "" : "s"}
         </p>
       </div>
@@ -180,7 +180,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
         )}
         <a
           href={`/deals/export${exportQuery ? `?${exportQuery}` : ""}`}
-          className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-800 transition-colors hover:bg-zinc-50 active:bg-zinc-100"
+          className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-secondary)] active:bg-[var(--bg-tertiary)]"
         >
           Export CSV
         </a>
@@ -231,16 +231,16 @@ export default async function DealsPage({ searchParams }: PageProps) {
       <div className="space-y-5">
         {header(boardTotal)}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center rounded-md border border-zinc-200 bg-white p-0.5 text-xs font-medium">
+          <div className="flex items-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-0.5 text-xs font-medium">
             <Link
               href={boardTypeHref("mandate")}
-              className={`rounded px-2.5 py-1 transition-colors ${boardType === "mandate" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50"}`}
+              className={`rounded px-2.5 py-1 transition-colors ${boardType === "mandate" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"}`}
             >
               Mandates
             </Link>
             <Link
               href={boardTypeHref("transaction")}
-              className={`rounded px-2.5 py-1 transition-colors ${boardType === "transaction" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50"}`}
+              className={`rounded px-2.5 py-1 transition-colors ${boardType === "transaction" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"}`}
             >
               Transactions
             </Link>
@@ -292,15 +292,15 @@ export default async function DealsPage({ searchParams }: PageProps) {
       </div>
       {spec.groupBy ? (
         groups.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-zinc-200 bg-white py-12 text-center text-sm text-zinc-400">
+          <div className="rounded-lg border border-dashed border-[var(--border-subtle)] bg-[var(--bg-primary)] py-12 text-center text-sm text-[var(--text-tertiary)]">
             No deals match these filters.
           </div>
         ) : (
           <div className="space-y-6">
             {groups.map((g) => (
               <div key={g.key} className="space-y-2">
-                <h2 className="text-sm font-semibold text-zinc-700">
-                  {g.label} <span className="font-normal text-zinc-400">({g.count})</span>
+                <h2 className="text-sm font-semibold text-[var(--text-secondary)]">
+                  {g.label} <span className="font-normal text-[var(--text-tertiary)]">({g.count})</span>
                 </h2>
                 <DealsTable
                   rows={rows.filter((r) => groupKeyOf(r, spec.groupBy) === g.key)}
@@ -317,23 +317,23 @@ export default async function DealsPage({ searchParams }: PageProps) {
         <DealsTable rows={rows} columns={columns} sort={spec.sort} dir={spec.dir} sortHref={sortHref} />
       )}
       {!spec.groupBy && pageCount > 1 && (
-        <div className="flex items-center justify-between border-t border-zinc-100 pt-3 text-sm">
+        <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-3 text-sm">
           {spec.page > 1 ? (
-            <Link href={pageHref(spec.page - 1)} className="font-medium text-emerald-700 hover:underline">
+            <Link href={pageHref(spec.page - 1)} className="font-medium text-[var(--accent)] hover:underline">
               ← Prev
             </Link>
           ) : (
-            <span className="text-zinc-300">← Prev</span>
+            <span className="text-[var(--text-tertiary)]">← Prev</span>
           )}
-          <span className="text-zinc-500">
+          <span className="text-[var(--text-tertiary)]">
             Page {spec.page} of {pageCount}
           </span>
           {spec.page < pageCount ? (
-            <Link href={pageHref(spec.page + 1)} className="font-medium text-emerald-700 hover:underline">
+            <Link href={pageHref(spec.page + 1)} className="font-medium text-[var(--accent)] hover:underline">
               Next →
             </Link>
           ) : (
-            <span className="text-zinc-300">Next →</span>
+            <span className="text-[var(--text-tertiary)]">Next →</span>
           )}
         </div>
       )}
