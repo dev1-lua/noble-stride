@@ -249,8 +249,9 @@ async function main() {
   }
 
   // One ACTIVE investor account so the portal is directly loggable-into (spec §11).
+  // Uses the first contact with an email of the first Approved investor.
   const demoContact = await prisma.person.findFirst({
-    where: { email: { not: null }, investor: { onboardingStatus: "Approved" }, isPrimaryContact: true },
+    where: { email: { not: null }, investor: { onboardingStatus: "Approved" } },
     orderBy: { createdAt: "asc" },
     include: { investor: { select: { name: true } } },
   });
@@ -266,7 +267,7 @@ async function main() {
     });
     console.log(`Seeded investor account: ${demoContact.email} (${demoContact.investor?.name})`);
   } else {
-    console.log("No demo investor account seeded: no Person with isPrimaryContact=true + email found on an Approved investor.");
+    console.log("No demo investor account seeded: no Person with an email found on an Approved investor.");
   }
 
   // PARTNERS
