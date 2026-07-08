@@ -70,8 +70,8 @@ export default async function TasksPage() {
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Tasks</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Tasks</h1>
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             {tasks.length} action point{tasks.length === 1 ? "" : "s"} across the team
           </p>
         </div>
@@ -87,12 +87,12 @@ export default async function TasksPage() {
 
       <div className="grid grid-cols-5 gap-4">
         {STATUS_ORDER.map((s) => (
-          <div key={s} className="rounded-xl border border-zinc-200 bg-white p-4">
-            <div className="text-2xl font-bold text-zinc-900">{counts[s]}</div>
-            <div className="text-xs text-zinc-500">{label("TaskStatus", s)}</div>
+          <div key={s} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4">
+            <div className="text-2xl font-bold text-[var(--text-primary)]">{counts[s]}</div>
+            <div className="text-xs text-[var(--text-tertiary)]">{label("TaskStatus", s)}</div>
           </div>
         ))}
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-4">
           <div className="text-2xl font-bold text-rose-700">{overdueCount}</div>
           <div className="text-xs text-rose-600">Overdue</div>
         </div>

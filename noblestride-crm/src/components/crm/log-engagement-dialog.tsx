@@ -206,7 +206,7 @@ export function LogEngagementDialog({
         >
           <Card className="w-full max-w-md mx-4 shadow-xl">
             <CardHeader>
-              <h2 className="text-sm font-semibold text-zinc-900">{dialogTitle}</h2>
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">{dialogTitle}</h2>
             </CardHeader>
             <CardBody>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -264,14 +264,14 @@ export function LogEngagementDialog({
                   disabled={pending}
                 />
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-zinc-700">Notes</label>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Notes</label>
                   <textarea
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
                     placeholder="Additional notes…"
                     disabled={pending}
                     rows={3}
-                    className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent disabled:bg-zinc-50 disabled:text-zinc-400 disabled:cursor-not-allowed resize-none"
+                    className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent disabled:bg-[var(--bg-secondary)] disabled:text-[var(--text-tertiary)] disabled:cursor-not-allowed resize-none"
                   />
                 </div>
 

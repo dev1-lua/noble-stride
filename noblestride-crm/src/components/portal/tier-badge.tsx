@@ -2,9 +2,9 @@
 import type { Tier } from "@/server/visibility";
 
 const TIER_STYLE: Record<Exclude<Tier, "NONE">, { label: string; cls: string }> = {
-  PRE_INTEREST: { label: "Teaser", cls: "bg-zinc-100 text-zinc-600" },
-  AFTER_NDA: { label: "NDA Signed", cls: "bg-sky-50 text-sky-700" },
-  DD: { label: "Due Diligence", cls: "bg-violet-50 text-violet-700" },
+  PRE_INTEREST: { label: "Teaser", cls: "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]" },
+  AFTER_NDA: { label: "NDA Signed", cls: "bg-[var(--t-tag-bg-sky)] text-[var(--t-tag-text-sky)]" },
+  DD: { label: "Due Diligence", cls: "bg-[var(--t-tag-bg-violet)] text-[var(--t-tag-text-violet)]" },
 };
 
 export function TierBadge({ tier }: { tier: Exclude<Tier, "NONE"> }) {

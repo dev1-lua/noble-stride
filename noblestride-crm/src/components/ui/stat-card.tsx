@@ -24,30 +24,30 @@ export function StatCard({ label, value, delta, icon, sub, className }: StatCard
   return (
     <div
       className={cn(
-        "rounded-lg bg-white border border-zinc-200 shadow-sm p-5 flex flex-col gap-3",
+        "rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] p-4 flex flex-col gap-3",
         className
       )}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-zinc-500 uppercase tracking-wide">{label}</span>
+        <span className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">{label}</span>
         {icon && (
-          <span className="flex items-center justify-center h-8 w-8 rounded-md bg-emerald-50 text-emerald-600">
+          <span className="flex items-center justify-center h-8 w-8 rounded-md bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]">
             {icon}
           </span>
         )}
       </div>
 
       <div className="flex items-end gap-3">
-        <span className="text-2xl font-bold text-zinc-900 leading-none">{value}</span>
+        <span className="text-2xl font-bold text-[var(--text-primary)] leading-none">{value}</span>
         {delta && (
-          <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 mb-0.5">
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--t-tag-bg-emerald)] px-2 py-0.5 text-xs font-semibold text-[var(--t-tag-text-emerald)] mb-0.5">
             <ArrowUpRight className="h-3 w-3" />
             {delta}
           </span>
         )}
       </div>
 
-      {sub && <p className="text-xs text-zinc-400">{sub}</p>}
+      {sub && <p className="text-xs text-[var(--text-tertiary)]">{sub}</p>}
     </div>
   );
 }

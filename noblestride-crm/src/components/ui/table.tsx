@@ -34,7 +34,7 @@ interface THeadProps extends React.HTMLAttributes<HTMLTableSectionElement> {
 
 export function THead({ children, className, ...props }: THeadProps) {
   return (
-    <thead className={cn("border-b border-zinc-200 bg-zinc-50/70", className)} {...props}>
+    <thead className={cn("border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)]", className)} {...props}>
       {children}
     </thead>
   );
@@ -46,7 +46,7 @@ interface TBodyProps extends React.HTMLAttributes<HTMLTableSectionElement> {
 
 export function TBody({ children, className, ...props }: TBodyProps) {
   return (
-    <tbody className={cn("divide-y divide-zinc-100", className)} {...props}>
+    <tbody className={cn("divide-y divide-[var(--border-subtle)]", className)} {...props}>
       {children}
     </tbody>
   );
@@ -58,7 +58,7 @@ interface TrProps extends React.HTMLAttributes<HTMLTableRowElement> {
 
 export function Tr({ children, className, ...props }: TrProps) {
   return (
-    <tr className={cn("hover:bg-zinc-50 transition-colors", className)} {...props}>
+    <tr className={cn("hover:bg-[var(--bg-secondary)] transition-colors", className)} {...props}>
       {children}
     </tr>
   );
@@ -72,7 +72,7 @@ export function Th({ children, className, ...props }: ThProps) {
   return (
     <th
       className={cn(
-        "px-4 py-2.5 text-left text-[11px] font-semibold text-zinc-400 uppercase tracking-wider whitespace-nowrap",
+        "px-3 py-2 text-left text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wide whitespace-nowrap",
         className
       )}
       {...props}
@@ -89,7 +89,7 @@ interface TdProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
 export function Td({ children, className, ...props }: TdProps) {
   return (
     <td
-      className={cn("px-4 py-3.5 text-zinc-700 align-middle", className)}
+      className={cn("px-3 py-2 text-[var(--text-secondary)] align-middle", className)}
       {...props}
     >
       {children}

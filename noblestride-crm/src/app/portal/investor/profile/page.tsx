@@ -12,12 +12,12 @@ import { saveFundProfile } from "./actions";
 export const dynamic = "force-dynamic";
 
 const INPUT_CLS =
-  "w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500";
+  "w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-zinc-500">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium text-[var(--text-tertiary)]">{label}</span>
       {children}
     </label>
   );
@@ -43,7 +43,7 @@ function ChipGroup({
             defaultChecked={selected.includes(o.value)}
             className="peer sr-only"
           />
-          <span className="inline-block rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-500 transition-colors peer-checked:border-emerald-300 peer-checked:bg-emerald-50 peer-checked:text-emerald-800 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-500">
+          <span className="inline-block rounded-full border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-1 text-xs font-medium text-[var(--text-tertiary)] transition-colors peer-checked:border-[var(--accent)] peer-checked:bg-[var(--t-tag-bg-emerald)] peer-checked:text-[var(--t-tag-text-emerald)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--accent)]">
             {o.label}
           </span>
         </label>
@@ -54,8 +54,8 @@ function ChipGroup({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-5">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">{title}</h2>
+    <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">{title}</h2>
       <div className="mt-4 space-y-4">{children}</div>
     </section>
   );
@@ -108,15 +108,15 @@ export default async function FundProfilePage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900">Fund Profile</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Fund Profile</h1>
+        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
           These preferences drive which opportunities NobleStride shows your fund. Keep them
           current — your NobleStride team can also update them on your behalf.
         </p>
       </div>
 
       {saved && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-medium text-emerald-800">
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] px-5 py-3 text-sm font-medium text-[var(--t-tag-text-emerald)]">
           Profile saved. Your deal matching preferences are now up to date.
         </div>
       )}
@@ -295,12 +295,12 @@ export default async function FundProfilePage({
         </Section>
 
         <div className="flex items-center justify-end gap-3">
-          <span className="text-xs text-zinc-400">
+          <span className="text-xs text-[var(--text-tertiary)]">
             Changes apply to {investor.name} only and take effect immediately.
           </span>
           <button
             type="submit"
-            className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+            className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
           >
             Save Fund Profile
           </button>

@@ -42,8 +42,8 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Investor Database</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Investor Database</h1>
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             {segments.total} investors across all sectors and geographies
           </p>
         </div>
@@ -63,7 +63,7 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
         (segments.pendingReview > 0 ? (
           <a
             href="/investors?onboarding=PendingReview"
-            className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 hover:bg-amber-100"
+            className="flex items-center justify-between rounded-lg border border-[var(--t-tag-bg-amber)] bg-[var(--t-tag-bg-amber)] px-4 py-2.5 text-sm text-[var(--t-tag-text-amber)] hover:bg-amber-100"
           >
             <span>
               <strong>{segments.pendingReview}</strong> investor registration{segments.pendingReview === 1 ? "" : "s"} awaiting review
@@ -73,7 +73,7 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
         ) : (
           <a
             href="/investors?onboarding=PendingReview"
-            className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-500 hover:bg-zinc-100"
+            className="flex items-center justify-between rounded-lg border border-[var(--t-tag-bg-gray)] bg-[var(--t-tag-bg-gray)] px-4 py-2.5 text-sm text-[var(--t-tag-text-gray)] hover:bg-zinc-100"
           >
             <span>No investor registrations awaiting review</span>
             <span className="font-medium">Review queue →</span>
@@ -86,7 +86,7 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
       </Suspense>
 
       {/* Results count */}
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-[var(--text-tertiary)]">
         {investors.length === segments.total
           ? `Showing all ${investors.length} investors`
           : `Showing ${investors.length} of ${segments.total} investors`}

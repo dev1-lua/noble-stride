@@ -1,7 +1,7 @@
 export { Tag } from "./tag";
 export { Chip } from "./chip";
 export { Avatar, initials } from "./avatar";
-export { Button } from "./button";
+export { Button, IconButton } from "./button";
 export type { ButtonProps } from "./button";
 export { Badge } from "./badge";
 export { Card, CardHeader, CardBody } from "./card";

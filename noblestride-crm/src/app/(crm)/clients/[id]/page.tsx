@@ -120,14 +120,14 @@ export default async function ClientDetailPage({ params }: PageProps) {
         <Avatar name={client.name} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{client.name}</h1>
+            <h1 className="text-2xl font-bold text-[var(--text-primary)] leading-tight">{client.name}</h1>
             {c.status && <Chip value={c.status} group="ClientStatus" />}
-            {c.codename && <span className="text-sm text-zinc-400">&ldquo;{c.codename}&rdquo;</span>}
+            {c.codename && <span className="text-sm text-[var(--text-tertiary)]">&ldquo;{c.codename}&rdquo;</span>}
             {sectors.map((s: string) => (
               <Chip key={s} value={s} group="Sector" />
             ))}
           </div>
-          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-500">
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--text-tertiary)]">
             {c.hqCity && <span>{c.hqCity}</span>}
             {c.hqCountry && <span>{c.hqCountry}</span>}
             {c.yearFounded && <span>Est. {c.yearFounded}</span>}
@@ -152,13 +152,13 @@ export default async function ClientDetailPage({ params }: PageProps) {
       {/* Key facts */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">Company Profile</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Company Profile</h2>
         </CardHeader>
         <CardBody>
           <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {countries.length > 0 && (
               <div className="sm:col-span-2">
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Geographies</dt>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Geographies</dt>
                 <dd className="mt-1 flex flex-wrap gap-1">
                   {countries.map((g: string) => (
                     <Chip key={g} value={g} group="Geography" />
@@ -169,49 +169,49 @@ export default async function ClientDetailPage({ params }: PageProps) {
 
             {c.coreProduct && (
               <div className="sm:col-span-2 lg:col-span-3">
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Core Product</dt>
-                <dd className="mt-1 text-sm text-zinc-700">{c.coreProduct}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Core Product</dt>
+                <dd className="mt-1 text-sm text-[var(--text-secondary)]">{c.coreProduct}</dd>
               </div>
             )}
 
             {c.founders && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Founders</dt>
-                <dd className="mt-1 text-sm text-zinc-900">{c.founders}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Founders</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">{c.founders}</dd>
               </div>
             )}
 
             {(c.founderGenders ?? []).length > 0 && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Founders&apos; Gender</dt>
-                <dd className="mt-1 text-sm text-zinc-900">{(c.founderGenders ?? []).map((g: string) => label("FounderGender", g)).join(", ")}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Founders&apos; Gender</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">{(c.founderGenders ?? []).map((g: string) => label("FounderGender", g)).join(", ")}</dd>
               </div>
             )}
 
             {c.foundersNationality && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Founders&apos; Nationality</dt>
-                <dd className="mt-1 text-sm text-zinc-900">{c.foundersNationality}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Founders&apos; Nationality</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">{c.foundersNationality}</dd>
               </div>
             )}
 
             {c.registrationNo && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Registration No.</dt>
-                <dd className="mt-1 text-sm text-zinc-900">{c.registrationNo}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Registration No.</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">{c.registrationNo}</dd>
               </div>
             )}
 
             {c.yearFounded && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Years of Operation</dt>
-                <dd className="mt-1 text-sm text-zinc-900">{new Date().getFullYear() - c.yearFounded}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Years of Operation</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">{new Date().getFullYear() - c.yearFounded}</dd>
               </div>
             )}
 
             {impactFlags.length > 0 && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Impact Flags</dt>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Impact Flags</dt>
                 <dd className="mt-1 flex flex-wrap gap-1">
                   {impactFlags.map((flag) => (
                     <Chip key={flag} value={flag} group="ImpactFlag" />
@@ -222,57 +222,57 @@ export default async function ClientDetailPage({ params }: PageProps) {
 
             {revenueLastYear != null && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Revenue (Last Year)</dt>
-                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(revenueLastYear)}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Revenue (Last Year)</dt>
+                <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{formatMoney(revenueLastYear)}</dd>
               </div>
             )}
 
             {revenueForecast != null && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Revenue Forecast</dt>
-                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(revenueForecast)}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Revenue Forecast</dt>
+                <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{formatMoney(revenueForecast)}</dd>
               </div>
             )}
 
             {c.profitability && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Profitability</dt>
-                <dd className="mt-1 text-sm text-zinc-900">{label("Profitability", c.profitability)}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Profitability</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">{label("Profitability", c.profitability)}</dd>
               </div>
             )}
 
             {c.ebitda != null && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">EBITDA</dt>
-                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(Number(c.ebitda))}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">EBITDA</dt>
+                <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{formatMoney(Number(c.ebitda))}</dd>
               </div>
             )}
 
             {c.existingDebt != null && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Existing Debt</dt>
-                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(Number(c.existingDebt))}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Existing Debt</dt>
+                <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{formatMoney(Number(c.existingDebt))}</dd>
               </div>
             )}
 
             {c.totalAssets != null && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Total Assets</dt>
-                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(Number(c.totalAssets))}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Total Assets</dt>
+                <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{formatMoney(Number(c.totalAssets))}</dd>
               </div>
             )}
 
             {c.existingInvestors && (
               <div className="sm:col-span-2">
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Existing Investors</dt>
-                <dd className="mt-1 text-sm text-zinc-700">{c.existingInvestors}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Existing Investors</dt>
+                <dd className="mt-1 text-sm text-[var(--text-secondary)]">{c.existingInvestors}</dd>
               </div>
             )}
 
             {c.description && (
               <div className="sm:col-span-2 lg:col-span-3">
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Description</dt>
-                <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{c.description}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Description</dt>
+                <dd className="mt-1 text-sm text-[var(--text-secondary)] whitespace-pre-line">{c.description}</dd>
               </div>
             )}
           </dl>
@@ -283,50 +283,50 @@ export default async function ClientDetailPage({ params }: PageProps) {
       {(ebitda != null || netProfit != null || existingDebt != null || loanBook != null || totalAssets != null || c.staffCount != null || c.branchCount != null) && (
         <Card>
           <CardHeader>
-            <h2 className="text-sm font-semibold text-zinc-900">Financials</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Financials</h2>
           </CardHeader>
           <CardBody>
             <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
               {c.staffCount != null && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Staff Count</dt>
-                  <dd className="mt-1 text-sm text-zinc-900">{c.staffCount}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Staff Count</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-primary)]">{c.staffCount}</dd>
                 </div>
               )}
               {c.branchCount != null && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Branch Count</dt>
-                  <dd className="mt-1 text-sm text-zinc-900">{c.branchCount}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Branch Count</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-primary)]">{c.branchCount}</dd>
                 </div>
               )}
               {ebitda != null && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">EBITDA</dt>
-                  <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(ebitda)}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">EBITDA</dt>
+                  <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{formatMoney(ebitda)}</dd>
                 </div>
               )}
               {netProfit != null && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Net Profit</dt>
-                  <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(netProfit)}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Net Profit</dt>
+                  <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{formatMoney(netProfit)}</dd>
                 </div>
               )}
               {existingDebt != null && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Existing Debt</dt>
-                  <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(existingDebt)}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Existing Debt</dt>
+                  <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{formatMoney(existingDebt)}</dd>
                 </div>
               )}
               {loanBook != null && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Loan Book</dt>
-                  <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(loanBook)}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Loan Book</dt>
+                  <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{formatMoney(loanBook)}</dd>
                 </div>
               )}
               {totalAssets != null && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Total Assets</dt>
-                  <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(totalAssets)}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Total Assets</dt>
+                  <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{formatMoney(totalAssets)}</dd>
                 </div>
               )}
             </dl>
@@ -338,32 +338,32 @@ export default async function ClientDetailPage({ params }: PageProps) {
       {(c.businessModel || c.ownershipStructure || c.directorsManagement || c.targetClients) && (
         <Card>
           <CardHeader>
-            <h2 className="text-sm font-semibold text-zinc-900">Governance</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Governance</h2>
           </CardHeader>
           <CardBody>
             <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
               {c.businessModel && (
                 <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Business Model</dt>
-                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{c.businessModel}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Business Model</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-secondary)] whitespace-pre-line">{c.businessModel}</dd>
                 </div>
               )}
               {c.ownershipStructure && (
                 <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Ownership Structure</dt>
-                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{c.ownershipStructure}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Ownership Structure</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-secondary)] whitespace-pre-line">{c.ownershipStructure}</dd>
                 </div>
               )}
               {c.directorsManagement && (
                 <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Directors / Management</dt>
-                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{c.directorsManagement}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Directors / Management</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-secondary)] whitespace-pre-line">{c.directorsManagement}</dd>
                 </div>
               )}
               {c.targetClients && (
                 <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Target Clients</dt>
-                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{c.targetClients}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Target Clients</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-secondary)] whitespace-pre-line">{c.targetClients}</dd>
                 </div>
               )}
             </dl>
@@ -389,7 +389,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
       {/* Mandates */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Mandates
             {client.mandates.length > 0 && (
               <Badge tone="neutral" className="ml-2">{client.mandates.length}</Badge>
@@ -398,14 +398,14 @@ export default async function ClientDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardBody>
           {client.mandates.length === 0 ? (
-            <p className="text-sm text-zinc-400">No mandates linked.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">No mandates linked.</p>
           ) : (
-            <ul className="divide-y divide-zinc-100">
+            <ul className="divide-y divide-[var(--border-subtle)]">
               {client.mandates.map((m) => (
                 <li key={m.id} className="py-3 flex items-center justify-between gap-4">
                   <Link
                     href={`/mandates/${m.id}`}
-                    className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors"
+                    className="text-sm font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
                   >
                     {m.name}
                   </Link>
@@ -420,7 +420,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
       {/* Transactions */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Transactions
             {client.transactions.length > 0 && (
               <Badge tone="neutral" className="ml-2">{client.transactions.length}</Badge>
@@ -429,14 +429,14 @@ export default async function ClientDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardBody>
           {client.transactions.length === 0 ? (
-            <p className="text-sm text-zinc-400">No transactions linked.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">No transactions linked.</p>
           ) : (
-            <ul className="divide-y divide-zinc-100">
+            <ul className="divide-y divide-[var(--border-subtle)]">
               {client.transactions.map((txn) => (
                 <li key={txn.id} className="py-3 flex items-center justify-between gap-4">
                   <Link
                     href={`/transactions/${txn.id}`}
-                    className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors"
+                    className="text-sm font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
                   >
                     {txn.name}
                   </Link>

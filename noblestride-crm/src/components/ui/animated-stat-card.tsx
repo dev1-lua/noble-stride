@@ -1,7 +1,7 @@
 "use client";
 
 // Premium metric tile: staggered entrance (via parent <Stagger>), count-up value,
-// hover lift, and a refined gradient icon chip. Formatting happens client-side from
+// hover lift, and a flat tag-token icon chip. Formatting happens client-side from
 // raw numbers (the format discriminator crosses the RSC boundary, a function can't).
 
 import { motion, type Variants } from "motion/react";
@@ -54,21 +54,15 @@ export function AnimatedStatCard({
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 380, damping: 26 }}
       className={cn(
-        "group relative flex flex-col gap-3 rounded-xl border border-zinc-200/80 bg-white p-5",
-        "shadow-[0_1px_2px_rgba(16,24,40,0.04),0_2px_8px_rgba(16,24,40,0.04)]",
-        "transition-[box-shadow,border-color] duration-300",
-        "hover:border-emerald-200 hover:shadow-[0_4px_20px_-4px_rgba(16,185,129,0.18)]"
+        "group relative flex flex-col gap-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5"
       )}
     >
-      {/* hairline accent that grows on hover */}
-      <span className="pointer-events-none absolute inset-x-5 top-0 h-px origin-left scale-x-0 bg-gradient-to-r from-emerald-400/0 via-emerald-400/70 to-emerald-400/0 transition-transform duration-500 group-hover:scale-x-100" />
-
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
           {label}
         </span>
         {icon && (
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 ring-1 ring-inset ring-emerald-100">
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]">
             {icon}
           </span>
         )}
@@ -78,17 +72,17 @@ export function AnimatedStatCard({
         <CountUp
           value={value}
           format={formatters[format]}
-          className="text-[1.75rem] font-bold leading-none tracking-tight text-zinc-900 tabular-nums"
+          className="text-[1.75rem] font-bold leading-none tracking-tight text-[var(--text-primary)] tabular-nums"
         />
         {deltaText && (
-          <span className="mb-0.5 inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
+          <span className="mb-0.5 inline-flex items-center gap-0.5 rounded-full bg-[var(--t-tag-bg-emerald)] px-2 py-0.5 text-xs font-semibold text-[var(--t-tag-text-emerald)]">
             <ArrowUpRight className="h-3 w-3" />
             {deltaText}
           </span>
         )}
       </div>
 
-      {sub && <p className="text-xs text-zinc-400">{sub}</p>}
+      {sub && <p className="text-xs text-[var(--text-tertiary)]">{sub}</p>}
     </motion.div>
   );
 }

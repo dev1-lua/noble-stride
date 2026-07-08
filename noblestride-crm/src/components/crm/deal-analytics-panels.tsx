@@ -33,7 +33,7 @@ const feedValue = (field: string, value: string | null) =>
   value == null ? "—" : label(FEED_VOCAB_GROUPS[field] ?? field, value);
 
 export function StageChangeFeedList({ items }: { items: StageChangeFeedItem[] }) {
-  if (items.length === 0) return <p className="text-xs text-zinc-400">No changes recorded yet.</p>;
+  if (items.length === 0) return <p className="text-xs text-[var(--text-tertiary)]">No changes recorded yet.</p>;
   return (
     <ul className="space-y-3">
       {items.map((item) => (
@@ -42,18 +42,18 @@ export function StageChangeFeedList({ items }: { items: StageChangeFeedItem[] })
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap text-sm">
               {item.entityHref ? (
-                <Link href={item.entityHref} className="font-medium text-zinc-900 hover:text-accent transition-colors">
+                <Link href={item.entityHref} className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors">
                   {item.entityLabel}
                 </Link>
               ) : (
-                <span className="font-medium text-zinc-900">{item.entityLabel}</span>
+                <span className="font-medium text-[var(--text-primary)]">{item.entityLabel}</span>
               )}
-              <span className="text-xs font-medium text-zinc-500">{FEED_FIELD_LABELS[item.field] ?? item.field}</span>
-              <span className="text-zinc-700">
-                {feedValue(item.field, item.fromValue)} <span className="text-zinc-400">→</span> {feedValue(item.field, item.toValue)}
+              <span className="text-xs font-medium text-[var(--text-tertiary)]">{FEED_FIELD_LABELS[item.field] ?? item.field}</span>
+              <span className="text-[var(--text-secondary)]">
+                {feedValue(item.field, item.fromValue)} <span className="text-[var(--text-tertiary)]">→</span> {feedValue(item.field, item.toValue)}
               </span>
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
               {daysAgoLabel(item.changedAt)} · {item.actorName ?? label("ActorSource", item.createdSource)}
             </p>
           </div>
@@ -64,7 +64,7 @@ export function StageChangeFeedList({ items }: { items: StageChangeFeedItem[] })
 }
 
 export function InvestorRollupTable({ rows }: { rows: InvestorEngagementRollupRow[] }) {
-  if (rows.length === 0) return <p className="text-xs text-zinc-400">No engagements yet.</p>;
+  if (rows.length === 0) return <p className="text-xs text-[var(--text-tertiary)]">No engagements yet.</p>;
   return (
     <Table>
       <THead>
@@ -79,7 +79,7 @@ export function InvestorRollupTable({ rows }: { rows: InvestorEngagementRollupRo
         {rows.map((r) => (
           <Tr key={r.investorId}>
             <Td>
-              <Link href={`/investors/${r.investorId}`} className="font-medium text-zinc-900 hover:text-accent transition-colors">
+              <Link href={`/investors/${r.investorId}`} className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors">
                 {r.name}
               </Link>
             </Td>
@@ -94,7 +94,7 @@ export function InvestorRollupTable({ rows }: { rows: InvestorEngagementRollupRo
 }
 
 export function HistoricalEngagementTable({ rows }: { rows: HistoricalEngagementRow[] }) {
-  if (rows.length === 0) return <p className="text-xs text-zinc-400">No dated engagements yet.</p>;
+  if (rows.length === 0) return <p className="text-xs text-[var(--text-tertiary)]">No dated engagements yet.</p>;
   return (
     <Table>
       <THead>
@@ -108,7 +108,7 @@ export function HistoricalEngagementTable({ rows }: { rows: HistoricalEngagement
       <TBody>
         {rows.map((r) => (
           <Tr key={`${r.year}-${r.quarter}`}>
-            <Td className="font-medium text-zinc-900">{r.year} Q{r.quarter}</Td>
+            <Td className="font-medium text-[var(--text-primary)]">{r.year} Q{r.quarter}</Td>
             <Td className="tabular-nums">{r.active}</Td>
             <Td className="tabular-nums">{r.invested}</Td>
             <Td className="tabular-nums">{r.declined}</Td>
@@ -120,7 +120,7 @@ export function HistoricalEngagementTable({ rows }: { rows: HistoricalEngagement
 }
 
 export function PartnerFunnelTable({ rows }: { rows: PartnerFunnelRow[] }) {
-  if (rows.length === 0) return <p className="text-xs text-zinc-400">No partner referrals yet.</p>;
+  if (rows.length === 0) return <p className="text-xs text-[var(--text-tertiary)]">No partner referrals yet.</p>;
   return (
     <Table>
       <THead>
@@ -136,7 +136,7 @@ export function PartnerFunnelTable({ rows }: { rows: PartnerFunnelRow[] }) {
         {rows.map((r) => (
           <Tr key={r.partnerId}>
             <Td>
-              <Link href={`/partners/${r.partnerId}`} className="font-medium text-zinc-900 hover:text-accent transition-colors">
+              <Link href={`/partners/${r.partnerId}`} className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors">
                 {r.name}
               </Link>
             </Td>

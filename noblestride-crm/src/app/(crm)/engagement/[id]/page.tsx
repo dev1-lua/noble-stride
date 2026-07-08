@@ -83,12 +83,12 @@ export default async function EngagementDetailPage({ params }: PageProps) {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-zinc-500">
-        <Link href="/engagement" className="hover:text-zinc-700 transition-colors">
+      <nav className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
+        <Link href="/engagement" className="hover:text-[var(--text-secondary)] transition-colors">
           Engagement
         </Link>
         <span>/</span>
-        <span className="text-zinc-900 font-medium">{engagement.name}</span>
+        <span className="text-[var(--text-primary)] font-medium">{engagement.name}</span>
       </nav>
 
       {/* Header */}
@@ -96,10 +96,10 @@ export default async function EngagementDetailPage({ params }: PageProps) {
         <Avatar name={engagement.investor.name} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{engagement.name}</h1>
+            <h1 className="text-2xl font-bold text-[var(--text-primary)] leading-tight">{engagement.name}</h1>
             <Chip value={engagement.status} group="EngagementStatus" />
           </div>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             {engagement.investor.name} · {engagement.transaction.name}
           </p>
         </div>
@@ -111,20 +111,20 @@ export default async function EngagementDetailPage({ params }: PageProps) {
       {/* Key facts */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">Details</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Details</h2>
         </CardHeader>
         <CardBody>
           <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Status</dt>
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Status</dt>
               <dd className="mt-1">
                 <Chip value={engagement.status} group="EngagementStatus" />
               </dd>
             </div>
 
             <div>
-              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Investor</dt>
-              <dd className="mt-1 text-sm font-medium text-zinc-900">
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Investor</dt>
+              <dd className="mt-1 text-sm font-medium text-[var(--text-primary)]">
                 <Link href={`/investors/${engagement.investor.id}`} className="hover:text-accent transition-colors">
                   {engagement.investor.name}
                 </Link>
@@ -132,8 +132,8 @@ export default async function EngagementDetailPage({ params }: PageProps) {
             </div>
 
             <div>
-              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Transaction</dt>
-              <dd className="mt-1 text-sm font-medium text-zinc-900">
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Transaction</dt>
+              <dd className="mt-1 text-sm font-medium text-[var(--text-primary)]">
                 <Link href={`/transactions/${engagement.transaction.id}`} className="hover:text-accent transition-colors">
                   {engagement.transaction.name}
                 </Link>
@@ -142,25 +142,25 @@ export default async function EngagementDetailPage({ params }: PageProps) {
 
             {engagement.lastContact && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Last Contact</dt>
-                <dd className="mt-1 text-sm text-zinc-900">
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Last Contact</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">
                   {formatDate(engagement.lastContact)}{" "}
-                  <span className="text-zinc-400">({daysAgoLabel(engagement.lastContact)})</span>
+                  <span className="text-[var(--text-tertiary)]">({daysAgoLabel(engagement.lastContact)})</span>
                 </dd>
               </div>
             )}
 
             {engagement.owner && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Owner</dt>
-                <dd className="mt-1 text-sm font-medium text-zinc-900">{engagement.owner.name}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Owner</dt>
+                <dd className="mt-1 text-sm font-medium text-[var(--text-primary)]">{engagement.owner.name}</dd>
               </div>
             )}
 
             {engagement.notes && (
               <div className="sm:col-span-2 lg:col-span-3">
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Notes</dt>
-                <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{engagement.notes}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Notes</dt>
+                <dd className="mt-1 text-sm text-[var(--text-secondary)] whitespace-pre-line">{engagement.notes}</dd>
               </div>
             )}
           </dl>
@@ -170,28 +170,28 @@ export default async function EngagementDetailPage({ params }: PageProps) {
       {/* NDA */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">NDA</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">NDA</h2>
         </CardHeader>
         <CardBody className="space-y-4">
           <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Engagement NDA</dt>
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Engagement NDA</dt>
               <dd className="mt-1">
                 {engagement.ndaType ? (
                   <div className="flex items-center gap-2">
                     <Chip value={engagement.ndaType} group="NdaType" />
                     {engagement.ndaSignedAt && (
-                      <span className="text-xs text-zinc-500">{formatDate(engagement.ndaSignedAt)}</span>
+                      <span className="text-xs text-[var(--text-tertiary)]">{formatDate(engagement.ndaSignedAt)}</span>
                     )}
                   </div>
                 ) : (
-                  <span className="text-sm text-zinc-400">No NDA recorded</span>
+                  <span className="text-sm text-[var(--text-tertiary)]">No NDA recorded</span>
                 )}
               </dd>
             </div>
 
             <div>
-              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Investor NDA Status</dt>
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Investor NDA Status</dt>
               <dd className="mt-1">
                 <Chip value={engagement.investor.ndaStatus} group="InvestorNdaStatus" />
               </dd>
@@ -200,7 +200,7 @@ export default async function EngagementDetailPage({ params }: PageProps) {
 
           {engagement.ndaType == null && <RecordClosedNdaButton engagementId={engagement.id} />}
 
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-[var(--text-tertiary)]">
             Stage changes past Teaser require an NDA (Open on the investor, or Closed here).
           </p>
         </CardBody>

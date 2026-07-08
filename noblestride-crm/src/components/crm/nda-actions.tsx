@@ -23,7 +23,7 @@ export function RecordOpenNdaButton({ investorId }: { investorId: string }) {
   return (
     <div>
       <button
-        className="rounded-lg border border-sky-300 bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-700 hover:bg-sky-100 disabled:opacity-50"
+        className="rounded bg-[var(--t-tag-bg-sky)] px-3 py-1.5 text-sm font-medium text-[var(--t-tag-text-sky)] hover:opacity-80 disabled:opacity-50"
         disabled={fetching}
         onClick={async () => {
           const res = await record({ investorId });
@@ -45,7 +45,7 @@ export function RecordClosedNdaButton({ engagementId }: { engagementId: string }
   return (
     <div>
       <button
-        className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+        className="rounded bg-[var(--t-tag-bg-emerald)] px-3 py-1.5 text-sm font-medium text-[var(--t-tag-text-emerald)] hover:opacity-80 disabled:opacity-50"
         disabled={fetching}
         onClick={async () => {
           const res = await record({ engagementId });

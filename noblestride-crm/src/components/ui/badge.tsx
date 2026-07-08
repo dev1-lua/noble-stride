@@ -2,15 +2,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/cn";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset",
+  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
   {
     variants: {
       tone: {
-        success: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-        danger: "bg-rose-50 text-rose-700 ring-rose-600/20",
-        warning: "bg-amber-50 text-amber-700 ring-amber-600/20",
-        info: "bg-sky-50 text-sky-700 ring-sky-600/20",
-        neutral: "bg-zinc-100 text-zinc-700 ring-zinc-500/20",
+        success: "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]",
+        danger: "bg-[var(--t-tag-bg-rose)] text-[var(--t-tag-text-rose)]",
+        warning: "bg-[var(--t-tag-bg-amber)] text-[var(--t-tag-text-amber)]",
+        info: "bg-[var(--t-tag-bg-sky)] text-[var(--t-tag-text-sky)]",
+        neutral: "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",
       },
     },
     defaultVariants: {

@@ -37,18 +37,18 @@ export interface DealSummaryProps {
 function Cell({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">{label}</dt>
-      <dd className="mt-1 text-sm text-zinc-900">{children}</dd>
+      <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">{label}</dt>
+      <dd className="mt-1 text-sm text-[var(--text-primary)]">{children}</dd>
     </div>
   );
 }
 
 function PersonCell({ name }: { name: string | null }) {
-  if (!name) return <span className="text-zinc-400">—</span>;
+  if (!name) return <span className="text-[var(--text-tertiary)]">—</span>;
   return (
     <span className="flex items-center gap-2">
       <Avatar name={name} size="sm" />
-      <span className="font-medium text-zinc-900">{name}</span>
+      <span className="font-medium text-[var(--text-primary)]">{name}</span>
     </span>
   );
 }
@@ -70,16 +70,16 @@ export function DealSummaryPanel(props: DealSummaryProps) {
   return (
     <Card>
       <CardHeader className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-zinc-900">Deal Summary</h2>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">Deal Summary</h2>
         <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span className="inline-flex items-center gap-1.5 font-medium text-zinc-700">
+          <span className="inline-flex items-center gap-1.5 font-medium text-[var(--text-secondary)]">
             <span className={`h-2 w-2 rounded-full flex-shrink-0 ${dotClass}`} />
             {statusLabel || "—"}
           </span>
-          <span className="text-zinc-300">·</span>
-          <span className="text-zinc-700">
+          <span className="text-[var(--text-tertiary)]">·</span>
+          <span className="text-[var(--text-secondary)]">
             {stageLabel}{" "}
-            <span className="text-zinc-400">
+            <span className="text-[var(--text-tertiary)]">
               ({daysInStage} day{daysInStage === 1 ? "" : "s"} in stage)
             </span>
           </span>
@@ -107,7 +107,7 @@ export function DealSummaryPanel(props: DealSummaryProps) {
                     ))}
                   </span>
                 ) : (
-                  <span className="text-zinc-400">—</span>
+                  <span className="text-[var(--text-tertiary)]">—</span>
                 )}
               </Cell>
               <Cell label="NDA">
@@ -129,7 +129,7 @@ export function DealSummaryPanel(props: DealSummaryProps) {
                     ))}
                   </span>
                 ) : (
-                  <span className="text-zinc-400">—</span>
+                  <span className="text-[var(--text-tertiary)]">—</span>
                 )}
               </Cell>
               {milestoneLabel && (
@@ -154,8 +154,8 @@ export function DealSummaryPanel(props: DealSummaryProps) {
               )}
               {engagement && (
                 <div className="col-span-2 sm:col-span-3 lg:col-span-4">
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Engagement</dt>
-                  <dd className="mt-1 text-sm text-zinc-900">
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Engagement</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-primary)]">
                     {engagement.investors} investor{engagement.investors === 1 ? "" : "s"} ·{" "}
                     {formatMoney(engagement.total)} total · {formatMoney(engagement.disbursed)} disbursed ·{" "}
                     {formatMoney(engagement.pending)} pending

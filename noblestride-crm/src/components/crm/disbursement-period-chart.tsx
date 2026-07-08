@@ -2,14 +2,14 @@
 
 // disbursement-period-chart.tsx — grouped bars: disbursed vs pending per
 // calendar quarter (SPEC §13). Same SVG/CSS + motion conventions as
-// pipeline-chart.tsx; teal→emerald family, no chart library.
+// pipeline-chart.tsx; retoned to the Twenty tag-palette series set.
 
 import { motion } from "motion/react";
 import { EASE } from "@/components/ui/motion";
 import { formatMoney } from "@/lib/money";
 
-const DISBURSED_COLOR = "#059669"; // emerald-600
-const PENDING_COLOR = "#5eead4"; // teal-300
+const DISBURSED_COLOR = "#10b981"; // emerald (brand accent) — primary/active series
+const PENDING_COLOR = "#0ea5e9"; // sky
 
 export interface DisbursementPeriodPoint {
   year: number;
@@ -50,8 +50,8 @@ export function DisbursementPeriodChart({ data }: { data: DisbursementPeriodPoin
           const y = baseline - barH(tick);
           return (
             <g key={tick}>
-              <line x1={PAD_LEFT} y1={y} x2={W - PAD_RIGHT} y2={y} stroke="#eef0f2" strokeWidth="1" />
-              <text x={PAD_LEFT - 6} y={y + 3.5} textAnchor="end" fontSize="9.5" fill="#a1a1aa">
+              <line x1={PAD_LEFT} y1={y} x2={W - PAD_RIGHT} y2={y} stroke="#e9ecef" strokeWidth="1" />
+              <text x={PAD_LEFT - 6} y={y + 3.5} textAnchor="end" fontSize="9.5" fill="#868e96">
                 {formatMoney(tick)}
               </text>
             </g>
@@ -86,7 +86,7 @@ export function DisbursementPeriodChart({ data }: { data: DisbursementPeriodPoin
               >
                 <title>{`Q${d.quarter} ${d.year} pending: ${formatMoney(d.pending)}`}</title>
               </motion.rect>
-              <text x={cx} y={H - 6} textAnchor="middle" fontSize="9.5" fill="#a1a1aa">
+              <text x={cx} y={H - 6} textAnchor="middle" fontSize="9.5" fill="#868e96">
                 {`Q${d.quarter} ${String(d.year).slice(2)}`}
               </text>
             </g>
@@ -101,7 +101,7 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-      <span className="text-xs text-zinc-500">{label}</span>
+      <span className="text-xs text-[var(--text-tertiary)]">{label}</span>
     </div>
   );
 }

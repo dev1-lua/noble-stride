@@ -15,21 +15,21 @@ interface PageProps {
 }
 
 const inputClass =
-  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 " +
-  "placeholder:text-zinc-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600";
+  "w-full rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] " +
+  "placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]";
 
-const labelClass = "block text-xs font-medium uppercase tracking-wide text-zinc-500";
+const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]";
 
 export default async function RegisterPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const step = sp.step === "verify" && sp.rid ? "verify" : sp.step === "done" ? "done" : "form";
 
   return (
-    <div className="flex min-h-screen items-start justify-center bg-zinc-50 px-4 py-12">
+    <div className="flex min-h-screen items-start justify-center bg-[var(--bg-secondary)] px-4 py-12">
       <div className="w-full max-w-2xl space-y-6">
         {step !== "form" && (
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-zinc-900">
+            <h1 className="text-2xl font-bold text-[var(--text-primary)]">
               {step === "verify" && "Verify your registration"}
               {step === "done" && "Registration received"}
             </h1>
@@ -37,7 +37,7 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         )}
 
         {sp.error && (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          <div className="rounded-lg border border-[var(--t-tag-bg-rose)] bg-[var(--t-tag-bg-rose)] p-4 text-sm text-[var(--t-tag-text-rose)]">
             {sp.error}
           </div>
         )}
@@ -45,8 +45,8 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         {step === "form" && <RegisterWizard />}
 
         {step === "verify" && (
-          <section className="rounded-xl border border-zinc-200 bg-white p-5">
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
+            <div className="rounded-lg border border-[var(--t-tag-bg-amber)] bg-[var(--t-tag-bg-amber)] p-4 text-sm text-[var(--t-tag-text-amber)]">
               Demo mode — OTP delivery is not wired yet. Use code {DEMO_OTP} for both fields.
             </div>
 
@@ -86,10 +86,10 @@ export default async function RegisterPage({ searchParams }: PageProps) {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-4 border-t border-zinc-100 pt-4">
+              <div className="flex items-center justify-end gap-4 border-t border-[var(--border-subtle)] pt-4">
                 <button
                   type="submit"
-                  className="rounded-full bg-emerald-950 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-900"
+                  className="rounded bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
                 >
                   Verify
                 </button>
@@ -99,17 +99,17 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         )}
 
         {step === "done" && (
-          <section className="rounded-xl border border-zinc-200 bg-white p-8 text-center">
+          <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-8 text-center">
             <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
-            <p className="mt-4 text-sm text-zinc-600">
+            <p className="mt-4 text-sm text-[var(--text-secondary)]">
               Your registration is under review by the NobleStride team. You will be contacted at
               your corporate email once approved. No deal information is visible before approval.
             </p>
             <div className="mt-6 flex items-center justify-center gap-4 text-sm font-medium">
-              <a href="/" className="text-zinc-600 hover:text-emerald-950">
+              <a href="/" className="text-[var(--text-secondary)] hover:text-[var(--accent)]">
                 ← Back to home
               </a>
-              <a href="/login" className="text-emerald-800 hover:underline">
+              <a href="/login" className="text-[var(--accent)] hover:underline">
                 Sign in
               </a>
             </div>

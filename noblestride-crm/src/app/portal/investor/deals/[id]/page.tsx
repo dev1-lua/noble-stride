@@ -22,8 +22,8 @@ const DATE_FMT = new Intl.DateTimeFormat("en-GB", {
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-6 py-2">
-      <dt className="text-sm text-zinc-500">{k}</dt>
-      <dd className="text-right text-sm font-medium text-zinc-900">{v ?? "—"}</dd>
+      <dt className="text-sm text-[var(--text-tertiary)]">{k}</dt>
+      <dd className="text-right text-sm font-medium text-[var(--text-primary)]">{v ?? "—"}</dd>
     </div>
   );
 }
@@ -31,13 +31,13 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
 function CheckIcon({ done }: { done: boolean }) {
   if (!done) {
     return (
-      <span className="mt-0.5 inline-block h-4 w-4 shrink-0 rounded-full border border-zinc-300 bg-white" />
+      <span className="mt-0.5 inline-block h-4 w-4 shrink-0 rounded-full border border-[var(--border-strong)] bg-[var(--bg-primary)]" />
     );
   }
   return (
     <svg
       viewBox="0 0 16 16"
-      className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-emerald-600 text-white"
+      className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-[var(--accent)] text-white"
       aria-hidden
     >
       <path
@@ -75,22 +75,22 @@ export default async function InvestorDealPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/portal/investor" className="text-sm text-emerald-700 hover:underline">
+        <Link href="/portal/investor" className="text-sm text-[var(--accent-hover)] hover:underline">
           ← All opportunities
         </Link>
         <div className="mt-2 flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-zinc-900">{deal.name}</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">{deal.name}</h1>
           <TierBadge tier={deal.tier} />
         </div>
-        <p className="mt-1 text-sm text-zinc-500">{deal.companyProfile.clientName}</p>
+        <p className="mt-1 text-sm text-[var(--text-tertiary)]">{deal.companyProfile.clientName}</p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
             Company Profile
           </h2>
-          <dl className="mt-2 divide-y divide-zinc-100">
+          <dl className="mt-2 divide-y divide-[var(--border-subtle)]">
             <Row k="Sector" v={deal.companyProfile.sector.map((s) => label("Sector", s)).join(", ")} />
             <Row k="Core product" v={deal.companyProfile.coreProduct} />
             <Row k="HQ" v={deal.companyProfile.hqCity} />
@@ -101,17 +101,17 @@ export default async function InvestorDealPage({
             <Row k="Founded" v={deal.companyProfile.yearFounded} />
           </dl>
           {deal.companyProfile.description && (
-            <p className="mt-3 text-sm leading-relaxed text-zinc-600">
+            <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
               {deal.companyProfile.description}
             </p>
           )}
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
             Deal &amp; Financials
           </h2>
-          <dl className="mt-2 divide-y divide-zinc-100">
+          <dl className="mt-2 divide-y divide-[var(--border-subtle)]">
             <Row k="Deal type" v={deal.dealTypeTicket.dealType ? label("DealType", deal.dealTypeTicket.dealType) : null} />
             <Row
               k="Instrument"
@@ -140,7 +140,7 @@ export default async function InvestorDealPage({
             />
           </dl>
           {fin.disclosure === "limited" && (
-            <p className="mt-3 rounded-md bg-zinc-50 px-3 py-2 text-xs text-zinc-500">
+            <p className="mt-3 rounded-md bg-[var(--bg-secondary)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
               Detailed financials are shared after an NDA is signed. Contact your NobleStride
               advisor to proceed.
             </p>
@@ -148,19 +148,19 @@ export default async function InvestorDealPage({
         </section>
       </div>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Documents</h2>
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">Documents</h2>
         {deal.documents.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-500">
+          <p className="mt-3 text-sm text-[var(--text-tertiary)]">
             No documents available at your current access level.
           </p>
         ) : (
-          <ul className="mt-2 divide-y divide-zinc-100">
+          <ul className="mt-2 divide-y divide-[var(--border-subtle)]">
             {deal.documents.map((doc) => (
               <li key={doc.id} className="flex items-center justify-between gap-4 py-2.5">
                 <div>
-                  <div className="text-sm font-medium text-zinc-900">{doc.name}</div>
-                  <div className="text-xs text-zinc-500">
+                  <div className="text-sm font-medium text-[var(--text-primary)]">{doc.name}</div>
+                  <div className="text-xs text-[var(--text-tertiary)]">
                     {label("DocumentType", doc.type)}
                     {doc.version ? ` · v${doc.version}` : ""}
                   </div>
@@ -168,12 +168,12 @@ export default async function InvestorDealPage({
                 {doc.fileUrl ? (
                   <a
                     href={doc.fileUrl}
-                    className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+                    className="rounded-md bg-[var(--t-tag-bg-emerald)] px-3 py-1 text-xs font-medium text-[var(--t-tag-text-emerald)] transition-colors hover:opacity-80"
                   >
                     Open
                   </a>
                 ) : (
-                  <span className="text-xs text-zinc-400">On request</span>
+                  <span className="text-xs text-[var(--text-tertiary)]">On request</span>
                 )}
               </li>
             ))}
@@ -182,16 +182,16 @@ export default async function InvestorDealPage({
       </section>
 
       {deal.advisorClientContacts && deal.advisorClientContacts.length > 0 && (
-        <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
             Company Contacts
           </h2>
-          <ul className="mt-2 divide-y divide-zinc-100">
+          <ul className="mt-2 divide-y divide-[var(--border-subtle)]">
             {deal.advisorClientContacts.map((c, i) => (
               <li key={i} className="py-2.5 text-sm">
-                <span className="font-medium text-zinc-900">{c.name}</span>
-                {c.jobTitle && <span className="text-zinc-500"> — {c.jobTitle}</span>}
-                {c.email && <span className="block text-xs text-zinc-500">{c.email}</span>}
+                <span className="font-medium text-[var(--text-primary)]">{c.name}</span>
+                {c.jobTitle && <span className="text-[var(--text-tertiary)]"> — {c.jobTitle}</span>}
+                {c.email && <span className="block text-xs text-[var(--text-tertiary)]">{c.email}</span>}
               </li>
             ))}
           </ul>
@@ -199,19 +199,19 @@ export default async function InvestorDealPage({
       )}
 
       {journey ? (
-        <section className="rounded-xl border border-zinc-200 bg-white p-5">
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
               Your Progress on This Deal
             </h2>
-            <span className="text-xs text-zinc-500">
-              <span className="font-semibold text-zinc-700">
+            <span className="text-xs text-[var(--text-tertiary)]">
+              <span className="font-semibold text-[var(--text-secondary)]">
                 {journey.own.milestoneKeys.length} of {MILESTONE_ORDER.length}
               </span>{" "}
               milestones · {label("EngagementStage", journey.own.stage)}
             </span>
           </div>
-          <ol className="mt-3 divide-y divide-zinc-100">
+          <ol className="mt-3 divide-y divide-[var(--border-subtle)]">
             {MILESTONE_ORDER.map((key) => {
               const done = journey.own.milestoneKeys.includes(key);
               const date = journey.milestoneDates[key];
@@ -219,12 +219,12 @@ export default async function InvestorDealPage({
                 <li key={key} className="flex items-center gap-3 py-2">
                   <CheckIcon done={done} />
                   <span
-                    className={`text-sm ${done ? "font-medium text-zinc-900" : "text-zinc-400"}`}
+                    className={`text-sm ${done ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
                   >
                     {MILESTONE_LABELS[key]}
                   </span>
                   {done && date && (
-                    <span className="ml-auto text-xs text-zinc-400">{DATE_FMT.format(date)}</span>
+                    <span className="ml-auto text-xs text-[var(--text-tertiary)]">{DATE_FMT.format(date)}</span>
                   )}
                 </li>
               );
@@ -233,17 +233,17 @@ export default async function InvestorDealPage({
         </section>
       ) : null}
 
-      <section className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-emerald-700/70">
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--t-tag-text-emerald)]">
           {journey ? "Request More Information" : "Express Interest"}
         </h2>
         {interest && (
-          <p className="mt-2 rounded-md bg-emerald-100/70 px-3 py-2 text-sm font-medium text-emerald-900">
+          <p className="mt-2 rounded-md bg-[var(--bg-primary)] px-3 py-2 text-sm font-medium text-[var(--t-tag-text-emerald)]">
             Thank you — your request has been sent to the NobleStride team. They will follow up
             shortly.
           </p>
         )}
-        <p className="mt-2 text-sm text-emerald-900">
+        <p className="mt-2 text-sm text-[var(--t-tag-text-emerald)]">
           {journey
             ? "Need something specific — data room access, a management call, updated financials? Let the deal team know."
             : "Interested in this opportunity? Register your interest and the NobleStride team will start your process."}
@@ -254,13 +254,13 @@ export default async function InvestorDealPage({
             name="message"
             rows={3}
             placeholder="Optional message for the deal team…"
-            className="w-full rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="text-xs text-emerald-800/70">{deal.contact}</span>
+            <span className="text-xs text-[var(--t-tag-text-emerald)]">{deal.contact}</span>
             <button
               type="submit"
-              className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+              className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
             >
               {journey ? "Send request" : "Express interest"}
             </button>

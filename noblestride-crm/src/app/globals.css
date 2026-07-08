@@ -1,11 +1,58 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand tokens */
-  --color-sidebar: #0b1a14;
-  --color-sidebar-fg: #cbd5cf;
-  --color-accent: #10b981;
-  --color-accent-600: #059669;
+  /* ── Neutral ramp — remap `zinc` to a calm, Twenty/Notion-like cool gray
+     (Open Color grays). ~90% of the app uses zinc-*, so this re-tones globally. */
+  --color-zinc-50:  #f8f9fa;
+  --color-zinc-100: #f1f3f5;
+  --color-zinc-200: #e9ecef;
+  --color-zinc-300: #dee2e6;
+  --color-zinc-400: #adb5bd;
+  --color-zinc-500: #868e96;
+  --color-zinc-600: #495057;
+  --color-zinc-700: #343a40;
+  --color-zinc-800: #21262b;
+  --color-zinc-900: #16191d;
+  --color-zinc-950: #0d0f11;
+
+  /* ── Emerald accent — kept as NobleStride's brand hue, tuned for AA on white.
+     Interactive fills use accent (600); lighter accents keep 500. */
+  --color-emerald-50:  #ecfdf5;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+  --color-accent:      #059669;   /* legacy alias used by focus rings/buttons */
+  --color-accent-600:  #047857;
+
+  /* ── Semantic tokens (what components SHOULD consume). Dark mode later =
+     one :root.dark {…} block reassigning these; no component edits. */
+  --bg-primary:     #ffffff;   /* surfaces: sidebar, topbar, cards, drawers */
+  --bg-secondary:   #f8f9fa;   /* app canvas behind cards; table header fill */
+  --bg-tertiary:    #f1f3f5;   /* hover, input bg, active nav fill */
+  --border-subtle:  #e9ecef;
+  --border-strong:  #dee2e6;
+  --text-primary:   #16191d;
+  --text-secondary: #495057;
+  --text-tertiary:  #868e96;
+  --accent:         #059669;
+  --accent-hover:   #047857;
+
+  /* ── Tag palette (soft bg + readable text), seeded with hues the app uses
+     via STATUS_DOT/badge. Extend with more hues as needed. */
+  --t-tag-bg-emerald: #ecfdf5; --t-tag-text-emerald: #047857;
+  --t-tag-bg-sky:     #eff6ff; --t-tag-text-sky:     #0369a1;
+  --t-tag-bg-blue:    #eff6ff; --t-tag-text-blue:    #1d4ed8;
+  --t-tag-bg-violet:  #f5f3ff; --t-tag-text-violet:  #6d28d9;
+  --t-tag-bg-amber:   #fffbeb; --t-tag-text-amber:   #b45309;
+  --t-tag-bg-orange:  #fff7ed; --t-tag-text-orange:  #c2410c;
+  --t-tag-bg-rose:    #fff1f2; --t-tag-text-rose:    #be123c;
+  --t-tag-bg-gray:    #f1f3f5; --t-tag-text-gray:    #495057;
+
+  /* ── Radius scale — 4px canonical. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
 
   /* Typography */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -19,45 +66,33 @@ html {
 
 body {
   font-family: var(--font-sans);
-  color: #18181b;
-  /* Near-white with two whisper-soft emerald glows top-left/right for depth */
-  background-color: #f7faf9;
-  background-image:
-    radial-gradient(900px 520px at 100% -8%, rgba(16, 185, 129, 0.05), transparent 60%),
-    radial-gradient(820px 480px at -8% 0%, rgba(13, 148, 136, 0.045), transparent 55%);
-  background-attachment: fixed;
+  color: var(--text-primary);
+  /* Twenty's flat, calm canvas — the emerald radial glow is intentionally removed. */
+  background-color: var(--bg-secondary);
 }
 
-/* Emerald-tinted text selection */
+/* Emerald-tinted text selection (kept, retoned) */
 ::selection {
-  background: rgba(16, 185, 129, 0.18);
+  background: rgba(5, 150, 105, 0.16);
   color: #064e3b;
 }
 
-/* Refined, unobtrusive scrollbars */
+/* Refined scrollbars — retoned to the neutral ramp */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #d4d4d8 transparent;
+  scrollbar-color: var(--border-strong) transparent;
 }
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
 *::-webkit-scrollbar-thumb {
-  background-color: #d4d4d8;
+  background-color: var(--border-strong);
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
-*::-webkit-scrollbar-thumb:hover {
-  background-color: #a1a1aa;
-}
+*::-webkit-scrollbar-thumb:hover { background-color: var(--color-zinc-400); }
 
-/* Honor reduced-motion globally */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;

@@ -47,8 +47,8 @@ export default async function DocumentsPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Documents</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Documents</h1>
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             Deal documents, versions, and review status
           </p>
         </div>
@@ -75,7 +75,7 @@ export default async function DocumentsPage() {
 
       {/* Documents table */}
       <div>
-        <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3">
           Document Register
         </h2>
         <Table>
@@ -109,20 +109,20 @@ export default async function DocumentsPage() {
                         href={doc.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium text-zinc-900 hover:text-accent transition-colors"
+                        className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
                         title={doc.fileUrl}
                       >
                         {doc.name}
                       </a>
                     ) : (
-                      <span className="font-medium text-zinc-900">{doc.name}</span>
+                      <span className="font-medium text-[var(--text-primary)]">{doc.name}</span>
                     )}
                   </Td>
                   <Td>
                     <Chip value={doc.type} group="DocumentType" />
                   </Td>
                   <Td>
-                    <span className="text-zinc-600">{doc.version ?? "—"}</span>
+                    <span className="text-[var(--text-secondary)]">{doc.version ?? "—"}</span>
                   </Td>
                   <Td>
                     <Chip value={doc.accessLevel} group="DocumentAccessLevel" />
@@ -131,23 +131,23 @@ export default async function DocumentsPage() {
                     {doc.status ? (
                       <Chip value={doc.status} group="DocumentStatus" />
                     ) : (
-                      <span className="text-zinc-400">—</span>
+                      <span className="text-[var(--text-tertiary)]">—</span>
                     )}
                   </Td>
                   <Td>
                     {linked ? (
                       <Link
                         href={linked.href}
-                        className="text-zinc-600 hover:text-accent transition-colors"
+                        className="text-[var(--text-secondary)] hover:text-accent transition-colors"
                       >
                         {linked.name}
                       </Link>
                     ) : (
-                      <span className="text-zinc-400">—</span>
+                      <span className="text-[var(--text-tertiary)]">—</span>
                     )}
                   </Td>
                   <Td>
-                    <span className="text-zinc-600">{formatDate(doc.uploadedAt)}</span>
+                    <span className="text-[var(--text-secondary)]">{formatDate(doc.uploadedAt)}</span>
                   </Td>
                 </Tr>
               );
@@ -155,7 +155,7 @@ export default async function DocumentsPage() {
             {documents.length === 0 && (
               <Tr>
                 <Td colSpan={7}>
-                  <span className="text-zinc-400">No documents on record.</span>
+                  <span className="text-[var(--text-tertiary)]">No documents on record.</span>
                 </Td>
               </Tr>
             )}

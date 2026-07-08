@@ -28,22 +28,22 @@ export default async function InvestorPipelinePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900">My Pipeline</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">My Pipeline</h1>
+        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
           Your fund&apos;s progress on each opportunity — the {MILESTONE_ORDER.length}-step
           NobleStride investment cycle from teaser review to completion.
         </p>
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-xl border border-zinc-200 bg-white px-6 py-16 text-center">
-          <p className="text-sm font-medium text-zinc-600">No active engagements yet.</p>
-          <p className="mt-1 text-sm text-zinc-400">
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-6 py-16 text-center">
+          <p className="text-sm font-medium text-[var(--text-secondary)]">No active engagements yet.</p>
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             Express interest on an opportunity to start your journey.
           </p>
           <Link
             href="/portal/investor"
-            className="mt-4 inline-block rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+            className="mt-4 inline-block rounded bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
           >
             Browse opportunities
           </Link>
@@ -56,18 +56,18 @@ export default async function InvestorPipelinePage() {
               <Link
                 key={deal.id}
                 href={`/portal/investor/deals/${deal.id}`}
-                className={`block rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md ${
+                className={`block rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5 transition-colors hover:border-[var(--border-strong)] ${
                   declined ? "opacity-60" : ""
                 }`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <div className="font-semibold text-zinc-900">{deal.name}</div>
+                    <div className="font-semibold text-[var(--text-primary)]">{deal.name}</div>
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       {deal.companyProfile.sector.slice(0, 3).map((s) => (
                         <span
                           key={s}
-                          className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700"
+                          className="rounded-full bg-[var(--t-tag-bg-gray)] px-2 py-0.5 text-xs font-medium text-[var(--t-tag-text-gray)]"
                         >
                           {label("Sector", s)}
                         </span>
@@ -77,8 +77,8 @@ export default async function InvestorPipelinePage() {
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                       declined
-                        ? "bg-zinc-100 text-zinc-500"
-                        : "bg-emerald-50 text-emerald-700"
+                        ? "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]"
+                        : "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
                     }`}
                   >
                     {label("EngagementStage", own.stage)}
@@ -89,9 +89,9 @@ export default async function InvestorPipelinePage() {
                   <MilestoneStepper completedKeys={own.milestoneKeys} muted={declined} />
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-zinc-500">
+                <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-[var(--text-tertiary)]">
                   <span>
-                    <span className="font-semibold text-zinc-700">
+                    <span className="font-semibold text-[var(--text-secondary)]">
                       {own.milestoneKeys.length} of {MILESTONE_ORDER.length}
                     </span>{" "}
                     milestones
@@ -101,7 +101,7 @@ export default async function InvestorPipelinePage() {
                     {own.lastContact ? DATE_FMT.format(own.lastContact) : "—"}
                   </span>
                   {own.termSheetIssued && (
-                    <span className="font-medium text-emerald-700">
+                    <span className="font-medium text-[var(--accent-hover)]">
                       Term sheet issued
                       {own.termSheetDate ? ` · ${DATE_FMT.format(own.termSheetDate)}` : ""}
                     </span>

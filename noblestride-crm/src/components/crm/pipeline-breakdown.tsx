@@ -22,7 +22,7 @@ export function BreakdownBarList({
   emptyText?: string;
 }) {
   if (rows.length === 0) {
-    return <p className="text-xs text-zinc-400">{emptyText}</p>;
+    return <p className="text-xs text-[var(--text-tertiary)]">{emptyText}</p>;
   }
 
   const max = Math.max(...rows.map((r) => r.count), 1);
@@ -31,16 +31,16 @@ export function BreakdownBarList({
     <ul className="space-y-2">
       {rows.map((r) => (
         <li key={r.key} className="flex items-center gap-2.5">
-          <span className="w-28 shrink-0 truncate text-xs text-zinc-600" title={r.label}>
+          <span className="w-28 shrink-0 truncate text-xs text-[var(--text-secondary)]" title={r.label}>
             {r.label}
           </span>
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
             <div
-              className="h-full rounded-full bg-teal-500"
+              className="h-full rounded-full bg-[var(--accent)]"
               style={{ width: `${Math.max((r.count / max) * 100, 4)}%` }}
             />
           </div>
-          <span className="w-6 shrink-0 text-right text-xs font-semibold tabular-nums text-zinc-900">
+          <span className="w-6 shrink-0 text-right text-xs font-semibold tabular-nums text-[var(--text-primary)]">
             {r.count}
           </span>
         </li>

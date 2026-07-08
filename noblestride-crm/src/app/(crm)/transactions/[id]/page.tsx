@@ -183,12 +183,12 @@ export default async function TransactionDetailPage({ params }: PageProps) {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-zinc-500">
-        <Link href="/transactions" className="hover:text-zinc-700 transition-colors">
+      <nav className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
+        <Link href="/transactions" className="hover:text-[var(--text-secondary)] transition-colors">
           Transactions
         </Link>
         <span>/</span>
-        <span className="text-zinc-900 font-medium">{clientName}</span>
+        <span className="text-[var(--text-primary)] font-medium">{clientName}</span>
       </nav>
 
       {/* Header */}
@@ -196,12 +196,12 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         <Avatar name={clientName} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{clientName}</h1>
+            <h1 className="text-2xl font-bold text-[var(--text-primary)] leading-tight">{clientName}</h1>
             <Chip value={txn.stage} group="TransactionStage" />
             {txn.dealStatus && <Chip value={txn.dealStatus} group="DealStatus" />}
           </div>
           {dealTypeName && (
-            <p className="mt-1 text-sm text-zinc-500">{dealTypeName}</p>
+            <p className="mt-1 text-sm text-[var(--text-tertiary)]">{dealTypeName}</p>
           )}
         </div>
         <div className="flex shrink-0 gap-2">
@@ -229,64 +229,64 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         {/* Key facts */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <h2 className="text-sm font-semibold text-zinc-900">Deal Facts</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Deal Facts</h2>
           </CardHeader>
           <CardBody>
             <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
               {/* Sector */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Sector</dt>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Sector</dt>
                 <dd className="mt-1 flex flex-wrap gap-1">
                   {sectors.length > 0
                     ? sectors.map((s) => <Chip key={s} value={s} group="Sector" />)
-                    : <span className="text-sm text-zinc-400">—</span>}
+                    : <span className="text-sm text-[var(--text-tertiary)]">—</span>}
                 </dd>
               </div>
 
               {/* Instruments */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Instrument</dt>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Instrument</dt>
                 <dd className="mt-1 flex flex-wrap gap-1">
                   {instruments.length > 0
                     ? instruments.map((inst) => <Chip key={inst} value={inst} group="Instrument" />)
-                    : <span className="text-sm text-zinc-400">—</span>}
+                    : <span className="text-sm text-[var(--text-tertiary)]">—</span>}
                 </dd>
               </div>
 
               {/* Target raise */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Target Raise</dt>
-                <dd className="mt-1 text-sm font-bold text-zinc-900">
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Target Raise</dt>
+                <dd className="mt-1 text-sm font-bold text-[var(--text-primary)]">
                   {targetRaiseNum != null ? formatMoney(targetRaiseNum) : "—"}
                 </dd>
               </div>
 
               {/* Owner */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Owner</dt>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Owner</dt>
                 <dd className="mt-1 flex items-center gap-2">
                   {ownerName ? (
                     <>
                       <Avatar name={ownerName} color={ownerColor ?? undefined} size="sm" />
-                      <span className="text-sm font-medium text-zinc-900">{ownerName}</span>
+                      <span className="text-sm font-medium text-[var(--text-primary)]">{ownerName}</span>
                     </>
                   ) : (
-                    <span className="text-sm text-zinc-400">—</span>
+                    <span className="text-sm text-[var(--text-tertiary)]">—</span>
                   )}
                 </dd>
               </div>
 
               {/* Assistant */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Assistant</dt>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Assistant</dt>
                 <dd className="mt-1 flex items-center gap-2">
                   {assistantName ? (
                     <>
                       <Avatar name={assistantName} color={assistantColor ?? undefined} size="sm" />
-                      <span className="text-sm font-medium text-zinc-900">{assistantName}</span>
+                      <span className="text-sm font-medium text-[var(--text-primary)]">{assistantName}</span>
                     </>
                   ) : (
-                    <span className="text-sm text-zinc-400">—</span>
+                    <span className="text-sm text-[var(--text-tertiary)]">—</span>
                   )}
                 </dd>
               </div>
@@ -294,15 +294,15 @@ export default async function TransactionDetailPage({ params }: PageProps) {
               {/* Mandate link */}
               {mandateName && (
                 <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Mandate</dt>
-                  <dd className="mt-1 text-sm font-medium text-zinc-900">{mandateName}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Mandate</dt>
+                  <dd className="mt-1 text-sm font-medium text-[var(--text-primary)]">{mandateName}</dd>
                 </div>
               )}
 
               {txn.referredBy && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Referred By</dt>
-                  <dd className="mt-1 text-sm text-zinc-900">
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Referred By</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-primary)]">
                     <Link href={`/partners/${txn.referredBy.id}`} className="hover:text-accent transition-colors">{txn.referredBy.name}</Link>
                   </dd>
                 </div>
@@ -311,7 +311,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
               {/* Deal milestone */}
               {txn.dealMilestone && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Deal Milestone</dt>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Deal Milestone</dt>
                   <dd className="mt-1"><Chip value={txn.dealMilestone} group="DealMilestone" /></dd>
                 </div>
               )}
@@ -319,31 +319,31 @@ export default async function TransactionDetailPage({ params }: PageProps) {
               {/* Financing type ("Deal type") */}
               {txn.financingType && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Deal Type</dt>
-                  <dd className="mt-1 text-sm text-zinc-900">{label("DealFinancingType", txn.financingType)}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Deal Type</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-primary)]">{label("DealFinancingType", txn.financingType)}</dd>
                 </div>
               )}
 
               {/* Max selling stake */}
               {txn.maxSellingStake && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Max Selling Stake</dt>
-                  <dd className="mt-1 text-sm text-zinc-900">{label("MaxSellingStake", txn.maxSellingStake)}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Max Selling Stake</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-primary)]">{label("MaxSellingStake", txn.maxSellingStake)}</dd>
                 </div>
               )}
 
               {/* Probability */}
               {probabilityNum != null && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Probability</dt>
-                  <dd className="mt-1 text-sm text-zinc-900">{probabilityNum}%</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Probability</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-primary)]">{probabilityNum}%</dd>
                 </div>
               )}
 
               {/* VDR link */}
               {txn.vdrLink && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">VDR Link</dt>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">VDR Link</dt>
                   <dd className="mt-1 text-sm">
                     <a href={txn.vdrLink} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline break-all">
                       {txn.vdrLink}
@@ -354,32 +354,32 @@ export default async function TransactionDetailPage({ params }: PageProps) {
 
               {/* Date opened */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Opened</dt>
-                <dd className="mt-1 text-sm text-zinc-900">{formatDate(txn.dateOpened) || "—"}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Opened</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">{formatDate(txn.dateOpened) || "—"}</dd>
               </div>
 
               {/* Closed at */}
               {txn.closedAt && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Closed</dt>
-                  <dd className="mt-1 text-sm text-zinc-900">{formatDate(txn.closedAt)}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Closed</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-primary)]">{formatDate(txn.closedAt)}</dd>
                 </div>
               )}
 
               {/* Stage since */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Stage Since</dt>
-                <dd className="mt-1 text-sm text-zinc-900">{formatDate(txn.stageEnteredAt)}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Stage Since</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">{formatDate(txn.stageEnteredAt)}</dd>
               </div>
 
               {/* Success fee */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Success Fee</dt>
-                <dd className="mt-1 text-sm font-bold text-zinc-900">
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Success Fee</dt>
+                <dd className="mt-1 text-sm font-bold text-[var(--text-primary)]">
                   {txn.successFeeAmount != null ? formatMoney(Number(txn.successFeeAmount)) : "—"}
                 </dd>
                 {(txn.successFeeInvoicedDate || txn.successFeePaidDate) && (
-                  <p className="mt-0.5 text-xs text-zinc-500">
+                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
                     {txn.successFeeInvoicedDate && <>Invoiced {formatDate(txn.successFeeInvoicedDate)}</>}
                     {txn.successFeeInvoicedDate && txn.successFeePaidDate && " · "}
                     {txn.successFeePaidDate && <>Paid {formatDate(txn.successFeePaidDate)}</>}
@@ -390,22 +390,22 @@ export default async function TransactionDetailPage({ params }: PageProps) {
               {/* Target profile */}
               {txn.targetProfile && (
                 <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Target Profile</dt>
-                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{txn.targetProfile}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Target Profile</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-secondary)] whitespace-pre-line">{txn.targetProfile}</dd>
                 </div>
               )}
 
               {/* Use of funds */}
               {txn.useOfFunds && (
                 <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Use of Funds</dt>
-                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{txn.useOfFunds}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Use of Funds</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-secondary)] whitespace-pre-line">{txn.useOfFunds}</dd>
                 </div>
               )}
               {/* IC approvals */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">IC Approvals</dt>
-                <dd className="mt-1 text-sm text-zinc-900">
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">IC Approvals</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">
                   {txn.icFirstApprovalDate || txn.icSecondApprovalDate ? (
                     <>
                       {txn.icFirstApprovalDate && <>First {formatDate(txn.icFirstApprovalDate)}</>}
@@ -413,19 +413,19 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                       {txn.icSecondApprovalDate && <>Second {formatDate(txn.icSecondApprovalDate)}</>}
                     </>
                   ) : (
-                    <span className="text-zinc-400">—</span>
+                    <span className="text-[var(--text-tertiary)]">—</span>
                   )}
                 </dd>
               </div>
 
               {/* CAK / COMESA */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">CAK / COMESA</dt>
-                <dd className="mt-1 text-sm text-zinc-900">
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">CAK / COMESA</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">
                   {label("RegulatoryStatus", txn.cakComesaStatus)}
                 </dd>
                 {(txn.cakComesaFiledDate || txn.cakComesaApprovedDate) && (
-                  <p className="mt-0.5 text-xs text-zinc-500">
+                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
                     {txn.cakComesaFiledDate && <>Filed {formatDate(txn.cakComesaFiledDate)}</>}
                     {txn.cakComesaFiledDate && txn.cakComesaApprovedDate && " · "}
                     {txn.cakComesaApprovedDate && <>Approved {formatDate(txn.cakComesaApprovedDate)}</>}
@@ -436,8 +436,8 @@ export default async function TransactionDetailPage({ params }: PageProps) {
               {/* Notes */}
               {txn.notes && (
                 <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Notes</dt>
-                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{txn.notes}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Notes</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-secondary)] whitespace-pre-line">{txn.notes}</dd>
                 </div>
               )}
             </dl>
@@ -447,7 +447,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         {/* Restage panel */}
         <Card>
           <CardHeader>
-            <h2 className="text-sm font-semibold text-zinc-900">Stage</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Stage</h2>
           </CardHeader>
           <CardBody>
             {mayEdit ? (
@@ -458,14 +458,14 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                   currentStage={txn.stage}
                   stageOptions={stageOptions}
                 />
-                <p className="mt-3 text-xs text-zinc-400">
+                <p className="mt-3 text-xs text-[var(--text-tertiary)]">
                   Changing stage immediately persists to the database and resets the stage timer.
                 </p>
               </>
             ) : (
               <>
                 <Chip value={txn.stage} group="TransactionStage" />
-                <p className="mt-3 text-xs text-zinc-400">Read-only in current view.</p>
+                <p className="mt-3 text-xs text-[var(--text-tertiary)]">Read-only in current view.</p>
               </>
             )}
           </CardBody>
@@ -475,7 +475,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
       {/* Engagements */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Investor Engagements
             {txn.engagements?.length > 0 && (
               <Badge tone="neutral" className="ml-2">{txn.engagements.length}</Badge>
@@ -484,9 +484,9 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardBody>
           {!txn.engagements || txn.engagements.length === 0 ? (
-            <p className="text-sm text-zinc-400">No investor engagements recorded.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">No investor engagements recorded.</p>
           ) : (
-            <ul className="divide-y divide-zinc-100">
+            <ul className="divide-y divide-[var(--border-subtle)]">
               {txn.engagements.map((eng: { id: string; investor: { id: string; name: string }; status: string; notes?: string | null }) => (
                 <li key={eng.id} className="py-3 flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
@@ -494,12 +494,12 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                     <div className="min-w-0">
                       <Link
                         href={`/investors/${eng.investor.id}`}
-                        className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors"
+                        className="text-sm font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
                       >
                         {eng.investor.name}
                       </Link>
                       {eng.notes && (
-                        <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{eng.notes}</p>
+                        <p className="text-xs text-[var(--text-tertiary)] mt-0.5 line-clamp-1">{eng.notes}</p>
                       )}
                     </div>
                   </div>
@@ -522,7 +522,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
       {/* Service Providers engaged on this transaction (edit via the drawer above) */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Service Providers
             {txn.serviceProviders?.length > 0 && (
               <Badge tone="neutral" className="ml-2">{txn.serviceProviders.length}</Badge>
@@ -531,25 +531,25 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardBody>
           {!txn.serviceProviders || txn.serviceProviders.length === 0 ? (
-            <p className="text-sm text-zinc-400">No service providers engaged on this transaction.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">No service providers engaged on this transaction.</p>
           ) : (
-            <ul className="divide-y divide-zinc-100">
+            <ul className="divide-y divide-[var(--border-subtle)]">
               {txn.serviceProviders.map((sp: { id: string; name: string; type: string; contactPerson: string | null; status: string | null }) => (
                 <li key={sp.id} className="py-3 flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <Link
                       href={`/service-providers`}
-                      className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors"
+                      className="text-sm font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
                     >
                       {sp.name}
                     </Link>
                     {sp.contactPerson && (
-                      <p className="text-xs text-zinc-500 mt-0.5">{sp.contactPerson}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{sp.contactPerson}</p>
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <Chip value={sp.type} group="ServiceProviderType" />
-                    {sp.status && <span className="text-xs text-zinc-500">{sp.status}</span>}
+                    {sp.status && <span className="text-xs text-[var(--text-tertiary)]">{sp.status}</span>}
                   </div>
                 </li>
               ))}
@@ -561,7 +561,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
       {/* Deal preparation checklist — derived from the document register */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Deal Preparation
             <Badge tone="neutral" className="ml-2">
               {visiblePrepMilestones(txn.financingType).filter((m) => documents.some((d) => d.type === m.docType)).length}
@@ -571,7 +571,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardBody>
           <PrepMilestones docTypes={documents.map((d) => d.type)} financingType={txn.financingType} />
-          <p className="mt-3 text-xs text-zinc-400">
+          <p className="mt-3 text-xs text-[var(--text-tertiary)]">
             Derived from the document register: a milestone is complete once a document of the
             matching type is linked to this transaction.
           </p>
@@ -581,7 +581,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
       {/* Due-diligence workstreams (§6.2) */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Due Diligence Workstreams
             <Badge tone="neutral" className="ml-2">
               {ddRows.filter((r) => r.status === "Complete").length}/{ddRows.length}
@@ -597,16 +597,16 @@ export default async function TransactionDetailPage({ params }: PageProps) {
               serviceProviders={serviceProviders.map((p) => ({ id: p.id, name: p.name }))}
             />
           ) : (
-            <ul className="divide-y divide-zinc-100">
+            <ul className="divide-y divide-[var(--border-subtle)]">
               {ddRows.map((row) => (
                 <li key={row.track} className="flex items-center justify-between gap-4 py-2.5">
-                  <span className="text-sm font-medium text-zinc-900">{label("DDTrack", row.track)}</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">{label("DDTrack", row.track)}</span>
                   <Chip value={row.status} group="DDStatus" />
                 </li>
               ))}
             </ul>
           )}
-          <p className="mt-3 text-xs text-zinc-400">
+          <p className="mt-3 text-xs text-[var(--text-tertiary)]">
             Deal-level workstreams (financial / tax / commercial / ESG / legal). Internal only —
             never shared with investors or partners.
           </p>
@@ -616,7 +616,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
       {/* Documents */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Documents
             {documents.length > 0 && (
               <Badge tone="neutral" className="ml-2">{documents.length}</Badge>
@@ -625,9 +625,9 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardBody>
           {documents.length === 0 ? (
-            <p className="text-sm text-zinc-400">No documents linked to this transaction.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">No documents linked to this transaction.</p>
           ) : (
-            <ul className="divide-y divide-zinc-100">
+            <ul className="divide-y divide-[var(--border-subtle)]">
               {documents.map((doc) => (
                 <li key={doc.id} className="py-3 flex items-center justify-between gap-4">
                   <div className="min-w-0">
@@ -636,14 +636,14 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                         href={doc.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors truncate block"
+                        className="text-sm font-medium text-[var(--text-primary)] hover:text-accent transition-colors truncate block"
                       >
                         {doc.name}
                       </a>
                     ) : (
-                      <p className="text-sm font-medium text-zinc-900 truncate">{doc.name}</p>
+                      <p className="text-sm font-medium text-[var(--text-primary)] truncate">{doc.name}</p>
                     )}
-                    <p className="mt-0.5 text-xs text-zinc-500">
+                    <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
                       {doc.version ? `${doc.version} · ` : ""}
                       Uploaded {formatDate(doc.uploadedAt)}
                       {doc.uploadedBy?.name ? ` by ${doc.uploadedBy.name}` : ""}

@@ -9,14 +9,14 @@ import type { PeriodDisbursement } from "@/server/services/dashboard";
 export function DisbursementPeriodSummary({ rows }: { rows: PeriodDisbursement[] }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl bg-white border border-zinc-200/80 shadow-[0_1px_3px_rgba(16,24,40,0.06)] px-5 py-6 text-center text-sm text-zinc-400">
+      <div className="rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] px-5 py-6 text-center text-sm text-[var(--text-tertiary)]">
         No dated disbursements yet.
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl bg-white border border-zinc-200/80 shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
+    <div className="rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] overflow-hidden">
       <Table>
         <THead>
           <Tr className="hover:bg-transparent">
@@ -29,12 +29,12 @@ export function DisbursementPeriodSummary({ rows }: { rows: PeriodDisbursement[]
         <TBody>
           {rows.map((r) => (
             <Tr key={`${r.year}-${r.quarter}`}>
-              <Td className="font-medium text-zinc-900">
+              <Td className="font-medium text-[var(--text-primary)]">
                 {r.year} · Q{r.quarter}
               </Td>
-              <Td className="text-zinc-700">{formatMoney(r.total)}</Td>
-              <Td className="text-zinc-700">{formatMoney(r.disbursed)}</Td>
-              <Td className="text-zinc-700">{formatMoney(r.pending)}</Td>
+              <Td className="text-[var(--text-secondary)]">{formatMoney(r.total)}</Td>
+              <Td className="text-[var(--text-secondary)]">{formatMoney(r.disbursed)}</Td>
+              <Td className="text-[var(--text-secondary)]">{formatMoney(r.pending)}</Td>
             </Tr>
           ))}
         </TBody>

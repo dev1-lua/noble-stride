@@ -35,12 +35,12 @@ export function OnboardingActions({ investorId }: { investorId: string }) {
     else router.refresh();
   }
 
-  const btn = "rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50";
+  const btn = "rounded px-3 py-1.5 text-sm font-medium disabled:opacity-50";
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
         <button
-          className={`${btn} bg-emerald-600 text-white hover:bg-emerald-700`}
+          className={`${btn} bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]`}
           disabled={pending !== null}
           onClick={() => run("approve", () => setStatus({ id: investorId, status: "Approved" }))}
         >
@@ -54,7 +54,7 @@ export function OnboardingActions({ investorId }: { investorId: string }) {
           {pending === "reject" ? "Rejecting…" : "Reject"}
         </button>
         <button
-          className={`${btn} border border-zinc-300 text-zinc-700 hover:bg-zinc-100`}
+          className={`${btn} border border-[var(--border-strong)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]`}
           disabled={pending !== null}
           onClick={() => run("greylist", () => greylist({ id: investorId }))}
         >

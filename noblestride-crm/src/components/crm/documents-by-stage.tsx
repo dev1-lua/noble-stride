@@ -44,7 +44,7 @@ function StatusDot({ value }: { value: string }) {
 // state — mirrors the local-badge pattern in deals-table.tsx (`TypeBadge`).
 function MissingBadge() {
   return (
-    <span className="inline-flex items-center whitespace-nowrap rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 ring-1 ring-inset ring-zinc-500/15">
+    <span className="inline-flex items-center whitespace-nowrap rounded bg-[var(--t-tag-bg-gray)] px-2 py-0.5 text-xs font-medium text-[var(--t-tag-text-gray)]">
       Missing
     </span>
   );
@@ -79,12 +79,12 @@ function StageRow({
 }) {
   return (
     <li className="flex items-center justify-between gap-4 py-2">
-      <span className="text-sm text-zinc-700">{rowLabel}</span>
+      <span className="text-sm text-[var(--text-secondary)]">{rowLabel}</span>
       <div className="flex items-center gap-3">
         {missing ? (
           <MissingBadge />
         ) : (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
             <StatusDot value={statusValue} />
             {href ? (
               <a href={href} target="_blank" rel="noopener noreferrer" className="hover:text-accent hover:underline">
@@ -116,15 +116,15 @@ export function DocumentsByStage(props: DocsByStageProps) {
   return (
     <Card>
       <CardHeader>
-        <h2 className="text-sm font-semibold text-zinc-900">Documents by Stage</h2>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">Documents by Stage</h2>
       </CardHeader>
       <CardBody className="space-y-5">
         {WORKFLOW_STAGE_ORDER.map((stage) => (
           <div key={stage}>
-            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">
+            <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">
               {WORKFLOW_STAGE_LABEL[stage]}
             </h3>
-            <ul className="mt-1.5 divide-y divide-zinc-100">
+            <ul className="mt-1.5 divide-y divide-[var(--border-subtle)]">
               {stage === "DataRoom" ? (
                 <StageRow
                   rowLabel="Data Room"

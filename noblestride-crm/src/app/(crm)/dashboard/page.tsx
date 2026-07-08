@@ -97,8 +97,8 @@ export default async function DashboardPage() {
       {/* Page header */}
       <Reveal>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">Dashboard</h1>
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             Overview of your deal pipeline and investor activity
           </p>
         </div>
@@ -149,10 +149,10 @@ export default async function DashboardPage() {
       {/* 2-up chart cards */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Reveal delay={0.1}>
-          <Card className="h-full transition-shadow duration-300 hover:shadow-md">
+          <Card className="h-full">
             <CardHeader>
-              <h2 className="text-sm font-semibold text-zinc-900">Deal Pipeline Trend</h2>
-              <p className="mt-0.5 text-xs text-zinc-500">Active deals vs closed over time</p>
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">Deal Pipeline Trend</h2>
+              <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Active deals vs closed over time</p>
             </CardHeader>
             <CardBody>
               <DealPipelineTrendChart data={trend} />
@@ -161,10 +161,10 @@ export default async function DashboardPage() {
         </Reveal>
 
         <Reveal delay={0.15}>
-          <Card className="h-full transition-shadow duration-300 hover:shadow-md">
+          <Card className="h-full">
             <CardHeader>
-              <h2 className="text-sm font-semibold text-zinc-900">Pipeline Overview</h2>
-              <p className="mt-0.5 text-xs text-zinc-500">Mandates &amp; transactions by stage</p>
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">Pipeline Overview</h2>
+              <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Mandates &amp; transactions by stage</p>
             </CardHeader>
             <CardBody>
               <PipelineOverviewChart
@@ -179,8 +179,8 @@ export default async function DashboardPage() {
       {/* Pipeline Breakdown — active transactions by lead / sector / financing type / ticket size */}
       <Reveal delay={0.18}>
         <div>
-          <h2 className="text-sm font-semibold text-zinc-900">Pipeline Breakdown</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Pipeline Breakdown</h2>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
             Active transactions by deal lead, sector, financing type &amp; ticket size
           </p>
         </div>
@@ -189,7 +189,7 @@ export default async function DashboardPage() {
       <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">By Deal Lead</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">By Deal Lead</h3>
           </CardHeader>
           <CardBody>
             <BreakdownBarList rows={breakdowns.byLead} />
@@ -197,7 +197,7 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">By Sector</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">By Sector</h3>
           </CardHeader>
           <CardBody>
             <BreakdownBarList rows={breakdowns.bySector.slice(0, 8)} />
@@ -205,7 +205,7 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">By Financing Type</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">By Financing Type</h3>
           </CardHeader>
           <CardBody>
             <BreakdownBarList rows={breakdowns.byFinancingType} />
@@ -213,7 +213,7 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">By Ticket Size</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">By Ticket Size</h3>
           </CardHeader>
           <CardBody>
             <BreakdownBarList rows={breakdowns.byTicketBand} />
@@ -224,8 +224,8 @@ export default async function DashboardPage() {
       {/* Deal Status & Activity — active vs inactive split, invested summary, change feed */}
       <Reveal delay={0.19}>
         <div>
-          <h2 className="text-sm font-semibold text-zinc-900">Deal Status &amp; Activity</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">Active vs inactive pipeline, invested deals &amp; recent changes</p>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Deal Status &amp; Activity</h2>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Active vs inactive pipeline, invested deals &amp; recent changes</p>
         </div>
       </Reveal>
 
@@ -253,21 +253,21 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <h3 className="text-sm font-semibold text-zinc-900">Recent Changes</h3>
-            <p className="mt-0.5 text-xs text-zinc-500">Stage, status &amp; identifier changes across all records</p>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Recent Changes</h3>
+            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Stage, status &amp; identifier changes across all records</p>
           </CardHeader>
           <CardBody className="space-y-4">
             <StageChangeFeedList items={feed} />
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">Transitions by field</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">Transitions by field</p>
               <BreakdownBarList rows={feedCounts} />
             </div>
           </CardBody>
         </Card>
         <Card>
           <CardHeader>
-            <h3 className="text-sm font-semibold text-zinc-900">Investor Engagement</h3>
-            <p className="mt-0.5 text-xs text-zinc-500">Per-investor deals under review, rejected &amp; invested</p>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Investor Engagement</h3>
+            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Per-investor deals under review, rejected &amp; invested</p>
           </CardHeader>
           <CardBody>
             <InvestorRollupTable rows={rollup} />
@@ -275,8 +275,8 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <h3 className="text-sm font-semibold text-zinc-900">Historical Engagement</h3>
-            <p className="mt-0.5 text-xs text-zinc-500">Engagement outcomes by year &amp; quarter</p>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Historical Engagement</h3>
+            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Engagement outcomes by year &amp; quarter</p>
           </CardHeader>
           <CardBody>
             <HistoricalEngagementTable rows={history} />
@@ -284,8 +284,8 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <h3 className="text-sm font-semibold text-zinc-900">Referral Conversion</h3>
-            <p className="mt-0.5 text-xs text-zinc-500">Per-partner funnel: introduced → progressed → won / lost</p>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Referral Conversion</h3>
+            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Per-partner funnel: introduced → progressed → won / lost</p>
           </CardHeader>
           <CardBody>
             <PartnerFunnelTable rows={funnel} />
@@ -296,8 +296,8 @@ export default async function DashboardPage() {
       {/* Investor Onboarding stat group */}
       <Reveal delay={0.2}>
         <div>
-          <h2 className="text-sm font-semibold text-zinc-900">Investor Onboarding</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">Registration review &amp; NDA coverage</p>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Investor Onboarding</h2>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Registration review &amp; NDA coverage</p>
         </div>
       </Reveal>
 
@@ -330,16 +330,16 @@ export default async function DashboardPage() {
       {/* Team & Tasks — deal load, task ownership, overdue actions */}
       <Reveal delay={0.25}>
         <div>
-          <h2 className="text-sm font-semibold text-zinc-900">Team &amp; Tasks</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">Deal load, task ownership &amp; overdue action points</p>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Team &amp; Tasks</h2>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Deal load, task ownership &amp; overdue action points</p>
         </div>
       </Reveal>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <h3 className="text-sm font-semibold text-zinc-900">Deal Load by Team Member</h3>
-            <p className="mt-0.5 text-xs text-zinc-500">Open mandates + active transactions</p>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Deal Load by Team Member</h3>
+            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Open mandates + active transactions</p>
           </CardHeader>
           <CardBody>
             <TeamWorkloadTable rows={workload} />
@@ -348,8 +348,8 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <h3 className="text-sm font-semibold text-zinc-900">Task Status by Owner</h3>
-            <p className="mt-0.5 text-xs text-zinc-500">Assigned tasks, by status</p>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Task Status by Owner</h3>
+            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Assigned tasks, by status</p>
           </CardHeader>
           <CardBody>
             <TaskStatusCrosstab rows={statusByOwner} />
@@ -358,11 +358,11 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900">
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-[var(--text-primary)]">
               <AlertTriangle className="h-4 w-4 text-rose-500" />
               Overdue Actions
             </h3>
-            <p className="mt-0.5 text-xs text-zinc-500">Escalated past their deadline</p>
+            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Escalated past their deadline</p>
           </CardHeader>
           <CardBody>
             <OverdueActionsList count={overdueCount} items={overdueList} />
@@ -371,14 +371,14 @@ export default async function DashboardPage() {
       </div>
       {/* Disbursements by quarter (§13) */}
       <Reveal delay={0.2}>
-        <Card className="transition-shadow duration-300 hover:shadow-md">
+        <Card>
           <CardHeader>
-            <h2 className="text-sm font-semibold text-zinc-900">Disbursements by Quarter</h2>
-            <p className="mt-0.5 text-xs text-zinc-500">Investor funds disbursed vs pending, per calendar quarter</p>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Disbursements by Quarter</h2>
+            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Investor funds disbursed vs pending, per calendar quarter</p>
           </CardHeader>
           <CardBody>
             {disbursements.length === 0 ? (
-              <p className="text-sm text-zinc-400">No disbursements recorded.</p>
+              <p className="text-sm text-[var(--text-tertiary)]">No disbursements recorded.</p>
             ) : (
               <DisbursementPeriodChart data={disbursements} />
             )}

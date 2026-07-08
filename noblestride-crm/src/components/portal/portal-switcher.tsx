@@ -34,7 +34,7 @@ export function PortalSwitcher({
           const first = r === "investor" ? investors[0] : partners[0];
           if (first) go(r, first.id);
         }}
-        className="rounded-md border border-amber-300 bg-white px-1.5 py-0.5 text-xs font-medium text-amber-900"
+        className="rounded-md border border-amber-300 bg-[var(--bg-primary)] px-1.5 py-0.5 text-xs font-medium text-[var(--t-tag-text-amber)]"
         aria-label="Portal role"
       >
         <option value="investor">Investor</option>
@@ -43,7 +43,7 @@ export function PortalSwitcher({
       <select
         value={recordId}
         onChange={(e) => go(role, e.target.value)}
-        className="max-w-52 rounded-md border border-amber-300 bg-white px-1.5 py-0.5 text-xs font-medium text-amber-900"
+        className="max-w-52 rounded-md border border-amber-300 bg-[var(--bg-primary)] px-1.5 py-0.5 text-xs font-medium text-[var(--t-tag-text-amber)]"
         aria-label={`Which ${role} to view as`}
       >
         {(role === "investor" ? investors : partners).map((r) => (

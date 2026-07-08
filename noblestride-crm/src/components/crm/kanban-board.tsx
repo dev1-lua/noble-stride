@@ -156,15 +156,15 @@ export function KanbanBoard(props: KanbanBoardProps) {
           >
             {/* Column header */}
             <div
-              className={`mb-3 px-3 py-2 rounded-md bg-white border border-zinc-200 border-l-4 shadow-sm ${
+              className={`mb-2 px-2.5 py-1.5 rounded-md bg-[var(--bg-primary)] border border-[var(--border-subtle)] border-l-4 ${
                 COLUMN_HEADER_COLORS[colIdx % COLUMN_HEADER_COLORS.length]
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-zinc-700 uppercase tracking-wide">
+                <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
                   {col.label}
                 </span>
-                <span className="text-xs font-bold text-zinc-500 bg-zinc-100 rounded-full px-2 py-0.5">
+                <span className="text-xs font-bold text-[var(--t-tag-text-gray)] bg-[var(--t-tag-bg-gray)] rounded-full px-2 py-0.5">
                   {col.items.length}
                 </span>
               </div>
@@ -176,10 +176,10 @@ export function KanbanBoard(props: KanbanBoardProps) {
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`flex-1 flex flex-col gap-2.5 rounded-lg p-2 min-h-[120px] transition-colors ${
+                  className={`flex-1 flex flex-col gap-2 rounded-md p-1.5 min-h-[120px] border border-[var(--border-subtle)] transition-colors ${
                     snapshot.isDraggingOver
                       ? "bg-accent/5 ring-1 ring-accent/20"
-                      : "bg-zinc-100/60"
+                      : "bg-[var(--bg-secondary)]"
                   }`}
                 >
                   {col.items.map((item, idx) => (
@@ -190,7 +190,7 @@ export function KanbanBoard(props: KanbanBoardProps) {
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                           style={provided.draggableProps.style}
-                          className={snapshot.isDragging ? "opacity-90 rotate-1 shadow-lg" : ""}
+                          className={snapshot.isDragging ? "opacity-90 rotate-1 shadow-md" : ""}
                         >
                           {props.kind === "mandate" ? (
                             <MandateKanbanCard
@@ -211,7 +211,7 @@ export function KanbanBoard(props: KanbanBoardProps) {
 
                   {col.items.length === 0 && (
                     <div className="flex-1 flex items-center justify-center">
-                      <p className="text-xs text-zinc-400 text-center py-4">Drop here</p>
+                      <p className="text-xs text-[var(--text-tertiary)] text-center py-4">Drop here</p>
                     </div>
                   )}
                 </div>

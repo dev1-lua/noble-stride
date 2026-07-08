@@ -119,12 +119,12 @@ export default async function MandateDetailPage({ params }: PageProps) {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-zinc-500">
-        <Link href="/mandates" className="hover:text-zinc-700 transition-colors">
+      <nav className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
+        <Link href="/mandates" className="hover:text-[var(--text-secondary)] transition-colors">
           Mandates
         </Link>
         <span>/</span>
-        <span className="text-zinc-900 font-medium">{clientName}</span>
+        <span className="text-[var(--text-primary)] font-medium">{clientName}</span>
       </nav>
 
       {/* Header */}
@@ -132,12 +132,12 @@ export default async function MandateDetailPage({ params }: PageProps) {
         <Avatar name={clientName} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{clientName}</h1>
+            <h1 className="text-2xl font-bold text-[var(--text-primary)] leading-tight">{clientName}</h1>
             <Chip value={m.stage} group="MandateStage" />
             {m.dealStatus && <Chip value={m.dealStatus} group="DealStatus" />}
           </div>
           {m.name && m.name !== clientName && (
-            <p className="mt-1 text-sm text-zinc-500">{m.name}</p>
+            <p className="mt-1 text-sm text-[var(--text-tertiary)]">{m.name}</p>
           )}
         </div>
         <div className="flex shrink-0 gap-2">
@@ -165,31 +165,31 @@ export default async function MandateDetailPage({ params }: PageProps) {
         {/* Key facts */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <h2 className="text-sm font-semibold text-zinc-900">Key Facts</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Key Facts</h2>
           </CardHeader>
           <CardBody>
             <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
               {/* Sector chips */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Sector</dt>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Sector</dt>
                 <dd className="mt-1 flex flex-wrap gap-1">
                   {sectors.length > 0
                     ? sectors.map((s) => <Chip key={s} value={s} group="Sector" />)
-                    : <span className="text-sm text-zinc-400">—</span>}
+                    : <span className="text-sm text-[var(--text-tertiary)]">—</span>}
                 </dd>
               </div>
 
               {/* Lead (owner) */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Lead</dt>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Lead</dt>
                 <dd className="mt-1 flex items-center gap-2">
                   {leadName ? (
                     <>
                       <Avatar name={leadName} color={leadColor ?? undefined} size="sm" />
-                      <span className="text-sm font-medium text-zinc-900">{leadName}</span>
+                      <span className="text-sm font-medium text-[var(--text-primary)]">{leadName}</span>
                     </>
                   ) : (
-                    <span className="text-sm text-zinc-400">—</span>
+                    <span className="text-sm text-[var(--text-tertiary)]">—</span>
                   )}
                 </dd>
               </div>
@@ -197,36 +197,36 @@ export default async function MandateDetailPage({ params }: PageProps) {
               {/* Referred by */}
               {referredBy && (
                 <div>
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Referred By</dt>
-                  <dd className="mt-1 text-sm font-medium text-zinc-900">{referredBy}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Referred By</dt>
+                  <dd className="mt-1 text-sm font-medium text-[var(--text-primary)]">{referredBy}</dd>
                 </div>
               )}
 
               {/* Next action */}
               {m.nextAction && (
                 <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Next Action</dt>
-                  <dd className="mt-1 text-sm text-zinc-900">{m.nextAction}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Next Action</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-primary)]">{m.nextAction}</dd>
                 </div>
               )}
 
               {/* Stage entered */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Stage Since</dt>
-                <dd className="mt-1 text-sm text-zinc-900">{formatDate(m.stageEnteredAt)}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Stage Since</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">{formatDate(m.stageEnteredAt)}</dd>
               </div>
 
               {/* Created */}
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Created</dt>
-                <dd className="mt-1 text-sm text-zinc-900">{formatDate(m.createdAt)}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Created</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">{formatDate(m.createdAt)}</dd>
               </div>
 
               {/* Notes */}
               {m.notes && (
                 <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Notes</dt>
-                  <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{m.notes}</dd>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Notes</dt>
+                  <dd className="mt-1 text-sm text-[var(--text-secondary)] whitespace-pre-line">{m.notes}</dd>
                 </div>
               )}
             </dl>
@@ -236,7 +236,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
         {/* Restage panel */}
         <Card>
           <CardHeader>
-            <h2 className="text-sm font-semibold text-zinc-900">Stage</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Stage</h2>
           </CardHeader>
           <CardBody>
             {mayEdit ? (
@@ -247,14 +247,14 @@ export default async function MandateDetailPage({ params }: PageProps) {
                   currentStage={m.stage}
                   stageOptions={stageOptions}
                 />
-                <p className="mt-3 text-xs text-zinc-400">
+                <p className="mt-3 text-xs text-[var(--text-tertiary)]">
                   Changing stage immediately persists to the database and resets the stage timer.
                 </p>
               </>
             ) : (
               <>
                 <Chip value={m.stage} group="MandateStage" />
-                <p className="mt-3 text-xs text-zinc-400">Read-only in current view.</p>
+                <p className="mt-3 text-xs text-[var(--text-tertiary)]">Read-only in current view.</p>
               </>
             )}
           </CardBody>
@@ -264,7 +264,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
       {/* Related transactions */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Transactions
             {m.transactions?.length > 0 && (
               <Badge tone="neutral" className="ml-2">{m.transactions.length}</Badge>
@@ -273,14 +273,14 @@ export default async function MandateDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardBody>
           {!m.transactions || m.transactions.length === 0 ? (
-            <p className="text-sm text-zinc-400">No transactions linked to this mandate.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">No transactions linked to this mandate.</p>
           ) : (
-            <ul className="divide-y divide-zinc-100">
+            <ul className="divide-y divide-[var(--border-subtle)]">
               {m.transactions.map((txn: { id: string; name: string; stage: string }) => (
                 <li key={txn.id} className="py-3 flex items-center justify-between gap-4">
                   <Link
                     href={`/transactions/${txn.id}`}
-                    className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors"
+                    className="text-sm font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
                   >
                     {txn.name}
                   </Link>
@@ -295,27 +295,27 @@ export default async function MandateDetailPage({ params }: PageProps) {
       {/* Documents linked to this deal (spec §3.9 linked record = Deal) */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Documents
             {documents.length > 0 && <Badge tone="neutral" className="ml-2">{documents.length}</Badge>}
           </h2>
         </CardHeader>
         <CardBody>
           {documents.length === 0 ? (
-            <p className="text-sm text-zinc-400">No documents linked to this mandate.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">No documents linked to this mandate.</p>
           ) : (
-            <ul className="divide-y divide-zinc-100">
+            <ul className="divide-y divide-[var(--border-subtle)]">
               {documents.map((doc) => (
                 <li key={doc.id} className="py-3 flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     {doc.fileUrl ? (
-                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors truncate block">
+                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-[var(--text-primary)] hover:text-accent transition-colors truncate block">
                         {doc.name}
                       </a>
                     ) : (
-                      <p className="text-sm font-medium text-zinc-900 truncate">{doc.name}</p>
+                      <p className="text-sm font-medium text-[var(--text-primary)] truncate">{doc.name}</p>
                     )}
-                    <p className="mt-0.5 text-xs text-zinc-500">
+                    <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
                       {doc.version ? `${doc.version} · ` : ""}
                       Uploaded {formatDate(doc.uploadedAt)}
                       {doc.uploadedBy?.name ? ` by ${doc.uploadedBy.name}` : ""}

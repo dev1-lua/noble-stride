@@ -27,42 +27,42 @@ export default async function PartnerPortalPage() {
       key: "introduced",
       title: "Introduced",
       count: funnel.introduced,
-      cls: "border-zinc-200 bg-zinc-50 text-zinc-700",
+      cls: "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",
     },
     {
       key: "inProgress",
       title: "In Progress",
       count: funnel.inProgress,
-      cls: "border-sky-200 bg-sky-50 text-sky-700",
+      cls: "bg-[var(--t-tag-bg-sky)] text-[var(--t-tag-text-sky)]",
     },
     {
       key: "signed",
       title: "Signed",
       count: funnel.signed,
-      cls: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      cls: "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]",
     },
     {
       key: "lost",
       title: "Lost",
       count: funnel.lost,
-      cls: "border-rose-200 bg-rose-50 text-rose-600",
+      cls: "bg-[var(--t-tag-bg-rose)] text-[var(--t-tag-text-rose)]",
     },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900">Partner Overview</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Partner Overview</h1>
+        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
           Your referrals and fee-sharing status with NobleStride Capital
         </p>
       </div>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-5">
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="text-lg font-semibold text-zinc-900">{profile.name}</div>
-            <div className="mt-0.5 text-sm text-zinc-500">
+            <div className="text-lg font-semibold text-[var(--text-primary)]">{profile.name}</div>
+            <div className="mt-0.5 text-sm text-[var(--text-tertiary)]">
               {[
                 profile.advisorType ? label("AdvisorType", profile.advisorType) : null,
                 profile.organization,
@@ -76,34 +76,34 @@ export default async function PartnerPortalPage() {
               className={
                 "rounded-full px-2.5 py-1 text-xs font-medium " +
                 (profile.feeSharingAgreement
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-zinc-100 text-zinc-500")
+                  ? "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
+                  : "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]")
               }
             >
               {profile.feeSharingAgreement ? "Fee-sharing agreed" : "No fee-sharing agreement"}
             </span>
-            <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
+            <span className="rounded-full bg-[var(--t-tag-bg-gray)] px-2.5 py-1 text-xs font-medium text-[var(--t-tag-text-gray)]">
               Partner agreement: {label("PartnerAgreementStatus", profile.partnerAgreementStatus)}
             </span>
           </div>
         </div>
         {profile.feeSharingTerms && (
-          <p className="mt-3 rounded-md bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
-            <span className="font-medium text-zinc-700">Terms:</span> {profile.feeSharingTerms}
+          <p className="mt-3 rounded-md bg-[var(--bg-secondary)] px-3 py-2 text-sm text-[var(--text-secondary)]">
+            <span className="font-medium text-[var(--text-secondary)]">Terms:</span> {profile.feeSharingTerms}
           </p>
         )}
       </section>
 
       {/* Referral conversion funnel: introduced → in progress → signed / lost */}
-      <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
           Referral Funnel
         </h2>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-stretch">
           {funnelSegments.map((seg, i) => (
             <div key={seg.key} className="flex flex-1 items-center gap-2">
-              {i > 0 && <span className="hidden text-zinc-300 sm:block">→</span>}
-              <div className={"flex-1 rounded-lg border px-3 py-2.5 " + seg.cls}>
+              {i > 0 && <span className="hidden text-[var(--text-tertiary)] sm:block">→</span>}
+              <div className={"flex-1 rounded-lg px-3 py-2.5 " + seg.cls}>
                 <div className="text-lg font-bold">{seg.count}</div>
                 <div className="text-[11px] font-medium uppercase tracking-wide">{seg.title}</div>
               </div>
@@ -114,33 +114,33 @@ export default async function PartnerPortalPage() {
 
       {/* Referrals by stage (§13): count + total deal size per pipeline stage */}
       {stageRows.length > 0 && (
-        <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
             Referrals by Stage
           </h2>
           <div className="mt-3 space-y-2">
             {stageRows.map((row) => (
               <div key={row.stage} className="flex items-center gap-3">
-                <span className="w-32 shrink-0 text-xs text-zinc-600">
+                <span className="w-32 shrink-0 text-xs text-[var(--text-secondary)]">
                   {label("MandateStage", row.stage)}
                 </span>
-                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-zinc-100">
+                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
                   <div
                     className={
                       "h-full rounded-full " +
                       (row.stage === "Signed"
-                        ? "bg-emerald-600"
+                        ? "bg-[var(--accent)]"
                         : row.stage === "Lost"
                           ? "bg-slate-300"
-                          : "bg-teal-500")
+                          : "bg-sky-500")
                     }
                     style={{ width: `${(row.count / maxStageCount) * 100}%` }}
                   />
                 </div>
-                <span className="w-6 text-right text-xs font-semibold tabular-nums text-zinc-900">
+                <span className="w-6 text-right text-xs font-semibold tabular-nums text-[var(--text-primary)]">
                   {row.count}
                 </span>
-                <span className="w-16 text-right text-xs text-zinc-500">
+                <span className="w-16 text-right text-xs text-[var(--text-tertiary)]">
                   {row.totalSize > 0 ? formatMoney(row.totalSize) : "—"}
                 </span>
               </div>
@@ -151,11 +151,11 @@ export default async function PartnerPortalPage() {
 
       {/* Expected fee on conversion (fee-share lifecycle, spec §3.6) */}
       {profile.feeSharingAgreement && (
-        <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] p-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--t-tag-text-emerald)]">
             Expected Fee
           </h2>
-          <p className="mt-1 text-sm text-emerald-900">
+          <p className="mt-1 text-sm text-[var(--t-tag-text-emerald)]">
             <span className="font-semibold">
               {funnel.signed} signed referral{funnel.signed === 1 ? "" : "s"}
             </span>
@@ -166,26 +166,26 @@ export default async function PartnerPortalPage() {
       )}
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <div className="text-2xl font-bold text-zinc-900">{referredDeals.length}</div>
-          <div className="text-xs text-zinc-500">Deals referred</div>
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4">
+          <div className="text-2xl font-bold text-[var(--text-primary)]">{referredDeals.length}</div>
+          <div className="text-xs text-[var(--text-tertiary)]">Deals referred</div>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <div className="text-2xl font-bold text-emerald-700">{converted}</div>
-          <div className="text-xs text-zinc-500">Converted (signed)</div>
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4">
+          <div className="text-2xl font-bold text-[var(--accent-hover)]">{converted}</div>
+          <div className="text-xs text-[var(--text-tertiary)]">Converted (signed)</div>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <div className="text-2xl font-bold text-zinc-900">
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4">
+          <div className="text-2xl font-bold text-[var(--text-primary)]">
             {referredDeals.length ? Math.round((converted / referredDeals.length) * 100) : 0}%
           </div>
-          <div className="text-xs text-zinc-500">Conversion rate</div>
+          <div className="text-xs text-[var(--text-tertiary)]">Conversion rate</div>
         </div>
       </div>
 
-      <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+      <section className="overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
               <th className="px-4 py-3">Referred deal</th>
               <th className="px-4 py-3">Client</th>
               <th className="px-4 py-3">Stage</th>
@@ -196,33 +196,33 @@ export default async function PartnerPortalPage() {
           <tbody>
             {referredDeals.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-sm text-zinc-400">
+                <td colSpan={5} className="px-4 py-10 text-center text-sm text-[var(--text-tertiary)]">
                   No referred deals yet.
                 </td>
               </tr>
             ) : (
               referredDeals.map((d, i) => (
-                <tr key={i} className="border-b border-zinc-100 last:border-0">
-                  <td className="px-4 py-2.5 font-medium text-zinc-900">{d.mandateName}</td>
-                  <td className="px-4 py-2.5 text-zinc-600">{d.clientName ?? "—"}</td>
+                <tr key={i} className="border-b border-[var(--border-subtle)] last:border-0">
+                  <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">{d.mandateName}</td>
+                  <td className="px-4 py-2.5 text-[var(--text-secondary)]">{d.clientName ?? "—"}</td>
                   <td className="px-4 py-2.5">
                     <span
                       className={
                         "rounded-full px-2 py-0.5 text-xs font-medium " +
                         (d.converted
-                          ? "bg-emerald-50 text-emerald-700"
+                          ? "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
                           : d.stage === "Lost"
-                            ? "bg-rose-50 text-rose-600"
-                            : "bg-sky-50 text-sky-700")
+                            ? "bg-[var(--t-tag-bg-rose)] text-[var(--t-tag-text-rose)]"
+                            : "bg-[var(--t-tag-bg-sky)] text-[var(--t-tag-text-sky)]")
                       }
                     >
                       {label("MandateStage", d.stage)}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 text-zinc-600">
+                  <td className="px-4 py-2.5 text-[var(--text-secondary)]">
                     {d.dealSize != null ? formatMoney(d.dealSize, d.currency) : "—"}
                   </td>
-                  <td className="px-4 py-2.5 text-zinc-600">{d.feeSharingStatus}</td>
+                  <td className="px-4 py-2.5 text-[var(--text-secondary)]">{d.feeSharingStatus}</td>
                 </tr>
               ))
             )}
