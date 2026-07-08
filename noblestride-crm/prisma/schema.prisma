@@ -485,6 +485,7 @@ model User {
   assistantTasks        Task[]        @relation("TaskAssistant")
   stageChanges          StageChange[] @relation("StageChangeActor")
   savedViews   SavedView[] @relation("SavedViewCreatedBy")
+  authAccount AuthAccount?
 }
 
 model Person {
@@ -509,6 +510,7 @@ model Person {
   partner    Partner?  @relation(fields: [partnerId], references: [id], onDelete: SetNull)
 
   ssaForInvestors Investor[] @relation("InvestorSsaContact")
+  authAccount AuthAccount?
 
   @@index([investorId])
   @@index([clientId])
@@ -1082,4 +1084,77 @@ model SavedView {
   updatedAt   DateTime @updatedAt
 
   @@index([entity])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Real authentication (design spec 2026-07-08): credentials + DB sessions.
+// AuthAccount links to User (internal staff) or Person (investor contact).
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum AccountKind {
+  INTERNAL
+  INVESTOR
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum AuthTokenPurpose {
+  RESET_PASSWORD
+  VERIFY_EMAIL
+}
+
+model AuthAccount {
+  id           String        @id @default(cuid())
+  email        String        @unique // always stored lowercase
+  passwordHash String
+  kind         AccountKind
+  status       AccountStatus @default(PENDING)
+  // Pre-approval signup details for internal accounts not yet in the directory:
+  displayName  String?
+  jobTitle     String?
+  userId       String?       @unique
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personId     String?       @unique
+  person       Person?       @relation(fields: [personId], references: [id], onDelete: Cascade)
+  failedLogins Int           @default(0)
+  lockedUntil  DateTime?
+  lastLoginAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  sessions AuthSession[]
+  tokens   AuthToken[]
+
+  @@index([kind, status])
+}
+
+model AuthSession {
+  id         String      @id @default(cuid())
+  tokenHash  String      @unique // sha256 hex of the opaque token; raw token never stored
+  accountId  String
+  account    AuthAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  createdAt  DateTime    @default(now())
+  lastUsedAt DateTime    @default(now())
+  ip         String?
+  userAgent  String?
+
+  @@index([accountId])
+}
+
+model AuthToken {
+  id        String           @id @default(cuid())
+  tokenHash String           @unique
+  accountId String
+  account   AuthAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  purpose   AuthTokenPurpose
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([accountId])
 }
