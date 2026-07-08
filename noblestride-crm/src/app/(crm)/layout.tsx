@@ -15,6 +15,7 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
   // External viewpoints never see the internal shell (spec §6) — they land on
   // their portal. The visibility engine gates everything they read there.
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role === "investor") redirect("/portal/investor");
   if (vp.role === "partner") redirect("/portal/partner");
 

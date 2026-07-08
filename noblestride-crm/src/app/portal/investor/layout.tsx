@@ -2,6 +2,7 @@
 // design language with the internal CRM): amber demo-lens banner on top,
 // light sidebar, slim topbar, neutral canvas. External-safe: the nav is
 // portal-only and every page still renders only visibility-projected data.
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
 import { isBlockedClassification } from "@/server/visibility/tiers";
@@ -17,6 +18,7 @@ export default async function InvestorPortalLayout({
   // Fund name for the topbar avatar; pages themselves gate + redirect
   // non-investor viewpoints, so a fallback label is fine here.
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   const investor =
     vp.role === "investor" && vp.recordId
       ? await prisma.investor.findUnique({

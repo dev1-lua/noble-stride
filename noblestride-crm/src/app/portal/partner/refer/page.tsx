@@ -20,6 +20,7 @@ const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(
 
 export default async function SubmitReferralPage({ searchParams }: PageProps) {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "partner" || !vp.recordId) redirect("/dashboard");
 
   const { submitted, error } = await searchParams;

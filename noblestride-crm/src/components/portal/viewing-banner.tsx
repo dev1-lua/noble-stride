@@ -10,6 +10,7 @@ import { PortalSwitcher } from "@/components/portal/portal-switcher";
 
 export async function ViewingBanner() {
   const vp = await getViewpoint();
+  if (!vp || !vp.impersonating) return null;
 
   const [investors, partners] = await Promise.all([
     prisma.investor.findMany({

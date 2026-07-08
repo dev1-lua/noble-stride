@@ -1,11 +1,12 @@
 import { cookies } from "next/headers";
-import { ADMIN_VIEWPOINT, parseViewpoint, type Viewpoint, VIEWPOINT_COOKIE } from "@/lib/viewpoint";
+import type { Viewpoint } from "@/lib/viewpoint";
+import { getCurrentAuth, resolveViewpointFor } from "@/server/auth/current";
+import { IMPERSONATION_COOKIE } from "@/server/auth/impersonation";
 
-/** Read the active demo viewpoint from the request cookie (RSC/server only). */
-export async function getViewpoint(): Promise<Viewpoint> {
-  const jar = await cookies();
-  // TEMPORARY (Task 8 rewrites this to derive the viewpoint from the real
-  // session, honoring the impersonation lens only for Admins): until then,
-  // fall back to ADMIN_VIEWPOINT so existing call sites keep compiling.
-  return parseViewpoint(jar.get(VIEWPOINT_COOKIE)?.value) ?? ADMIN_VIEWPOINT;
+/** Derive the active viewpoint from the REAL session (null = signed out).
+ *  Admins may overlay a signed "view as" lens (ns_viewpoint cookie). */
+export async function getViewpoint(): Promise<Viewpoint | null> {
+  const auth = await getCurrentAuth();
+  const lens = (await cookies()).get(IMPERSONATION_COOKIE)?.value;
+  return resolveViewpointFor(auth, lens);
 }

@@ -21,6 +21,7 @@ const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(
 
 export default async function PartnerDetailsPage({ searchParams }: PageProps) {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "partner" || !vp.recordId) redirect("/dashboard");
 
   const [{ saved }, partner] = await Promise.all([searchParams, getOwnPartnerDetails(vp.recordId)]);
