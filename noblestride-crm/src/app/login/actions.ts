@@ -9,6 +9,7 @@ import { z } from "zod";
 import { loginWithPassword } from "@/server/auth/login";
 import { rateLimit } from "@/server/auth/rate-limit";
 import { setSessionCookie } from "@/server/auth/session-cookie";
+import { safeNext } from "./safe-next";
 
 const emailSchema = z.string().trim().email("Enter a valid email address.");
 
@@ -18,10 +19,6 @@ const MESSAGES: Record<string, string> = {
   pending: "Your account is awaiting review by the NobleStride team.",
   suspended: "This account is suspended. Contact NobleStride if you believe this is an error.",
 };
-
-function safeNext(next: string | undefined): string | null {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : null;
-}
 
 export async function loginAction(formData: FormData): Promise<void> {
   const parsed = emailSchema.safeParse(String(formData.get("email") ?? ""));
