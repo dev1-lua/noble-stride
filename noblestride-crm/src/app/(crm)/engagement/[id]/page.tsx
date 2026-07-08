@@ -16,6 +16,10 @@ import { EngagementFormDrawer } from "@/components/crm/engagement-form-drawer";
 import { MilestoneChecklist } from "@/components/crm/milestone-checklist";
 import type { MilestoneItemDTO } from "@/components/crm/milestone-checklist";
 import { MILESTONE_ORDER, MILESTONE_LABELS, effectiveMilestones } from "@/lib/milestones";
+import { getOrgLens } from "@/server/rbac/context";
+import { canUpdateRecord } from "@/server/rbac/matrix";
+import { EngagementRestageSelect } from "@/components/crm/engagement-restage-select";
+import { engagementStageOptions } from "@/lib/engagement-stage-colors";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -29,6 +33,10 @@ export default async function EngagementDetailPage({ params }: PageProps) {
   if (!engagement) notFound();
 
   const rel = await relationOptions();
+
+  const lens = await getOrgLens();
+  const canRestage = canUpdateRecord(lens.orgRole, "Engagements", lens.userId, { ownerId: engagement.ownerId });
+  const stageOptions = engagementStageOptions();
 
   const activityItems: ActivityTimelineItem[] = engagement.activities.map((a) => ({
     id: a.id,
@@ -104,7 +112,7 @@ export default async function EngagementDetailPage({ params }: PageProps) {
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <EngagementFormDrawer initial={editInitial} />
+          {canRestage && <EngagementFormDrawer initial={editInitial} />}
         </div>
       </div>
 
@@ -115,6 +123,25 @@ export default async function EngagementDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardBody>
           <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Stage</dt>
+              <dd className="mt-1">
+                {canRestage ? (
+                  <div className="max-w-56">
+                    <EngagementRestageSelect
+                      id={engagement.id}
+                      transactionId={engagement.transactionId}
+                      investorId={engagement.investorId}
+                      currentStage={engagement.engagementStage}
+                      stageOptions={stageOptions}
+                    />
+                  </div>
+                ) : (
+                  <Chip value={engagement.engagementStage} group="EngagementStage" />
+                )}
+              </dd>
+            </div>
+
             <div>
               <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Status</dt>
               <dd className="mt-1">
