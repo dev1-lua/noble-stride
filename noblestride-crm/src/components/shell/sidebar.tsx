@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -11,6 +12,7 @@ import {
   MessageSquare,
   Building2,
   Scale,
+  ChevronDown,
   FileText,
   ListChecks,
   UserCog,
@@ -95,6 +97,60 @@ export function NavItem({ href, label, Icon, active, badge, iconColor }: NavItem
   );
 }
 
+// ─── Engagements nav group (expandable: By Deal / By Investor) ────────────────
+
+function EngagementNavGroup({ active }: { active: boolean }) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(active);
+  const childActive = (href: string) => pathname === href;
+  return (
+    <div>
+      {/* "Engagements" is a disclosure toggle only — clicking it opens/closes the
+          sub-menu and never navigates. A page loads only when a child (By Deal /
+          By Investor) is chosen. */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={cn(
+          NAV_ROW_BASE,
+          "w-full",
+          active
+            ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)] font-medium"
+            : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
+        )}
+      >
+        <MessageSquare
+          className={cn("h-4 w-4 flex-shrink-0", active ? "text-[var(--accent)]" : "text-[var(--t-tag-text-violet)]")}
+        />
+        Engagements
+        <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform", open ? "" : "-rotate-90")} />
+      </button>
+      {open && (
+        <div className="ml-9 mt-0.5 flex flex-col gap-0.5">
+          {[
+            { href: "/engagement/deals", label: "By Deal" },
+            { href: "/engagement/investors", label: "By Investor" },
+          ].map((c) => (
+            <Link
+              key={c.href}
+              href={c.href}
+              className={cn(
+                "rounded px-3 py-1.5 text-sm transition-colors",
+                childActive(c.href)
+                  ? "bg-[var(--bg-tertiary)] font-medium text-[var(--text-primary)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
+              )}
+            >
+              {c.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
 export function Sidebar({
@@ -124,17 +180,21 @@ export function Sidebar({
         </p>
 
         <nav className="flex flex-col gap-0.5">
-          {navItems.map(({ href, label, Icon, iconColor }) => (
-            <NavItem
-              key={href}
-              href={href}
-              label={label}
-              Icon={Icon}
-              active={isActive(href)}
-              iconColor={iconColor}
-              badge={href === "/investors" ? pendingReview : undefined}
-            />
-          ))}
+          {navItems.map(({ href, label, Icon, iconColor }) =>
+            href === "/engagement" ? (
+              <EngagementNavGroup key={href} active={isActive(href)} />
+            ) : (
+              <NavItem
+                key={href}
+                href={href}
+                label={label}
+                Icon={Icon}
+                active={isActive(href)}
+                iconColor={iconColor}
+                badge={href === "/investors" ? pendingReview : undefined}
+              />
+            ),
+          )}
         </nav>
       </div>
     </aside>
