@@ -450,6 +450,39 @@ export async function onboardingStats(now: Date = new Date()) {
   };
 }
 
+/**
+ * Investors awaiting onboarding review, newest registration first, with their
+ * primary contact (name + email). Drives the dashboard onboarding alert card.
+ */
+export async function pendingOnboardingInvestors() {
+  const investors = await prisma.investor.findMany({
+    where: { onboardingStatus: "PendingReview" },
+    orderBy: [{ registeredAt: "desc" }, { createdAt: "desc" }],
+    select: {
+      id: true,
+      name: true,
+      registeredAt: true,
+      contacts: {
+        where: { email: { not: null } },
+        orderBy: { isPrimaryContact: "desc" },
+        take: 1,
+        select: { firstName: true, lastName: true, email: true },
+      },
+    },
+  });
+
+  return investors.map((inv) => {
+    const c = inv.contacts[0];
+    return {
+      id: inv.id,
+      name: inv.name,
+      registeredAt: inv.registeredAt,
+      contactName: c ? [c.firstName, c.lastName].filter(Boolean).join(" ") || null : null,
+      contactEmail: c?.email ?? null,
+    };
+  });
+}
+
 // ─── Spec-gap pass 2: remaining §13 dashboards ────────────────────────────────
 
 export interface ActiveInactiveSplit {

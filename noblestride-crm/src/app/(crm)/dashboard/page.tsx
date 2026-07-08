@@ -8,6 +8,7 @@ import {
   pipelineBreakdowns,
   dealPipelineTrend,
   onboardingStats,
+  pendingOnboardingInvestors,
   teamWorkload,
   taskStatusByOwner,
   overdueTasksCount,
@@ -26,6 +27,7 @@ import { Card, CardHeader, CardBody } from "@/components/ui";
 import { AnimatedStatCard } from "@/components/ui/animated-stat-card";
 import { Reveal, Stagger } from "@/components/ui/motion";
 import { OverviewAgentCard } from "@/components/crm/overview-agent-card";
+import { OnboardingQueueCard } from "@/components/crm/onboarding-queue-card";
 import { DealPipelineTrendChart, PipelineOverviewChart } from "@/components/crm/pipeline-chart";
 import { BreakdownBarList } from "@/components/crm/pipeline-breakdown";
 import { TeamWorkloadTable, TaskStatusCrosstab, OverdueActionsList } from "@/components/crm/team-tasks-panel";
@@ -45,6 +47,7 @@ export default async function DashboardPage() {
     breakdowns,
     trend,
     onboarding,
+    pendingOnboarding,
     workload,
     statusByOwner,
     overdueCount,
@@ -64,6 +67,7 @@ export default async function DashboardPage() {
     pipelineBreakdowns(),
     dealPipelineTrend(),
     onboardingStats(),
+    pendingOnboardingInvestors(),
     teamWorkload(),
     taskStatusByOwner(),
     overdueTasksCount(),
@@ -80,6 +84,16 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <OnboardingQueueCard
+        investors={pendingOnboarding.map((p) => ({
+          id: p.id,
+          name: p.name,
+          registeredAt: p.registeredAt ? p.registeredAt.toISOString() : null,
+          contactName: p.contactName,
+          contactEmail: p.contactEmail,
+        }))}
+      />
+
       {/* Page header */}
       <Reveal>
         <div>

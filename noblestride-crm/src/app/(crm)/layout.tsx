@@ -18,10 +18,11 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
   if (vp.role === "investor") redirect("/portal/investor");
   if (vp.role === "partner") redirect("/portal/partner");
 
-  const [investors, partners, users] = await Promise.all([
+  const [investors, partners, users, pendingReview] = await Promise.all([
     prisma.investor.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.partner.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.investor.count({ where: { onboardingStatus: "PendingReview" } }),
   ]);
 
   // §7.2 in-org lens (demo): banner names the active role + user.
@@ -31,7 +32,7 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Fixed-width sidebar, full height */}
-      <Sidebar />
+      <Sidebar pendingReview={pendingReview} />
 
       {/* Main content region */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
