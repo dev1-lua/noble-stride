@@ -4,7 +4,8 @@
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getCurrentAuth } from "@/server/auth/current";
+import { getViewpoint } from "@/server/viewpoint";
+import { viewpointHome } from "@/lib/viewpoint";
 import { loginAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -20,11 +21,15 @@ const inputClass =
 const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]";
 
 export default async function LoginPage({ searchParams }: PageProps) {
-  // Real session check (not cookie presence) — a stale/invalidated cookie
-  // returns null here and the form still renders, so a dead-cookie visitor
-  // isn't trapped. A genuinely live session redirects home, same as before.
-  const auth = await getCurrentAuth();
-  if (auth) redirect(auth.account.kind === "INVESTOR" ? "/portal/investor" : "/dashboard");
+  // Gate on the resolved VIEWPOINT (same predicate the CRM/portal layouts
+  // use), not merely on auth existing. An ACTIVE account can still resolve
+  // to a null viewpoint (e.g. an investor whose Investor row was deleted, or
+  // a deactivated internal user) — if we redirected on auth alone, that
+  // account would bounce login -> portal/dashboard -> login forever, with no
+  // way to reach the sign-in form or sign out. A null viewpoint must render
+  // the form instead.
+  const vp = await getViewpoint();
+  if (vp) redirect(viewpointHome(vp));
 
   const sp = await searchParams;
   const isInvestor = sp.as === "investor";

@@ -6,7 +6,8 @@
 // zero until a team member approves (anti-broker gate).
 
 import { redirect } from "next/navigation";
-import { getCurrentAuth } from "@/server/auth/current";
+import { getViewpoint } from "@/server/viewpoint";
+import { viewpointHome } from "@/lib/viewpoint";
 import { routeEmailAction, contactSignupAction } from "./actions";
 import RegisterWizard from "./register-wizard";
 import InternalForm from "./internal-form";
@@ -25,10 +26,12 @@ const inputClass =
 const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]";
 
 export default async function RegisterPage({ searchParams }: PageProps) {
-  // Real session check (not cookie presence) — see login/page.tsx for why
-  // this lives here instead of the edge middleware.
-  const auth = await getCurrentAuth();
-  if (auth) redirect(auth.account.kind === "INVESTOR" ? "/portal/investor" : "/dashboard");
+  // Gate on the resolved VIEWPOINT — see login/page.tsx for why this must
+  // match the layouts' predicate instead of raw auth presence (an
+  // ACTIVE-account-with-null-viewpoint state would otherwise loop forever
+  // between here and the portal/dashboard).
+  const vp = await getViewpoint();
+  if (vp) redirect(viewpointHome(vp));
 
   const sp = await searchParams;
   const email = sp.email ?? "";

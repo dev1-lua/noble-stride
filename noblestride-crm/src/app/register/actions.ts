@@ -27,6 +27,15 @@ export async function routeEmailAction(formData: FormData): Promise<void> {
   const email = normalizeEmail(String(formData.get("email") ?? ""));
   if (!email) redirect("/register");
 
+  // Unauthenticated email classifier — without a limit an attacker can
+  // bulk-enumerate investor-contact emails via the path=contact vs path=fund
+  // redirect. Throttle BEFORE the classification/lookup queries run so a
+  // throttled caller never triggers them. Generic message only — never echo
+  // the email back on this path.
+  if (!(await checkRate("signup"))) {
+    redirect(`/register?error=${encodeURIComponent("Too many attempts — please try again later.")}`);
+  }
+
   const cls = await classifyEmailForSignup(email);
   if (cls.kind === "blocked") {
     const msg =
