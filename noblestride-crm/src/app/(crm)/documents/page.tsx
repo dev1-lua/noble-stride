@@ -13,8 +13,10 @@ import { relationOptions } from "@/server/services/relation-options";
 import { StatCard, Chip, Table, THead, TBody, Tr, Th, Td, HelpHint } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { DocumentFormDrawer } from "@/components/crm/document-form-drawer";
+import { ShareBoxButton } from "@/components/crm/share-box-button";
 import { getOrgLens } from "@/server/rbac/context";
 import { can } from "@/server/rbac/matrix";
+import { isConfigured } from "@/server/integrations/config";
 
 export default async function DocumentsPage() {
   const lens = await getOrgLens();
@@ -119,6 +121,11 @@ export default async function DocumentsPage() {
                       </a>
                     ) : (
                       <span className="font-medium text-[var(--text-primary)]">{doc.name}</span>
+                    )}
+                    {isConfigured("box") && (
+                      <span className="ml-2 inline-block align-middle">
+                        <ShareBoxButton documentId={doc.id} />
+                      </span>
                     )}
                   </Td>
                   <Td>

@@ -27,6 +27,7 @@ import { assertAdmin, assertCan, assertCanDelete, assertCanUpdateOwnScoped } fro
 import { prisma } from "@/lib/db";
 import { sendEsignEnvelope } from "@/server/services/esign";
 import type { ESignKind } from "@/server/integrations/esign/provider";
+import { shareDocumentViaBox } from "@/server/services/docshare";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -377,6 +378,28 @@ builder.mutationFields((t) => ({
     resolve: async (_q, _r, args, ctx) => {
       assertCanDelete(ctx.actor, "Documents");
       return deleteDocument(args.id);
+    },
+  }),
+
+  // ── Share via Box (Task 12b) — fetches the document's stored bytes from
+  // its fileUrl and hands them to the docshare provider seam (manual no-op
+  // fallback when Box is unconfigured; see src/server/integrations/docshare/provider.ts).
+  // Guarded the same as updateDocument: a staff-write check on Documents.
+  shareDocumentViaBox: t.string({
+    nullable: false,
+    args: { documentId: t.arg.id({ required: true }) },
+    resolve: async (_r, args, ctx) => {
+      assertCan(ctx.actor, "Documents", "U");
+      const doc = await prisma.document.findUnique({ where: { id: String(args.documentId) } });
+      if (!doc) throw new Error("Document not found");
+      if (!doc.fileUrl) throw new Error("Document has no fileUrl to share");
+      const r = await fetch(doc.fileUrl);
+      const bytes = Buffer.from(await r.arrayBuffer());
+      const { sharedUrl } = await shareDocumentViaBox(doc.id, bytes, {
+        filename: doc.name,
+        contentType: r.headers.get("content-type") ?? "application/octet-stream",
+      });
+      return sharedUrl;
     },
   }),
 
