@@ -5,6 +5,8 @@
 // No viewpoint/auth — this is the pre-approval front door; visibility stays
 // zero until a team member approves (anti-broker gate).
 
+import { redirect } from "next/navigation";
+import { getCurrentAuth } from "@/server/auth/current";
 import { routeEmailAction, contactSignupAction } from "./actions";
 import RegisterWizard from "./register-wizard";
 import InternalForm from "./internal-form";
@@ -23,6 +25,11 @@ const inputClass =
 const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]";
 
 export default async function RegisterPage({ searchParams }: PageProps) {
+  // Real session check (not cookie presence) — see login/page.tsx for why
+  // this lives here instead of the edge middleware.
+  const auth = await getCurrentAuth();
+  if (auth) redirect(auth.account.kind === "INVESTOR" ? "/portal/investor" : "/dashboard");
+
   const sp = await searchParams;
   const email = sp.email ?? "";
 

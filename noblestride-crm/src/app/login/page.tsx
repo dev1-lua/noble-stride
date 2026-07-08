@@ -3,6 +3,8 @@
 // action, not here.
 
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getCurrentAuth } from "@/server/auth/current";
 import { loginAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +20,12 @@ const inputClass =
 const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]";
 
 export default async function LoginPage({ searchParams }: PageProps) {
+  // Real session check (not cookie presence) — a stale/invalidated cookie
+  // returns null here and the form still renders, so a dead-cookie visitor
+  // isn't trapped. A genuinely live session redirects home, same as before.
+  const auth = await getCurrentAuth();
+  if (auth) redirect(auth.account.kind === "INVESTOR" ? "/portal/investor" : "/dashboard");
+
   const sp = await searchParams;
   const isInvestor = sp.as === "investor";
 
