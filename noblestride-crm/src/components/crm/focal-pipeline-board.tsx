@@ -8,17 +8,23 @@
 // Marked "use client": the inner name Link stops propagation on click so it
 // doesn't also toggle the parent <details> disclosure, and a Server Component
 // cannot attach an event handler to an element it renders directly.
+// The per-row EngagementRestageSelect is the second client-island reason.
 import Link from "next/link";
 import { Chip } from "@/components/ui";
+import type { SelectOption } from "@/components/ui";
 import { stageBarColor } from "@/lib/engagement-stage-colors";
+import { EngagementRestageSelect } from "./engagement-restage-select";
 
 export interface FocalGroupItemDTO {
   id: string;
+  transactionId: string;
+  investorId: string;
   counterpartName: string;
   counterpartHref: string;
   stage: string;
-  stageLabel: string;
   interestLevel: string | null;
+  /** §7.2 lens: computed server-side via canUpdateRecord (own-scope aware). */
+  canRestage: boolean;
 }
 export interface FocalGroupDTO {
   id: string;
@@ -45,7 +51,7 @@ function StageBar({ stageCounts, total }: { stageCounts: FocalGroupDTO["stageCou
   );
 }
 
-export function FocalPipelineBoard({ groups }: { groups: FocalGroupDTO[] }) {
+export function FocalPipelineBoard({ groups, stageOptions }: { groups: FocalGroupDTO[]; stageOptions: SelectOption[] }) {
   if (groups.length === 0) {
     return (
       <div className="rounded-xl border border-zinc-200/80 bg-white px-5 py-12 text-center text-zinc-500 shadow-sm">
@@ -97,7 +103,19 @@ export function FocalPipelineBoard({ groups }: { groups: FocalGroupDTO[] }) {
                   </Link>
                   <div className="flex shrink-0 items-center gap-2">
                     {it.interestLevel && <Chip value={it.interestLevel} group="InterestLevel" />}
-                    <Chip value={it.stage} group="EngagementStage" />
+                    {it.canRestage ? (
+                      <div className="w-40">
+                        <EngagementRestageSelect
+                          id={it.id}
+                          transactionId={it.transactionId}
+                          investorId={it.investorId}
+                          currentStage={it.stage}
+                          stageOptions={stageOptions}
+                        />
+                      </div>
+                    ) : (
+                      <Chip value={it.stage} group="EngagementStage" />
+                    )}
                     <Link href={`/engagement/${it.id}`} className="text-xs font-medium text-accent hover:underline">
                       Open →
                     </Link>

@@ -10,7 +10,7 @@ import { disbursementByPeriod } from "@/server/services/dashboard";
 import { relationOptions } from "@/server/services/relation-options";
 import { StatCard } from "@/components/ui";
 import { label } from "@/lib/vocab";
-import { ENGAGEMENT_STAGES, stageColorSwatch } from "@/lib/engagement-stage-colors";
+import { ENGAGEMENT_STAGES, stageColorSwatch, engagementStageOptions } from "@/lib/engagement-stage-colors";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { LogEngagementDialog } from "@/components/crm/log-engagement-dialog";
@@ -20,7 +20,7 @@ import { DisbursementTable } from "@/components/crm/disbursement-table";
 import type { DisbursementRow } from "@/components/crm/disbursement-table";
 import { DisbursementPeriodSummary } from "@/components/crm/disbursement-period-summary";
 import { getOrgLens } from "@/server/rbac/context";
-import { can } from "@/server/rbac/matrix";
+import { can, canUpdateRecord } from "@/server/rbac/matrix";
 
 export default async function EngagementByDealPage() {
   const lens = await getOrgLens();
@@ -37,6 +37,8 @@ export default async function EngagementByDealPage() {
       listInvestors({}),
       relationOptions(),
     ]);
+
+  const stageOptions = engagementStageOptions();
 
   // "Deals rejected" — engagements that reached the Declined stage. Reuses the
   // stage buckets already loaded above (engagementsByStage), so this costs no
@@ -56,11 +58,13 @@ export default async function EngagementByDealPage() {
     stageCounts: stageCountsFor(engagements),
     items: engagements.map((e) => ({
       id: e.id,
+      transactionId: e.transactionId,
+      investorId: e.investorId,
       counterpartName: e.investor.name,
       counterpartHref: `/investors/${e.investorId}`,
       stage: e.engagementStage,
-      stageLabel: e.engagementStage,
       interestLevel: e.interestLevel,
+      canRestage: canUpdateRecord(lens.orgRole, "Engagements", lens.userId, { ownerId: e.ownerId }),
     })),
   }));
 
@@ -150,7 +154,7 @@ export default async function EngagementByDealPage() {
         <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-3">
           Pipeline — By Deal
         </h2>
-        <FocalPipelineBoard groups={dealGroups} />
+        <FocalPipelineBoard groups={dealGroups} stageOptions={stageOptions} />
       </div>
 
       {/* Disbursements + activity timeline */}

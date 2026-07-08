@@ -10,10 +10,10 @@ import { FocalPipelineBoard } from "@/components/crm/focal-pipeline-board";
 import type { FocalGroupDTO } from "@/components/crm/focal-pipeline-board";
 import { StatCard } from "@/components/ui";
 import { LogEngagementDialog } from "@/components/crm/log-engagement-dialog";
-import { ENGAGEMENT_STAGES, stageColorSwatch } from "@/lib/engagement-stage-colors";
+import { ENGAGEMENT_STAGES, stageColorSwatch, engagementStageOptions } from "@/lib/engagement-stage-colors";
 import { label } from "@/lib/vocab";
 import { getOrgLens } from "@/server/rbac/context";
-import { can } from "@/server/rbac/matrix";
+import { can, canUpdateRecord } from "@/server/rbac/matrix";
 
 export default async function EngagementByInvestorPage() {
   const lens = await getOrgLens();
@@ -24,6 +24,8 @@ export default async function EngagementByInvestorPage() {
     listInvestors({}),
   ]);
 
+  const stageOptions = engagementStageOptions();
+
   const groups: FocalGroupDTO[] = byInvestor.map(({ investor, engagements }) => ({
     id: investor.id,
     name: investor.name,
@@ -32,11 +34,13 @@ export default async function EngagementByInvestorPage() {
     stageCounts: stageCountsFor(engagements),
     items: engagements.map((e) => ({
       id: e.id,
+      transactionId: e.transactionId,
+      investorId: e.investorId,
       counterpartName: e.transaction.name,
       counterpartHref: `/transactions/${e.transactionId}`,
       stage: e.engagementStage,
-      stageLabel: e.engagementStage,
       interestLevel: e.interestLevel,
+      canRestage: canUpdateRecord(lens.orgRole, "Engagements", lens.userId, { ownerId: e.ownerId }),
     })),
   }));
 
@@ -73,7 +77,7 @@ export default async function EngagementByInvestorPage() {
         ))}
       </div>
 
-      <FocalPipelineBoard groups={groups} />
+      <FocalPipelineBoard groups={groups} stageOptions={stageOptions} />
     </div>
   );
 }
