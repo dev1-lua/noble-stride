@@ -33,7 +33,15 @@
 
 ## Bugs found
 
-None. No fixes required during verification.
+None during the e2e flows. The subsequent fable whole-branch review found no Critical and no security holes (all 4 holistic risks refuted); it flagged 2 required fixes + 1 cheap hardening, applied as one consolidated wave (commit `3f94d91`) and re-verified below.
+
+## Post-review fix wave (commit 3f94d91) — re-verified
+
+- **Login error copy:** `/login` now maps 2FA bounce slugs to human copy. Re-checked live: `/login?error=session-expired` renders "Your sign-in session expired. Please sign in again." (no raw slug). ✅
+- **Email-delivery failure handling (spec §4):** `sendMail` failures are now caught — `issueLoginOtp` throws `OtpDeliveryError` → login returns `otp_unavailable` (friendly message) / resend → `?error=send-failed`; `requestPasswordReset` swallows-and-logs to preserve no-enumeration. New test `login-otp-delivery.smoke.test.ts` asserts `otp_unavailable`. ✅
+- **Status re-check:** `verifyLoginOtpAction` re-checks `account.status === "ACTIVE"` before minting a session. ✅
+- **Happy path re-verified after the wave:** investor login → `/login/verify` → sink code → `/portal/investor`, cookies `[ns_2fa_trust, ns_session]`. ✅
+- **Gate after wave:** tsc 0 · vitest **562** · eslint clean on all touched files.
 
 ## Notes / deferred (unchanged from design §10)
 
