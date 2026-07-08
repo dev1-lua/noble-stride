@@ -1052,6 +1052,17 @@ model Document {
   accessLevel   DocumentAccessLevel @default(Internal)
   status        DocumentStatus?
   fileUrl       String?
+  storageProvider   String?   @default("local")
+  storageKey        String?
+  mimeType          String?
+  sizeBytes         Int?
+  checksum          String?
+  originalFilename  String?
+  previousVersionId String?
+  previousVersion   Document?  @relation("DocumentVersions", fields: [previousVersionId], references: [id], onDelete: SetNull)
+  supersededBy      Document[] @relation("DocumentVersions")
+  isCurrent         Boolean    @default(true)
+  accessLogs        DocumentAccessLog[]
   uploadedById  String?
   uploadedBy    User?               @relation("DocumentUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
   uploadedAt    DateTime            @default(now())
@@ -1080,6 +1091,19 @@ model Document {
   @@index([accessLevel])
   @@index([transactionId])
   @@index([mandateId])
+  @@index([isCurrent])
+}
+
+model DocumentAccessLog {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String?
+  action     String   // UPLOAD | DOWNLOAD | DELETE
+  at         DateTime @default(now())
+
+  @@index([documentId])
+  @@index([userId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

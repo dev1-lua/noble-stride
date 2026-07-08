@@ -96,6 +96,23 @@ describe("projectDealForInvestor — tier gating (§5.2)", () => {
     it("DD with a satisfied NDA: InvestorShared + VDR", () => {
       expect(docIds("DD", true)).toEqual(["doc-deck", "doc-im", "doc-model", "doc-teaser", "doc-vdr"]);
     });
+
+    it("M2: superseded versions (isCurrent === false) are hidden even if otherwise shareable", () => {
+      const deal = makeDealFixture();
+      deal.documents = [
+        { id: "doc-im-old", name: "IM v1", type: "IM", accessLevel: "InvestorShared", isCurrent: false },
+        { id: "doc-im-new", name: "IM v2", type: "IM", accessLevel: "InvestorShared", isCurrent: true },
+      ];
+      const p = projectDealForInvestor(deal, "AFTER_NDA");
+      expect(p!.documents.map((d) => d.id)).toEqual(["doc-im-new"]);
+    });
+
+    it("M2: a document with no isCurrent value is treated as current (backward-compatible)", () => {
+      const deal = makeDealFixture();
+      deal.documents = [{ id: "doc-im-legacy", name: "IM", type: "IM", accessLevel: "InvestorShared" }];
+      const p = projectDealForInvestor(deal, "AFTER_NDA");
+      expect(p!.documents.map((d) => d.id)).toEqual(["doc-im-legacy"]);
+    });
   });
 
   describe("advisor & client contacts: DD only", () => {

@@ -76,6 +76,10 @@ export interface DocumentInput {
   accessLevel: DocumentAccessLevel;
   status?: DocumentStatus | null;
   fileUrl?: string | null;
+  /** Superseded versions (isCurrent === false) are hidden from external roles.
+   *  Undefined is treated as current for backward compatibility with existing
+   *  fixtures/rows predating the versioning feature. */
+  isCurrent?: boolean;
 }
 
 export interface EngagementInput {
@@ -209,6 +213,9 @@ function projectDocuments(
   const masked = tier === "PRE_INTEREST";
   return documents
     .filter((doc) => {
+      // Superseded versions are never investor-visible; undefined ⇒ current
+      // (pre-versioning fixtures/rows have no isCurrent value at all).
+      if (doc.isCurrent === false) return false;
       if (NEVER_SHARED_DOC_TYPES.includes(doc.type)) return false;
       // Internal and ClientShared documents are never investor-visible.
       if (doc.accessLevel === "Internal" || doc.accessLevel === "ClientShared") return false;

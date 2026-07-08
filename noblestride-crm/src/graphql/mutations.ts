@@ -15,7 +15,7 @@ import { createMandate, updateMandate, deleteMandate, acceptIntakeMandate, depri
 import { createTransaction, updateTransaction, deleteTransaction } from "@/server/services/transactions";
 import { createPartner, updatePartner, deletePartner } from "@/server/services/partners";
 import { createServiceProvider, updateServiceProvider, deleteServiceProvider } from "@/server/services/service-providers";
-import { createDocument, updateDocument, deleteDocument } from "@/server/services/documents";
+import { createDocument, updateDocument, deleteDocumentVersion } from "@/server/services/documents";
 import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
 import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
@@ -350,7 +350,7 @@ builder.mutationFields((t) => ({
     args: { id: t.arg.id({ required: true }) },
     resolve: async (_q, _r, args, ctx) => {
       assertCanDelete(ctx.actor, "Documents");
-      return deleteDocument(args.id);
+      return deleteDocumentVersion(args.id);
     },
   }),
 

@@ -91,6 +91,7 @@ export default async function DocumentsPage() {
               <Th>Status</Th>
               <Th>Linked Record</Th>
               <Th>Uploaded</Th>
+              {can(lens.orgRole, "Documents", "C") && <Th>Actions</Th>}
             </Tr>
           </THead>
           <TBody>
@@ -107,14 +108,16 @@ export default async function DocumentsPage() {
               return (
                 <Tr key={doc.id}>
                   <Td>
-                    {doc.fileUrl ? (
+                    {doc.storageKey ? (
                       <a
-                        href={doc.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={`/api/documents/${doc.id}/download`}
                         className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
-                        title={doc.fileUrl}
+                        title={doc.originalFilename ?? doc.name}
                       >
+                        {doc.name}
+                      </a>
+                    ) : doc.fileUrl ? (
+                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors" title={doc.fileUrl}>
                         {doc.name}
                       </a>
                     ) : (
@@ -152,12 +155,42 @@ export default async function DocumentsPage() {
                   <Td>
                     <span className="text-[var(--text-secondary)]">{formatDate(doc.uploadedAt)}</span>
                   </Td>
+                  {can(lens.orgRole, "Documents", "C") && (
+                    <Td>
+                      {doc.storageKey ? (
+                        <DocumentFormDrawer
+                          mode="create"
+                          triggerLabel="New version"
+                          triggerVariant="ghost"
+                          supersedesId={doc.id}
+                          initial={{
+                            name: doc.name,
+                            type: doc.type,
+                            accessLevel: doc.accessLevel,
+                            transactionId: doc.transactionId ?? undefined,
+                            clientId: doc.clientId ?? undefined,
+                            investorId: doc.investorId ?? undefined,
+                            mandateId: doc.mandateId ?? undefined,
+                            partnerId: doc.partnerId ?? undefined,
+                          }}
+                          transactions={txnOptions}
+                          clients={clientOptions}
+                          investors={invOptions}
+                          users={userOptions}
+                          mandates={mandateOptions}
+                          partners={partnerOptions}
+                        />
+                      ) : (
+                        <span className="text-[var(--text-tertiary)]">—</span>
+                      )}
+                    </Td>
+                  )}
                 </Tr>
               );
             })}
             {documents.length === 0 && (
               <Tr>
-                <Td colSpan={7}>
+                <Td colSpan={can(lens.orgRole, "Documents", "C") ? 8 : 7}>
                   <span className="text-[var(--text-tertiary)]">No documents on record.</span>
                 </Td>
               </Tr>
