@@ -1,6 +1,6 @@
 // engagement-stage-colors.ts — single source of truth for engagement-stage
 // ordering and colors, shared by the focal boards' distribution bars/legends.
-import { LABELS } from "@/lib/vocab";
+import { LABELS, label } from "@/lib/vocab";
 
 export const ENGAGEMENT_STAGES: string[] = Object.keys(LABELS.EngagementStage);
 
@@ -26,4 +26,9 @@ export function stageBarColor(stage: string): string {
 
 export function stageColorSwatch(stage: string): string {
   return stageBarColor(stage);
+}
+
+/** {value,label} list for the engagement restage selects, in vocab order. */
+export function engagementStageOptions(): { value: string; label: string }[] {
+  return ENGAGEMENT_STAGES.map((s) => ({ value: s, label: label("EngagementStage", s) }));
 }
