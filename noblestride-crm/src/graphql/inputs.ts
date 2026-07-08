@@ -351,6 +351,22 @@ export const SendEsignInput = builder.inputType("SendEsignInput", {
   }),
 });
 
+// Schedule-a-Teams-call (Task 15). `attendeesJson` is a JSON-encoded array of
+// `{email, name}` — left as a plain string here (mirroring SendEsignInput's
+// documentBase64 convention) so the resolver, not the GraphQL layer, owns
+// parsing/validation of attendee shape.
+export const ScheduleMeetingInput = builder.inputType("ScheduleMeetingInput", {
+  fields: (t) => ({
+    subject: t.string({ required: true }),
+    startAt: t.string({ required: true }),
+    endAt: t.string({ required: true }),
+    attendeesJson: t.string({ required: true }),
+    engagementId: t.id({ required: false }),
+    transactionId: t.id({ required: false }),
+    investorId: t.id({ required: false }),
+  }),
+});
+
 export const DueDiligenceTrackInput = builder.inputType("DueDiligenceTrackInput", {
   fields: (t) => ({
     transactionId: t.id({ required: true }),

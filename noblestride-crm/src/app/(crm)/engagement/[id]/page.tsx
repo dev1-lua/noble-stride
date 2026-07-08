@@ -13,6 +13,7 @@ import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { formatDate, daysAgoLabel } from "@/lib/format";
 import { RecordClosedNdaButton } from "@/components/crm/nda-actions";
 import { SendEsignButton } from "@/components/crm/send-esign-button";
+import { ScheduleTeamsButton } from "@/components/crm/schedule-teams-button";
 import { isConfigured } from "@/server/integrations/config";
 import { EngagementFormDrawer } from "@/components/crm/engagement-form-drawer";
 import { MilestoneChecklist } from "@/components/crm/milestone-checklist";
@@ -49,6 +50,13 @@ export default async function EngagementDetailPage({ params }: PageProps) {
     engagement.investor.contacts.find((c) => c.email);
   const esignSignerEmail = esignContact?.email ?? null;
   const esignSignerName = esignContact ? [esignContact.firstName, esignContact.lastName].filter(Boolean).join(" ") : "";
+
+  // Teams call attendees (Task 15): every investor contact with an email on
+  // file. No fake/placeholder email — if none resolves, the Schedule button
+  // is simply not rendered below.
+  const meetingAttendees = engagement.investor.contacts
+    .filter((c) => c.email)
+    .map((c) => ({ email: c.email as string, name: [c.firstName, c.lastName].filter(Boolean).join(" ") || undefined }));
 
   const activityItems: ActivityTimelineItem[] = engagement.activities.map((a) => ({
     id: a.id,
@@ -124,6 +132,13 @@ export default async function EngagementDetailPage({ params }: PageProps) {
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
+          {isConfigured("teams") && meetingAttendees.length > 0 && (
+            <ScheduleTeamsButton
+              subject={`Call — ${engagement.name}`}
+              attendees={meetingAttendees}
+              engagementId={engagement.id}
+            />
+          )}
           {canRestage && <EngagementFormDrawer initial={editInitial} />}
         </div>
       </div>
