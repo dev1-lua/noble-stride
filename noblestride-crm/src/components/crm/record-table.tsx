@@ -56,11 +56,11 @@ export function RecordTable({ investors }: RecordTableProps) {
           <Tr className="hover:bg-transparent">
             <Th>Investor</Th>
             <Th>Type</Th>
-            <Th>Ticket Size</Th>
             <Th>Sectors</Th>
             <Th>Geography</Th>
             <Th>Status</Th>
             <Th>Onboarding</Th>
+            <Th>Ticket Size</Th>
           </Tr>
         </THead>
         <TBody>
@@ -97,9 +97,6 @@ export function RecordTable({ investors }: RecordTableProps) {
                 <Td>
                   <Chip value={inv.investorType} group="InvestorType" />
                 </Td>
-
-                {/* Ticket size range — wraps in its fixed-width column */}
-                <Td className="text-zinc-700">{ticketRange}</Td>
 
                 {/* Sector chips — primary sector + count, rest summarised */}
                 <Td>
@@ -142,6 +139,11 @@ export function RecordTable({ investors }: RecordTableProps) {
                 <Td>
                   <Chip value={inv.onboardingStatus} group="OnboardingStatus" />
                 </Td>
+
+                {/* Ticket size range — moved to the end: sparse for many
+                    investors (source has structured tickets for only ~12/40),
+                    so it trails the always-populated columns per design. */}
+                <Td className="text-zinc-700">{ticketRange}</Td>
               </Tr>
             );
           })}

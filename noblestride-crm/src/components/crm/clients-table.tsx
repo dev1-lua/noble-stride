@@ -26,7 +26,7 @@ export function ClientsTable({ clients }: { clients: ClientRow[] }) {
       <Table>
         <THead>
           <Tr className="hover:bg-transparent">
-            <Th>Client</Th><Th>Status</Th><Th>Sector</Th><Th>HQ City</Th><Th>Revenue (LY)</Th><Th>Mandates</Th>
+            <Th>Client</Th><Th>Status</Th><Th>Sector</Th><Th>Mandates</Th><Th>HQ City</Th><Th>Revenue (LY)</Th>
           </Tr>
         </THead>
         <TBody>
@@ -45,9 +45,9 @@ export function ClientsTable({ clients }: { clients: ClientRow[] }) {
                   {c.sector.length > 3 && <span className="text-xs text-zinc-400">+{c.sector.length - 3}</span>}
                 </div>
               </Td>
+              <Td className="text-zinc-700">{c.mandateCount}</Td>
               <Td className="text-zinc-700">{c.hqCity ?? "—"}</Td>
               <Td className="whitespace-nowrap text-zinc-700">{c.revenueLastYear == null ? "—" : formatMoney(c.revenueLastYear)}</Td>
-              <Td className="text-zinc-700">{c.mandateCount}</Td>
             </Tr>
           ))}
         </TBody>

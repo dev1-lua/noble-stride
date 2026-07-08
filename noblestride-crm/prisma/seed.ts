@@ -31,7 +31,6 @@ import type {
 // so import the disbursement helpers via a relative path (single source of truth).
 import { amountPending, deriveYearQuarter } from "../src/server/domain/disbursement";
 import seedData from "./seed-data.json";
-import { CLIENT_FINANCIALS, MANDATE_DEAL_SIZES, INVESTOR_TICKETS } from "./demo-financials";
 
 const prisma = new PrismaClient();
 
@@ -207,8 +206,8 @@ async function main() {
         sectorFocus: inv.sectorFocus as Sector[],
         geographicFocus: inv.geographicFocus as Geography[],
         instruments: inv.instruments as Instrument[],
-        ticketMin: inv.ticketMin ?? INVESTOR_TICKETS[inv.name]?.ticketMin ?? null,
-        ticketMax: inv.ticketMax ?? INVESTOR_TICKETS[inv.name]?.ticketMax ?? null,
+        ticketMin: inv.ticketMin ?? null,
+        ticketMax: inv.ticketMax ?? null,
         engagementClassification: classificationFor(invIdx),
         ndaStatus: ndaStatusFor(invIdx),
         notes: inv.notes ?? null,
@@ -227,8 +226,8 @@ async function main() {
       id: created.id,
       sectorFocus: inv.sectorFocus as Sector[],
       geographicFocus: inv.geographicFocus as Geography[],
-      ticketMin: inv.ticketMin ?? INVESTOR_TICKETS[inv.name]?.ticketMin ?? null,
-      ticketMax: inv.ticketMax ?? INVESTOR_TICKETS[inv.name]?.ticketMax ?? null,
+      ticketMin: inv.ticketMin ?? null,
+      ticketMax: inv.ticketMax ?? null,
     });
   }
 
@@ -275,15 +274,11 @@ async function main() {
   const clients: Array<{ id: string; sector: Sector[] }> = [];
 
   for (const cl of seedData.clients) {
-    const financials = CLIENT_FINANCIALS[cl.name];
     const created = await prisma.client.create({
       data: {
         name: cl.name,
         sector: cl.sector as Sector[],
         countries: cl.countries as Geography[],
-        hqCity: financials?.hqCity ?? null,
-        hqCountry: financials?.hqCountry ?? null,
-        revenueLastYear: financials?.revenueLastYear ?? null,
       },
     });
     clients.push({ id: created.id, sector: cl.sector as Sector[] });
@@ -315,7 +310,6 @@ async function main() {
         clientId: client.id,
         leadId: leadId ?? null,
         sector: client.sector,
-        dealSize: MANDATE_DEAL_SIZES[m.name] ?? null,
         dateOpened: m.dateOpened ? new Date(m.dateOpened) : null,
         ndaStatus: m.ndaStatus as DocStatus,
         ndaSentDate: m.ndaSentDate ? new Date(m.ndaSentDate) : null,

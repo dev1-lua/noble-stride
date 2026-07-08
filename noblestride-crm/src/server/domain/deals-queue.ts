@@ -25,6 +25,11 @@ export interface DealsQuerySpec {
   view: DealsView;
 }
 
+// Column order: identity → structural pipeline block (stage/status/milestone,
+// kept together and un-scrambled) → always-populated attributes → then the
+// loose, type-specific attribute columns (Deal type, Ticket size) trail at the
+// end so they don't strand dashes mid-table on mandate rows (which have no
+// deal-type/ticket of their own). Non-structural empties go last per design.
 export const DEAL_COLUMNS: { key: string; label: string; default: boolean }[] = [
   { key: "name", label: "Project", default: true },
   { key: "company", label: "Company", default: true },
@@ -32,13 +37,13 @@ export const DEAL_COLUMNS: { key: string; label: string; default: boolean }[] = 
   { key: "stage", label: "Stage", default: true },
   { key: "status", label: "Status", default: true },
   { key: "milestone", label: "Milestone", default: true },
-  { key: "dealType", label: "Deal type", default: true },
-  { key: "ticket", label: "Ticket size", default: true },
   { key: "sector", label: "Sector", default: true },
   { key: "lead", label: "Lead", default: true },
   { key: "dateOnboarded", label: "Date onboarded", default: true },
   { key: "nextAction", label: "Next action", default: true },
   { key: "daysInStage", label: "Days in stage", default: true },
+  { key: "dealType", label: "Deal type", default: true },
+  { key: "ticket", label: "Ticket size", default: true },
 ];
 
 const KNOWN_COLUMNS = new Set(DEAL_COLUMNS.map((c) => c.key));

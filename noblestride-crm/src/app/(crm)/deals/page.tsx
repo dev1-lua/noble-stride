@@ -18,6 +18,8 @@ import { formatMoney } from "@/lib/money";
 import { KanbanBoard } from "@/components/crm/kanban-board";
 import type { KanbanColumnDTO } from "@/components/crm/kanban-board";
 import type { MandateCardDTO, TransactionCardDTO } from "@/components/crm/kanban-card";
+import { MandateFormDrawer } from "@/components/crm/mandate-form-drawer";
+import { TransactionFormDrawer } from "@/components/crm/transaction-form-drawer";
 
 type RawSearchParams = { [k: string]: string | string[] | undefined };
 interface PageProps { searchParams: Promise<RawSearchParams>; }
@@ -131,6 +133,10 @@ export default async function DealsPage({ searchParams }: PageProps) {
   const lens = await getOrgLens();
   const spec = parseDealsQuery(sp);
   const views = await listSavedViews();
+  // relationOptions feeds both the header create-drawers (below) and the list
+  // filter bar; loaded once here so both board and list branches can offer the
+  // gated "New mandate"/"New transaction" affordances the queue consolidated.
+  const rel = await relationOptions();
 
   // Export carries every active filter/sort/group param, but not the
   // pagination/column/view display params — the export always covers the
@@ -152,6 +158,26 @@ export default async function DealsPage({ searchParams }: PageProps) {
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
+        {can(lens.orgRole, "Mandates", "C") && (
+          <MandateFormDrawer
+            mode="create"
+            triggerLabel="+ New Mandate"
+            clients={rel.clients}
+            users={rel.users}
+            partners={rel.partners}
+          />
+        )}
+        {can(lens.orgRole, "Transactions", "C") && (
+          <TransactionFormDrawer
+            mode="create"
+            triggerLabel="+ New Transaction"
+            clients={rel.clients}
+            users={rel.users}
+            mandates={rel.mandates}
+            partners={rel.partners}
+            serviceProviders={rel.serviceProviders}
+          />
+        )}
         <a
           href={`/deals/export${exportQuery ? `?${exportQuery}` : ""}`}
           className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-800 transition-colors hover:bg-zinc-50 active:bg-zinc-100"
@@ -233,14 +259,12 @@ export default async function DealsPage({ searchParams }: PageProps) {
   // Grouped mode needs the whole filtered set, not just the current page:
   // group headers come from countsBy() over all matching rows, so paginated
   // rows would under-fill later groups and leave groups on other pages empty.
-  const [{ rows, total }, relations] = await Promise.all([
-    spec.groupBy ? listAllDeals(spec) : listDeals(spec),
-    relationOptions(),
-  ]);
+  const { rows, total } = spec.groupBy ? await listAllDeals(spec) : await listDeals(spec);
 
   // Distinct lead names for the filter dropdown (filtering matches on name,
-  // not id — see DealRow.leadName / matches() in the service).
-  const leadNames = Array.from(new Set(relations.users.map((u) => u.label))).sort((a, b) => a.localeCompare(b));
+  // not id — see DealRow.leadName / matches() in the service). `rel` is the
+  // relationOptions() loaded once up top (also feeds the header create-drawers).
+  const leadNames = Array.from(new Set(rel.users.map((u) => u.label))).sort((a, b) => a.localeCompare(b));
   const leads = leadNames.map((name) => ({ value: name, label: name }));
 
   const groups = spec.groupBy ? await countsBy(spec, spec.groupBy) : [];
