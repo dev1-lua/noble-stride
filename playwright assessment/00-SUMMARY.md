@@ -47,3 +47,28 @@ product's core promise (SOW §07, Spec §11), this should be fixed before any ex
 | Agents / WhatsApp / Email / SharePoint (Spec §8, §9, §14) | ➖ Not built (known scope gaps — see coverage map) |
 
 **Counts:** 1 high / 5 medium / ~10 low bugs; 3 deployment blockers; ~7 known scope gaps.
+
+---
+
+## 2026-07-08 — Gap-closure + simplification SDD run (verification pass)
+
+**Branch:** `integration/all-features` (work uncommitted/staged on top of `833de8f`). **Method:** 19-task SDD plan executed subagent-driven (sonnet implement, opus review per task); this is the Task-19 consolidated verification.
+
+**Gates (all green):** `tsc --noEmit` clean · `vitest run` **636 passed / 78 files, 0 failed** · `next build` succeeds (all 36 routes compile, incl. `/home`, `/engagement`, `/intake`, `/access-matrix`) · eslint clean on touched files (only the pre-existing `dashboard/page.tsx` `<a href>` error remains, unrelated).
+
+**Live Playwright pass — new surfaces this run (all verified working):**
+- **`/home` "Today" page** — Today nav item first (Sun icon, active); 4 lens-scoped sections render, empty sections omitted ("Going quiet" correctly listed a stale deal); welcome checklist with 4 items + dismiss.
+- **Nav revert (user request)** — "Investor Outreach" → **"Engagements"** everywhere; sidebar dropdown flattened to a single "Engagements" item → `/engagement` (→ redirects to By Deal board). Transaction pipeline STAGE "Investor Outreach" (Marko-verbatim) preserved.
+- **Help panel (Task 18)** — topbar "?" button; `?help=journey` deep-link opens the drawer scrolled to the 17-step "How a deal flows" list — verified on the checklist **client-side nav** path (the reviewer-caught I1 defect, now fixed).
+- **Deal Journey spine (Task 16)** — renders on mandate detail (17 steps, done=emerald / current=accent ring / pending / manual=dashed), evidence-based out-of-order states correct.
+- **`/intake` public wizard (Task 11)** — 6-step, renders standalone (no CRM shell).
+- **Notification bell (Task 14)** present in topbar (empty for the default demo-Admin lens — known limitation: recipient targeting needs `feat/real-auth`'s real `userId`).
+
+**Confirmed intact (client concern):** the investor-onboarding **PendingReview queue is live on the dashboard** (`OnboardingQueueCard` + "Pending Review" stat, inline Approve/Decline/Greylist) — not removed by simplification; Task 14 also now fires an in-app bell to Admins on new registration.
+
+**Coverage note (honest):** this pass focused on the Wave-1/2/3 surfaces this SDD run added/changed. Flows built+reviewed in Tasks 1–13 (match popover, client compliance round-trip, portal EBITDA/net-profit filters, full intake submit → dashboard callout → review-panel accept/deprioritize, restage→notification write path) are covered by the 636 unit/smoke tests + the passing `next build`, and by the 2026-07-07 manual pass above; they were **not** re-exercised end-to-end live this round. No new DB test artifacts were created this pass (read-only navigation only — see `04`).
+
+Per-task detail, findings, and minor-for-final-review items live in `.superpowers/sdd/progress.md`. The Fable whole-branch review is the final gate.
+
+### Update (2026-07-08, post-review): "Today" `/home` page removed at user request
+The user reviewed the new `/home` "Today" page and asked for it to be removed. Task 17's page + welcome checklist were deleted; the sidebar "Today" item, the `/home` topbar entry, and the team login/root redirect were reverted (team users land on `/dashboard` again, as before). `quietTransactions()` (the shared query extracted from `aiOverviewInsights`) was kept — it's decoupled from `/home` and still powers the dashboard "attention" insight. Gates re-verified green: tsc clean, vitest 636/78, `next build` OK (35 routes now — `/home` gone).

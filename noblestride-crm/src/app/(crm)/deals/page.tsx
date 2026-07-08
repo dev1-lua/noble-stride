@@ -77,6 +77,7 @@ function mandateBoardColumns(
       const stageEnteredAt: Date = mandate.stageEnteredAt ?? now;
       const ownerName: string | null = mandate.lead?.name ?? null;
       const ownerColor: string | null = mandate.lead?.avatarColor ?? null;
+      const priorityLabel: string | null = mandate.priority ? label("Priority", mandate.priority) : null;
       return {
         id: mandate.id,
         clientName,
@@ -85,6 +86,7 @@ function mandateBoardColumns(
         daysInStage: daysInStage(stageEnteredAt, now),
         ownerName,
         ownerColor,
+        priorityLabel,
       } satisfies MandateCardDTO;
     }),
   }));
@@ -111,6 +113,7 @@ function transactionBoardColumns(
       const stageEnteredAt: Date = txn.stageEnteredAt ?? now;
       const ownerName: string | null = txn.owner?.name ?? null;
       const ownerColor: string | null = txn.owner?.avatarColor ?? null;
+      const priorityLabel: string | null = txn.priority ? label("Priority", txn.priority) : null;
       return {
         id: txn.id,
         clientName,
@@ -123,6 +126,7 @@ function transactionBoardColumns(
         daysInStage: daysInStage(stageEnteredAt, now),
         ownerName,
         ownerColor,
+        priorityLabel,
       } satisfies TransactionCardDTO;
     }),
   }));

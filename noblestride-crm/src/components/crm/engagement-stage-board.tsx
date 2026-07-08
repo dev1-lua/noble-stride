@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { Chip, Badge } from "@/components/ui";
 import type { SelectOption } from "@/components/ui";
-import { label } from "@/lib/vocab";
+import { label, STAGE_HELP } from "@/lib/vocab";
 import { EngagementRestageSelect } from "./engagement-restage-select";
 
 // ─── DTOs (plain values only — no Prisma types cross the RSC boundary) ───────
@@ -135,6 +135,7 @@ export function EngagementStageBoard({
         <div key={col.stage} className="flex-shrink-0 w-60 flex flex-col">
           {/* Column header */}
           <div
+            title={STAGE_HELP.EngagementStage[col.stage]}
             className={`mb-2 px-2.5 py-1.5 rounded-md bg-[var(--bg-primary)] border border-[var(--border-subtle)] border-l-4 ${
               COLUMN_HEADER_COLORS[colIdx % COLUMN_HEADER_COLORS.length]
             }`}
@@ -161,7 +162,7 @@ export function EngagementStageBoard({
             ))}
             {col.items.length === 0 && (
               <div className="flex-1 flex items-center justify-center">
-                <p className="text-xs text-[var(--text-tertiary)] text-center py-4">No engagements</p>
+                <p className="text-xs text-[var(--text-tertiary)] text-center py-4">No engagements yet</p>
               </div>
             )}
           </div>

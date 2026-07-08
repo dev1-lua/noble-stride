@@ -33,7 +33,7 @@ export function DisbursementTable({ rows }: { rows: DisbursementRow[] }) {
   if (rows.length === 0) {
     return (
       <div className="rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] px-5 py-10 text-center text-sm text-[var(--text-tertiary)]">
-        No invested engagements yet.
+        No invested deals yet.
       </div>
     );
   }

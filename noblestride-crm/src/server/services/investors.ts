@@ -118,16 +118,42 @@ export async function createInvestor(input: InvestorCreateInput, actor: Actor) {
   return prisma.investor.create({ data: { ...data, createdSource: actorSource(actor) } });
 }
 
+// Fields that define an investor's matching criteria. Touching any of these
+// on an update re-verifies the criteria as of now (see rankInvestorMatches /
+// isCriteriaStale in domain/ranking.ts, which treats criteriaVerifiedAt as
+// stale after CRITERIA_STALE_DAYS).
+const CRITERIA_FIELDS = [
+  "sectorFocus",
+  "geographicFocus",
+  "ticketMin",
+  "ticketMax",
+  "instruments",
+  "minRevenue",
+  "minEbitda",
+  "minLoanBook",
+  "status",
+  "investmentStages",
+] as const;
+
 export async function updateInvestor(id: string, input: InvestorUpdateInput, actor: Actor = { type: "HUMAN" }) {
   const data = investorUpdateSchema.parse(input);
+  const criteriaTouched = CRITERIA_FIELDS.some((field) => data[field] !== undefined);
   return prisma.$transaction(async (tx) => {
     const existing = await tx.investor.findUniqueOrThrow({ where: { id }, select: { name: true } });
-    const updated = await tx.investor.update({ where: { id }, data });
+    const updated = await tx.investor.update({
+      where: { id },
+      data: { ...data, ...(criteriaTouched ? { criteriaVerifiedAt: new Date() } : {}) },
+    });
     if (data.name !== undefined) {
       await recordStageChange(tx, { field: "name", fromValue: existing.name, toValue: data.name, actor, investorId: id });
     }
     return updated;
   });
+}
+
+/** Marks an investor's matching criteria as freshly verified, without editing any other field. */
+export async function markInvestorCriteriaVerified(id: string) {
+  return prisma.investor.update({ where: { id }, data: { criteriaVerifiedAt: new Date() } });
 }
 
 const ONBOARDING_ACTIVITY_SUBJECT: Record<OnboardingStatus, string> = {

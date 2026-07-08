@@ -202,7 +202,7 @@ export default async function EngagementDetailPage({ params }: PageProps) {
         <CardBody className="space-y-4">
           <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Engagement NDA</dt>
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Deal NDA</dt>
               <dd className="mt-1">
                 {engagement.ndaType ? (
                   <div className="flex items-center gap-2">

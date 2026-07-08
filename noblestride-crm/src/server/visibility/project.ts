@@ -16,6 +16,7 @@ import type {
   MilestoneKey,
   OnboardingStatus,
   PartnerAgreementStatus,
+  PartnerFeeStatus,
   AdvisorType,
   Profitability,
   Sector,
@@ -103,6 +104,7 @@ export interface DealClientInput {
   // Present on loaded records but NEVER projected at any tier (they belong to
   // the fullFinancials group, which stays internal for now):
   ebitda?: DecimalLike | null;
+  netProfit?: DecimalLike | null;
   existingDebt?: DecimalLike | null;
   totalAssets?: DecimalLike | null;
 }
@@ -466,6 +468,9 @@ export interface ReferredMandateInput {
   dealSize?: DecimalLike | null;
   currency?: string;
   client?: { name: string } | null;
+  // Task 8: the mandate's linked transaction(s) carry the fee-execution status —
+  // only the first is used (mirrors deals-queue's linkedCounterpartId convention).
+  transactions?: { partnerFeeStatus?: PartnerFeeStatus | null }[];
 }
 
 export interface ProjectedPartnerView {
@@ -485,6 +490,9 @@ export interface ProjectedPartnerView {
     currency: string;
     converted: boolean;
     feeSharingStatus: string;
+    // Task 8: read-only fee STATUS for the referred deal's transaction (never
+    // feedbackNotes — that field is internal-only and never projected here).
+    partnerFeeStatusValue: PartnerFeeStatus | null;
   }[];
 }
 
@@ -519,6 +527,7 @@ export function projectForPartner(
       currency: mandate.currency ?? "USD",
       converted: mandate.stage === "Signed",
       feeSharingStatus,
+      partnerFeeStatusValue: mandate.transactions?.[0]?.partnerFeeStatus ?? null,
     })),
   };
 }

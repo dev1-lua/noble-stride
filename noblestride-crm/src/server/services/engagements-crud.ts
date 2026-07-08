@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/db";
+import { label } from "@/lib/vocab";
 import { actorSource } from "./crud";
 import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 import { amountPending, deriveYearQuarter } from "@/server/domain/disbursement";
 import { engagementCreateSchema, engagementUpdateSchema } from "@/lib/schemas/engagement";
 import { assertStageAllowed, stageRequiresNda } from "@/server/domain/nda-guard";
+import { notify } from "./notifications";
 
 function derived(input: { totalAmount?: number | null; amountDisbursed?: number | null; dateReceived?: Date | null }) {
   const pending = amountPending(input.totalAmount ?? null, input.amountDisbursed ?? null);
@@ -50,7 +52,7 @@ export async function updateEngagement(id: string, raw: unknown, actor: Actor = 
       "amountDisbursed" in input ? input.amountDisbursed : existing.amountDisbursed == null ? undefined : Number(existing.amountDisbursed),
     dateReceived: "dateReceived" in input ? input.dateReceived : existing.dateReceived ?? undefined,
   };
-  return prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     const updated = await tx.engagement.update({ where: { id }, data: { ...input, ...derived(merged) } as never });
     if (input.engagementStage !== undefined) {
       await recordStageChange(tx, {
@@ -63,4 +65,22 @@ export async function updateEngagement(id: string, raw: unknown, actor: Actor = 
     }
     return updated;
   });
+
+  // Notify the engagement's owner of the restage — after the transaction has
+  // committed (see notifications.ts). Skipped when there is no owner, the
+  // stage didn't actually change, or the owner is the one who made the change.
+  if (
+    input.engagementStage !== undefined &&
+    input.engagementStage !== existing.engagementStage &&
+    existing.ownerId &&
+    existing.ownerId !== actor.userId
+  ) {
+    await notify([existing.ownerId], {
+      kind: "stage_change",
+      title: `${existing.name}: ${label("EngagementStage", existing.engagementStage)} → ${label("EngagementStage", input.engagementStage)}`,
+      href: `/engagement/${id}`,
+    });
+  }
+
+  return updated;
 }

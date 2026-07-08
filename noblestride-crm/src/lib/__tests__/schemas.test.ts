@@ -162,6 +162,43 @@ describe("entity create schemas", () => {
     }
   });
 
+  it("client: Task-7 compliance & operations fields survive Zod parse (not stripped)", () => {
+    const r = clientCreateSchema.safeParse({
+      name: "Acme Foods",
+      pepExposure: true,
+      governmentOwned: false,
+      complianceNotes: "Board includes a former minister",
+      auditedFinancialsYears: 3,
+      groupStructure: "Parent + 2 subsidiaries",
+      suppliers: "Local millers, regional distributors",
+      competitors: "Kandy Foods, GrainCo",
+      capacityUtilization: "78%",
+      repaymentAbilityNotes: "DSCR of 1.6x on current facilities",
+      pricingExpectations: "8-10x EBITDA",
+      proposedTimeline: "Close within 6 months",
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.pepExposure).toBe(true);
+      expect(r.data.governmentOwned).toBe(false);
+      expect(r.data.complianceNotes).toBe("Board includes a former minister");
+      expect(r.data.auditedFinancialsYears).toBe(3);
+      expect(r.data.groupStructure).toBe("Parent + 2 subsidiaries");
+      expect(r.data.suppliers).toBe("Local millers, regional distributors");
+      expect(r.data.competitors).toBe("Kandy Foods, GrainCo");
+      expect(r.data.capacityUtilization).toBe("78%");
+      expect(r.data.repaymentAbilityNotes).toBe("DSCR of 1.6x on current facilities");
+      expect(r.data.pricingExpectations).toBe("8-10x EBITDA");
+      expect(r.data.proposedTimeline).toBe("Close within 6 months");
+    }
+  });
+
+  it("client: rejects auditedFinancialsYears outside 0-10 range", () => {
+    expect(clientCreateSchema.safeParse({ name: "X", auditedFinancialsYears: -1 }).success).toBe(false);
+    expect(clientCreateSchema.safeParse({ name: "X", auditedFinancialsYears: 11 }).success).toBe(false);
+    expect(clientCreateSchema.safeParse({ name: "X", auditedFinancialsYears: 10 }).success).toBe(true);
+  });
+
   it("client: strips unknown keys", () => {
     const r = clientCreateSchema.safeParse({ name: "Acme Foods", notAField: "nope" });
     expect(r.success).toBe(true);

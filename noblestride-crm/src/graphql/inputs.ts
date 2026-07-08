@@ -18,6 +18,7 @@ import {
   TaskStatusEnum, TaskSourceEnum,
   InteractionTypeEnum, CommChannelEnum, CommDirectionEnum,
   RegulatoryStatusEnum, DDTrackEnum, DDStatusEnum,
+  PriorityEnum, PartnerFeeStatusEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -103,6 +104,18 @@ export const ClientInput = builder.inputType("ClientInput", {
     totalAssets: t.float({ required: false }),
     impactFlags: t.field({ type: [ImpactFlagEnum], required: false }),
     status: t.field({ type: ClientStatusEnum, required: false }),
+    // Task 7: compliance & operations fields (Task 6 migration)
+    pepExposure: t.boolean({ required: false }),
+    governmentOwned: t.boolean({ required: false }),
+    complianceNotes: t.string({ required: false }),
+    auditedFinancialsYears: t.int({ required: false }),
+    groupStructure: t.string({ required: false }),
+    suppliers: t.string({ required: false }),
+    competitors: t.string({ required: false }),
+    capacityUtilization: t.string({ required: false }),
+    repaymentAbilityNotes: t.string({ required: false }),
+    pricingExpectations: t.string({ required: false }),
+    proposedTimeline: t.string({ required: false }),
   }),
 });
 
@@ -126,6 +139,12 @@ export const MandateInput = builder.inputType("MandateInput", {
     eaSignedDate: t.field({ type: "DateTime", required: false }),
     nextAction: t.string({ required: false }),
     notes: t.string({ required: false }),
+    // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
+    retainerAmount: t.float({ required: false }),
+    retainerInvoicedDate: t.field({ type: "DateTime", required: false }),
+    retainerPaidDate: t.field({ type: "DateTime", required: false }),
+    priority: t.field({ type: PriorityEnum, required: false }),
+    referralQualified: t.boolean({ required: false }),
   }),
 });
 
@@ -163,6 +182,10 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     cakComesaStatus: t.field({ type: RegulatoryStatusEnum, required: false }),
     cakComesaFiledDate: t.field({ type: "DateTime", required: false }),
     cakComesaApprovedDate: t.field({ type: "DateTime", required: false }),
+    // Task 8: priority + partner fee tracking (Task 6 migration)
+    priority: t.field({ type: PriorityEnum, required: false }),
+    partnerFeeStatus: t.field({ type: PartnerFeeStatusEnum, required: false }),
+    partnerFeeAmount: t.float({ required: false }),
   }),
 });
 
@@ -184,6 +207,8 @@ export const PartnerInput = builder.inputType("PartnerInput", {
     feeSharingTerms: t.string({ required: false }),
     partnerAgreementStatus: t.field({ type: PartnerAgreementStatusEnum, required: false }),
     internalOnly: t.boolean({ required: false }),
+    // Task 8: internal feedback notes (Task 6 migration)
+    feedbackNotes: t.string({ required: false }),
   }),
 });
 

@@ -22,6 +22,8 @@ const EMPTY: Record<string, unknown> = {
   referredById: "", serviceProviderIds: [],
   icFirstApprovalDate: "", icSecondApprovalDate: "",
   cakComesaStatus: "", cakComesaFiledDate: "", cakComesaApprovedDate: "",
+  // Task 8: priority + partner fee tracking (Task 6 migration)
+  priority: "", partnerFeeStatus: "", partnerFeeAmount: undefined,
 };
 
 export function TransactionFormDrawer({ mode, initial, clients, users, mandates, partners, serviceProviders, triggerLabel }: {
@@ -41,6 +43,10 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
     createMutation: CREATE, updateMutation: UPDATE,
     mode, recordId: initial?.id as string | undefined,
     onSuccess: () => setOpen(false),
+    // Reviewer finding: these Task 8 fields must be clearable back to unset
+    // via a blank selection, unlike this app's default "blank = leave
+    // unchanged" convention for optional fields.
+    clearableFields: ["priority", "partnerFeeStatus"],
   });
   const v = f.values;
   const lockDateOpened = mode === "edit" && Boolean(initial?.dateOpened);
@@ -68,6 +74,12 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
           <RelationSelect label="Owner" value={v.ownerId as string} onChange={(x) => f.setValue("ownerId", x)} options={users} placeholder="Select owner…" />
           <RelationSelect label="Assistant" value={v.assistantId as string} onChange={(x) => f.setValue("assistantId", x)} options={users} placeholder="Select assistant…" />
           <RelationSelect label="Referred By (Consultant/Partner)" value={v.referredById as string} onChange={(x) => f.setValue("referredById", x)} options={partners} placeholder="Select partner…" />
+          {Boolean(v.referredById) && (
+            <div className="grid grid-cols-2 gap-3">
+              <SelectField label="Partner Fee Status" value={v.partnerFeeStatus as string} onChange={(x) => f.setValue("partnerFeeStatus", x)} options={options("PartnerFeeStatus")} />
+              <MoneyField label="Partner Fee Amount" value={v.partnerFeeAmount as number} onChange={(x) => f.setValue("partnerFeeAmount", x)} />
+            </div>
+          )}
           <MultiSelectField label="Service Providers Engaged" value={v.serviceProviderIds as string[]} onChange={(x) => f.setValue("serviceProviderIds", x)} options={serviceProviders} />
           <div className="grid grid-cols-2 gap-3">
             <MoneyField label="Target Raise" value={v.targetRaise as number} onChange={(x) => f.setValue("targetRaise", x)} />
@@ -85,6 +97,7 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
             <SelectField label="Deal Status" value={v.dealStatus as string} onChange={(x) => f.setValue("dealStatus", x)} options={options("DealStatus")} />
             <SelectField label="Deal Milestone" value={v.dealMilestone as string} onChange={(x) => f.setValue("dealMilestone", x)} options={options("DealMilestone")} />
           </div>
+          <SelectField label="Priority" value={v.priority as string} onChange={(x) => f.setValue("priority", x)} options={options("Priority")} />
           <div className="grid grid-cols-2 gap-3">
             <SelectField label="Deal Type" value={v.financingType as string} onChange={(x) => f.setValue("financingType", x)} options={options("DealFinancingType")} />
             <SelectField label="Max Selling Stake" value={v.maxSellingStake as string} onChange={(x) => f.setValue("maxSellingStake", x)} options={options("MaxSellingStake")} />

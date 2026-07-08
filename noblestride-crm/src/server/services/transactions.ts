@@ -13,6 +13,7 @@ import { transactionCreateSchema, transactionUpdateSchema, type TransactionCreat
 import { actorSource, CrudError, sameCalendarDate } from "./crud";
 import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
+import { notify } from "./notifications";
 
 // ─── Filter type ─────────────────────────────────────────────────────────────
 
@@ -123,15 +124,28 @@ export async function getTransaction(id: string) {
 export async function setTransactionStage(id: string, stage: TransactionStage, actor: Actor = { type: "HUMAN" }) {
   const closedAt = CLOSED_TXN_STAGES.includes(stage) ? new Date() : null;
 
-  return prisma.$transaction(async (tx) => {
-    const existing = await tx.transaction.findUniqueOrThrow({ where: { id }, select: { stage: true } });
+  const { updated, fromStage, name, ownerId } = await prisma.$transaction(async (tx) => {
+    const existing = await tx.transaction.findUniqueOrThrow({ where: { id }, select: { stage: true, name: true, ownerId: true } });
     const updated = await tx.transaction.update({
       where: { id },
       data: { stage, stageEnteredAt: new Date(), closedAt },
     });
     await recordStageChange(tx, { field: "stage", fromValue: existing.stage, toValue: stage, actor, transactionId: id });
-    return updated;
+    return { updated, fromStage: existing.stage, name: existing.name, ownerId: existing.ownerId };
   });
+
+  // Notify the transaction's owner of the restage — after the transaction has
+  // committed (see notifications.ts). Skipped when there is no owner, the
+  // stage didn't actually change, or the owner is the one who made the change.
+  if (fromStage !== stage && ownerId && ownerId !== actor.userId) {
+    await notify([ownerId], {
+      kind: "stage_change",
+      title: `${name}: ${label("TransactionStage", fromStage)} → ${label("TransactionStage", stage)}`,
+      href: `/transactions/${id}`,
+    });
+  }
+
+  return updated;
 }
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────────

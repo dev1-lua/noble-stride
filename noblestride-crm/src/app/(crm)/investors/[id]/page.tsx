@@ -4,7 +4,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getInvestor } from "@/server/services/investors";
-import { Avatar, Chip, Card, CardHeader, CardBody, Badge } from "@/components/ui";
+import { Avatar, Chip, Card, CardHeader, CardBody, Badge, HelpHint } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
@@ -13,6 +13,7 @@ import { DeleteConfirm } from "@/components/crm/delete-confirm";
 import { ContactsCard } from "@/components/crm/contacts-card";
 import { OnboardingActions } from "@/components/crm/onboarding-actions";
 import { RecordOpenNdaButton } from "@/components/crm/nda-actions";
+import { MarkCriteriaVerifiedButton } from "@/components/crm/mark-criteria-verified-button";
 import { formatDate } from "@/lib/format";
 import { StageHistory } from "@/components/crm/stage-history";
 import type { StageHistoryItem } from "@/components/crm/stage-history";
@@ -170,7 +171,10 @@ export default async function InvestorDetailPage({ params }: PageProps) {
   const ndaPanel = (
     <Card>
       <CardHeader>
-        <h2 className="text-sm font-semibold text-[var(--text-primary)]">NDA</h2>
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+          NDA
+          <HelpHint term="Open NDA" />
+        </h2>
       </CardHeader>
       <CardBody className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
@@ -184,7 +188,7 @@ export default async function InvestorDetailPage({ params }: PageProps) {
           <p className="mb-2 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Closed NDAs</p>
           {closedNdaEngagements.length === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)]">
-              No closed-NDA engagements on record. Closed NDAs are recorded per deal from an
+              No closed-NDA deals on record. Closed NDAs are recorded per deal from an
               engagement page — link this investor to a deal first (Engagement → Log Engagement).
             </p>
           ) : (
@@ -325,6 +329,16 @@ export default async function InvestorDetailPage({ params }: PageProps) {
               </dd>
             </div>
 
+            <div>
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Criteria Verified</dt>
+              <dd className="mt-1 flex items-center gap-2 text-sm text-[var(--text-primary)]">
+                <span>{investor.criteriaVerifiedAt ? formatDate(investor.criteriaVerifiedAt) : "Never"}</span>
+                {canUpdateRecord(lens.orgRole, "Investors", lens.userId, {}) && (
+                  <MarkCriteriaVerifiedButton investorId={investor.id} />
+                )}
+              </dd>
+            </div>
+
             {investor.shareholdingPreference && (
               <div>
                 <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Shareholding Preference</dt>
@@ -391,7 +405,7 @@ export default async function InvestorDetailPage({ params }: PageProps) {
       <Card>
         <CardHeader>
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-            Engagements
+            Investor Engagements
             {investor.engagements.length > 0 && (
               <Badge tone="neutral" className="ml-2">{investor.engagements.length}</Badge>
             )}

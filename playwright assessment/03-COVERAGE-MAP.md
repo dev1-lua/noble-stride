@@ -113,3 +113,29 @@ Verified live via Playwright (browser MCP) on `integration/all-features` at `0c5
 | Read-only lenses | ✅ TeamMember (Irine M, non-owner): detail page shows static Shared chip, no stage select, no Edit drawer. DealLead (Brenda C): board rows she owns (5/6 in Chipori group) show selects; the unowned responsAbility row shows a static chip — own-scope split matches DB ownership exactly |
 
 Data changed by this pass (intentional, demo-safe): new engagement responsAbility × Chipori Ltd (Shared→TeaserSent→Meeting, status Interested) + its portal-interest activity; no other rows mutated (guard attempt reverted).
+
+---
+
+## 2026-07-08 — new/changed surfaces (gap-closure + simplification SDD run)
+
+✅ verified live this pass · 🧪 covered by unit/smoke tests + `next build` (not re-driven live) · ➖ known limitation
+
+### New routes / features
+| Surface | Result |
+|---------|--------|
+| `/home` "Today" page (4 lens-scoped sections, all-clear card, welcome checklist) | ✅ Sections render; empty sections omitted; "Going quiet" listed a real stale deal; checklist present + dismissible |
+| Sidebar "Today" first (Sun icon) + team login/root redirect `/dashboard`→`/home` | ✅ Today active-first; redirect via single `viewpointHome()` change |
+| Nav: "Investor Outreach" dropdown → single **"Engagements"** item (user-requested revert) | ✅ Single item → `/engagement` (→ By Deal); "Investor Outreach" **transaction stage** label preserved |
+| Help panel (topbar "?" drawer: 17-step journey + glossary + access-matrix link) | ✅ Opens; `?help=journey` deep-link works on both hard-load and client-nav |
+| Deal Journey spine (mandate / client / transaction detail) | ✅ Mandate detail verified (17 steps, 4 states, evidence-based out-of-order); client/txn placements 🧪 |
+| Deals queue Priority column + filter (Task 8), Source filter (Task 12) | ✅ Filters present in the deals filter bar |
+| Notification bell + emissions (Task 14) | ➖ Bell present; empty for default demo-Admin lens (userId undefined) — real targeting needs `feat/real-auth` |
+
+### Covered by tests + build (not re-driven live this pass)
+| Flow | Coverage |
+|------|----------|
+| `/intake` full submit (Qualified/Deprioritized) → neutral confirmation → dashboard callout → review-panel Accept-requires-lead / Deprioritize | 🧪 `/intake` renders live; submit→review path via `intake-steps.test`, `intake-review.smoke`, verdict-confidentiality tests |
+| Match popover (exclusions, warning chips, contact line), ranking freshness/staleness | 🧪 `ranking.test`, `ai-match-investors.test` |
+| Portal EBITDA / net-profit range filters | 🧪 `filters.test` (incl. null-exclusion) |
+| Client compliance/ops fields round-trip; deal fields (retainer/priority/fee-status) | 🧪 `new-fields.test`, `use-entity-form.test`; live-verified in the 2026-07-07 pass |
+| Restage → in-app notification (stage-change emission, actor-skip, exact title) | 🧪 `notifications.smoke` (mandate restage emits to lead, self-skip) |

@@ -1,8 +1,17 @@
 // deals-table.tsx — read-only table for the unified deals queue (mandates + transactions).
 import Link from "next/link";
 import { Table, THead, TBody, Tr, Th, Td } from "@/components/ui/table";
+import { Badge } from "@/components/ui";
 import { DEAL_COLUMNS, type DealsSortKey } from "@/server/domain/deals-queue";
 import type { DealRow } from "@/server/services/deals-queue";
+
+// Task 8: High=rose, Medium=amber, Low=neutral — mirrors deal-summary-panel.tsx's
+// priorityTone (kept local; too small a helper to warrant a shared module).
+function priorityTone(value: string): "danger" | "warning" | "neutral" {
+  if (value === "High") return "danger";
+  if (value === "Medium") return "warning";
+  return "neutral";
+}
 
 const LABEL_BY_KEY = Object.fromEntries(DEAL_COLUMNS.map((c) => [c.key, c.label]));
 
@@ -10,7 +19,7 @@ const LABEL_BY_KEY = Object.fromEntries(DEAL_COLUMNS.map((c) => [c.key, c.label]
 // that array isn't exported) — used to decide which column headers render as
 // sort links vs. plain labels.
 const SORTABLE_KEYS = new Set<DealsSortKey>([
-  "name", "company", "stage", "status", "ticket", "lead", "dateOnboarded", "daysInStage",
+  "name", "company", "stage", "status", "ticket", "lead", "dateOnboarded", "daysInStage", "priority",
 ]);
 
 function isSortKey(key: string): key is DealsSortKey {
@@ -52,6 +61,7 @@ function cell(r: DealRow, key: string): React.ReactNode {
     case "dateOnboarded": return r.dateOnboarded ? r.dateOnboarded.slice(0, 10) : "—";
     case "nextAction": return r.nextAction ?? "—";
     case "daysInStage": return String(r.daysInStage);
+    case "priority": return r.priorityValue ? <Badge tone={priorityTone(r.priorityValue)}>{r.priorityLabel}</Badge> : "—";
     default: return "—";
   }
 }

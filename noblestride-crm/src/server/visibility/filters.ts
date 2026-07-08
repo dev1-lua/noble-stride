@@ -16,6 +16,10 @@ export interface OpportunityFilters {
   ticketMax?: number;
   revenueMin?: number;
   revenueMax?: number;
+  ebitdaMin?: number;
+  ebitdaMax?: number;
+  netProfitMin?: number;
+  netProfitMax?: number;
   womenLed?: boolean;
   youthLed?: boolean;
 }
@@ -36,6 +40,12 @@ export function applyOpportunityFilters<T extends DealInput>(deals: T[], f: Oppo
     const revenue = toNum(client?.revenueLastYear);
     if (f.revenueMin != null && (revenue == null || revenue < f.revenueMin)) return false;
     if (f.revenueMax != null && (revenue == null || revenue > f.revenueMax)) return false;
+    const ebitda = toNum(client?.ebitda);
+    if (f.ebitdaMin != null && (ebitda == null || ebitda < f.ebitdaMin)) return false;
+    if (f.ebitdaMax != null && (ebitda == null || ebitda > f.ebitdaMax)) return false;
+    const netProfit = toNum(client?.netProfit);
+    if (f.netProfitMin != null && (netProfit == null || netProfit < f.netProfitMin)) return false;
+    if (f.netProfitMax != null && (netProfit == null || netProfit > f.netProfitMax)) return false;
     if (f.womenLed && !(client?.impactFlags ?? []).includes("WomenLed")) return false;
     if (f.youthLed && !(client?.impactFlags ?? []).includes("YouthLed")) return false;
     return true;
@@ -77,6 +87,14 @@ export function parseOpportunityFilters(params: RawParams): OpportunityFilters {
   if (revenueMin != null) f.revenueMin = revenueMin;
   const revenueMax = parseNum(first(params.revenueMax));
   if (revenueMax != null) f.revenueMax = revenueMax;
+  const ebitdaMin = parseNum(first(params.ebitdaMin));
+  if (ebitdaMin != null) f.ebitdaMin = ebitdaMin;
+  const ebitdaMax = parseNum(first(params.ebitdaMax));
+  if (ebitdaMax != null) f.ebitdaMax = ebitdaMax;
+  const netProfitMin = parseNum(first(params.netProfitMin));
+  if (netProfitMin != null) f.netProfitMin = netProfitMin;
+  const netProfitMax = parseNum(first(params.netProfitMax));
+  if (netProfitMax != null) f.netProfitMax = netProfitMax;
   if (first(params.womenLed) === "1") f.womenLed = true;
   if (first(params.youthLed) === "1") f.youthLed = true;
   return f;

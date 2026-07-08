@@ -8,10 +8,10 @@ import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
 import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput } from "./inputs";
-import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor } from "@/server/services/investors";
+import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor, markInvestorCriteriaVerified } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
-import { createMandate, updateMandate, deleteMandate } from "@/server/services/mandates";
+import { createMandate, updateMandate, deleteMandate, acceptIntakeMandate, deprioritizeIntakeMandate, rerunQualification } from "@/server/services/mandates";
 import { createTransaction, updateTransaction, deleteTransaction } from "@/server/services/transactions";
 import { createPartner, updatePartner, deletePartner } from "@/server/services/partners";
 import { createServiceProvider, updateServiceProvider, deleteServiceProvider } from "@/server/services/service-providers";
@@ -21,6 +21,8 @@ import { createPerson, updatePerson, deletePerson } from "@/server/services/pers
 import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
 import { createSavedView, renameSavedView, deleteSavedView, type SavedViewConfig } from "@/server/services/saved-views";
 import { SavedViewRef } from "./types";
+import { markNotificationsRead, markAllNotificationsRead } from "@/server/services/notifications";
+import { getOrgLens } from "@/server/rbac/context";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -96,6 +98,11 @@ builder.mutationFields((t) => ({
     args: { id: t.arg.id({ required: true }) },
     resolve: (_q, _r, args) => deleteInvestor(args.id),
   }),
+  markInvestorCriteriaVerified: t.prismaField({
+    type: "Investor", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args) => markInvestorCriteriaVerified(args.id),
+  }),
   setInvestorOnboardingStatus: t.prismaField({
     type: "Investor", nullable: false,
     args: {
@@ -154,6 +161,24 @@ builder.mutationFields((t) => ({
     type: "Mandate", nullable: false,
     args: { id: t.arg.id({ required: true }) },
     resolve: (_q, _r, args) => deleteMandate(args.id),
+  }),
+
+  // Intake review actions (Task 12) — website-intake mandates land in
+  // NewLead with a computed qualification verdict; a human reviews from here.
+  acceptIntakeMandate: t.prismaField({
+    type: "Mandate", nullable: false,
+    args: { id: t.arg.id({ required: true }), leadId: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args, ctx) => acceptIntakeMandate(args.id, args.leadId, ctx.actor),
+  }),
+  deprioritizeIntakeMandate: t.prismaField({
+    type: "Mandate", nullable: false,
+    args: { id: t.arg.id({ required: true }), reason: t.arg.string({ required: true }) },
+    resolve: (_q, _r, args, ctx) => deprioritizeIntakeMandate(args.id, args.reason, ctx.actor),
+  }),
+  rerunQualification: t.prismaField({
+    type: "Mandate", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: (_q, _r, args) => rerunQualification(args.id),
   }),
 
   // ── Transaction ──
@@ -321,5 +346,27 @@ builder.mutationFields((t) => ({
     type: SavedViewRef, nullable: false,
     args: { id: t.arg.id({ required: true }) },
     resolve: (_r, args) => deleteSavedView(String(args.id)),
+  }),
+
+  // ── Notification (Task 14 bell) ──
+  // Both mutations scope the update to the current in-org lens user, so a
+  // user can only ever mark their own notifications read. Demo-lens mode:
+  // when the lens has no resolved userId (Admin fallback), no-ops to 0.
+  markNotificationsRead: t.int({
+    nullable: false,
+    args: { ids: t.arg({ type: ["ID"], required: true }) },
+    resolve: async (_r, args) => {
+      const lens = await getOrgLens();
+      if (!lens.userId) return 0;
+      return markNotificationsRead(lens.userId, args.ids.map(String));
+    },
+  }),
+  markAllNotificationsRead: t.int({
+    nullable: false,
+    resolve: async () => {
+      const lens = await getOrgLens();
+      if (!lens.userId) return 0;
+      return markAllNotificationsRead(lens.userId);
+    },
   }),
 }));

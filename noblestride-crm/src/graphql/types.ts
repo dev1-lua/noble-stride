@@ -49,6 +49,8 @@ import {
   DDTrackEnum,
   DDStatusEnum,
   OrgRoleEnum,
+  PriorityEnum,
+  PartnerFeeStatusEnum,
 } from "./builder";
 import { daysInStage } from "@/server/domain/metrics";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
@@ -133,6 +135,7 @@ export const InvestorRef = builder.prismaObject("Investor", {
     emailVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.emailVerifiedAt }),
     phoneVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.phoneVerifiedAt }),
     openNdaSignedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.openNdaSignedAt }),
+    criteriaVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.criteriaVerifiedAt }),
     shareholdingPreference: t.exposeString("shareholdingPreference", { nullable: true }),
     minRevenue: t.float({ nullable: true, resolve: (i) => (i.minRevenue == null ? null : Number(i.minRevenue)) }),
     minEbitda: t.float({ nullable: true, resolve: (i) => (i.minEbitda == null ? null : Number(i.minEbitda)) }),
@@ -209,6 +212,18 @@ export const ClientRef = builder.prismaObject("Client", {
     totalAssets: t.float({ nullable: true, resolve: (c) => (c.totalAssets == null ? null : Number(c.totalAssets)) }),
     impactFlags: t.field({ type: [ImpactFlagEnum], resolve: (c) => c.impactFlags }),
     status: t.field({ type: ClientStatusEnum, resolve: (c) => c.status }),
+    // Task 7: compliance & operations fields (Task 6 migration)
+    pepExposure: t.exposeBoolean("pepExposure"),
+    governmentOwned: t.exposeBoolean("governmentOwned"),
+    complianceNotes: t.exposeString("complianceNotes", { nullable: true }),
+    auditedFinancialsYears: t.exposeInt("auditedFinancialsYears", { nullable: true }),
+    groupStructure: t.exposeString("groupStructure", { nullable: true }),
+    suppliers: t.exposeString("suppliers", { nullable: true }),
+    competitors: t.exposeString("competitors", { nullable: true }),
+    capacityUtilization: t.exposeString("capacityUtilization", { nullable: true }),
+    repaymentAbilityNotes: t.exposeString("repaymentAbilityNotes", { nullable: true }),
+    pricingExpectations: t.exposeString("pricingExpectations", { nullable: true }),
+    proposedTimeline: t.exposeString("proposedTimeline", { nullable: true }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (c) => c.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (c) => c.updatedAt }),
@@ -246,6 +261,16 @@ export const MandateRef = builder.prismaObject("Mandate", {
     eaSignedDate: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.eaSignedDate }),
     nextAction: t.exposeString("nextAction", { nullable: true }),
     notes: t.exposeString("notes", { nullable: true }),
+    // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
+    retainerAmount: t.float({ nullable: true, resolve: (m) => (m.retainerAmount == null ? null : Number(m.retainerAmount)) }),
+    retainerInvoicedDate: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.retainerInvoicedDate }),
+    retainerPaidDate: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.retainerPaidDate }),
+    priority: t.field({ type: PriorityEnum, nullable: true, resolve: (m) => m.priority }),
+    referralQualified: t.exposeBoolean("referralQualified", { nullable: true }),
+    // Task 11/12: public-intake qualification verdict + reasons, reviewed here.
+    qualificationVerdict: t.exposeString("qualificationVerdict", { nullable: true }),
+    qualificationReasons: t.exposeStringList("qualificationReasons"),
+    qualifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.qualifiedAt }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (m) => m.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (m) => m.updatedAt }),
@@ -298,6 +323,10 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     cakComesaStatus: t.field({ type: RegulatoryStatusEnum, resolve: (tx) => tx.cakComesaStatus }),
     cakComesaFiledDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.cakComesaFiledDate }),
     cakComesaApprovedDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.cakComesaApprovedDate }),
+    // Task 8: priority + partner fee tracking (Task 6 migration)
+    priority: t.field({ type: PriorityEnum, nullable: true, resolve: (tx) => tx.priority }),
+    partnerFeeStatus: t.field({ type: PartnerFeeStatusEnum, nullable: true, resolve: (tx) => tx.partnerFeeStatus }),
+    partnerFeeAmount: t.float({ nullable: true, resolve: (tx) => (tx.partnerFeeAmount == null ? null : Number(tx.partnerFeeAmount)) }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (tx) => tx.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (tx) => tx.updatedAt }),
@@ -389,6 +418,8 @@ export const PartnerRef = builder.prismaObject("Partner", {
     feeSharingTerms: t.exposeString("feeSharingTerms", { nullable: true }),
     partnerAgreementStatus: t.field({ type: PartnerAgreementStatusEnum, resolve: (p) => p.partnerAgreementStatus }),
     internalOnly: t.exposeBoolean("internalOnly"),
+    // Task 8: internal feedback notes (Task 6 migration) — never projected to the portal
+    feedbackNotes: t.exposeString("feedbackNotes", { nullable: true }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (p) => p.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (p) => p.updatedAt }),
@@ -556,6 +587,22 @@ export const DueDiligenceTrackRef = builder.prismaObject("DueDiligenceTrack", {
     transaction: t.relation("transaction"),
     owner: t.relation("owner", { nullable: true }),
     serviceProvider: t.relation("serviceProvider", { nullable: true }),
+  }),
+});
+
+// ─── Notification ────────────────────────────────────────────────────────────
+// In-app notification bell (Task 14). `kind` is a plain String on the Prisma
+// model (not a Prisma enum), so it's exposed as String here too.
+
+export const NotificationRef = builder.prismaObject("Notification", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    kind: t.exposeString("kind"),
+    title: t.exposeString("title"),
+    body: t.exposeString("body", { nullable: true }),
+    href: t.exposeString("href", { nullable: true }),
+    createdAt: t.field({ type: "DateTime", resolve: (n) => n.createdAt }),
+    readAt: t.field({ type: "DateTime", nullable: true, resolve: (n) => n.readAt }),
   }),
 });
 

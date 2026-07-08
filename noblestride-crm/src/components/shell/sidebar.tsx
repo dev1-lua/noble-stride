@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,13 +11,7 @@ import {
   MessageSquare,
   Building2,
   Scale,
-  Settings,
-  ChevronLeft,
-  ChevronDown,
-  Search,
   FileText,
-  Activity,
-  ShieldCheck,
   ListChecks,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -30,19 +23,11 @@ const MAIN_NAV = [
   { href: "/deals", label: "Deals", Icon: Briefcase, iconColor: "text-[var(--t-tag-text-amber)]" },
   { href: "/clients", label: "Clients", Icon: Building, iconColor: "text-[var(--t-tag-text-blue)]" },
   { href: "/investors", label: "Investors", Icon: Users, iconColor: "text-[var(--t-tag-text-sky)]" },
-  { href: "/engagement", label: "Engagement", Icon: MessageSquare, iconColor: "text-[var(--t-tag-text-violet)]" },
+  { href: "/engagement", label: "Engagements", Icon: MessageSquare, iconColor: "text-[var(--t-tag-text-violet)]" },
   { href: "/documents", label: "Documents", Icon: FileText, iconColor: "text-[var(--t-tag-text-orange)]" },
   { href: "/tasks", label: "Tasks", Icon: ListChecks, iconColor: "text-[var(--t-tag-text-blue)]" },
   { href: "/partners", label: "Partners", Icon: Building2, iconColor: "text-[var(--t-tag-text-violet)]" },
   { href: "/service-providers", label: "Service Providers", Icon: Scale, iconColor: "text-[var(--t-tag-text-gray)]" },
-  { href: "/access-matrix", label: "Access Matrix", Icon: ShieldCheck, iconColor: "text-[var(--t-tag-text-rose)]" },
-];
-
-const AGENT_CARDS = [
-  { label: "Overview", Icon: Activity, iconColor: "text-[var(--t-tag-text-emerald)]" },
-  { label: "Prospecting", Icon: Search, iconColor: "text-[var(--t-tag-text-sky)]" },
-  { label: "CRM", Icon: Users, iconColor: "text-[var(--t-tag-text-blue)]" },
-  { label: "Notes", Icon: FileText, iconColor: "text-[var(--t-tag-text-orange)]" },
 ];
 
 // ─── Brand mark ───────────────────────────────────────────────────────────────
@@ -73,7 +58,7 @@ interface NavItemProps {
   iconColor?: string;
 }
 
-// Shared base row classes for NavItem and the agent rows below.
+// Shared base row classes for NavItem.
 const NAV_ROW_BASE = "relative flex items-center gap-3 rounded px-3 py-1.5 text-sm transition-colors";
 
 export function NavItem({ href, label, Icon, active, badge, iconColor }: NavItemProps) {
@@ -100,79 +85,6 @@ export function NavItem({ href, label, Icon, active, badge, iconColor }: NavItem
   );
 }
 
-// ─── Engagement nav group (expandable: By Deal / By Investor) ────────────────
-
-function EngagementNavGroup({ active }: { active: boolean }) {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(active);
-  const childActive = (href: string) => pathname === href;
-  return (
-    <div>
-      {/* "Engagement" is a disclosure toggle only — clicking it opens/closes the
-          sub-menu and never navigates. A page loads only when a child (By Deal /
-          By Investor) is chosen. */}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className={cn(
-          NAV_ROW_BASE,
-          "w-full",
-          active
-            ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)] font-medium"
-            : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
-        )}
-      >
-        <MessageSquare
-          className={cn("h-4 w-4 flex-shrink-0", active ? "text-[var(--accent)]" : "text-[var(--t-tag-text-violet)]")}
-        />
-        Engagement
-        <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform", open ? "" : "-rotate-90")} />
-      </button>
-      {open && (
-        <div className="ml-9 mt-0.5 flex flex-col gap-0.5">
-          {[
-            { href: "/engagement/deals", label: "By Deal" },
-            { href: "/engagement/investors", label: "By Investor" },
-          ].map((c) => (
-            <Link
-              key={c.href}
-              href={c.href}
-              className={cn(
-                "rounded px-3 py-1.5 text-sm transition-colors",
-                childActive(c.href)
-                  ? "bg-[var(--bg-tertiary)] font-medium text-[var(--text-primary)]"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
-              )}
-            >
-              {c.label}
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Agent row ───────────────────────────────────────────────────────────────
-
-function AgentRow({
-  label,
-  Icon,
-  iconColor,
-}: {
-  label: string;
-  Icon: React.ComponentType<{ className?: string }>;
-  iconColor: string;
-}) {
-  return (
-    <button type="button" className={cn(NAV_ROW_BASE, "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]")}>
-      <Icon className={cn("h-4 w-4 flex-shrink-0", iconColor)} />
-      {label}
-    </button>
-  );
-}
-
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
 export function Sidebar({ pendingReview = 0 }: { pendingReview?: number }) {
@@ -187,7 +99,7 @@ export function Sidebar({ pendingReview = 0 }: { pendingReview?: number }) {
       {/* Brand */}
       <BrandMark />
 
-      {/* Scrollable middle: MAIN nav + AGENTS */}
+      {/* Scrollable middle: MAIN nav */}
       <div className="flex-1 overflow-y-auto px-3 min-h-0">
         {/* MAIN section label */}
         <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
@@ -195,62 +107,18 @@ export function Sidebar({ pendingReview = 0 }: { pendingReview?: number }) {
         </p>
 
         <nav className="flex flex-col gap-0.5">
-          {MAIN_NAV.map(({ href, label, Icon, iconColor }) =>
-            href === "/engagement" ? (
-              <EngagementNavGroup key={href} active={isActive(href)} />
-            ) : (
-              <NavItem
-                key={href}
-                href={href}
-                label={label}
-                Icon={Icon}
-                active={isActive(href)}
-                iconColor={iconColor}
-                badge={href === "/investors" ? pendingReview : undefined}
-              />
-            ),
-          )}
+          {MAIN_NAV.map(({ href, label, Icon, iconColor }) => (
+            <NavItem
+              key={href}
+              href={href}
+              label={label}
+              Icon={Icon}
+              active={isActive(href)}
+              iconColor={iconColor}
+              badge={href === "/investors" ? pendingReview : undefined}
+            />
+          ))}
         </nav>
-
-        {/* AGENTS section */}
-        <div className="mt-6">
-          <div className="mb-2 flex items-center justify-between px-1">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
-              Agents
-            </p>
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[var(--accent)] text-[9px] font-bold text-white">
-              3
-            </span>
-          </div>
-          {/* Agent rows, flattened to nav-style rows */}
-          <div className="flex flex-col gap-0.5 pb-2">
-            {AGENT_CARDS.map(({ label, Icon, iconColor }) => (
-              <AgentRow key={label} label={label} Icon={Icon} iconColor={iconColor} />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Settings pinned at bottom */}
-      <div className="flex-shrink-0 border-t border-[var(--border-subtle)] px-3 pt-2 pb-1">
-        <button
-          className="flex w-full items-center gap-3 rounded px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
-          type="button"
-        >
-          <Settings className="h-4 w-4 flex-shrink-0 text-[var(--text-tertiary)]" />
-          Settings
-        </button>
-      </div>
-
-      {/* Collapse chevron */}
-      <div className="flex-shrink-0 flex items-center justify-center py-3 border-t border-[var(--border-subtle)]">
-        <button
-          type="button"
-          className="flex h-7 w-7 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] transition-colors"
-          aria-label="Collapse sidebar"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
       </div>
     </aside>
   );

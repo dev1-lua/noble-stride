@@ -5,7 +5,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getMandate } from "@/server/services/mandates";
 import { listDocuments } from "@/server/services/documents";
+import { journeyForMandate } from "@/server/services/journey";
 import { relationOptions } from "@/server/services/relation-options";
+import { DealJourney } from "@/components/crm/deal-journey";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { label, options } from "@/lib/vocab";
@@ -22,8 +24,9 @@ import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { FindProspectsButton } from "@/components/crm/find-prospects-button";
 import { MandateFormDrawer } from "@/components/crm/mandate-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
+import { IntakeReviewPanel } from "@/components/crm/intake-review-panel";
 import { getOrgLens } from "@/server/rbac/context";
-import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
+import { can, canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -36,9 +39,10 @@ export default async function MandateDetailPage({ params }: PageProps) {
 
   if (!mandate) notFound();
 
-  const [rel, documents] = await Promise.all([
+  const [rel, documents, journeySteps] = await Promise.all([
     relationOptions(),
     listDocuments({ mandateId: id }),
+    journeyForMandate(id),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,6 +64,12 @@ export default async function MandateDetailPage({ params }: PageProps) {
     eaStatus: m.eaStatus ?? "",
     nextAction: m.nextAction ?? "",
     notes: m.notes ?? "",
+    // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
+    retainerAmount: m.retainerAmount == null ? undefined : Number(m.retainerAmount),
+    retainerInvoicedDate: toDate(m.retainerInvoicedDate),
+    retainerPaidDate: toDate(m.retainerPaidDate),
+    priority: m.priority ?? "",
+    referralQualified: m.referralQualified ?? undefined,
   };
   const DELETE_MANDATE = `mutation DeleteMandate($id: ID!) { deleteMandate(id: $id) { id } }`;
 
@@ -67,6 +77,14 @@ export default async function MandateDetailPage({ params }: PageProps) {
   const lens = await getOrgLens();
   const mayEdit = canUpdateRecord(lens.orgRole, "Mandates", lens.userId, { leadId: m.leadId });
   const mayDelete = canDeleteRecord(lens.orgRole, "Mandates");
+
+  // Task 12: website-intake mandates (source: "Website", never yet assigned a
+  // lead) get an internal review panel — Admin/DealLead lens + Mandates:U only.
+  const isUnreviewedIntake = m.source === "Website" && m.leadId == null;
+  const mayReviewIntake =
+    isUnreviewedIntake &&
+    (lens.orgRole === "Admin" || lens.orgRole === "DealLead") &&
+    can(lens.orgRole, "Mandates", "U");
 
   const clientName: string = m.client?.name ?? m.name;
   const leadName: string | null = m.lead?.name ?? null;
@@ -94,6 +112,10 @@ export default async function MandateDetailPage({ params }: PageProps) {
     ndaStatusLabel: label("DocStatus", m.ndaStatus),
     eaStatusLabel: label("DocStatus", m.eaStatus),
     referrer: referredBy,
+    priorityValue: m.priority ?? null,
+    retainerAmount: m.retainerAmount != null ? Number(m.retainerAmount) : null,
+    retainerInvoicedDate: m.retainerInvoicedDate ? m.retainerInvoicedDate.toISOString() : null,
+    retainerPaidDate: m.retainerPaidDate ? m.retainerPaidDate.toISOString() : null,
   };
 
   // Task 14: Documents-by-stage panel — plain DTO from the already-loaded
@@ -153,6 +175,31 @@ export default async function MandateDetailPage({ params }: PageProps) {
           )}
         </div>
       </div>
+
+      {/* Deal journey spine (Task 16) — under the header, above everything else. */}
+      {journeySteps && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Deal Journey</h2>
+          </CardHeader>
+          <CardBody>
+            <DealJourney steps={journeySteps} />
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Intake review panel (Task 12) — website-intake mandates awaiting a lead
+          decision, visible only to the Admin/DealLead lens with Mandates:U. */}
+      {mayReviewIntake && (
+        <IntakeReviewPanel
+          mandateId={m.id}
+          verdict={m.qualificationVerdict ?? null}
+          reasons={m.qualificationReasons ?? []}
+          qualifiedAt={m.qualifiedAt ? m.qualifiedAt.toISOString() : null}
+          users={rel.users}
+          canReview={mayReviewIntake}
+        />
+      )}
 
       {/* Deal-summary header panel (Task 13) */}
       <DealSummaryPanel {...dealSummary} />

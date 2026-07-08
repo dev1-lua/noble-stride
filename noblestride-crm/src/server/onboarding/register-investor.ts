@@ -11,6 +11,7 @@ import { prisma } from "@/lib/db";
 import { registrationSchema } from "@/lib/schemas/registration";
 import { ticketBand } from "@/lib/ticket-bands";
 import { emailDomain } from "@/lib/corporate-email";
+import { notify, adminUserIds } from "@/server/services/notifications";
 
 /** DEMO ONLY — static OTP; no email/SMS is sent (see repo:memory/remaining-tasks.md). */
 export const DEMO_OTP = "000000";
@@ -55,7 +56,7 @@ export async function registerInvestor(raw: unknown): Promise<Investor> {
   const band = ticketBand(input.dealSizeBand);
   const [firstName, ...restName] = input.contactPerson.split(/\s+/);
 
-  return prisma.$transaction(async (tx) => {
+  const investor = await prisma.$transaction(async (tx) => {
     const investor = await tx.investor.create({
       data: {
         name: input.fundName,
@@ -90,6 +91,24 @@ export async function registerInvestor(raw: unknown): Promise<Investor> {
     });
     return investor;
   });
+
+  // Best-effort, post-commit: alert every Admin that a registration is
+  // awaiting review. External self-registration has no internal actor to
+  // skip. The whole block is guarded because `adminUserIds()` runs OUTSIDE
+  // `notify`'s own try/catch — a throw here (e.g. the admin query failing)
+  // must never surface to the caller after the business transaction has
+  // already committed.
+  try {
+    await notify(await adminUserIds(), {
+      kind: "new_registration",
+      title: `New investor registration: ${investor.name}`,
+      href: "/investors?onboarding=PendingReview",
+    });
+  } catch (err) {
+    console.error("registerInvestor: post-commit notification failed", err);
+  }
+
+  return investor;
 }
 
 /**

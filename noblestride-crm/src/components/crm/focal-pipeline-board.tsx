@@ -13,6 +13,7 @@ import Link from "next/link";
 import { Chip } from "@/components/ui";
 import type { SelectOption } from "@/components/ui";
 import { stageBarColor } from "@/lib/engagement-stage-colors";
+import { STAGE_HELP } from "@/lib/vocab";
 import { EngagementRestageSelect } from "./engagement-restage-select";
 
 export interface FocalGroupItemDTO {
@@ -86,7 +87,11 @@ export function FocalPipelineBoard({ groups, stageOptions }: { groups: FocalGrou
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {g.stageCounts.map((s) => (
-                    <span key={s.stage} className="inline-flex items-center gap-1.5 rounded-md bg-zinc-100 px-1.5 py-0.5 text-[11px] font-medium text-zinc-600">
+                    <span
+                      key={s.stage}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-zinc-100 px-1.5 py-0.5 text-[11px] font-medium text-zinc-600"
+                      title={STAGE_HELP.EngagementStage[s.stage]}
+                    >
                       <span className={`h-2 w-2 rounded-full ${stageBarColor(s.stage)}`} />
                       {s.label}·{s.count}
                     </span>
@@ -104,7 +109,7 @@ export function FocalPipelineBoard({ groups, stageOptions }: { groups: FocalGrou
                   <div className="flex shrink-0 items-center gap-2">
                     {it.interestLevel && <Chip value={it.interestLevel} group="InterestLevel" />}
                     {it.canRestage ? (
-                      <div className="w-40">
+                      <div className="w-40" title={STAGE_HELP.EngagementStage[it.stage]}>
                         <EngagementRestageSelect
                           id={it.id}
                           transactionId={it.transactionId}

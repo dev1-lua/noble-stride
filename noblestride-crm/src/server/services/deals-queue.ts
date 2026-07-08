@@ -25,7 +25,15 @@ export interface DealRow {
   daysInStage: number;
   linkedCounterpartId: string | null;
   href: string;
+  // Task 8: Mandate.priority / Transaction.priority
+  priorityValue: string | null;
+  priorityLabel: string;
+  // Task 12: originating source (e.g. "Website" for public-intake mandates)
+  sourceValue: string | null;
 }
+
+// Rank for priority sort — unset sorts lowest ("asc" surfaces it first).
+const PRIORITY_RANK: Record<string, number> = { High: 3, Medium: 2, Low: 1 };
 
 async function loadRows(): Promise<DealRow[]> {
   const now = new Date();
@@ -58,6 +66,9 @@ async function loadRows(): Promise<DealRow[]> {
     daysInStage: daysInStage(m.stageEnteredAt ?? now, now),
     linkedCounterpartId: m.transactions[0]?.id ?? null,
     href: `/mandates/${m.id}`,
+    priorityValue: m.priority ?? null,
+    priorityLabel: m.priority ? label("Priority", m.priority) : "",
+    sourceValue: m.source ?? null,
   }));
 
   const tRows: DealRow[] = transactions.map((t) => ({
@@ -80,6 +91,10 @@ async function loadRows(): Promise<DealRow[]> {
     daysInStage: daysInStage(t.stageEnteredAt ?? now, now),
     linkedCounterpartId: t.mandateId ?? null,
     href: `/transactions/${t.id}`,
+    priorityValue: t.priority ?? null,
+    priorityLabel: t.priority ? label("Priority", t.priority) : "",
+    // Transaction has no `source` field (only Client/Mandate do) — never matches a source filter.
+    sourceValue: null,
   }));
 
   return [...mRows, ...tRows];
@@ -91,6 +106,8 @@ function matches(r: DealRow, spec: DealsQuerySpec): boolean {
   if (spec.status && r.statusValue !== spec.status) return false;
   if (spec.sector && !r.sectors.includes(spec.sector)) return false;
   if (spec.lead && r.leadName !== spec.lead) return false;
+  if (spec.priority && r.priorityValue !== spec.priority) return false;
+  if (spec.source && r.sourceValue !== spec.source) return false;
   if (spec.ticketBand) {
     const band = TICKET_BANDS.find((b) => b.value === spec.ticketBand);
     if (band) {
@@ -116,6 +133,7 @@ function sortValue(r: DealRow, key: DealsQuerySpec["sort"]): string | number {
     case "lead": return (r.leadName ?? "").toLowerCase();
     case "daysInStage": return r.daysInStage;
     case "dateOnboarded": return r.dateOnboarded ?? "";
+    case "priority": return r.priorityValue ? (PRIORITY_RANK[r.priorityValue] ?? 0) : 0;
   }
 }
 
@@ -170,7 +188,7 @@ export async function countsBy(spec: DealsQuerySpec, dimension: DealsGroupBy) {
   return [...map.values()].sort((a, b) => b.count - a.count);
 }
 
-const CSV_HEADERS = ["Project", "Company", "Type", "Stage", "Status", "Milestone", "Deal type", "Ticket (USD)", "Sector", "Lead", "Date onboarded", "Days in stage"];
+const CSV_HEADERS = ["Project", "Company", "Type", "Stage", "Status", "Milestone", "Deal type", "Ticket (USD)", "Sector", "Lead", "Date onboarded", "Days in stage", "Priority"];
 
 export async function dealsCsvRows(spec: DealsQuerySpec): Promise<string[][]> {
   const all = applySort((await loadRows()).filter((r) => matches(r, spec)), spec);
@@ -178,6 +196,7 @@ export async function dealsCsvRows(spec: DealsQuerySpec): Promise<string[][]> {
     r.name, r.company, r.kind, r.stageLabel, r.statusLabel, r.milestoneLabel,
     r.dealTypeLabel, r.ticket != null ? String(r.ticket) : "", r.sectors.map((s) => label("Sector", s)).join("; "),
     r.leadName ?? "", r.dateOnboarded ? r.dateOnboarded.slice(0, 10) : "", String(r.daysInStage),
+    r.priorityLabel,
   ]);
   return [CSV_HEADERS, ...body];
 }

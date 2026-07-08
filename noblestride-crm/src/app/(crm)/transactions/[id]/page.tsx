@@ -7,7 +7,9 @@ import { getTransaction } from "@/server/services/transactions";
 import { listDocuments } from "@/server/services/documents";
 import { listDDTracks } from "@/server/services/due-diligence";
 import { listServiceProviders } from "@/server/services/service-providers";
+import { journeyForMandate } from "@/server/services/journey";
 import { relationOptions } from "@/server/services/relation-options";
+import { DealJourney } from "@/components/crm/deal-journey";
 import { DDTrack } from "@prisma/client";
 import { DDTracksPanel, type DDTrackRow } from "@/components/crm/dd-tracks-panel";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
@@ -44,15 +46,17 @@ export default async function TransactionDetailPage({ params }: PageProps) {
 
   if (!transaction) notFound();
 
-  const [rel, documents, ddTracks, serviceProviders] = await Promise.all([
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const txn = transaction as any;
+
+  const [rel, documents, ddTracks, serviceProviders, journeySteps] = await Promise.all([
     relationOptions(),
     listDocuments({ transactionId: id }),
     listDDTracks(id),
     listServiceProviders(),
+    // Skip entirely when this transaction has no linked mandate.
+    txn.mandateId ? journeyForMandate(txn.mandateId) : Promise.resolve(null),
   ]);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const txn = transaction as any;
 
   const toDate = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : "");
   const initial = {
@@ -87,6 +91,10 @@ export default async function TransactionDetailPage({ params }: PageProps) {
     cakComesaStatus: txn.cakComesaStatus ?? "",
     cakComesaFiledDate: toDate(txn.cakComesaFiledDate),
     cakComesaApprovedDate: toDate(txn.cakComesaApprovedDate),
+    // Task 8: priority + partner fee tracking (Task 6 migration)
+    priority: txn.priority ?? "",
+    partnerFeeStatus: txn.partnerFeeStatus ?? "",
+    partnerFeeAmount: txn.partnerFeeAmount == null ? undefined : Number(txn.partnerFeeAmount),
   };
 
   // §6.2 DD workstreams: one row per track, whether or not a DB row exists yet.
@@ -157,6 +165,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
     milestoneLabel: txn.dealMilestone ? label("DealMilestone", txn.dealMilestone) : undefined,
     probability: probabilityNum,
     engagement: engagementRollup,
+    priorityValue: txn.priority ?? null,
   };
 
   // Task 14: Documents-by-stage panel — plain DTO from the already-loaded
@@ -217,6 +226,19 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           )}
         </div>
       </div>
+
+      {/* Deal journey spine (Task 16) — scoped to this transaction's mandate;
+          renders nothing when the transaction has no linked mandate. */}
+      {journeySteps && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Deal Journey</h2>
+          </CardHeader>
+          <CardBody>
+            <DealJourney steps={journeySteps} />
+          </CardBody>
+        </Card>
+      )}
 
       {/* Deal-summary header panel (Task 13) */}
       <DealSummaryPanel {...dealSummary} />
@@ -304,6 +326,19 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                   <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Referred By</dt>
                   <dd className="mt-1 text-sm text-[var(--text-primary)]">
                     <Link href={`/partners/${txn.referredBy.id}`} className="hover:text-accent transition-colors">{txn.referredBy.name}</Link>
+                  </dd>
+                </div>
+              )}
+
+              {/* Partner fee (Task 8) — only meaningful once a referrer is set */}
+              {txn.referredBy && (
+                <div>
+                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Partner Fee</dt>
+                  <dd className="mt-1 flex items-center gap-2 text-sm text-[var(--text-primary)]">
+                    {txn.partnerFeeStatus ? <Chip value={txn.partnerFeeStatus} group="PartnerFeeStatus" /> : <span className="text-[var(--text-tertiary)]">—</span>}
+                    {txn.partnerFeeAmount != null && (
+                      <span className="font-semibold">{formatMoney(Number(txn.partnerFeeAmount))}</span>
+                    )}
                   </dd>
                 </div>
               )}

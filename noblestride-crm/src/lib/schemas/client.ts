@@ -37,6 +37,18 @@ export const clientCreateSchema = z.object({
   totalAssets: z.number().nonnegative().optional(),
   impactFlags: z.array(z.nativeEnum(ImpactFlag)).optional(),
   status: z.nativeEnum(ClientStatus).optional(),
+  // Task 7: compliance & operations fields (Task 6 migration)
+  pepExposure: z.boolean().optional(),
+  governmentOwned: z.boolean().optional(),
+  complianceNotes: z.string().trim().optional(),
+  auditedFinancialsYears: z.number().int().min(0).max(10).optional(),
+  groupStructure: z.string().trim().optional(),
+  suppliers: z.string().trim().optional(),
+  competitors: z.string().trim().optional(),
+  capacityUtilization: z.string().trim().optional(),
+  repaymentAbilityNotes: z.string().trim().optional(),
+  pricingExpectations: z.string().trim().optional(),
+  proposedTimeline: z.string().trim().optional(),
 });
 export const clientUpdateSchema = clientCreateSchema.partial();
 export type ClientCreateInput = z.infer<typeof clientCreateSchema>;

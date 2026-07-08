@@ -2,11 +2,11 @@
 
 export type DealKind = "mandate" | "transaction";
 export type DealsSortKey =
-  | "name" | "company" | "stage" | "status" | "ticket" | "lead" | "dateOnboarded" | "daysInStage";
+  | "name" | "company" | "stage" | "status" | "ticket" | "lead" | "dateOnboarded" | "daysInStage" | "priority";
 export type DealsGroupBy = "" | "stage" | "lead" | "sector" | "type" | "status";
 export type DealsView = "list" | "board";
 
-const SORT_KEYS: DealsSortKey[] = ["name", "company", "stage", "status", "ticket", "lead", "dateOnboarded", "daysInStage"];
+const SORT_KEYS: DealsSortKey[] = ["name", "company", "stage", "status", "ticket", "lead", "dateOnboarded", "daysInStage", "priority"];
 const GROUP_KEYS: DealsGroupBy[] = ["", "stage", "lead", "sector", "type", "status"];
 
 export interface DealsQuerySpec {
@@ -16,6 +16,8 @@ export interface DealsQuerySpec {
   sector?: string;
   lead?: string;
   ticketBand?: string;
+  priority?: string;
+  source?: string;
   search?: string;
   sort: DealsSortKey;
   dir: "asc" | "desc";
@@ -44,6 +46,8 @@ export const DEAL_COLUMNS: { key: string; label: string; default: boolean }[] = 
   { key: "daysInStage", label: "Days in stage", default: true },
   { key: "dealType", label: "Deal type", default: true },
   { key: "ticket", label: "Ticket size", default: true },
+  // Task 8: not in the default set — chooser-toggleable via ?cols=
+  { key: "priority", label: "Priority", default: false },
 ];
 
 const KNOWN_COLUMNS = new Set(DEAL_COLUMNS.map((c) => c.key));
@@ -73,6 +77,8 @@ export function parseDealsQuery(sp: Record<string, string | string[] | undefined
     sector: str(sp.sector),
     lead: str(sp.lead),
     ticketBand: str(sp.ticket),
+    priority: str(sp.priority),
+    source: str(sp.source),
     search: str(sp.q),
     sort: sortRaw && SORT_KEYS.includes(sortRaw) ? sortRaw : "dateOnboarded",
     dir: str(sp.dir) === "asc" ? "asc" : "desc",

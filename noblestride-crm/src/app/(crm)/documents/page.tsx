@@ -10,7 +10,7 @@ import { listInvestors } from "@/server/services/investors";
 import { listUsers } from "@/server/services/users";
 import { listMandates } from "@/server/services/mandates";
 import { relationOptions } from "@/server/services/relation-options";
-import { StatCard, Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
+import { StatCard, Chip, Table, THead, TBody, Tr, Th, Td, HelpHint } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { DocumentFormDrawer } from "@/components/crm/document-form-drawer";
 import { getOrgLens } from "@/server/rbac/context";
@@ -47,9 +47,12 @@ export default async function DocumentsPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Documents</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-[var(--text-primary)]">
+            Documents
+            <HelpHint term="VDR" />
+          </h1>
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-            Deal documents, versions, and review status
+            The register of documents — versions, review status, and who is allowed to see each
           </p>
         </div>
         {can(lens.orgRole, "Documents", "C") && (

@@ -7,6 +7,7 @@ import { referralFunnel, referralsByStage } from "@/server/partner-portal";
 import { getViewpoint } from "@/server/viewpoint";
 import { label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
+import { Chip } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -191,12 +192,13 @@ export default async function PartnerPortalPage() {
               <th className="px-4 py-3">Stage</th>
               <th className="px-4 py-3">Deal size</th>
               <th className="px-4 py-3">Fee-sharing</th>
+              <th className="px-4 py-3">Fee status</th>
             </tr>
           </thead>
           <tbody>
             {referredDeals.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-sm text-[var(--text-tertiary)]">
+                <td colSpan={6} className="px-4 py-10 text-center text-sm text-[var(--text-tertiary)]">
                   No referred deals yet.
                 </td>
               </tr>
@@ -223,6 +225,13 @@ export default async function PartnerPortalPage() {
                     {d.dealSize != null ? formatMoney(d.dealSize, d.currency) : "—"}
                   </td>
                   <td className="px-4 py-2.5 text-[var(--text-secondary)]">{d.feeSharingStatus}</td>
+                  <td className="px-4 py-2.5">
+                    {d.partnerFeeStatusValue ? (
+                      <Chip value={d.partnerFeeStatusValue} group="PartnerFeeStatus" />
+                    ) : (
+                      <span className="text-[var(--text-tertiary)]">—</span>
+                    )}
+                  </td>
                 </tr>
               ))
             )}

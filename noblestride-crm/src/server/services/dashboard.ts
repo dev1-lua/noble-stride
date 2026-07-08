@@ -483,6 +483,60 @@ export async function pendingOnboardingInvestors() {
   });
 }
 
+/**
+ * Count of website-intake mandates awaiting review: submitted via the public
+ * intake wizard (Task 11), never yet assigned a deal lead, and still open.
+ * Drives the dashboard intake callout card (Task 12).
+ */
+export async function intakeAwaitingReviewCount(): Promise<number> {
+  return prisma.mandate.count({
+    where: { source: "Website", leadId: null, dealStatus: "Open" },
+  });
+}
+
+export interface QuietTransaction {
+  id: string;
+  name: string;
+  ownerId: string | null;
+}
+
+/**
+ * Active transactions (stage NOT in CLOSED_TXN_STAGES) with no logged
+ * activity in the last 14 days — "going quiet". Powers `aiOverviewInsights`'s
+ * "attention" insight (org-wide, `ownerId` omitted). Kept parameterized by
+ * `ownerId` (own-scoped mode) for reuse by any future lens-scoped surface.
+ *
+ * Query plan: one findMany over active transactions, each with a narrow
+ * take:1 lookup for recent activity — filtering (no activity in window)
+ * happens in-process. No N+1: the activity check is a nested `select` on the
+ * same query, not a per-row follow-up call.
+ */
+export async function quietTransactions(ownerId?: string): Promise<QuietTransaction[]> {
+  const now = new Date();
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+  const activeTransactions = await prisma.transaction.findMany({
+    where: {
+      stage: { notIn: CLOSED_TXN_STAGES },
+      ...(ownerId ? { ownerId } : {}),
+    },
+    select: {
+      id: true,
+      name: true,
+      ownerId: true,
+      activities: {
+        where: { occurredAt: { gte: fourteenDaysAgo } },
+        select: { id: true },
+        take: 1,
+      },
+    },
+  });
+
+  return activeTransactions
+    .filter((t) => t.activities.length === 0)
+    .map((t) => ({ id: t.id, name: t.name, ownerId: t.ownerId }));
+}
+
 // ─── Spec-gap pass 2: remaining §13 dashboards ────────────────────────────────
 
 export interface ActiveInactiveSplit {

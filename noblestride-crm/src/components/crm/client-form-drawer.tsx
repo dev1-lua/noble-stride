@@ -4,7 +4,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui";
 import { Drawer } from "@/components/ui/drawer";
-import { TextField, TextAreaField, NumberField, MoneyField, SelectField, MultiSelectField } from "@/components/ui/fields";
+import { TextField, TextAreaField, NumberField, MoneyField, SelectField, MultiSelectField, CheckboxField } from "@/components/ui/fields";
 import { useEntityForm } from "@/components/ui/use-entity-form";
 import { clientCreateSchema, clientUpdateSchema } from "@/lib/schemas/client";
 import { options } from "@/lib/vocab";
@@ -29,6 +29,10 @@ const EMPTY: Record<string, unknown> = {
   foundersNationality: "", ownershipStructure: "", directorsManagement: "", targetClients: "",
   staffCount: undefined, branchCount: undefined, ebitda: undefined, netProfit: undefined,
   existingDebt: undefined, loanBook: undefined, totalAssets: undefined, impactFlags: [],
+  // Task 7: compliance & operations fields (Task 6 migration)
+  pepExposure: false, governmentOwned: false, complianceNotes: "", auditedFinancialsYears: undefined,
+  groupStructure: "", suppliers: "", competitors: "", capacityUtilization: "",
+  repaymentAbilityNotes: "", pricingExpectations: "", proposedTimeline: "",
 };
 
 export function ClientFormDrawer({ mode, initial, triggerLabel }: {
@@ -105,12 +109,27 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
             <NumberField label="Branch Count" value={v.branchCount as number} onChange={(x) => f.setValue("branchCount", x)} min={0} />
           </div>
           <SelectField label="Profitability" value={v.profitability as string} onChange={(x) => f.setValue("profitability", x)} options={options("Profitability")} />
+          <TextAreaField label="Repayment Ability" value={v.repaymentAbilityNotes as string} onChange={(x) => f.setValue("repaymentAbilityNotes", x)} />
+          <TextAreaField label="Pricing Expectations" value={v.pricingExpectations as string} onChange={(x) => f.setValue("pricingExpectations", x)} />
+          <TextAreaField label="Proposed Timeline" value={v.proposedTimeline as string} onChange={(x) => f.setValue("proposedTimeline", x)} />
 
           <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Governance</p>
           <TextAreaField label="Business Model" value={v.businessModel as string} onChange={(x) => f.setValue("businessModel", x)} />
           <TextAreaField label="Ownership Structure" value={v.ownershipStructure as string} onChange={(x) => f.setValue("ownershipStructure", x)} />
           <TextAreaField label="Directors / Management" value={v.directorsManagement as string} onChange={(x) => f.setValue("directorsManagement", x)} />
           <TextAreaField label="Target Clients" value={v.targetClients as string} onChange={(x) => f.setValue("targetClients", x)} />
+
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Compliance</p>
+          <CheckboxField label="PEP involvement" value={v.pepExposure as boolean} onChange={(x) => f.setValue("pepExposure", x)} />
+          <CheckboxField label="Government-owned" value={v.governmentOwned as boolean} onChange={(x) => f.setValue("governmentOwned", x)} />
+          <TextAreaField label="Compliance Notes" value={v.complianceNotes as string} onChange={(x) => f.setValue("complianceNotes", x)} />
+          <NumberField label="Audited Financial Years" value={v.auditedFinancialsYears as number} onChange={(x) => f.setValue("auditedFinancialsYears", x)} min={0} max={10} />
+
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Operations</p>
+          <TextAreaField label="Group Structure" value={v.groupStructure as string} onChange={(x) => f.setValue("groupStructure", x)} />
+          <TextAreaField label="Suppliers" value={v.suppliers as string} onChange={(x) => f.setValue("suppliers", x)} />
+          <TextAreaField label="Competitors" value={v.competitors as string} onChange={(x) => f.setValue("competitors", x)} />
+          <TextAreaField label="Capacity Utilization" value={v.capacityUtilization as string} onChange={(x) => f.setValue("capacityUtilization", x)} />
           {f.formError && <p className="text-xs text-rose-600">{f.formError}</p>}
         </div>
       </Drawer>

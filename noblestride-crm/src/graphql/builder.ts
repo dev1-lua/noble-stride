@@ -39,9 +39,11 @@ import {
   OnboardingStatus,
   OrgRole,
   PartnerAgreementStatus,
+  PartnerFeeStatus,
   PartnerStatus,
   PartnerType,
   Prisma,
+  Priority,
   Profitability,
   RegulatoryStatus,
   Sector,
@@ -120,3 +122,6 @@ export const RegulatoryStatusEnum = builder.enumType(RegulatoryStatus, { name: "
 export const DDTrackEnum = builder.enumType(DDTrack, { name: "DDTrack" });
 export const DDStatusEnum = builder.enumType(DDStatus, { name: "DDStatus" });
 export const OrgRoleEnum = builder.enumType(OrgRole, { name: "OrgRole" });
+// Task 8: priority + partner fee status (Task 6 migration)
+export const PriorityEnum = builder.enumType(Priority, { name: "Priority" });
+export const PartnerFeeStatusEnum = builder.enumType(PartnerFeeStatus, { name: "PartnerFeeStatus" });

@@ -4,10 +4,10 @@
 // already-loaded record and mount <DealSummaryPanel/> right under the page
 // header, above the existing "Key Facts"/"Deal Facts" panels.
 
-import { Avatar, Card, CardHeader, CardBody, Chip, Badge } from "@/components/ui";
+import { Avatar, Card, CardHeader, CardBody, Chip, Badge, HelpHint } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
-import { STATUS_DOT } from "@/lib/vocab";
+import { STATUS_DOT, label as vocabLabel } from "@/lib/vocab";
 
 export interface DealSummaryProps {
   kind: "mandate" | "transaction";
@@ -25,6 +25,9 @@ export interface DealSummaryProps {
   ndaStatusLabel?: string;
   eaStatusLabel?: string;
   referrer?: string | null;
+  retainerAmount?: number | null;
+  retainerInvoicedDate?: string | null;
+  retainerPaidDate?: string | null;
   // transaction
   targetRaise?: number | null;
   instruments?: string[];
@@ -32,6 +35,16 @@ export interface DealSummaryProps {
   probability?: number | null;
   docReadiness?: { label: string; state: string }[];
   engagement?: { investors: number; total: number; disbursed: number; pending: number } | null;
+  // shared: Mandate.priority / Transaction.priority (Task 8)
+  priorityValue?: string | null;
+}
+
+// Task 8: High=rose, Medium=amber, Low=neutral — distinct from Chip's vocab-driven
+// category/status tones, so rendered directly as a Badge rather than via <Chip/>.
+function priorityTone(value: string): "danger" | "warning" | "neutral" {
+  if (value === "High") return "danger";
+  if (value === "Medium") return "warning";
+  return "neutral";
 }
 
 function Cell({ label, children }: { label: string; children: React.ReactNode }) {
@@ -62,7 +75,9 @@ export function DealSummaryPanel(props: DealSummaryProps) {
   const {
     kind, statusLabel, statusValue, stageLabel, daysInStage, leadName, assistantName,
     nextAction, dateOnboarded, dealSize, sectors, ndaStatusLabel, eaStatusLabel, referrer,
+    retainerAmount, retainerInvoicedDate, retainerPaidDate,
     targetRaise, instruments, milestoneLabel, probability, docReadiness, engagement,
+    priorityValue,
   } = props;
 
   const dotClass = statusValue ? (STATUS_DOT[statusValue] ?? "bg-zinc-400") : "bg-zinc-300";
@@ -83,6 +98,9 @@ export function DealSummaryPanel(props: DealSummaryProps) {
               ({daysInStage} day{daysInStage === 1 ? "" : "s"} in stage)
             </span>
           </span>
+          {priorityValue && (
+            <Badge tone={priorityTone(priorityValue)}>{vocabLabel("Priority", priorityValue)}</Badge>
+          )}
         </div>
       </CardHeader>
       <CardBody>
@@ -115,6 +133,16 @@ export function DealSummaryPanel(props: DealSummaryProps) {
               </Cell>
               <Cell label="EA">
                 <Badge tone="neutral">{eaStatusLabel || "—"}</Badge>
+              </Cell>
+              <Cell label="Retainer">
+                <span className="font-semibold">{retainerAmount != null ? formatMoney(retainerAmount) : "—"}</span>
+                {(retainerInvoicedDate || retainerPaidDate) && (
+                  <p className="mt-0.5 text-xs font-normal text-[var(--text-tertiary)]">
+                    {retainerInvoicedDate && <>Invoiced {formatDate(retainerInvoicedDate)}</>}
+                    {retainerInvoicedDate && retainerPaidDate && " · "}
+                    {retainerPaidDate && <>Paid {formatDate(retainerPaidDate)}</>}
+                  </p>
+                )}
               </Cell>
               {referrer && <Cell label="Referrer">{referrer}</Cell>}
             </>
@@ -154,7 +182,10 @@ export function DealSummaryPanel(props: DealSummaryProps) {
               )}
               {engagement && (
                 <div className="col-span-2 sm:col-span-3 lg:col-span-4">
-                  <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Engagement</dt>
+                  <dt className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
+                    Engagement
+                    <HelpHint term="Investor Engagement" />
+                  </dt>
                   <dd className="mt-1 text-sm text-[var(--text-primary)]">
                     {engagement.investors} investor{engagement.investors === 1 ? "" : "s"} ·{" "}
                     {formatMoney(engagement.total)} total · {formatMoney(engagement.disbursed)} disbursed ·{" "}

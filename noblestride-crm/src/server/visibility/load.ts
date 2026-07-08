@@ -260,7 +260,15 @@ export async function loadPartnerPortalData(
 ): Promise<ProjectedPartnerView> {
   const partner = await prisma.partner.findUniqueOrThrow({
     where: { id: partnerId },
-    include: { referredMandates: { include: { client: true } } },
+    include: {
+      referredMandates: {
+        include: {
+          client: true,
+          // Task 8: fee status lives on the transaction, not the mandate.
+          transactions: { select: { partnerFeeStatus: true }, take: 1 },
+        },
+      },
+    },
   });
   return projectForPartner(partner, partner.referredMandates);
 }

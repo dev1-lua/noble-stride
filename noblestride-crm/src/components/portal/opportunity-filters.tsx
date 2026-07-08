@@ -19,6 +19,10 @@ const NUMBERS = [
   { key: "ticketMax", label: "Ticket max (USD)" },
   { key: "revenueMin", label: "Revenue min (USD)" },
   { key: "revenueMax", label: "Revenue max (USD)" },
+  { key: "ebitdaMin", label: "EBITDA min (USD)" },
+  { key: "ebitdaMax", label: "EBITDA max (USD)" },
+  { key: "netProfitMin", label: "Net profit min (USD)" },
+  { key: "netProfitMax", label: "Net profit max (USD)" },
 ] as const;
 
 const FLAGS = [

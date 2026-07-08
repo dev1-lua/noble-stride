@@ -14,6 +14,7 @@ import { useMutation } from "urql";
 import { useRouter } from "next/navigation";
 import { MandateKanbanCard, TransactionKanbanCard } from "./kanban-card";
 import type { MandateCardDTO, TransactionCardDTO } from "./kanban-card";
+import { STAGE_HELP } from "@/lib/vocab";
 
 // ─── GraphQL mutation strings ─────────────────────────────────────────────────
 
@@ -156,6 +157,7 @@ export function KanbanBoard(props: KanbanBoardProps) {
           >
             {/* Column header */}
             <div
+              title={STAGE_HELP[props.kind === "mandate" ? "MandateStage" : "TransactionStage"][col.stage]}
               className={`mb-2 px-2.5 py-1.5 rounded-md bg-[var(--bg-primary)] border border-[var(--border-subtle)] border-l-4 ${
                 COLUMN_HEADER_COLORS[colIdx % COLUMN_HEADER_COLORS.length]
               }`}

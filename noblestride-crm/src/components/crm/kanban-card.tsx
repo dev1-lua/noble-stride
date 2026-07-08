@@ -1,8 +1,16 @@
 // kanban-card.tsx — Individual draggable cards for the Kanban boards.
 // Pure rendering — receives plain DTO props; no Prisma types cross the RSC boundary.
 
-import { Chip, Avatar } from "@/components/ui";
+import { Chip, Avatar, Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
+
+// Task 8: High=rose, Medium=amber, Low=neutral — mirrors deal-summary-panel.tsx's
+// priorityTone (kept local; too small a helper to warrant a shared module).
+function priorityTone(value: string): "danger" | "warning" | "neutral" {
+  if (value === "High") return "danger";
+  if (value === "Medium") return "warning";
+  return "neutral";
+}
 
 // ─── Card DTO types ───────────────────────────────────────────────────────────
 
@@ -14,6 +22,8 @@ export interface MandateCardDTO {
   daysInStage: number;
   ownerName: string | null;
   ownerColor: string | null;
+  // Task 8: Mandate.priority — pre-labeled ("High"/"Medium"/"Low") or null when unset
+  priorityLabel: string | null;
 }
 
 export interface TransactionCardDTO {
@@ -28,6 +38,8 @@ export interface TransactionCardDTO {
   daysInStage: number;
   ownerName: string | null;
   ownerColor: string | null;
+  // Task 8: Transaction.priority — pre-labeled or null when unset
+  priorityLabel: string | null;
 }
 
 // ─── Mandate card ─────────────────────────────────────────────────────────────
@@ -76,16 +88,19 @@ export function MandateKanbanCard({ card, href, className }: MandateKanbanCardPr
         </p>
       )}
 
-      {/* Footer: days in stage + owner avatar */}
-      <div className="flex items-center justify-between pt-0.5">
+      {/* Footer: days in stage + priority + owner avatar */}
+      <div className="flex items-center justify-between gap-2 pt-0.5">
         <span className="text-xs text-[var(--text-tertiary)]">{card.daysInStage}d in stage</span>
-        {card.ownerName && (
-          <Avatar
-            name={card.ownerName}
-            color={card.ownerColor ?? undefined}
-            size="sm"
-          />
-        )}
+        <div className="flex items-center gap-2">
+          {card.priorityLabel && <Badge tone={priorityTone(card.priorityLabel)}>{card.priorityLabel}</Badge>}
+          {card.ownerName && (
+            <Avatar
+              name={card.ownerName}
+              color={card.ownerColor ?? undefined}
+              size="sm"
+            />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -153,16 +168,19 @@ export function TransactionKanbanCard({ card, href, className }: TransactionKanb
         </a>
       </div>
 
-      {/* Footer: days in stage + owner avatar */}
-      <div className="flex items-center justify-between pt-0.5">
+      {/* Footer: days in stage + priority + owner avatar */}
+      <div className="flex items-center justify-between gap-2 pt-0.5">
         <span className="text-xs text-[var(--text-tertiary)]">{card.daysInStage}d in stage</span>
-        {card.ownerName && (
-          <Avatar
-            name={card.ownerName}
-            color={card.ownerColor ?? undefined}
-            size="sm"
-          />
-        )}
+        <div className="flex items-center gap-2">
+          {card.priorityLabel && <Badge tone={priorityTone(card.priorityLabel)}>{card.priorityLabel}</Badge>}
+          {card.ownerName && (
+            <Avatar
+              name={card.ownerName}
+              color={card.ownerColor ?? undefined}
+              size="sm"
+            />
+          )}
+        </div>
       </div>
     </div>
   );

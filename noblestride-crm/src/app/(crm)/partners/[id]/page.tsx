@@ -43,6 +43,8 @@ export default async function PartnerDetailPage({ params }: PageProps) {
     feeSharingTerms: partner.feeSharingTerms ?? "",
     partnerAgreementStatus: partner.partnerAgreementStatus ?? "",
     internalOnly: partner.internalOnly,
+    // Task 8: internal feedback notes (Task 6 migration) — CRM-only, edited via this drawer
+    feedbackNotes: partner.feedbackNotes ?? "",
   };
   const DELETE_PARTNER = `mutation DeletePartner($id: ID!) { deletePartner(id: $id) { id } }`;
 
@@ -205,6 +207,16 @@ export default async function PartnerDetailPage({ params }: PageProps) {
                           <span className="text-xs text-[var(--text-tertiary)]">
                             {label("TransactionStage", txn.stage)}
                           </span>
+                          {/* Fee status (Task 8) — only meaningful when this transaction has a fee-earning referrer */}
+                          {txn.referredById && (
+                            <span className="text-xs">
+                              {txn.partnerFeeStatus ? (
+                                <Chip value={txn.partnerFeeStatus} group="PartnerFeeStatus" />
+                              ) : (
+                                <span className="text-[var(--text-tertiary)]">Fee status: —</span>
+                              )}
+                            </span>
+                          )}
                         </li>
                       ))}
                     </ul>

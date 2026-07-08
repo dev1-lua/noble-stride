@@ -1,5 +1,5 @@
 import { cn } from "@/lib/cn";
-import { label as vocabLabel, STATUS_DOT } from "@/lib/vocab";
+import { label as vocabLabel, STATUS_DOT, STAGE_HELP } from "@/lib/vocab";
 
 interface ChipProps {
   value: string;
@@ -7,6 +7,21 @@ interface ChipProps {
   /** "category" — colored pill; "status" — dot + label. Defaults to "category". */
   tone?: "category" | "status";
   className?: string;
+  /**
+   * Tooltip override. When omitted and `group` is one of the stage enums
+   * (MandateStage / TransactionStage / EngagementStage), a STAGE_HELP
+   * one-liner is looked up automatically — call sites that render stage
+   * chips don't need to thread anything through.
+   */
+  title?: string;
+}
+
+const STAGE_GROUPS = new Set(["MandateStage", "TransactionStage", "EngagementStage"]);
+
+function resolveTitle(group: string, value: string, explicit?: string): string | undefined {
+  if (explicit) return explicit;
+  if (STAGE_GROUPS.has(group)) return STAGE_HELP[group as keyof typeof STAGE_HELP]?.[value];
+  return undefined;
 }
 
 // Restrained category styling — no rainbow. The entity *type* (InvestorType /
@@ -28,14 +43,16 @@ function categoryClasses(group: string): string {
  *
  * Chips never wrap mid-phrase ("Sub-Saharan Africa" stays on one line).
  */
-export function Chip({ value, group, tone, className }: ChipProps) {
+export function Chip({ value, group, tone, className, title }: ChipProps) {
   const resolvedTone = tone ?? (group.endsWith("Status") || group.endsWith("Stage") ? "status" : "category");
   const humanLabel = vocabLabel(group, value) || value;
+  const resolvedTitle = resolveTitle(group, value, title);
 
   if (resolvedTone === "status") {
     const dotClass = STATUS_DOT[value] ?? "bg-zinc-400";
     return (
       <span
+        title={resolvedTitle}
         className={cn(
           "inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-[var(--text-secondary)]",
           className
@@ -49,6 +66,7 @@ export function Chip({ value, group, tone, className }: ChipProps) {
 
   return (
     <span
+      title={resolvedTitle}
       className={cn(
         "inline-flex items-center whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium",
         categoryClasses(group),

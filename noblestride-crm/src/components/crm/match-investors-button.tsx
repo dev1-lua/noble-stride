@@ -15,6 +15,9 @@ const MATCH_INVESTORS_DOC = gql`
       name
       score
       reasons
+      warnings
+      contactName
+      criteriaStale
     }
   }
 `;
@@ -24,10 +27,22 @@ interface InvestorMatch {
   name: string;
   score: number;
   reasons: string[];
+  warnings: string[];
+  contactName: string | null;
+  criteriaStale: boolean;
 }
 
 interface MatchInvestorsButtonProps {
   transactionId: string;
+}
+
+// Warnings are a flat string list (see ranking.ts) with no structured severity
+// field. "Not on record" warnings are informational (a figure is simply
+// missing) so they render amber; everything else (a real miss on a threshold,
+// or an investor that isn't currently deploying) is a harder negative and
+// renders rose.
+function warningTone(warning: string): "amber" | "rose" {
+  return warning.includes("not on record") ? "amber" : "rose";
 }
 
 export function MatchInvestorsButton({ transactionId }: MatchInvestorsButtonProps) {
@@ -106,6 +121,9 @@ export function MatchInvestorsButton({ transactionId }: MatchInvestorsButtonProp
                         {Math.round(m.score * 100)}%
                       </span>
                     </div>
+                    {m.contactName && (
+                      <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">via {m.contactName}</p>
+                    )}
                     {m.reasons.length > 0 && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {m.reasons.map((reason, ri) => (
@@ -116,6 +134,30 @@ export function MatchInvestorsButton({ transactionId }: MatchInvestorsButtonProp
                             {reason}
                           </span>
                         ))}
+                      </div>
+                    )}
+                    {m.criteriaStale && (
+                      <p className="mt-1.5 inline-flex items-center rounded-full border border-[var(--border-subtle)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-tertiary)]">
+                        Criteria stale
+                      </p>
+                    )}
+                    {m.warnings.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {m.warnings.map((warning, wi) => {
+                          const tone = warningTone(warning);
+                          return (
+                            <span
+                              key={wi}
+                              className={
+                                tone === "amber"
+                                  ? "rounded-full bg-[var(--t-tag-bg-amber)] px-2 py-0.5 text-[10px] text-[var(--t-tag-text-amber)]"
+                                  : "rounded-full bg-[var(--t-tag-bg-rose)] px-2 py-0.5 text-[10px] text-[var(--t-tag-text-rose)]"
+                              }
+                            >
+                              {warning}
+                            </span>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

@@ -8,7 +8,7 @@ import { listTransactions } from "@/server/services/transactions";
 import { listInvestors } from "@/server/services/investors";
 import { FocalPipelineBoard } from "@/components/crm/focal-pipeline-board";
 import type { FocalGroupDTO } from "@/components/crm/focal-pipeline-board";
-import { StatCard } from "@/components/ui";
+import { StatCard, HelpHint } from "@/components/ui";
 import { LogEngagementDialog } from "@/components/crm/log-engagement-dialog";
 import { ENGAGEMENT_STAGES, stageColorSwatch, engagementStageOptions } from "@/lib/engagement-stage-colors";
 import { label } from "@/lib/vocab";
@@ -51,7 +51,10 @@ export default async function EngagementByInvestorPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Engagement — By Investor</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-zinc-900">
+            Engagement — By Investor
+            <HelpHint term="Investor Engagement" />
+          </h1>
           <p className="mt-1 text-sm text-zinc-500">Each investor and the deals they&apos;re engaged on, by pipeline stage</p>
         </div>
         {can(lens.orgRole, "Engagements", "C") && (

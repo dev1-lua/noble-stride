@@ -4,6 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { clientCreateSchema } from "@/lib/schemas/client";
 import { transactionCreateSchema } from "@/lib/schemas/transaction";
+import { mandateCreateSchema } from "@/lib/schemas/mandate";
 import { ddTrackUpsertSchema } from "@/lib/schemas/due-diligence";
 
 describe("client schema — §3.1 fields survive parsing", () => {
@@ -52,6 +53,55 @@ describe("transaction schema — §3.2 IC/CAK fields survive parsing", () => {
     expect(() =>
       transactionCreateSchema.parse({ name: "Deal", clientId: "c1", cakComesaStatus: "Pending" }),
     ).toThrow();
+  });
+});
+
+// Reviewer finding: priority/referralQualified/partnerFeeStatus must accept an
+// explicit `null` (the drawer's "clear to unset" signal via clearableFields),
+// not just omission — pins .nullable().optional() on all four fields.
+describe("mandate schema — priority/referralQualified accept explicit null", () => {
+  it("accepts null for priority and referralQualified", () => {
+    const parsed = mandateCreateSchema.parse({
+      name: "Deal",
+      clientId: "c1",
+      priority: null,
+      referralQualified: null,
+    });
+    expect(parsed.priority).toBeNull();
+    expect(parsed.referralQualified).toBeNull();
+  });
+
+  it("still accepts real values and omission", () => {
+    expect(
+      mandateCreateSchema.parse({ name: "Deal", clientId: "c1", priority: "High", referralQualified: false })
+        .priority,
+    ).toBe("High");
+    expect(
+      mandateCreateSchema.parse({ name: "Deal", clientId: "c1" }).priority,
+    ).toBeUndefined();
+  });
+});
+
+describe("transaction schema — priority/partnerFeeStatus accept explicit null", () => {
+  it("accepts null for priority and partnerFeeStatus", () => {
+    const parsed = transactionCreateSchema.parse({
+      name: "Deal",
+      clientId: "c1",
+      priority: null,
+      partnerFeeStatus: null,
+    });
+    expect(parsed.priority).toBeNull();
+    expect(parsed.partnerFeeStatus).toBeNull();
+  });
+
+  it("still accepts real values and omission", () => {
+    expect(
+      transactionCreateSchema.parse({ name: "Deal", clientId: "c1", partnerFeeStatus: "Paid" })
+        .partnerFeeStatus,
+    ).toBe("Paid");
+    expect(
+      transactionCreateSchema.parse({ name: "Deal", clientId: "c1" }).partnerFeeStatus,
+    ).toBeUndefined();
   });
 });
 

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
 import { getOrgLens } from "@/server/rbac/context";
 import { label } from "@/lib/vocab";
+import { unreadFor, unreadCountFor } from "@/server/services/notifications";
 
 // CRM pages read live data from Postgres per request — never prerender them at
 // build time (that needs the DB at build and would freeze data into static HTML).
@@ -29,6 +30,20 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
   const lens = await getOrgLens();
   const lensUser = lens.userId ? users.find((u) => u.id === lens.userId) : undefined;
 
+  // Task 14 bell: server-rendered per request, no polling. Demo-lens mode:
+  // when the lens has no resolved userId (Admin fallback), the bell shows an
+  // empty state rather than fetching for all users.
+  const [unreadNotifications, unreadCount] = lens.userId
+    ? await Promise.all([unreadFor(lens.userId, 15), unreadCountFor(lens.userId)])
+    : [[], 0];
+  const notifications = unreadNotifications.map((n) => ({
+    id: n.id,
+    kind: n.kind,
+    title: n.title,
+    href: n.href,
+    createdAt: n.createdAt.toISOString(),
+  }));
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Fixed-width sidebar, full height */}
@@ -43,6 +58,8 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
           users={users}
           activeOrgRole={vp.orgRole ?? "Admin"}
           activeUserId={vp.userId}
+          notifications={notifications}
+          notificationCount={unreadCount}
         />
 
         {/* Org-role lens banner (demo lens, spec §7.2) */}

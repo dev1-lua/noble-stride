@@ -13,6 +13,7 @@ import {
   taskStatusByOwner,
   overdueTasksCount,
   overdueTasks,
+  quietTransactions,
 } from "@/server/services/dashboard";
 import { aiOverviewInsights, aiAsk, aiMatchInvestors, aiFindProspects } from "@/server/services/ai";
 import { prisma } from "@/lib/db";
@@ -365,6 +366,71 @@ describe("dashboard groupings (smoke, own rows)", () => {
         if (txn2) await prisma.transaction.delete({ where: { id: txn2.id } });
         await prisma.investor.delete({ where: { id: investor.id } });
         await prisma.client.delete({ where: { id: client.id } });
+      }
+      return true;
+    });
+    if (ran === null) return;
+  });
+
+  it("quietTransactions() finds active transactions with no activity in 14 days, scoped by ownerId when given", async () => {
+    const ran = await withDb(async () => {
+      const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const owner = await prisma.user.create({
+        data: { name: `ZZ Quiet Owner ${suffix}`, email: `zz-quiet-${suffix}@test.local` },
+      });
+      const otherOwner = await prisma.user.create({
+        data: { name: `ZZ Quiet Other ${suffix}`, email: `zz-quiet-other-${suffix}@test.local` },
+      });
+      const client = await prisma.client.create({ data: { name: `ZZ Quiet Client ${suffix}` } });
+
+      let quietTxn: Awaited<ReturnType<typeof prisma.transaction.create>> | null = null;
+      let activeTxn: Awaited<ReturnType<typeof prisma.transaction.create>> | null = null;
+      let closedTxn: Awaited<ReturnType<typeof prisma.transaction.create>> | null = null;
+      let otherOwnerQuietTxn: Awaited<ReturnType<typeof prisma.transaction.create>> | null = null;
+      try {
+        // Active, no recent activity -> quiet.
+        quietTxn = await prisma.transaction.create({
+          data: { name: `ZZ Quiet Txn ${suffix}`, clientId: client.id, ownerId: owner.id, stage: "DealPreparation" },
+        });
+        // Active, WITH recent activity -> not quiet.
+        activeTxn = await prisma.transaction.create({
+          data: {
+            name: `ZZ Active Txn ${suffix}`,
+            clientId: client.id,
+            ownerId: owner.id,
+            stage: "DealPreparation",
+            activities: { create: { type: "Call", subject: "Call", occurredAt: new Date() } },
+          },
+        });
+        // Closed, no activity -> excluded regardless of staleness.
+        closedTxn = await prisma.transaction.create({
+          data: { name: `ZZ Closed Txn ${suffix}`, clientId: client.id, ownerId: owner.id, stage: "ClosedWon" },
+        });
+        // Active, no activity, but a DIFFERENT owner -> excluded when scoped to `owner`.
+        otherOwnerQuietTxn = await prisma.transaction.create({
+          data: { name: `ZZ Other Owner Quiet Txn ${suffix}`, clientId: client.id, ownerId: otherOwner.id, stage: "DealPreparation" },
+        });
+
+        const orgWide = await quietTransactions();
+        expect(orgWide.some((t) => t.id === quietTxn!.id)).toBe(true);
+        expect(orgWide.some((t) => t.id === activeTxn!.id)).toBe(false);
+        expect(orgWide.some((t) => t.id === closedTxn!.id)).toBe(false);
+        expect(orgWide.some((t) => t.id === otherOwnerQuietTxn!.id)).toBe(true);
+
+        const scoped = await quietTransactions(owner.id);
+        expect(scoped.some((t) => t.id === quietTxn!.id)).toBe(true);
+        expect(scoped.some((t) => t.id === otherOwnerQuietTxn!.id)).toBe(false);
+        expect(scoped.every((t) => t.ownerId === owner.id)).toBe(true);
+      } finally {
+        if (quietTxn) await prisma.transaction.delete({ where: { id: quietTxn.id } });
+        if (activeTxn) {
+          await prisma.activity.deleteMany({ where: { transactionId: activeTxn.id } });
+          await prisma.transaction.delete({ where: { id: activeTxn.id } });
+        }
+        if (closedTxn) await prisma.transaction.delete({ where: { id: closedTxn.id } });
+        if (otherOwnerQuietTxn) await prisma.transaction.delete({ where: { id: otherOwnerQuietTxn.id } });
+        await prisma.client.delete({ where: { id: client.id } });
+        await prisma.user.deleteMany({ where: { id: { in: [owner.id, otherOwner.id] } } });
       }
       return true;
     });

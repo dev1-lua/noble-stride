@@ -7,6 +7,7 @@
 import { prisma } from "@/lib/db";
 import type { TaskStatus } from "@prisma/client";
 import { taskCreateSchema, taskUpdateSchema, type TaskCreateInput, type TaskUpdateInput } from "@/lib/schemas/task";
+import { notify } from "./notifications";
 
 /** Statuses that count as "still open" for overdue escalation (spec §12.2). */
 const OPEN_STATUSES: TaskStatus[] = ["NotStarted", "Pending", "Ongoing"];
@@ -63,15 +64,34 @@ export async function deleteTask(id: string) {
  * Idempotent: only rows currently `escalated: false` are matched, so calling
  * this repeatedly (e.g. once per tasks-page load) is a cheap no-op once a
  * task has already been flagged. Returns the number of rows flipped.
+ *
+ * Notifies each task's assignee exactly once, on the false→true transition:
+ * the about-to-flip rows are read BEFORE the `updateMany` (which itself
+ * cannot return per-row data), then notified after the update commits.
  */
 export async function flagOverdueTasks(now: Date = new Date()): Promise<number> {
-  const result = await prisma.task.updateMany({
+  const toEscalate = await prisma.task.findMany({
     where: {
       dueAt: { lt: now },
       status: { in: OPEN_STATUSES },
       escalated: false,
     },
+    select: { id: true, title: true, assigneeId: true },
+  });
+  if (toEscalate.length === 0) return 0;
+
+  const result = await prisma.task.updateMany({
+    where: { id: { in: toEscalate.map((t) => t.id) } },
     data: { escalated: true },
   });
+
+  for (const task of toEscalate) {
+    await notify([task.assigneeId], {
+      kind: "task_overdue",
+      title: `Overdue: ${task.title}`,
+      href: "/tasks",
+    });
+  }
+
   return result.count;
 }

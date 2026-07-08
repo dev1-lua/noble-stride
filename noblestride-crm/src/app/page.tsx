@@ -39,6 +39,12 @@ export default async function LandingPage() {
             Sign up as an investor
           </Link>
           <Link
+            href="/intake"
+            className="text-xs font-medium text-[var(--text-tertiary)] hover:text-[var(--accent)]"
+          >
+            Raise capital with NobleStride
+          </Link>
+          <Link
             href="/login"
             className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
           >
@@ -78,6 +84,10 @@ export default async function LandingPage() {
             <span className="text-[var(--border-strong)]">·</span>
             <Link href="/register" className="font-medium hover:text-[var(--accent)] hover:underline">
               Sign up as an investor
+            </Link>
+            <span className="text-[var(--border-strong)]">·</span>
+            <Link href="/intake" className="font-medium hover:text-[var(--accent)] hover:underline">
+              Raise capital with NobleStride
             </Link>
           </div>
         </div>

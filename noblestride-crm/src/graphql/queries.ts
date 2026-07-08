@@ -50,6 +50,8 @@ import { listPartners, getPartner, partnerReferralStats } from "@/server/service
 import { dashboardStats, pipelineOverview, dealPipelineTrend } from "@/server/services/dashboard";
 import { aiOverviewInsights, aiMatchInvestors, aiFindProspects, aiAsk } from "@/server/services/ai";
 import { listSavedViews } from "@/server/services/saved-views";
+import { unreadFor, unreadCountFor } from "@/server/services/notifications";
+import { getOrgLens } from "@/server/rbac/context";
 
 // ── Input types ───────────────────────────────────────────────────────────────
 
@@ -215,6 +217,9 @@ const InvestorMatchRef = builder.objectRef<InvestorMatch>("InvestorMatch").imple
     name: t.exposeString("name"),
     score: t.exposeFloat("score"),
     reasons: t.exposeStringList("reasons"),
+    warnings: t.exposeStringList("warnings"),
+    contactName: t.exposeString("contactName", { nullable: true }),
+    criteriaStale: t.exposeBoolean("criteriaStale"),
   }),
 });
 
@@ -520,5 +525,30 @@ builder.queryFields((t) => ({
       entity: t.arg.string({ required: false }),
     },
     resolve: (_root, args) => listSavedViews(args.entity ?? undefined),
+  }),
+
+  // 26. myUnreadNotifications: [Notification] — latest 15 unread for the
+  // current in-org lens user (Task 14 bell). Demo-lens mode: when the lens
+  // has no resolved userId (Admin fallback), resolves to [] rather than
+  // fetching for all users.
+  myUnreadNotifications: t.prismaField({
+    type: ["Notification"],
+    nullable: false,
+    resolve: async () => {
+      const lens = await getOrgLens();
+      if (!lens.userId) return [];
+      return unreadFor(lens.userId, 15);
+    },
+  }),
+
+  // 27. myUnreadNotificationCount: Int — badge count for the bell, same
+  // demo-lens fallback as myUnreadNotifications.
+  myUnreadNotificationCount: t.field({
+    type: "Int",
+    resolve: async () => {
+      const lens = await getOrgLens();
+      if (!lens.userId) return 0;
+      return unreadCountFor(lens.userId);
+    },
   }),
 }));

@@ -9,6 +9,7 @@ import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
 import { loadInvestorPortalData } from "@/server/visibility";
+import { notify } from "@/server/services/notifications";
 
 export async function expressInterest(formData: FormData): Promise<void> {
   const vp = await getViewpoint();
@@ -33,7 +34,7 @@ export async function expressInterest(formData: FormData): Promise<void> {
   // deal name, so it's fetched separately after authorization passes.
   const txn = await prisma.transaction.findUniqueOrThrow({
     where: { id: dealId },
-    select: { name: true },
+    select: { name: true, ownerId: true },
   });
 
   // (a) Upsert the engagement — first touch starts the journey at "Shared".
@@ -74,6 +75,18 @@ export async function expressInterest(formData: FormData): Promise<void> {
       createdSource: "API",
     },
   });
+
+  // (b2) Best-effort: alert the engagement owner (falling back to the
+  // transaction owner when the engagement has none) that an investor has
+  // expressed interest. Portal actions have no internal actor to skip.
+  const interestRecipient = engagement.ownerId ?? txn.ownerId;
+  if (interestRecipient) {
+    await notify([interestRecipient], {
+      kind: "interest_expressed",
+      title: `${investor.name} expressed interest in ${txn.name}`,
+      href: `/engagement/${engagement.id}`,
+    });
+  }
 
   // (c) Refresh the portal views that render this journey.
   revalidatePath(`/portal/investor/deals/${dealId}`);

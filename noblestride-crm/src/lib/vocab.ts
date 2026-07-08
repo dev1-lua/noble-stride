@@ -23,6 +23,11 @@ export const LABELS: Record<string, Record<string, string>> = {
     TransportLogistics: "Transport & Logistics",
     WaterSanitation: "Water & Sanitation",
     Energy: "Energy",
+    OilAndGas: "Oil & Gas",
+    Mining: "Mining",
+    Gambling: "Gambling",
+    Alcohol: "Alcohol",
+    Tobacco: "Tobacco",
   },
   InvestorType: {
     PrivateEquity: "Private Equity",
@@ -220,6 +225,51 @@ export const LABELS: Record<string, Record<string, string>> = {
   DDStatus: { NotStarted: "Not Started", InProgress: "In Progress", Complete: "Complete", Flagged: "Flagged", NotApplicable: "N/A" },
   OrgRole: { Admin: "Admin", DealLead: "Deal Lead", TeamMember: "Team Member" },
   DealQueueGroupBy: { stage: "Stage", lead: "Lead", sector: "Sector", type: "Type", status: "Status" },
+  // Task 6: qualification/scoping gap fields
+  Priority: { High: "High", Medium: "Medium", Low: "Low" },
+  PartnerFeeStatus: { NotDue: "Not Due", Due: "Due", Invoiced: "Invoiced", Paid: "Paid" },
+};
+
+// ── Stage tooltips (Wave 1 teaching layer) ──────────────────────────────────
+// One-liner, plain-language explanation for every value of the three pipeline
+// stage enums (MandateStage ×7, TransactionStage ×7, EngagementStage ×12 = 26).
+// Nested per-enum (rather than a single flat Record<string,string>) because
+// TransactionStage and EngagementStage both define TermSheet and DueDiligence
+// — a flat map would force one enum's tooltip to silently win. Consumers that
+// know their group is a stage enum can do STAGE_HELP[group]?.[value].
+export const STAGE_HELP: Record<"MandateStage" | "TransactionStage" | "EngagementStage", Record<string, string>> = {
+  MandateStage: {
+    NewLead: "A prospective client we haven't yet qualified",
+    Qualification: "We're assessing whether this is a fit for NobleStride",
+    PitchPresentation: "We've pitched our services to the prospective client",
+    Proposal: "Our engagement proposal is with the client",
+    Negotiation: "Terms of the engagement are being negotiated",
+    Signed: "The engagement contract is signed — the mandate is live",
+    Lost: "The prospective client did not proceed with NobleStride",
+  },
+  TransactionStage: {
+    DealPreparation: "Analysis and investor documents are being prepared",
+    InvestorOutreach: "Investors are being approached and worked through the pipeline",
+    DueDiligence: "One or more investors are carrying out due diligence on this deal",
+    TermSheet: "The deal has reached term sheet stage with at least one investor",
+    Closing: "Final agreements and closing conditions are being completed",
+    ClosedWon: "The transaction closed successfully",
+    ClosedLost: "The transaction did not close",
+  },
+  EngagementStage: {
+    Shared: "The deal has been shared with this investor",
+    TeaserSent: "The teaser has been sent to this investor",
+    NDASigned: "The investor has signed the NDA for this deal",
+    IMShared: "The investor has received the Information Memorandum",
+    VDRAccess: "The investor has been granted access to the data room",
+    Meeting: "A meeting is scheduled or has taken place with the investor",
+    InfoRequest: "The investor has requested more information",
+    DueDiligence: "The investor is carrying out due diligence on the deal",
+    TermSheet: "The investor has issued a term sheet",
+    Offer: "The investor has made a binding offer",
+    Invested: "The investor has committed and invested",
+    Declined: "The investor has passed on this deal",
+  },
 };
 
 /** Human label for an enum value; falls back to the raw value. */
@@ -306,4 +356,9 @@ export const STATUS_DOT: Record<string, string> = {
   Complete: "bg-emerald-600",
   Flagged: "bg-rose-500",
   NotApplicable: "bg-slate-400",
+  // PartnerFeeStatus (Task 8)
+  NotDue: "bg-slate-300",
+  Due: "bg-amber-500",
+  Invoiced: "bg-sky-500",
+  Paid: "bg-emerald-600",
 };

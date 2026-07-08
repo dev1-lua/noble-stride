@@ -35,6 +35,14 @@ describe("parseDealsQuery", () => {
     expect(parseDealsQuery({ page: "-4" }).page).toBe(1);
     expect(parseDealsQuery({ page: "notanumber" }).page).toBe(1);
   });
+  // Task 8: priority sort key + priority filter dropdown
+  it("accepts sort=priority", () => {
+    expect(parseDealsQuery({ sort: "priority" }).sort).toBe("priority");
+  });
+  it("reads the priority filter param through", () => {
+    expect(parseDealsQuery({ priority: "High" }).priority).toBe("High");
+    expect(parseDealsQuery({}).priority).toBeUndefined();
+  });
 });
 
 describe("parseColumns", () => {
@@ -45,6 +53,12 @@ describe("parseColumns", () => {
   });
   it("keeps only known column keys, preserving order", () => {
     expect(parseColumns("company,haxx,ticket")).toEqual(["company", "ticket"]);
+  });
+  // Task 8: priority column is chooser-toggleable but not on by default
+  it("recognizes the priority column but excludes it from defaults", () => {
+    const defaults = DEAL_COLUMNS.filter((c) => c.default).map((c) => c.key);
+    expect(defaults).not.toContain("priority");
+    expect(parseColumns("company,priority")).toEqual(["company", "priority"]);
   });
 });
 

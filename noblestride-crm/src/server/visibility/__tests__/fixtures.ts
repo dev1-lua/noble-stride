@@ -58,6 +58,7 @@ export function makeDealFixture(): DealInput {
       impactFlags: ["WomenLed"],
       // fullFinancials group — loaded but never projected:
       ebitda: 1_500_000,
+      netProfit: 1_000_000,
       existingDebt: 900_000,
       totalAssets: 5_000_000,
       contacts: [

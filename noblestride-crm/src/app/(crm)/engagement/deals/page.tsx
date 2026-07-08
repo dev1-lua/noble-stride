@@ -8,7 +8,7 @@ import { listTransactions } from "@/server/services/transactions";
 import { listInvestors } from "@/server/services/investors";
 import { disbursementByPeriod } from "@/server/services/dashboard";
 import { relationOptions } from "@/server/services/relation-options";
-import { StatCard } from "@/components/ui";
+import { StatCard, HelpHint } from "@/components/ui";
 import { label } from "@/lib/vocab";
 import { ENGAGEMENT_STAGES, stageColorSwatch, engagementStageOptions } from "@/lib/engagement-stage-colors";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
@@ -118,7 +118,10 @@ export default async function EngagementByDealPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Engagement — By Deal</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-zinc-900">
+            Engagement — By Deal
+            <HelpHint term="Investor Engagement" />
+          </h1>
           <p className="mt-1 text-sm text-zinc-500">
             Each deal and the investors engaged on it, by pipeline stage
           </p>

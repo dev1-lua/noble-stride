@@ -15,6 +15,7 @@ const EMPTY: Record<string, unknown> = {
   name: "", partnerType: "", profile: "", status: "", location: "", amount: undefined, currency: "",
   advisorType: "", organization: "", email: "", phone: "",
   feeSharingAgreement: false, feeSharingTerms: "", partnerAgreementStatus: "", internalOnly: true,
+  feedbackNotes: "",
 };
 
 export function PartnerFormDrawer({ mode, initial, triggerLabel }: {
@@ -69,6 +70,8 @@ export function PartnerFormDrawer({ mode, initial, triggerLabel }: {
           )}
           <CheckboxField label="Internal only (not client-facing)" value={v.internalOnly as boolean} onChange={(x) => f.setValue("internalOnly", x)} />
           <TextAreaField label="Profile" value={v.profile as string} onChange={(x) => f.setValue("profile", x)} />
+          {/* Internal-only field — never rendered under src/app/portal/ */}
+          <TextAreaField label="Feedback Notes (internal)" value={v.feedbackNotes as string} onChange={(x) => f.setValue("feedbackNotes", x)} />
           {f.formError && <p className="text-xs text-rose-600">{f.formError}</p>}
         </div>
       </Drawer>

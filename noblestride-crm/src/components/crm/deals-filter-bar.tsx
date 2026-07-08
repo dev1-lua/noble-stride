@@ -38,6 +38,8 @@ export function DealsFilterBar({ leads }: { leads: { value: string; label: strin
     ...TICKET_BANDS.map((b) => ({ value: b.value, label: b.label })),
   ];
   const leadOpts = [{ value: "", label: "All leads" }, ...leads];
+  const priorityOpts = [{ value: "", label: "All priorities" }, ...options("Priority")];
+  const sourceOpts = [{ value: "", label: "All sources" }, ...options("Source")];
   const groupOpts = [{ value: "", label: "No grouping" }, ...options("DealQueueGroupBy")];
 
   return (
@@ -65,6 +67,12 @@ export function DealsFilterBar({ leads }: { leads: { value: string; label: strin
       </div>
       <div className="w-44">
         <Select options={leadOpts} value={sp.get("lead") ?? ""} onChange={(v) => update("lead", v)} placeholder="Lead" />
+      </div>
+      <div className="w-40">
+        <Select options={priorityOpts} value={sp.get("priority") ?? ""} onChange={(v) => update("priority", v)} placeholder="Priority" />
+      </div>
+      <div className="w-44">
+        <Select options={sourceOpts} value={sp.get("source") ?? ""} onChange={(v) => update("source", v)} placeholder="Source" />
       </div>
       <div className="w-44">
         <Select options={groupOpts} value={sp.get("group") ?? ""} onChange={(v) => update("group", v)} placeholder="Group by" />

@@ -9,6 +9,7 @@ import {
   dealPipelineTrend,
   onboardingStats,
   pendingOnboardingInvestors,
+  intakeAwaitingReviewCount,
   teamWorkload,
   taskStatusByOwner,
   overdueTasksCount,
@@ -28,6 +29,7 @@ import { AnimatedStatCard } from "@/components/ui/animated-stat-card";
 import { Reveal, Stagger } from "@/components/ui/motion";
 import { OverviewAgentCard } from "@/components/crm/overview-agent-card";
 import { OnboardingQueueCard } from "@/components/crm/onboarding-queue-card";
+import { IntakeQueueCallout } from "@/components/crm/intake-queue-callout";
 import { DealPipelineTrendChart, PipelineOverviewChart } from "@/components/crm/pipeline-chart";
 import { BreakdownBarList } from "@/components/crm/pipeline-breakdown";
 import { TeamWorkloadTable, TaskStatusCrosstab, OverdueActionsList } from "@/components/crm/team-tasks-panel";
@@ -48,6 +50,7 @@ export default async function DashboardPage() {
     trend,
     onboarding,
     pendingOnboarding,
+    intakeAwaitingReview,
     workload,
     statusByOwner,
     overdueCount,
@@ -68,6 +71,7 @@ export default async function DashboardPage() {
     dealPipelineTrend(),
     onboardingStats(),
     pendingOnboardingInvestors(),
+    intakeAwaitingReviewCount(),
     teamWorkload(),
     taskStatusByOwner(),
     overdueTasksCount(),
@@ -94,12 +98,14 @@ export default async function DashboardPage() {
         }))}
       />
 
+      <IntakeQueueCallout count={intakeAwaitingReview} />
+
       {/* Page header */}
       <Reveal>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">Dashboard</h1>
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-            Overview of your deal pipeline and investor activity
+            Where the pipeline stands today — deals, investors, tasks, and money in motion
           </p>
         </div>
       </Reveal>

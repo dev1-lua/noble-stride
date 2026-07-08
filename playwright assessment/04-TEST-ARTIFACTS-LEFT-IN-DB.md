@@ -21,3 +21,9 @@ None of this touches source code — it's all data — but you may want to reset
 ## Also worth knowing
 - The `?interest=sent` express-interest request on "Project Amber Harrier" (as IFC) may have logged a request/activity — check the engagement/activity log if you want it clean.
 - Pre-existing test junk was already in the DB before I started (`asd`, `abc23`, `test2`, `Test1`, `E2E Probe Capital`, `Gate Check Capital`, `Meridian Frontier Capital`, and the `E2E …` change-history entries). Those are not mine — see BUG-15.
+
+---
+
+## 2026-07-08 — SDD run verification pass
+
+**No new DB test artifacts created.** The Task-19 Playwright pass was **read-only** — navigation + screenshots only (`/home`, `/home?help=journey`, `/deals?type=mandate`, a mandate detail, `/intake`). No records were created, edited, or deleted. Automated smoke tests (`vitest`) create their own `__notif_*` / `ZZ Test…` rows and self-clean in `finally` blocks per project convention. The 2026-07-07 artifacts above still stand — reset the seed before a clean demo if desired.

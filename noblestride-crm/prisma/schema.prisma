@@ -42,6 +42,24 @@ enum Sector {
   TransportLogistics
   WaterSanitation
   Energy
+  OilAndGas
+  Mining
+  Gambling
+  Alcohol
+  Tobacco
+}
+
+enum Priority {
+  High
+  Medium
+  Low
+}
+
+enum PartnerFeeStatus {
+  NotDue
+  Due
+  Invoiced
+  Paid
 }
 
 enum InvestorType {
@@ -485,6 +503,7 @@ model User {
   assistantTasks        Task[]        @relation("TaskAssistant")
   stageChanges          StageChange[] @relation("StageChangeActor")
   savedViews   SavedView[] @relation("SavedViewCreatedBy")
+  notifications Notification[]
 }
 
 model Person {
@@ -570,6 +589,8 @@ model Investor {
   reputationalRisks    String? // §7 controversial sectors or geographies
   ssaRegionContactId       String?
   ssaRegionContact         Person?   @relation("InvestorSsaContact", fields: [ssaRegionContactId], references: [id], onDelete: SetNull)
+  // Task 6: criteria verification stamp
+  criteriaVerifiedAt  DateTime?
   createdSource       ActorSource     @default(HUMAN)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
@@ -645,6 +666,18 @@ model Client {
   totalAssets          Decimal?     @db.Decimal(20, 2)
   impactFlags          ImpactFlag[] @default([])
   status               ClientStatus @default(Prospect)
+  // Task 6: qualification/scoping gap fields
+  pepExposure            Boolean  @default(false)
+  governmentOwned        Boolean  @default(false)
+  complianceNotes        String?
+  auditedFinancialsYears Int?
+  groupStructure         String?
+  suppliers              String?
+  competitors            String?
+  capacityUtilization    String?
+  repaymentAbilityNotes  String?
+  pricingExpectations    String?
+  proposedTimeline       String?
   createdSource     ActorSource    @default(HUMAN)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
@@ -683,6 +716,15 @@ model Mandate {
   eaSignedDate   DateTime?
   nextAction     String?
   notes          String?
+  // Task 6: retainer + qualification fields
+  retainerAmount       Decimal?  @db.Decimal(20, 2)
+  retainerInvoicedDate DateTime?
+  retainerPaidDate     DateTime?
+  priority             Priority?
+  referralQualified    Boolean?
+  qualificationVerdict String?
+  qualificationReasons String[]
+  qualifiedAt          DateTime?
   createdSource  ActorSource  @default(HUMAN)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -740,6 +782,10 @@ model Transaction {
   cakComesaStatus       RegulatoryStatus @default(NotStarted)
   cakComesaFiledDate    DateTime?
   cakComesaApprovedDate DateTime?
+  // Task 6: priority + partner fee tracking
+  priority          Priority?
+  partnerFeeStatus  PartnerFeeStatus?
+  partnerFeeAmount  Decimal?           @db.Decimal(20, 2)
   createdSource  ActorSource      @default(HUMAN)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -879,6 +925,8 @@ model Partner {
   feeSharingTerms        String?
   partnerAgreementStatus PartnerAgreementStatus @default(None)
   internalOnly           Boolean                @default(true)
+  // Task 6: feedback notes
+  feedbackNotes          String?
   createdSource ActorSource   @default(HUMAN)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -1082,4 +1130,22 @@ model SavedView {
   updatedAt   DateTime @updatedAt
 
   @@index([entity])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification — per-user notification feed (Task 6 gap closure).
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String
+  title     String
+  body      String?
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
 }
