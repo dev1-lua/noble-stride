@@ -30,6 +30,7 @@ import type {
 // tsx does not reliably resolve the `@/` tsconfig alias in this seed script,
 // so import the disbursement helpers via a relative path (single source of truth).
 import { amountPending, deriveYearQuarter } from "../src/server/domain/disbursement";
+import { stageRequiresNda } from "../src/server/domain/nda-guard";
 import seedData from "./seed-data.json";
 
 const prisma = new PrismaClient();
@@ -466,6 +467,14 @@ async function main() {
       const engagementStage = STATUS_TO_STAGE[status];
       const interestLevel = INTEREST_BY_SLOT[j];
 
+      // SOW §06 guard invariant (nda-guard.ts): an engagement seeded into an
+      // NDA-gated stage must have its NDA satisfied, or it can never be
+      // restaged. Investors with an Open NDA are covered fund-wide; everyone
+      // else gets a deal-level Closed NDA recorded at seed time.
+      const investorNdaStatus = ndaStatusFor((ti * 5 + j) % investors.length);
+      const needsEngagementNda =
+        stageRequiresNda(engagementStage) && investorNdaStatus !== "OpenNDA";
+
       // Disbursement: populate for committed/invested engagements (the money
       // is flowing) and a couple of mid-funnel ones marked Ongoing. Leaves the
       // rest null so the funnel shows a realistic mix.
@@ -522,6 +531,8 @@ async function main() {
           status,
           engagementStage,
           interestLevel,
+          ndaType: needsEngagementNda ? "Closed" : null,
+          ndaSignedAt: needsEngagementNda ? daysAgo(20 + ti * 3 + j) : null,
           totalAmount: disbursement?.totalAmount ?? null,
           amountDisbursed: disbursement?.amountDisbursed ?? null,
           amountPending: disbursement?.amountPending ?? null,
