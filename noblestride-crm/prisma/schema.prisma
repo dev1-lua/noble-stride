@@ -604,6 +604,9 @@ model Investor {
   documents   Document[]
   stageChanges StageChange[]
   blockedRegistrations BlockedRegistration[]
+  eSignEnvelopes ESignEnvelope[]
+  meetings       Meeting[]
+  emailMessages  EmailMessage[]
 
   @@index([investorType])
   @@index([status])
@@ -809,6 +812,9 @@ model Transaction {
   documents        Document[]
   stageChanges     StageChange[]
   ddTracks         DueDiligenceTrack[]
+  eSignEnvelopes   ESignEnvelope[]
+  meetings         Meeting[]
+  emailMessages    EmailMessage[]
 
   @@index([stage])
   @@index([clientId])
@@ -854,6 +860,9 @@ model Engagement {
   activities    Activity[]
   milestones    EngagementMilestone[]
   stageChanges  StageChange[]
+  eSignEnvelopes ESignEnvelope[]
+  meetings       Meeting[]
+  emailMessages  EmailMessage[]
 
   @@unique([transactionId, investorId])
   @@index([status])
@@ -1052,6 +1061,9 @@ model Document {
   accessLevel   DocumentAccessLevel @default(Internal)
   status        DocumentStatus?
   fileUrl       String?
+  boxFileId           String?
+  boxSharedLinkUrl    String?
+  boxWatermarkApplied Boolean?
   uploadedById  String?
   uploadedBy    User?               @relation("DocumentUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
   uploadedAt    DateTime            @default(now())
@@ -1075,6 +1087,7 @@ model Document {
   partner       Partner?            @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   createdSource ActorSource         @default(HUMAN)
   createdAt     DateTime            @default(now())
+  shareEvents   DocumentShareEvent[]
 
   @@index([type])
   @@index([accessLevel])
@@ -1243,4 +1256,107 @@ model AuthOtpChallenge {
   createdAt   DateTime       @default(now())
 
   @@index([accountId, purpose])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// External integrations scaffold (additive): DocuSign envelopes, Teams/Graph
+// meetings, Outlook/Graph email messages, and Graph webhook subscriptions.
+// All new tables are independent; new columns on existing models are
+// nullable/defaulted. See docs/superpowers for the design + implementation plan.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ESignEnvelope {
+  id            String   @id @default(cuid())
+  provider      String   @default("docusign")
+  externalId    String   // DocuSign envelopeId
+  kind          String   // OpenNda | ClosedNda | TermSheet
+  status        String   @default("sent") // sent | delivered | completed | declined | voided
+  signerEmail   String
+  signerName    String
+  investorId    String?
+  investor      Investor?    @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  engagementId  String?
+  engagement    Engagement?  @relation(fields: [engagementId], references: [id], onDelete: SetNull)
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  sentAt        DateTime @default(now())
+  completedAt   DateTime?
+  createdSource ActorSource @default(API)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([provider, externalId])
+  @@index([investorId])
+  @@index([engagementId])
+}
+
+model Meeting {
+  id              String   @id @default(cuid())
+  provider        String   @default("teams")
+  externalId      String   // Graph event id
+  joinUrl         String
+  subject         String
+  startAt         DateTime
+  endAt           DateTime
+  organizerUserId String
+  engagementId    String?
+  engagement      Engagement?  @relation(fields: [engagementId], references: [id], onDelete: SetNull)
+  transactionId   String?
+  transaction     Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  investorId      String?
+  investor        Investor?    @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  createdSource   ActorSource @default(API)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([provider, externalId])
+}
+
+model EmailMessage {
+  id             String   @id @default(cuid())
+  provider       String   @default("outlook")
+  externalId     String   // Graph message id
+  conversationId String?
+  subject        String?
+  fromAddress    String?
+  toAddresses    String[] @default([])
+  direction      String?  // inbound | outbound
+  bodyPreview    String?
+  receivedAt     DateTime?
+  sentAt         DateTime?
+  matchedBy      String?  // participant | conversation | subject
+  investorId     String?
+  investor       Investor?    @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  transactionId  String?
+  transaction    Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  engagementId   String?
+  engagement     Engagement?  @relation(fields: [engagementId], references: [id], onDelete: SetNull)
+  createdAt      DateTime @default(now())
+
+  @@unique([provider, externalId])
+  @@index([conversationId])
+  @@index([investorId])
+}
+
+model GraphSubscription {
+  id             String   @id @default(cuid())
+  subscriptionId String   @unique
+  resource       String
+  mailbox        String
+  clientState    String
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model DocumentShareEvent {
+  id          String   @id @default(cuid())
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  action      String   // PREVIEW | DOWNLOAD
+  source      String   @default("box")
+  viewerEmail String?
+  at          DateTime @default(now())
+
+  @@index([documentId])
 }
