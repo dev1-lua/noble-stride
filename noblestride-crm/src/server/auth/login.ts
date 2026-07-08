@@ -7,18 +7,21 @@ import { normalizeEmail } from "./guardrails";
 import { DUMMY_HASH, verifyPassword } from "./password";
 import { createSession } from "./session";
 import { logAuthEvent } from "./audit";
+import { issueLoginOtp, signPending, verifyTrust } from "./two-factor";
 
 const MAX_FAILURES = 10;
 const LOCK_MS = 15 * 60 * 1000;
 
 export type LoginResult =
   | { ok: true; token: string; expiresAt: Date; home: string }
-  | { ok: false; reason: "invalid" | "locked" | "pending" | "suspended" };
+  | { ok: false; reason: "invalid" | "locked" | "pending" | "suspended" }
+  | { ok: false; reason: "otp_required"; pendingToken: string; emailMask: string };
 
 export async function loginWithPassword(
   emailRaw: string,
   password: string,
   meta?: { ip?: string; userAgent?: string },
+  opts?: { trustedDeviceToken?: string },
 ): Promise<LoginResult> {
   const email = normalizeEmail(emailRaw);
   const account = await prisma.authAccount.findUnique({ where: { email } });
@@ -49,6 +52,22 @@ export async function loginWithPassword(
 
   if (account.status === "PENDING") return { ok: false, reason: "pending" };
   if (account.status === "SUSPENDED") return { ok: false, reason: "suspended" };
+
+  // Investor 2FA: password was correct, so clear the password-lockout counters,
+  // but require an email OTP before issuing a session unless this device is trusted.
+  if (account.kind === "INVESTOR") {
+    const trusted = await verifyTrust(opts?.trustedDeviceToken, account.id);
+    if (!trusted) {
+      await prisma.authAccount.update({
+        where: { id: account.id },
+        data: { failedLogins: 0, lockedUntil: null },
+      });
+      const { challengeId, emailMask } = await issueLoginOtp({ id: account.id, email: account.email });
+      const pendingToken = await signPending({ accountId: account.id, challengeId, emailMask });
+      await logAuthEvent(`Auth: 2FA challenge issued — ${email}`);
+      return { ok: false, reason: "otp_required", pendingToken, emailMask };
+    }
+  }
 
   const { token, expiresAt } = await createSession(account.id, meta);
   await prisma.authAccount.update({

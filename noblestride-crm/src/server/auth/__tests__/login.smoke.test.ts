@@ -1,5 +1,7 @@
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { rateLimit } from "../rate-limit";
+import { hashPassword } from "../password";
+import { signTrust } from "../two-factor";
 
 const hasDb = Boolean(process.env.DATABASE_URL);
 const d = hasDb ? describe : describe.skip;
@@ -16,12 +18,19 @@ d("loginWithPassword (DB)", () => {
   const SUFFIX = Math.random().toString(36).slice(2, 8);
   const EMAIL = `zz-test-login-${SUFFIX}@noblestride.capital`;
   const PASSWORD = "long-enough-pass-1";
+  const PREV_AUTH_SECRET = process.env.AUTH_SECRET;
+
+  beforeAll(() => {
+    if (!process.env.AUTH_SECRET) process.env.AUTH_SECRET = "zz-test-login-secret-do-not-use-in-prod";
+  });
 
   afterAll(async () => {
     const { prisma } = await import("@/lib/db");
     await prisma.authAccount.deleteMany({ where: { email: EMAIL } });
     await prisma.user.deleteMany({ where: { email: EMAIL } });
     await prisma.activity.deleteMany({ where: { subject: { contains: "zz-test-login" } } });
+    await prisma.authAccount.deleteMany({ where: { email: { startsWith: "zz-test-login" } } });
+    process.env.AUTH_SECRET = PREV_AUTH_SECRET;
   });
 
   async function makeActiveAccount() {
@@ -72,5 +81,45 @@ d("loginWithPassword (DB)", () => {
     expect(await loginWithPassword(EMAIL, PASSWORD)).toEqual({ ok: false, reason: "pending" });
     await prisma.authAccount.update({ where: { id: account.id }, data: { status: "SUSPENDED" } });
     expect(await loginWithPassword(EMAIL, PASSWORD)).toEqual({ ok: false, reason: "suspended" });
+  });
+
+  // --- investor 2FA branch (Task 5) ---
+  it("challenges an ACTIVE investor for OTP when no trusted device", async () => {
+    const { prisma } = await import("@/lib/db");
+    const { loginWithPassword } = await import("../login");
+    const email = `zz-test-login-2fa-${Date.now()}@example.com`;
+    await prisma.authAccount.create({
+      data: { email, passwordHash: await hashPassword("Str0ng!Passw0rd"), kind: "INVESTOR", status: "ACTIVE" },
+    });
+    const res = await loginWithPassword(email, "Str0ng!Passw0rd");
+    expect(res.ok).toBe(false);
+    expect(res).toMatchObject({ reason: "otp_required" });
+    if (!res.ok && res.reason === "otp_required") {
+      expect(res.pendingToken.length).toBeGreaterThan(10);
+      expect(res.emailMask).toContain("@");
+    }
+  });
+
+  it("skips OTP for an investor with a valid trusted-device token", async () => {
+    const { prisma } = await import("@/lib/db");
+    const { loginWithPassword } = await import("../login");
+    const email = `zz-test-login-trust-${Date.now()}@example.com`;
+    const acct = await prisma.authAccount.create({
+      data: { email, passwordHash: await hashPassword("Str0ng!Passw0rd"), kind: "INVESTOR", status: "ACTIVE" },
+    });
+    const trust = await signTrust(acct.id);
+    const res = await loginWithPassword(email, "Str0ng!Passw0rd", undefined, { trustedDeviceToken: trust });
+    expect(res.ok).toBe(true);
+  });
+
+  it("never challenges an INTERNAL account", async () => {
+    const { prisma } = await import("@/lib/db");
+    const { loginWithPassword } = await import("../login");
+    const email = `zz-test-login-internal-${Date.now()}@example.com`;
+    await prisma.authAccount.create({
+      data: { email, passwordHash: await hashPassword("Str0ng!Passw0rd"), kind: "INTERNAL", status: "ACTIVE" },
+    });
+    const res = await loginWithPassword(email, "Str0ng!Passw0rd");
+    expect(res.ok).toBe(true);
   });
 });

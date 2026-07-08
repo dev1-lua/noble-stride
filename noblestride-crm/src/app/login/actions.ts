@@ -3,12 +3,13 @@
 // action (not via a route-handler redirect — the client router drops that
 // Set-Cookie). Errors round-trip via query params, same as before.
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { loginWithPassword } from "@/server/auth/login";
 import { rateLimit } from "@/server/auth/rate-limit";
 import { setSessionCookie } from "@/server/auth/session-cookie";
+import { PENDING_COOKIE, PENDING_TTL_S, TRUST_COOKIE } from "@/server/auth/two-factor";
 import { safeNext } from "./safe-next";
 
 const emailSchema = z.string().trim().email("Enter a valid email address.");
@@ -36,7 +37,25 @@ export async function loginAction(formData: FormData): Promise<void> {
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
   if (!rateLimit(`login:${ip}`)) back(MESSAGES.locked, email);
 
-  const res = await loginWithPassword(email, password, { ip, userAgent: hdrs.get("user-agent") ?? undefined });
+  const cookieStore = await cookies();
+  const trustedDeviceToken = cookieStore.get(TRUST_COOKIE)?.value;
+  const res = await loginWithPassword(
+    email,
+    password,
+    { ip, userAgent: hdrs.get("user-agent") ?? undefined },
+    { trustedDeviceToken },
+  );
+
+  if (!res.ok && res.reason === "otp_required") {
+    cookieStore.set(PENDING_COOKIE, res.pendingToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: PENDING_TTL_S,
+    });
+    redirect(`/login/verify${next ? `?next=${encodeURIComponent(next)}` : ""}`);
+  }
   if (!res.ok) back(MESSAGES[res.reason], email);
   const ok = res as Extract<Awaited<ReturnType<typeof loginWithPassword>>, { ok: true }>;
 
