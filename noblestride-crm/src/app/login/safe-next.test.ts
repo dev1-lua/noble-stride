@@ -31,4 +31,10 @@ describe("safeNext", () => {
     expect(safeNext(undefined)).toBeNull();
     expect(safeNext("")).toBeNull();
   });
+
+  it("rejects control-character tricks that browsers strip before parsing", () => {
+    expect(safeNext("/\t/evil.com")).toBeNull(); // tab stripped by browser → //evil.com
+    expect(safeNext("/\n/evil.com")).toBeNull();
+    expect(safeNext("/dashboard\r")).toBeNull();
+  });
 });
