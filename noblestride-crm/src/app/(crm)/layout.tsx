@@ -35,7 +35,7 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Fixed-width sidebar, full height */}
-      <Sidebar pendingReview={pendingReview} />
+      <Sidebar pendingReview={pendingReview} isAdmin={auth?.user?.role === "Admin"} />
 
       {/* Main content region */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
