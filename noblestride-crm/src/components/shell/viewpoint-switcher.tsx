@@ -26,16 +26,20 @@ export function ViewpointSwitcher({
   users = [],
   activeOrgRole = "Admin",
   activeUserId,
+  enabled = false,
 }: {
   investors: ViewpointOption[];
   partners: ViewpointOption[];
   users?: ViewpointOption[];
   activeOrgRole?: string;
   activeUserId?: string;
+  enabled?: boolean;
 }) {
   const [role, setRole] = useState<"admin" | "investor" | "partner">("admin");
   const [orgRole, setOrgRole] = useState<string>(activeOrgRole);
   const records = role === "investor" ? investors : role === "partner" ? partners : [];
+
+  if (!enabled) return null;
 
   function go(nextRole: string, recordId?: string, nextOrgRole?: string, userId?: string) {
     const params = new URLSearchParams({ role: nextRole });

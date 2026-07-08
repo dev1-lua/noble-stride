@@ -4,6 +4,7 @@ import { Topbar } from "@/components/shell/topbar";
 import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
 import { getOrgLens } from "@/server/rbac/context";
+import { getCurrentAuth } from "@/server/auth/current";
 import { label } from "@/lib/vocab";
 
 // CRM pages read live data from Postgres per request — never prerender them at
@@ -19,11 +20,12 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
   if (vp.role === "investor") redirect("/portal/investor");
   if (vp.role === "partner") redirect("/portal/partner");
 
-  const [investors, partners, users, pendingReview] = await Promise.all([
+  const [investors, partners, users, pendingReview, auth] = await Promise.all([
     prisma.investor.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.partner.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.investor.count({ where: { onboardingStatus: "PendingReview" } }),
+    getCurrentAuth(),
   ]);
 
   // §7.2 in-org lens (demo): banner names the active role + user.
@@ -44,6 +46,7 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
           users={users}
           activeOrgRole={vp.orgRole ?? "Admin"}
           activeUserId={vp.userId}
+          switcherEnabled={auth?.user?.role === "Admin"}
         />
 
         {/* Org-role lens banner (demo lens, spec §7.2) */}

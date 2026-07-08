@@ -1,12 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 import { Search, Bell } from "lucide-react";
 import { Avatar } from "@/components/ui";
 import { AskBar } from "./ask-bar";
 import { ViewpointSwitcher, type ViewpointOption } from "./viewpoint-switcher";
 import { cn } from "@/lib/cn";
+import { logoutAction } from "@/app/logout/actions";
 
 // ─── Route → title/subtitle map ──────────────────────────────────────────────
 
@@ -84,12 +84,14 @@ export function Topbar({
   users = [],
   activeOrgRole,
   activeUserId,
+  switcherEnabled = false,
 }: {
   investors?: ViewpointOption[];
   partners?: ViewpointOption[];
   users?: ViewpointOption[];
   activeOrgRole?: string;
   activeUserId?: string;
+  switcherEnabled?: boolean;
 }) {
   const pathname = usePathname();
   const { title, subtitle } = derivePageMeta(pathname);
@@ -111,22 +113,25 @@ export function Topbar({
 
       {/* Right controls */}
       <div className="flex flex-shrink-0 items-center gap-3">
-        {/* View-as switcher (demo lens, spec §6 + §7.2 org roles) */}
+        {/* View-as switcher (admin-only lens, spec §6 + §7.2 org roles) */}
         <ViewpointSwitcher
           investors={investors}
           partners={partners}
           users={users}
           activeOrgRole={activeOrgRole}
           activeUserId={activeUserId}
+          enabled={switcherEnabled}
         />
 
-        {/* Sign out — clears demo viewpoint cookie, returns to public landing */}
-        <Link
-          href="/api/viewpoint?role=signout"
-          className="rounded border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] transition-colors"
-        >
-          Sign out
-        </Link>
+        {/* Sign out — real logout: revokes the DB session, clears cookies */}
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            className="rounded border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+          >
+            Sign out
+          </button>
+        </form>
 
         {/* Search */}
         <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-3 py-1.5">

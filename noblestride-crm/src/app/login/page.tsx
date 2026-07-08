@@ -1,6 +1,6 @@
-// login/page.tsx — dummy sign-in (landing spec §6). DEMO ONLY: the email is
-// looked up against contacts; the password is cosmetic. No credentials, no
-// sessions — the viewpoint cookie is the "session" (memory/remaining-tasks.md).
+// login/page.tsx — real credential sign-in (real-auth spec §10). Errors
+// round-trip via query params; the session cookie is set by the server
+// action, not here.
 
 import Link from "next/link";
 import { loginAction } from "./actions";
@@ -8,7 +8,7 @@ import { loginAction } from "./actions";
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: Promise<{ error?: string; email?: string; as?: string }>;
+  searchParams: Promise<{ error?: string; email?: string; as?: string; next?: string }>;
 }
 
 const inputClass =
@@ -36,24 +36,15 @@ export default async function LoginPage({ searchParams }: PageProps) {
           </p>
         </div>
 
-        <div className="rounded-lg border border-[var(--t-tag-bg-amber)] bg-[var(--t-tag-bg-amber)] p-4 text-sm text-[var(--t-tag-text-amber)]">
-          Demo mode — any password works. Your email decides where you land: investor and partner
-          contacts go to their portal, NobleStride team emails go to the CRM.
-        </div>
-
         {sp.error && (
           <div className="rounded-lg border border-[var(--t-tag-bg-rose)] bg-[var(--t-tag-bg-rose)] p-4 text-sm text-[var(--t-tag-text-rose)]">
-            {sp.error}{" "}
-            {sp.error.startsWith("No account") && (
-              <Link href="/register" className="font-semibold underline">
-                Register your fund →
-              </Link>
-            )}
+            {sp.error}
           </div>
         )}
 
         <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
           <form action={loginAction} className="space-y-4">
+            {sp.next ? <input type="hidden" name="next" value={sp.next} /> : null}
             <div>
               <label htmlFor="email" className={labelClass}>
                 Email <span className="text-rose-500">*</span>
@@ -77,7 +68,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
                 name="password"
                 type="password"
                 required
-                placeholder="Any password (demo)"
+                placeholder="Your password"
                 className={"mt-1 " + inputClass}
               />
             </div>
@@ -101,6 +92,14 @@ export default async function LoginPage({ searchParams }: PageProps) {
               >
                 Sign in
               </button>
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-[var(--border-subtle)] pt-4 text-xs">
+              <Link href="/forgot-password" className="font-medium text-[var(--accent)] hover:underline">
+                Forgot password?
+              </Link>
+              <Link href="/register" className="font-medium text-[var(--accent)] hover:underline">
+                Create an account →
+              </Link>
             </div>
           </form>
         </section>

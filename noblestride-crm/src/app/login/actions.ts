@@ -1,38 +1,48 @@
 "use server";
-// Server action for the dummy /login flow. Thin wrapper over the testable
-// core in src/server/onboarding/resolve-login.ts. Errors round-trip via
-// query params (same convention as /register).
-//
-// The viewpoint cookie is set HERE, not via a redirect through /api/viewpoint:
-// the client router follows a server-action redirect with fetch and drops
-// Set-Cookie from the route handler, leaving the browser signed out (and the
-// default-admin viewpoint then lands investors on /dashboard).
+// Real credential login (spec §10). The session cookie is set HERE in the
+// action (not via a route-handler redirect — the client router drops that
+// Set-Cookie). Errors round-trip via query params, same as before.
 
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { serializeViewpoint, viewpointHome, VIEWPOINT_COOKIE, type Viewpoint } from "@/lib/viewpoint";
-import { resolveLogin } from "@/server/onboarding/resolve-login";
+import { loginWithPassword } from "@/server/auth/login";
+import { rateLimit } from "@/server/auth/rate-limit";
+import { setSessionCookie } from "@/server/auth/session-cookie";
 
 const emailSchema = z.string().trim().email("Enter a valid email address.");
 
+const MESSAGES: Record<string, string> = {
+  invalid: "Incorrect email or password.",
+  locked: "Too many failed attempts. Try again in about 15 minutes.",
+  pending: "Your account is awaiting review by the NobleStride team.",
+  suspended: "This account is suspended. Contact NobleStride if you believe this is an error.",
+};
+
+function safeNext(next: string | undefined): string | null {
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+}
+
 export async function loginAction(formData: FormData): Promise<void> {
   const parsed = emailSchema.safeParse(String(formData.get("email") ?? ""));
-  if (!parsed.success) {
-    redirect(`/login?error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Enter a valid email address.")}`);
-  }
-  const email = parsed.data;
-
-  const res = await resolveLogin(email);
-  if (res.kind === "unknown") {
+  const password = String(formData.get("password") ?? "");
+  const next = safeNext(String(formData.get("next") ?? "") || undefined);
+  const back = (error: string, email = "") =>
     redirect(
-      `/login?email=${encodeURIComponent(email)}&error=${encodeURIComponent(
-        "No account found for this email.",
-      )}`,
+      `/login?error=${encodeURIComponent(error)}${email ? `&email=${encodeURIComponent(email)}` : ""}${next ? `&next=${encodeURIComponent(next)}` : ""}`,
     );
-  }
 
-  const vp: Viewpoint = res.kind === "admin" ? { role: "admin" } : { role: res.kind, recordId: res.recordId };
-  (await cookies()).set(VIEWPOINT_COOKIE, serializeViewpoint(vp), { path: "/", sameSite: "lax" });
-  redirect(viewpointHome(vp));
+  if (!parsed.success) back(parsed.error.issues[0]?.message ?? "Enter a valid email address.");
+  const email = parsed.data!;
+
+  const hdrs = await headers();
+  const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+  if (!rateLimit(`login:${ip}`)) back(MESSAGES.locked, email);
+
+  const res = await loginWithPassword(email, password, { ip, userAgent: hdrs.get("user-agent") ?? undefined });
+  if (!res.ok) back(MESSAGES[res.reason], email);
+  const ok = res as Extract<Awaited<ReturnType<typeof loginWithPassword>>, { ok: true }>;
+
+  await setSessionCookie(ok.token, ok.expiresAt);
+  redirect(next ?? ok.home);
 }
