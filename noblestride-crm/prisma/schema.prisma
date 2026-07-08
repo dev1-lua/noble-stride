@@ -1107,6 +1107,10 @@ enum AuthTokenPurpose {
   VERIFY_EMAIL
 }
 
+enum AuthOtpPurpose {
+  LOGIN_2FA
+}
+
 model AuthAccount {
   id           String        @id @default(cuid())
   email        String        @unique // always stored lowercase
@@ -1126,8 +1130,9 @@ model AuthAccount {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  sessions AuthSession[]
-  tokens   AuthToken[]
+  sessions      AuthSession[]
+  tokens        AuthToken[]
+  otpChallenges AuthOtpChallenge[]
 
   @@index([kind, status])
 }
@@ -1157,4 +1162,20 @@ model AuthToken {
   createdAt DateTime         @default(now())
 
   @@index([accountId])
+}
+
+model AuthOtpChallenge {
+  id          String         @id @default(cuid())
+  accountId   String
+  account     AuthAccount    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  purpose     AuthOtpPurpose
+  codeHash    String // sha256 hex of the 6-digit code; raw code never stored
+  destination String // email the code was actually sent to (audit)
+  attempts    Int            @default(0)
+  maxAttempts Int            @default(5)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime       @default(now())
+
+  @@index([accountId, purpose])
 }
