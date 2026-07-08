@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,6 +14,7 @@ import {
   Scale,
   Settings,
   ChevronLeft,
+  ChevronDown,
   Search,
   FileText,
   Activity,
@@ -72,9 +74,10 @@ interface NavItemProps {
   label: string;
   Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   active: boolean;
+  badge?: number;
 }
 
-export function NavItem({ href, label, Icon, active }: NavItemProps) {
+export function NavItem({ href, label, Icon, active, badge }: NavItemProps) {
   return (
     <Link
       href={href}
@@ -95,7 +98,62 @@ export function NavItem({ href, label, Icon, active }: NavItemProps) {
         style={{ color: active ? "#34d399" : SIDEBAR_FG }}
       />
       {label}
+      {badge ? (
+        <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-bold leading-none text-white">
+          {badge}
+        </span>
+      ) : null}
     </Link>
+  );
+}
+
+// ─── Engagement nav group (expandable: By Deal / By Investor) ────────────────
+
+function EngagementNavGroup({ active }: { active: boolean }) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(active);
+  const childActive = (href: string) => pathname === href;
+  return (
+    <div>
+      {/* "Engagement" is a disclosure toggle only — clicking it opens/closes the
+          sub-menu and never navigates. A page loads only when a child (By Deal /
+          By Investor) is chosen. */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={cn(
+          "relative flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+          active ? "bg-white/10 font-medium" : "hover:bg-white/5",
+        )}
+        style={{ color: active ? "#ffffff" : SIDEBAR_FG }}
+      >
+        {active && <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-emerald-400" />}
+        <MessageSquare className="h-4 w-4 flex-shrink-0" style={{ color: active ? "#34d399" : SIDEBAR_FG }} />
+        Engagement
+        <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform", open ? "" : "-rotate-90")} />
+      </button>
+      {open && (
+        <div className="ml-9 mt-0.5 flex flex-col gap-0.5">
+          {[
+            { href: "/engagement/deals", label: "By Deal" },
+            { href: "/engagement/investors", label: "By Investor" },
+          ].map((c) => (
+            <Link
+              key={c.href}
+              href={c.href}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-sm transition-colors",
+                childActive(c.href) ? "bg-white/10 font-medium text-white" : "hover:bg-white/5",
+              )}
+              style={{ color: childActive(c.href) ? "#ffffff" : SIDEBAR_FG }}
+            >
+              {c.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -122,7 +180,7 @@ function AgentCard({
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
-export function Sidebar() {
+export function Sidebar({ pendingReview = 0 }: { pendingReview?: number }) {
   const pathname = usePathname();
 
   function isActive(href: string) {
@@ -148,9 +206,20 @@ export function Sidebar() {
         </p>
 
         <nav className="flex flex-col gap-0.5">
-          {MAIN_NAV.map(({ href, label, Icon }) => (
-            <NavItem key={href} href={href} label={label} Icon={Icon} active={isActive(href)} />
-          ))}
+          {MAIN_NAV.map(({ href, label, Icon }) =>
+            href === "/engagement" ? (
+              <EngagementNavGroup key={href} active={isActive(href)} />
+            ) : (
+              <NavItem
+                key={href}
+                href={href}
+                label={label}
+                Icon={Icon}
+                active={isActive(href)}
+                badge={href === "/investors" ? pendingReview : undefined}
+              />
+            ),
+          )}
         </nav>
 
         {/* AGENTS section */}

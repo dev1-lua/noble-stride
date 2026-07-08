@@ -34,6 +34,32 @@ export async function engagementsByDeal() {
 }
 
 /**
+ * Per-stage counts for a set of engagements, in vocab order, omitting stages
+ * with zero engagements. Shared by the focal (By Deal / By Investor) boards.
+ */
+export function stageCountsFor(engagements: { engagementStage: string }[]) {
+  const counts = new Map<string, number>();
+  for (const e of engagements) counts.set(e.engagementStage, (counts.get(e.engagementStage) ?? 0) + 1);
+  return Object.keys(LABELS.EngagementStage)
+    .filter((stage) => (counts.get(stage) ?? 0) > 0)
+    .map((stage) => ({ stage, label: label("EngagementStage", stage), count: counts.get(stage)! }));
+}
+
+/**
+ * Every investor that has at least one engagement, each with its engagements
+ * (transaction included), investors ordered by name. Mirror of
+ * engagementsByDeal() with the focal entity flipped.
+ */
+export async function engagementsByInvestor() {
+  const investors = await prisma.investor.findMany({
+    where: { engagements: { some: {} } },
+    orderBy: { name: "asc" },
+    include: { engagements: { include: { transaction: true } } },
+  });
+  return investors.map((investor) => ({ investor, engagements: investor.engagements }));
+}
+
+/**
  * Return one column per EngagementStage value (12, in vocab order), each with
  * the engagements in that stage (investor + transaction included).
  *
