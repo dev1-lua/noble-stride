@@ -47,7 +47,7 @@ src/server/services/
   mailsync.ts                    # Task 18 — mail ingestion + deal matching
 src/app/api/integrations/
   docusign/connect/route.ts      # Task 7 — Connect webhook → converge on recordOpenNda/recordClosedNda
-  box/webhook/route.ts           # Task 12 — Box events → DocumentAccessLog
+  box/webhook/route.ts           # Task 12 — Box events → DocumentShareEvent
   msgraph/notifications/route.ts # Task 19 — Graph change notifications → mailsync
 src/components/crm/
   send-esign-button.tsx          # Task 8 — gated e-sign control
@@ -378,12 +378,12 @@ git commit -m "feat(integrations): shared MS Graph client-credentials auth"
 ## Task 3: Additive data model
 
 **Files:**
-- Modify: `prisma/schema.prisma` (append models; add fields to `Document`, `DocumentAccessLog`)
+- Modify: `prisma/schema.prisma` (append models incl. `DocumentShareEvent`; add fields to `Document`)
 - Create: `prisma/migrations/<generated>/migration.sql` (via `pnpm migrate`)
 - Test: `src/server/integrations/__tests__/schema.smoke.test.ts`
 
 **Interfaces:**
-- Produces Prisma models: `ESignEnvelope`, `Meeting`, `EmailMessage`, `GraphSubscription`; `Document.boxFileId/boxSharedLinkUrl/boxWatermarkApplied`; `DocumentAccessLog.source`.
+- Produces Prisma models: `ESignEnvelope`, `Meeting`, `EmailMessage`, `GraphSubscription`, `DocumentShareEvent`; `Document.boxFileId/boxSharedLinkUrl/boxWatermarkApplied/shareEvents`.
 
 - [ ] **Step 1: Add models to `schema.prisma`**
 
@@ -473,21 +473,30 @@ model GraphSubscription {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+
+model DocumentShareEvent {
+  id          String   @id @default(cuid())
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  action      String   // PREVIEW | DOWNLOAD
+  source      String   @default("box")
+  viewerEmail String?
+  at          DateTime @default(now())
+
+  @@index([documentId])
+}
 ```
 
 Add to `model Document` (in its field block):
 
 ```prisma
-  boxFileId          String?
-  boxSharedLinkUrl   String?
+  boxFileId           String?
+  boxSharedLinkUrl    String?
   boxWatermarkApplied Boolean?
+  shareEvents         DocumentShareEvent[]
 ```
 
-Add to `model DocumentAccessLog` (in its field block):
-
-```prisma
-  source String? @default("internal") // internal | box
-```
+> **NOTE (cross-branch):** this branch does NOT contain the file-storage effort's `DocumentAccessLog` model — do not reference, add, or modify it. Box view/download tracking uses the new **`DocumentShareEvent`** model above instead.
 
 Add the back-relations to the existing models (append inside each model's relation block):
 - `model Investor { … eSignEnvelopes ESignEnvelope[]  meetings Meeting[]  emailMessages EmailMessage[] }`
@@ -496,8 +505,9 @@ Add the back-relations to the existing models (append inside each model's relati
 
 - [ ] **Step 2: Generate the migration**
 
-Run: `pnpm migrate` (prisma migrate dev). When prompted for a name, use `external_integrations_scaffold`.
-Expected: a new folder under `prisma/migrations/` with `migration.sql` adding the tables/columns; `prisma generate` runs automatically. Confirm the SQL only `CREATE TABLE`/`ALTER TABLE ... ADD COLUMN` (no drops/alters of existing columns).
+This worktree uses an **isolated database** (`DATABASE_URL` → `…/noblestride_integrations`) so its migration history cannot collide with the shared dev DB used by other efforts. Run **non-interactively**:
+`pnpm exec prisma migrate dev --name external_integrations_scaffold --skip-seed`
+Because the isolated DB starts empty, Prisma applies this branch's committed migrations, then creates the new one — no drift, no reset prompt. **If Prisma ever proposes a reset/drop, STOP and report BLOCKED.** Then run `pnpm generate`. Confirm the new `migration.sql` contains only `CREATE TABLE` / `ALTER TABLE ... ADD COLUMN` (+ indexes/FKs).
 
 - [ ] **Step 3: Write the smoke test**
 
@@ -1510,7 +1520,7 @@ git commit -m "feat(integrations): docshare service persists Box share on Docume
 
 ---
 
-## Task 12: Box webhook (preview/download tracking → DocumentAccessLog)
+## Task 12: Box webhook (preview/download tracking → DocumentShareEvent)
 
 **Files:**
 - Create: `src/app/api/integrations/box/webhook/route.ts`
@@ -1518,7 +1528,7 @@ git commit -m "feat(integrations): docshare service persists Box share on Docume
 - Test: `src/server/integrations/docshare/__tests__/webhook.test.ts`
 
 **Interfaces:**
-- Consumes: `boxConfigured()`, `boxEnv()` (Task 1); Prisma `document`, `documentAccessLog`.
+- Consumes: `boxConfigured()`, `boxEnv()` (Task 1); Prisma `document`, `documentShareEvent`.
 - Produces: `function verifyBoxSignature(rawBody, headers, primary, secondary): boolean`; `function parseBoxEvent(json): { trigger: string; boxFileId: string } | null`.
 
 - [ ] **Step 1: Write the failing test**
@@ -1598,8 +1608,8 @@ export async function POST(req: Request) {
   if (evt) {
     const doc = await prisma.document.findFirst({ where: { boxFileId: evt.boxFileId }, select: { id: true } });
     if (doc) {
-      await prisma.documentAccessLog.create({
-        data: { documentId: doc.id, userId: null, action: evt.trigger === "FILE.DOWNLOADED" ? "DOWNLOAD" : "PREVIEW", source: "box" },
+      await prisma.documentShareEvent.create({
+        data: { documentId: doc.id, action: evt.trigger === "FILE.DOWNLOADED" ? "DOWNLOAD" : "PREVIEW", source: "box" },
       });
     }
   }
