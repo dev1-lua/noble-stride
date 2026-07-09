@@ -30,7 +30,6 @@ export async function sendEsignEnvelope(input: SendEnvelopeInput, actor: Actor) 
 export async function resolveEnvelopeCompletion(externalId: string, completedAt: Date): Promise<void> {
   const row = await prisma.eSignEnvelope.findFirst({ where: { provider: "docusign", externalId } });
   if (!row || row.status === "completed") return; // idempotent
-  await prisma.eSignEnvelope.update({ where: { id: row.id }, data: { status: "completed", completedAt } });
 
   const systemActor: Actor = { type: "API" };
   if (row.kind === "OpenNda" && row.investorId) {
@@ -38,5 +37,6 @@ export async function resolveEnvelopeCompletion(externalId: string, completedAt:
   } else if (row.kind === "ClosedNda" && row.engagementId) {
     await recordClosedNda(row.engagementId, systemActor);
   }
-  // TermSheet completion records no NDA state; the row status update above is sufficient.
+  // TermSheet completion records no NDA state; the row status update below is sufficient.
+  await prisma.eSignEnvelope.update({ where: { id: row.id }, data: { status: "completed", completedAt } });
 }
