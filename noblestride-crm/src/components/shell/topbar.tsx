@@ -1,11 +1,13 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Search, Bell } from "lucide-react";
+import { Search } from "lucide-react";
 import { Avatar } from "@/components/ui";
 import { AskBar } from "./ask-bar";
 import { ViewpointSwitcher, type ViewpointOption } from "./viewpoint-switcher";
-import { cn } from "@/lib/cn";
+import { NotificationBell, type NotificationItem } from "./notification-bell";
+import { HelpPanel } from "./help-panel";
+import { logoutAction } from "@/app/logout/actions";
 
 // ─── Route → title/subtitle map ──────────────────────────────────────────────
 
@@ -17,11 +19,15 @@ interface PageMeta {
 const ROUTE_META: Record<string, PageMeta> = {
   "/dashboard": {
     title: "Dashboard",
-    subtitle: "Overview of your deal pipeline and investor activity",
+    subtitle: "Where the pipeline stands today — deals, investors, tasks, and money in motion",
+  },
+  "/deals": {
+    title: "Deals",
+    subtitle: "Every assignment we've been hired for (mandates) and every live raise (transactions), in one queue",
   },
   "/mandates": {
     title: "Mandates",
-    subtitle: "Advisory mandates across all stages",
+    subtitle: "Client mandates — the assignments behind every raise",
   },
   "/transactions": {
     title: "Transactions",
@@ -29,23 +35,23 @@ const ROUTE_META: Record<string, PageMeta> = {
   },
   "/investors": {
     title: "Investors",
-    subtitle: "Investor network and engagement",
+    subtitle: "The investor database — who invests in what, and where each relationship stands",
   },
   "/engagement": {
     title: "Engagement",
-    subtitle: "Interaction tracker and timeline",
+    subtitle: "Which investors have seen each deal, and how far each conversation has gone",
   },
   "/partners": {
     title: "Partners",
-    subtitle: "Referral partners and advisors",
+    subtitle: "Referral partners and advisors — who introduced which deals, and what we owe them",
   },
   "/clients": {
     title: "Clients",
-    subtitle: "Portfolio company profile",
+    subtitle: "The companies we raise capital for — profile, financials, and their documents",
   },
   "/documents": {
     title: "Documents",
-    subtitle: "Deal documents, access levels and review status",
+    subtitle: "The register of teasers, IMs, NDAs and models — and who is allowed to see each",
   },
   "/access-matrix": {
     title: "Access Matrix",
@@ -53,7 +59,11 @@ const ROUTE_META: Record<string, PageMeta> = {
   },
   "/tasks": {
     title: "Tasks",
-    subtitle: "Team action points and deadlines",
+    subtitle: "Action items and follow-ups — who owes what, by when",
+  },
+  "/service-providers": {
+    title: "Service Providers",
+    subtitle: "Lawyers, auditors and DD firms engaged on transactions",
   },
 };
 
@@ -76,20 +86,32 @@ function derivePageMeta(pathname: string): PageMeta {
 export function Topbar({
   investors = [],
   partners = [],
+  users = [],
+  activeOrgRole,
+  activeUserId,
+  notifications = [],
+  notificationCount = 0,
+  switcherEnabled = false,
 }: {
   investors?: ViewpointOption[];
   partners?: ViewpointOption[];
+  users?: ViewpointOption[];
+  activeOrgRole?: string;
+  activeUserId?: string;
+  notifications?: NotificationItem[];
+  notificationCount?: number;
+  switcherEnabled?: boolean;
 }) {
   const pathname = usePathname();
   const { title, subtitle } = derivePageMeta(pathname);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-zinc-200 bg-white px-6">
+    <header className="sticky top-0 z-30 flex h-12 items-center gap-4 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] px-6">
       {/* Page title block */}
-      <div className="flex flex-col justify-center min-w-0 flex-shrink-0 w-52">
-        <h1 className="text-lg font-bold leading-tight text-zinc-900 truncate">{title}</h1>
+      <div className="flex flex-col justify-center min-w-0 flex-shrink-0 w-auto">
+        <h1 className="text-sm font-semibold leading-tight text-[var(--text-primary)] truncate">{title}</h1>
         {subtitle && (
-          <p className="text-xs text-zinc-500 leading-tight truncate">{subtitle}</p>
+          <p className="text-[11px] text-[var(--text-tertiary)] leading-tight truncate hidden lg:block">{subtitle}</p>
         )}
       </div>
 
@@ -100,36 +122,41 @@ export function Topbar({
 
       {/* Right controls */}
       <div className="flex flex-shrink-0 items-center gap-3">
-        {/* View-as switcher (demo lens, spec §6) */}
-        <ViewpointSwitcher investors={investors} partners={partners} />
+        {/* Help panel (Task 18) — journey guide, glossary, access matrix link. Supports ?help=journey deep link. */}
+        <HelpPanel />
+
+        {/* View-as switcher (admin-only lens, spec §6 + §7.2 org roles) */}
+        <ViewpointSwitcher
+          investors={investors}
+          partners={partners}
+          users={users}
+          activeOrgRole={activeOrgRole}
+          activeUserId={activeUserId}
+          enabled={switcherEnabled}
+        />
+
+        {/* Sign out — real logout: revokes the DB session, clears cookies */}
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            className="rounded border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+          >
+            Sign out
+          </button>
+        </form>
 
         {/* Search */}
-        <div className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5">
-          <Search className="h-3.5 w-3.5 text-zinc-400 flex-shrink-0" />
+        <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-3 py-1.5">
+          <Search className="h-3.5 w-3.5 text-[var(--text-tertiary)] flex-shrink-0" />
           <input
             type="text"
             placeholder="Search…"
-            className="w-28 bg-transparent text-xs text-zinc-600 placeholder:text-zinc-400 focus:outline-none"
+            className="w-28 bg-transparent text-xs text-[var(--text-secondary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
           />
         </div>
 
-        {/* Notification bell */}
-        <div className="relative">
-          <button
-            type="button"
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full",
-              "text-zinc-500 hover:bg-zinc-100 transition-colors"
-            )}
-            aria-label="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
-          {/* Red badge */}
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white leading-none">
-            3
-          </span>
-        </div>
+        {/* Notification bell (Task 14) — server-fetched initial data, no polling */}
+        <NotificationBell initialItems={notifications} initialCount={notificationCount} />
 
         {/* Avatar */}
         <Avatar name="NS" size="sm" color="bg-emerald-600" />

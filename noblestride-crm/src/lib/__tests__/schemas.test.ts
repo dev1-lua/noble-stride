@@ -3,6 +3,9 @@ import { investorCreateSchema } from "@/lib/schemas/investor";
 import { mandateCreateSchema } from "@/lib/schemas/mandate";
 import { partnerCreateSchema } from "@/lib/schemas/partner";
 import { serviceProviderCreateSchema } from "@/lib/schemas/service-provider";
+import { clientCreateSchema } from "@/lib/schemas/client";
+import { transactionCreateSchema } from "@/lib/schemas/transaction";
+import { taskCreateSchema } from "@/lib/schemas/task";
 
 describe("entity create schemas", () => {
   it("investor: accepts a minimal valid payload", () => {
@@ -61,6 +64,16 @@ describe("entity create schemas", () => {
     }
   });
 
+  it("investor schema accepts onboarding fields", () => {
+    const parsed = investorCreateSchema.parse({
+      name: "Fund X",
+      investorType: "PrivateEquity",
+      onboardingStatus: "PendingReview",
+      registeredAt: new Date("2026-07-05"),
+    });
+    expect(parsed.onboardingStatus).toBe("PendingReview");
+  });
+
   it("mandate: requires name and clientId", () => {
     expect(mandateCreateSchema.safeParse({ name: "M" }).success).toBe(false);
     expect(mandateCreateSchema.safeParse({ name: "M", clientId: "c1" }).success).toBe(true);
@@ -109,5 +122,199 @@ describe("entity create schemas", () => {
 
   it("serviceProvider: rejects a negative fee", () => {
     expect(serviceProviderCreateSchema.safeParse({ name: "X", type: "LawFirm", fee: -1 }).success).toBe(false);
+  });
+
+  it("client: spec-gap fields survive Zod parse (not stripped)", () => {
+    const r = clientCreateSchema.safeParse({
+      name: "Acme Foods",
+      codename: "Project Falcon",
+      registrationNo: "CR12/2024/000123",
+      hqCountry: "Kenya",
+      businessModel: "B2B distribution",
+      foundersNationality: "Kenyan",
+      ownershipStructure: "Founder-owned",
+      directorsManagement: "2 EDs, 1 NED",
+      targetClients: "Mid-market retailers",
+      staffCount: 120,
+      branchCount: 8,
+      ebitda: 500000,
+      netProfit: 250000,
+      existingDebt: 100000,
+      loanBook: 750000,
+      totalAssets: 2000000,
+      impactFlags: ["WomenLed", "YouthLed"],
+      status: "Active",
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.codename).toBe("Project Falcon");
+      expect(r.data.registrationNo).toBe("CR12/2024/000123");
+      expect(r.data.hqCountry).toBe("Kenya");
+      expect(r.data.staffCount).toBe(120);
+      expect(r.data.branchCount).toBe(8);
+      expect(r.data.ebitda).toBe(500000);
+      expect(r.data.netProfit).toBe(250000);
+      expect(r.data.existingDebt).toBe(100000);
+      expect(r.data.loanBook).toBe(750000);
+      expect(r.data.totalAssets).toBe(2000000);
+      expect(r.data.impactFlags).toEqual(["WomenLed", "YouthLed"]);
+      expect(r.data.status).toBe("Active");
+    }
+  });
+
+  it("client: Task-7 compliance & operations fields survive Zod parse (not stripped)", () => {
+    const r = clientCreateSchema.safeParse({
+      name: "Acme Foods",
+      pepExposure: true,
+      governmentOwned: false,
+      complianceNotes: "Board includes a former minister",
+      auditedFinancialsYears: 3,
+      groupStructure: "Parent + 2 subsidiaries",
+      suppliers: "Local millers, regional distributors",
+      competitors: "Kandy Foods, GrainCo",
+      capacityUtilization: "78%",
+      repaymentAbilityNotes: "DSCR of 1.6x on current facilities",
+      pricingExpectations: "8-10x EBITDA",
+      proposedTimeline: "Close within 6 months",
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.pepExposure).toBe(true);
+      expect(r.data.governmentOwned).toBe(false);
+      expect(r.data.complianceNotes).toBe("Board includes a former minister");
+      expect(r.data.auditedFinancialsYears).toBe(3);
+      expect(r.data.groupStructure).toBe("Parent + 2 subsidiaries");
+      expect(r.data.suppliers).toBe("Local millers, regional distributors");
+      expect(r.data.competitors).toBe("Kandy Foods, GrainCo");
+      expect(r.data.capacityUtilization).toBe("78%");
+      expect(r.data.repaymentAbilityNotes).toBe("DSCR of 1.6x on current facilities");
+      expect(r.data.pricingExpectations).toBe("8-10x EBITDA");
+      expect(r.data.proposedTimeline).toBe("Close within 6 months");
+    }
+  });
+
+  it("client: rejects auditedFinancialsYears outside 0-10 range", () => {
+    expect(clientCreateSchema.safeParse({ name: "X", auditedFinancialsYears: -1 }).success).toBe(false);
+    expect(clientCreateSchema.safeParse({ name: "X", auditedFinancialsYears: 11 }).success).toBe(false);
+    expect(clientCreateSchema.safeParse({ name: "X", auditedFinancialsYears: 10 }).success).toBe(true);
+  });
+
+  it("client: strips unknown keys", () => {
+    const r = clientCreateSchema.safeParse({ name: "Acme Foods", notAField: "nope" });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect((r.data as Record<string, unknown>).notAField).toBeUndefined();
+    }
+  });
+
+  it("client: rejects a bad ClientStatus enum", () => {
+    expect(clientCreateSchema.safeParse({ name: "X", status: "Deleted" }).success).toBe(false);
+  });
+
+  it("client: rejects a bad ImpactFlag enum", () => {
+    expect(clientCreateSchema.safeParse({ name: "X", impactFlags: ["FounderLed"] }).success).toBe(false);
+  });
+
+  it("mandate: accepts dealStatus", () => {
+    const r = mandateCreateSchema.safeParse({ name: "M", clientId: "c1", dealStatus: "ClosedReopened" });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.dealStatus).toBe("ClosedReopened");
+  });
+
+  it("mandate: rejects a bad DealStatus enum", () => {
+    expect(mandateCreateSchema.safeParse({ name: "M", clientId: "c1", dealStatus: "Vanished" }).success).toBe(false);
+  });
+
+  it("transaction: spec-gap fields survive Zod parse (not stripped)", () => {
+    const r = transactionCreateSchema.safeParse({
+      name: "T1",
+      clientId: "c1",
+      assistantId: "u2",
+      dealStatus: "OnHold",
+      dealMilestone: "SpaSha",
+      financingType: "EquityAndDebt",
+      maxSellingStake: "NA",
+      targetProfile: "Strategic investor",
+      useOfFunds: "Working capital",
+      vdrLink: "https://vdr.example.com/deal-1",
+      probability: 60,
+      notes: "Strong pipeline",
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.assistantId).toBe("u2");
+      expect(r.data.dealStatus).toBe("OnHold");
+      expect(r.data.dealMilestone).toBe("SpaSha");
+      expect(r.data.financingType).toBe("EquityAndDebt");
+      expect(r.data.maxSellingStake).toBe("NA");
+      expect(r.data.targetProfile).toBe("Strategic investor");
+      expect(r.data.useOfFunds).toBe("Working capital");
+      expect(r.data.vdrLink).toBe("https://vdr.example.com/deal-1");
+      expect(r.data.probability).toBe(60);
+      expect(r.data.notes).toBe("Strong pipeline");
+    }
+  });
+
+  it("transaction: strips unknown keys", () => {
+    const r = transactionCreateSchema.safeParse({ name: "T1", clientId: "c1", bogus: "nope" });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect((r.data as Record<string, unknown>).bogus).toBeUndefined();
+    }
+  });
+
+  it("transaction: rejects a bad DealMilestone enum", () => {
+    expect(transactionCreateSchema.safeParse({ name: "T1", clientId: "c1", dealMilestone: "Handshake" }).success).toBe(false);
+  });
+
+  it("task: requires title", () => {
+    expect(taskCreateSchema.safeParse({}).success).toBe(false);
+    expect(taskCreateSchema.safeParse({ title: "Follow up", clientId: "c1" }).success).toBe(true);
+  });
+
+  it("task: accepts all optional link ids + source, strips caller-supplied escalated", () => {
+    const due = new Date("2026-08-01T00:00:00.000Z");
+    const r = taskCreateSchema.safeParse({
+      title: "Send teaser",
+      status: "Ongoing",
+      source: "WhatsApp",
+      dueAt: due,
+      body: "Follow up with investor",
+      assigneeId: "u1",
+      assistantId: "u2",
+      // escalated is spec §3.8 Auto — not a schema field, so a caller-supplied
+      // value here must be silently stripped, never echoed back or persisted.
+      escalated: true,
+      mandateId: "m1",
+      transactionId: "t1",
+      investorId: "i1",
+      clientId: "c1",
+      activityId: "a1",
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.status).toBe("Ongoing");
+      expect(r.data.source).toBe("WhatsApp");
+      expect(r.data.dueAt).toEqual(due);
+      expect(r.data.assistantId).toBe("u2");
+      expect((r.data as Record<string, unknown>).escalated).toBeUndefined();
+      expect(r.data.mandateId).toBe("m1");
+      expect(r.data.transactionId).toBe("t1");
+      expect(r.data.investorId).toBe("i1");
+      expect(r.data.clientId).toBe("c1");
+      expect(r.data.activityId).toBe("a1");
+    }
+  });
+
+  it("task: strips unknown keys", () => {
+    const r = taskCreateSchema.safeParse({ title: "X", notAField: "nope", clientId: "c1" });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect((r.data as Record<string, unknown>).notAField).toBeUndefined();
+    }
+  });
+
+  it("task: rejects a bad TaskSource enum", () => {
+    expect(taskCreateSchema.safeParse({ title: "X", source: "Fax" }).success).toBe(false);
   });
 });

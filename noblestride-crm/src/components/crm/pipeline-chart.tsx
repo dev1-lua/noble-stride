@@ -1,21 +1,21 @@
 "use client";
 
 // pipeline-chart.tsx — animated, premium SVG/CSS charts for the Dashboard.
-// Motion-driven draw-in. Cohesive teal→emerald palette (no rainbow).
+// Motion-driven draw-in. Retoned to the Twenty tag-palette series set.
 
 import { motion } from "motion/react";
 import { EASE } from "@/components/ui/motion";
 
 // ─── Palette ────────────────────────────────────────────────────────────────
-// Stays within one teal→emerald family (no rainbow), but each step is chosen so
-// adjacent stages contrast in BOTH lightness and hue — early stages deepen
-// through teal, later stages shift to emerald and deepen again. Terminal stages
-// are special-cased: "won/signed" culminates in the deepest emerald, "lost" is
-// a quiet slate. Crisp white dividers between bar segments do the rest.
+// Series colors drawn from the shared Twenty tag palette so charts read as one
+// system with the pill/tag chrome elsewhere in the app. Stages progress
+// sky → blue → violet → amber as they move through the pipeline; terminal
+// stages are special-cased: "won/signed" culminates in emerald (brand accent),
+// "lost" is a quiet gray. Crisp white dividers between bar segments do the rest.
 
-const RAMP = ["#5eead4", "#14b8a6", "#0f766e", "#10b981", "#047857"];
-const WON = "#065f46"; // emerald-800 — deepest culmination
-const LOST = "#94a3b8"; // slate-400 — present but quiet
+const RAMP = ["#0ea5e9", "#3b82f6", "#8b5cf6", "#f59e0b", "#f43f5e"];
+const WON = "#10b981"; // emerald — deepest culmination (brand accent)
+const LOST = "#868e96"; // text-tertiary gray — present but quiet
 
 function stageColor(stage: string, rampIndex: number): string {
   const s = stage.toLowerCase();
@@ -24,8 +24,8 @@ function stageColor(stage: string, rampIndex: number): string {
   return RAMP[Math.min(rampIndex, RAMP.length - 1)];
 }
 
-const ACTIVE_COLOR = "#14b8a6"; // teal-500
-const CLOSED_COLOR = "#059669"; // emerald-600
+const ACTIVE_COLOR = "#0ea5e9"; // sky
+const CLOSED_COLOR = "#10b981"; // emerald (brand accent)
 
 // ─── Smooth path (Catmull-Rom → cubic bezier) ────────────────────────────────
 
@@ -122,10 +122,10 @@ export function DealPipelineTrendChart({ data }: { data: TrendPoint[] }) {
                 y1={y}
                 x2={W - PAD_RIGHT}
                 y2={y}
-                stroke="#eef0f2"
+                stroke="#e9ecef"
                 strokeWidth="1"
               />
-              <text x={PAD_LEFT - 6} y={y + 3.5} textAnchor="end" fontSize="9.5" fill="#a1a1aa">
+              <text x={PAD_LEFT - 6} y={y + 3.5} textAnchor="end" fontSize="9.5" fill="#868e96">
                 {tick}
               </text>
             </g>
@@ -188,7 +188,7 @@ export function DealPipelineTrendChart({ data }: { data: TrendPoint[] }) {
 
         {/* X-axis labels */}
         {data.map((d, i) => (
-          <text key={i} x={xPos(i)} y={H - 6} textAnchor="middle" fontSize="9.5" fill="#a1a1aa">
+          <text key={i} x={xPos(i)} y={H - 6} textAnchor="middle" fontSize="9.5" fill="#868e96">
             {d.month}
           </text>
         ))}
@@ -201,7 +201,7 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-      <span className="text-xs text-zinc-500">{label}</span>
+      <span className="text-xs text-[var(--text-tertiary)]">{label}</span>
     </div>
   );
 }
@@ -220,14 +220,14 @@ function StageGroupChart({ heading, stages }: { heading: string; stages: StageCo
 
   return (
     <div>
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
         {heading}
       </p>
 
       {/* Stacked bar — wipes in left→right via clip-path */}
-      <div className="mb-3 h-2.5 w-full overflow-hidden rounded-full bg-zinc-100">
+      <div className="mb-3 h-2.5 w-full overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
         {total === 0 ? (
-          <div className="h-full w-full bg-zinc-200" />
+          <div className="h-full w-full bg-[var(--border-strong)]" />
         ) : (
           <motion.div
             className="flex h-full w-full"
@@ -269,15 +269,15 @@ function StageGroupChart({ heading, stages }: { heading: string; stages: StageCo
           return (
             <div
               key={s.stage}
-              className="flex min-w-0 items-center gap-1.5 rounded-md bg-zinc-50 px-2 py-1.5"
+              className="flex min-w-0 items-center gap-1.5 rounded-md bg-[var(--bg-tertiary)] px-2 py-1.5"
               title={`${s.label}: ${s.count}`}
             >
               <span
                 className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
                 style={{ backgroundColor: stageColor(s.stage, colorIdx) }}
               />
-              <span className="truncate text-xs text-zinc-600">{s.label}</span>
-              <span className="ml-auto flex-shrink-0 border-l border-zinc-200 pl-1.5 text-xs font-semibold tabular-nums text-zinc-900">
+              <span className="truncate text-xs text-[var(--text-secondary)]">{s.label}</span>
+              <span className="ml-auto flex-shrink-0 border-l border-[var(--border-subtle)] pl-1.5 text-xs font-semibold tabular-nums text-[var(--text-primary)]">
                 {s.count}
               </span>
             </div>

@@ -9,9 +9,11 @@ import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
 import { loadInvestorPortalData } from "@/server/visibility";
+import { notify } from "@/server/services/notifications";
 
 export async function expressInterest(formData: FormData): Promise<void> {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
   const investorId = vp.recordId as string;
 
@@ -27,18 +29,37 @@ export async function expressInterest(formData: FormData): Promise<void> {
   const deal = deals.find((d) => d.id === dealId);
   if (!deal) notFound();
 
+  // The projected `deal` set above is used ONLY for authorization — its name
+  // may be the masked pre-interest codename ("Project Amber Falcon"). The
+  // internal Engagement.name that admins see everywhere must carry the real
+  // deal name, so it's fetched separately after authorization passes.
+  const txn = await prisma.transaction.findUniqueOrThrow({
+    where: { id: dealId },
+    select: { name: true, ownerId: true },
+  });
+
   // (a) Upsert the engagement — first touch starts the journey at "Shared".
+  // An inbound EOI also flips status to "Interested" so admins see it on the
+  // board/detail chip — but never downgrades a status an admin has already
+  // progressed past the early contact states.
+  const existing = await prisma.engagement.findUnique({
+    where: { transactionId_investorId: { transactionId: dealId, investorId } },
+    select: { status: true },
+  });
+  const bumpStatus =
+    !existing || existing.status === "NotContacted" || existing.status === "Contacted";
   const engagement = await prisma.engagement.upsert({
     where: { transactionId_investorId: { transactionId: dealId, investorId } },
     create: {
-      name: `${investor.name} — ${deal.name}`,
+      name: `${investor.name} — ${txn.name}`,
       transactionId: dealId,
       investorId,
       engagementStage: "Shared",
+      status: "Interested",
       lastContact: new Date(),
       createdSource: "API",
     },
-    update: { lastContact: new Date() },
+    update: { lastContact: new Date(), ...(bumpStatus ? { status: "Interested" as const } : {}) },
   });
 
   // (b) Log the request on the timeline. (InteractionType has no dedicated
@@ -55,6 +76,18 @@ export async function expressInterest(formData: FormData): Promise<void> {
       createdSource: "API",
     },
   });
+
+  // (b2) Best-effort: alert the engagement owner (falling back to the
+  // transaction owner when the engagement has none) that an investor has
+  // expressed interest. Portal actions have no internal actor to skip.
+  const interestRecipient = engagement.ownerId ?? txn.ownerId;
+  if (interestRecipient) {
+    await notify([interestRecipient], {
+      kind: "interest_expressed",
+      title: `${investor.name} expressed interest in ${txn.name}`,
+      href: `/engagement/${engagement.id}`,
+    });
+  }
 
   // (c) Refresh the portal views that render this journey.
   revalidatePath(`/portal/investor/deals/${dealId}`);

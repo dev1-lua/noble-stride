@@ -7,7 +7,11 @@ import { isActiveInvestorThisQuarter } from "@/server/domain/metrics";
 import type { InvestorFilter, InvestorSegments, Pagination } from "@/server/domain/types";
 import { investorCreateSchema, investorUpdateSchema, type InvestorCreateInput, type InvestorUpdateInput } from "@/lib/schemas/investor";
 import { actorSource, CrudError } from "./crud";
+import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
+import type { OnboardingStatus } from "@prisma/client";
+import { emailDomain, isFreeEmailDomain } from "@/lib/corporate-email";
+import { activateAccountsForInvestor, suspendAccountsForInvestor } from "@/server/auth/accounts";
 
 /**
  * List investors matching the given filter, ordered by name asc.
@@ -45,11 +49,12 @@ export async function countInvestors(filter: InvestorFilter): Promise<number> {
  *   - `isActiveInvestorThisQuarter` is applied in-process over the flat result.
  */
 export async function investorSegments(now: Date = new Date()): Promise<InvestorSegments> {
-  const [typeCounts, investors] = await Promise.all([
+  const [typeCounts, onboardingCounts, investors] = await Promise.all([
     prisma.investor.groupBy({
       by: ["investorType"],
       _count: { _all: true },
     }),
+    prisma.investor.groupBy({ by: ["onboardingStatus"], _count: { _all: true } }),
     prisma.investor.findMany({
       select: {
         status: true,
@@ -62,6 +67,12 @@ export async function investorSegments(now: Date = new Date()): Promise<Investor
   const byType: Record<string, number> = {};
   for (const row of typeCounts) {
     byType[row.investorType] = row._count._all;
+  }
+
+  // Build onboarding-status-count lookup
+  const byOnboarding: Record<string, number> = {};
+  for (const row of onboardingCounts) {
+    byOnboarding[row.onboardingStatus] = row._count._all;
   }
 
   // Count active-this-quarter in-process (no N+1)
@@ -80,6 +91,8 @@ export async function investorSegments(now: Date = new Date()): Promise<Investor
     ventureCapital: byType["VentureCapital"] ?? 0,
     dfi: byType["DFI"] ?? 0,
     debtProvider: byType["DebtProvider"] ?? 0,
+    pendingReview: byOnboarding["PendingReview"] ?? 0,
+    rejected: byOnboarding["Rejected"] ?? 0,
   };
 }
 
@@ -93,8 +106,10 @@ export async function getInvestor(id: string) {
     where: { id },
     include: {
       contacts: true,
+      ssaRegionContact: true,
       engagements: { include: { transaction: true } },
       activities: { orderBy: { occurredAt: "desc" }, take: 20 },
+      stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
     },
   });
 }
@@ -104,9 +119,122 @@ export async function createInvestor(input: InvestorCreateInput, actor: Actor) {
   return prisma.investor.create({ data: { ...data, createdSource: actorSource(actor) } });
 }
 
-export async function updateInvestor(id: string, input: InvestorUpdateInput) {
+// Fields that define an investor's matching criteria. Touching any of these
+// on an update re-verifies the criteria as of now (see rankInvestorMatches /
+// isCriteriaStale in domain/ranking.ts, which treats criteriaVerifiedAt as
+// stale after CRITERIA_STALE_DAYS).
+const CRITERIA_FIELDS = [
+  "sectorFocus",
+  "geographicFocus",
+  "ticketMin",
+  "ticketMax",
+  "instruments",
+  "minRevenue",
+  "minEbitda",
+  "minLoanBook",
+  "status",
+  "investmentStages",
+] as const;
+
+export async function updateInvestor(id: string, input: InvestorUpdateInput, actor: Actor = { type: "HUMAN" }) {
   const data = investorUpdateSchema.parse(input);
-  return prisma.investor.update({ where: { id }, data });
+  const criteriaTouched = CRITERIA_FIELDS.some((field) => data[field] !== undefined);
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.investor.findUniqueOrThrow({ where: { id }, select: { name: true } });
+    const updated = await tx.investor.update({
+      where: { id },
+      data: { ...data, ...(criteriaTouched ? { criteriaVerifiedAt: new Date() } : {}) },
+    });
+    if (data.name !== undefined) {
+      await recordStageChange(tx, { field: "name", fromValue: existing.name, toValue: data.name, actor, investorId: id });
+    }
+    return updated;
+  });
+}
+
+/** Marks an investor's matching criteria as freshly verified, without editing any other field. */
+export async function markInvestorCriteriaVerified(id: string) {
+  return prisma.investor.update({ where: { id }, data: { criteriaVerifiedAt: new Date() } });
+}
+
+const ONBOARDING_ACTIVITY_SUBJECT: Record<OnboardingStatus, string> = {
+  Approved: "Investor approved",
+  Rejected: "Investor rejected",
+  PendingReview: "Investor set to pending review",
+};
+
+/** Approve/reject a registration; logs the decision on the timeline. */
+export async function setOnboardingStatus(id: string, status: OnboardingStatus, actor: Actor) {
+  const investor = await prisma.$transaction(async (tx) => {
+    const investor = await tx.investor.update({ where: { id }, data: { onboardingStatus: status } });
+    await tx.activity.create({
+      data: {
+        type: "Note",
+        subject: `${ONBOARDING_ACTIVITY_SUBJECT[status]} — ${investor.name}`,
+        investorId: id,
+        createdSource: actorSource(actor),
+      },
+    });
+    return investor;
+  });
+  if (status === "Approved") await activateAccountsForInvestor(id);
+  if (status === "Rejected") await suspendAccountsForInvestor(id);
+  return investor;
+}
+
+/**
+ * Greylist an investor (SOW §11.2: greylisted funds never see opportunities).
+ * One decision, two fields: the classification blocks all portal visibility
+ * and the registration is resolved as Rejected so it leaves the pending
+ * queue. Reversible: re-approving restores the status, but portal access
+ * stays blocked until the classification is changed off Greylisted.
+ */
+export async function greylistInvestor(id: string, actor: Actor) {
+  const investor = await prisma.$transaction(async (tx) => {
+    const investor = await tx.investor.update({
+      where: { id },
+      data: { engagementClassification: "Greylisted", onboardingStatus: "Rejected" },
+    });
+
+    // Find a contact email to block: prefer the primary contact, else any contact.
+    const contact = await tx.person.findFirst({
+      where: { investorId: id, email: { not: null } },
+      orderBy: { isPrimaryContact: "desc" },
+      select: { email: true },
+    });
+
+    let blockNote = "Portal access blocked; registration resolved as Rejected.";
+    const email = contact?.email?.trim().toLowerCase();
+    const domain = email ? emailDomain(email) : null;
+    if (email && domain) {
+      const block =
+        isFreeEmailDomain(domain)
+          ? { kind: "Email" as const, value: email }
+          : { kind: "Domain" as const, value: domain };
+      await tx.blockedRegistration.upsert({
+        where: { kind_value: { kind: block.kind, value: block.value } },
+        create: { ...block, reason: `Greylisted: ${investor.name}`, investorId: id },
+        update: { reason: `Greylisted: ${investor.name}`, investorId: id },
+      });
+      blockNote +=
+        block.kind === "Domain"
+          ? ` Domain ${block.value} blocked from re-registration.`
+          : ` Email ${block.value} blocked from re-registration.`;
+    }
+
+    await tx.activity.create({
+      data: {
+        type: "Note",
+        subject: `Investor greylisted — ${investor.name}`,
+        body: blockNote,
+        investorId: id,
+        createdSource: actorSource(actor),
+      },
+    });
+    return investor;
+  });
+  await suspendAccountsForInvestor(id);
+  return investor;
 }
 
 export async function deleteInvestor(id: string) {

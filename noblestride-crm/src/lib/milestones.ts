@@ -93,3 +93,8 @@ export const PREP_MILESTONES = [
   { key: "Valuation", label: "Valuation report (equity deals)", docType: "Valuation" },
   { key: "BusinessPlan", label: "Business plan (optional)", docType: "BusinessPlan" },
 ] as const;
+
+/** §6.1: the valuation report applies to equity deals — hidden when the deal is Debt-only. */
+export function visiblePrepMilestones(financingType?: string | null) {
+  return PREP_MILESTONES.filter((m) => !(financingType === "Debt" && m.key === "Valuation"));
+}

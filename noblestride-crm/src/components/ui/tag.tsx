@@ -14,8 +14,8 @@ export function Tag({ label, color, className }: TagProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset",
-        "bg-zinc-100 text-zinc-700 ring-zinc-500/20",
+        "inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium",
+        "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",
         className
       )}
       style={color ? { backgroundColor: color + "1a", color, borderColor: color + "33" } : undefined}

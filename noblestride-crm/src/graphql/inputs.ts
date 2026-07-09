@@ -8,11 +8,17 @@ import {
   SectorEnum, InvestorTypeEnum, InvestorStatusEnum, InstrumentEnum, InvestmentStageEnum,
   GeographyEnum, SourceEnum, DocStatusEnum, DealTypeEnum, PartnerTypeEnum, PartnerStatusEnum,
   FounderGenderEnum,
-  EngagementStageEnum, InterestLevelEnum, NdaTypeEnum, DisbursementStatusEnum,
+  EngagementStageEnum, InterestLevelEnum, NdaTypeEnum, DisbursementStatusEnum, MilestoneKeyEnum,
   ServiceProviderTypeEnum,
   DocumentTypeEnum, DocumentAccessLevelEnum, DocumentStatusEnum,
   InvestorEngagementClassificationEnum, InvestorNdaStatusEnum,
   AdvisorTypeEnum, PartnerAgreementStatusEnum,
+  DealStatusEnum, DealMilestoneEnum, DealFinancingTypeEnum, MaxSellingStakeEnum,
+  ImpactFlagEnum, ClientStatusEnum, ProfitabilityEnum,
+  TaskStatusEnum, TaskSourceEnum,
+  InteractionTypeEnum, CommChannelEnum, CommDirectionEnum,
+  RegulatoryStatusEnum, DDTrackEnum, DDStatusEnum,
+  PriorityEnum, PartnerFeeStatusEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -72,14 +78,44 @@ export const ClientInput = builder.inputType("ClientInput", {
     coreProduct: t.string({ required: false }),
     description: t.string({ required: false }),
     founders: t.string({ required: false }),
-    founderGender: t.field({ type: FounderGenderEnum, required: false }),
+    founderGenders: t.field({ type: [FounderGenderEnum], required: false }),
     revenueLastYear: t.float({ required: false }),
     revenueForecast: t.float({ required: false }),
     currency: t.string({ required: false }),
-    profitable: t.boolean({ required: false }),
+    profitability: t.field({ type: ProfitabilityEnum, required: false }),
     existingInvestors: t.string({ required: false }),
     source: t.field({ type: SourceEnum, required: false }),
     pitchDeckUrl: t.string({ required: false }),
+    // Spec-gap: company profile fields (spec §3.1/§3.2)
+    codename: t.string({ required: false }),
+    registrationNo: t.string({ required: false }),
+    hqCountry: t.string({ required: false }),
+    businessModel: t.string({ required: false }),
+    foundersNationality: t.string({ required: false }),
+    ownershipStructure: t.string({ required: false }),
+    directorsManagement: t.string({ required: false }),
+    targetClients: t.string({ required: false }),
+    staffCount: t.int({ required: false }),
+    branchCount: t.int({ required: false }),
+    ebitda: t.float({ required: false }),
+    netProfit: t.float({ required: false }),
+    existingDebt: t.float({ required: false }),
+    loanBook: t.float({ required: false }),
+    totalAssets: t.float({ required: false }),
+    impactFlags: t.field({ type: [ImpactFlagEnum], required: false }),
+    status: t.field({ type: ClientStatusEnum, required: false }),
+    // Task 7: compliance & operations fields (Task 6 migration)
+    pepExposure: t.boolean({ required: false }),
+    governmentOwned: t.boolean({ required: false }),
+    complianceNotes: t.string({ required: false }),
+    auditedFinancialsYears: t.int({ required: false }),
+    groupStructure: t.string({ required: false }),
+    suppliers: t.string({ required: false }),
+    competitors: t.string({ required: false }),
+    capacityUtilization: t.string({ required: false }),
+    repaymentAbilityNotes: t.string({ required: false }),
+    pricingExpectations: t.string({ required: false }),
+    proposedTimeline: t.string({ required: false }),
   }),
 });
 
@@ -89,6 +125,7 @@ export const MandateInput = builder.inputType("MandateInput", {
     clientId: t.id({ required: true }),
     leadId: t.id({ required: false }),
     referredById: t.id({ required: false }),
+    dealStatus: t.field({ type: DealStatusEnum, required: false }),
     dealSize: t.float({ required: false }),
     currency: t.string({ required: false }),
     sector: t.field({ type: [SectorEnum], required: false }),
@@ -102,6 +139,12 @@ export const MandateInput = builder.inputType("MandateInput", {
     eaSignedDate: t.field({ type: "DateTime", required: false }),
     nextAction: t.string({ required: false }),
     notes: t.string({ required: false }),
+    // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
+    retainerAmount: t.float({ required: false }),
+    retainerInvoicedDate: t.field({ type: "DateTime", required: false }),
+    retainerPaidDate: t.field({ type: "DateTime", required: false }),
+    priority: t.field({ type: PriorityEnum, required: false }),
+    referralQualified: t.boolean({ required: false }),
   }),
 });
 
@@ -111,6 +154,7 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     clientId: t.id({ required: true }),
     mandateId: t.id({ required: false }),
     ownerId: t.id({ required: false }),
+    assistantId: t.id({ required: false }),
     dealType: t.field({ type: DealTypeEnum, required: false }),
     instrument: t.field({ type: [InstrumentEnum], required: false }),
     targetRaise: t.float({ required: false }),
@@ -120,6 +164,28 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     successFeeAmount: t.float({ required: false }),
     successFeeInvoicedDate: t.field({ type: "DateTime", required: false }),
     successFeePaidDate: t.field({ type: "DateTime", required: false }),
+    // Spec-gap: deal status/milestone/financing fields (spec §4.1/§4.3/§4.5/§4.7)
+    dealStatus: t.field({ type: DealStatusEnum, required: false }),
+    dealMilestone: t.field({ type: DealMilestoneEnum, required: false }),
+    financingType: t.field({ type: DealFinancingTypeEnum, required: false }),
+    maxSellingStake: t.field({ type: MaxSellingStakeEnum, required: false }),
+    targetProfile: t.string({ required: false }),
+    useOfFunds: t.string({ required: false }),
+    vdrLink: t.string({ required: false }),
+    probability: t.int({ required: false }),
+    notes: t.string({ required: false }),
+    referredById: t.id({ required: false }),
+    serviceProviderIds: t.field({ type: ["ID"], required: false }),
+    // §3.2 IC approvals + CAK/COMESA regulatory tracking
+    icFirstApprovalDate: t.field({ type: "DateTime", required: false }),
+    icSecondApprovalDate: t.field({ type: "DateTime", required: false }),
+    cakComesaStatus: t.field({ type: RegulatoryStatusEnum, required: false }),
+    cakComesaFiledDate: t.field({ type: "DateTime", required: false }),
+    cakComesaApprovedDate: t.field({ type: "DateTime", required: false }),
+    // Task 8: priority + partner fee tracking (Task 6 migration)
+    priority: t.field({ type: PriorityEnum, required: false }),
+    partnerFeeStatus: t.field({ type: PartnerFeeStatusEnum, required: false }),
+    partnerFeeAmount: t.float({ required: false }),
   }),
 });
 
@@ -141,6 +207,8 @@ export const PartnerInput = builder.inputType("PartnerInput", {
     feeSharingTerms: t.string({ required: false }),
     partnerAgreementStatus: t.field({ type: PartnerAgreementStatusEnum, required: false }),
     internalOnly: t.boolean({ required: false }),
+    // Task 8: internal feedback notes (Task 6 migration)
+    feedbackNotes: t.string({ required: false }),
   }),
 });
 
@@ -175,6 +243,46 @@ export const DocumentInput = builder.inputType("DocumentInput", {
     transactionId: t.id({ required: false }),
     clientId: t.id({ required: false }),
     investorId: t.id({ required: false }),
+    mandateId: t.id({ required: false }),
+    partnerId: t.id({ required: false }),
+  }),
+});
+
+export const TaskInput = builder.inputType("TaskInput", {
+  fields: (t) => ({
+    title: t.string({ required: true }),
+    status: t.field({ type: TaskStatusEnum, required: false }),
+    source: t.field({ type: TaskSourceEnum, required: false }),
+    dueAt: t.field({ type: "DateTime", required: false }),
+    body: t.string({ required: false }),
+    assigneeId: t.id({ required: false }),
+    assistantId: t.id({ required: false }),
+    mandateId: t.id({ required: false }),
+    transactionId: t.id({ required: false }),
+    investorId: t.id({ required: false }),
+    clientId: t.id({ required: false }),
+    activityId: t.id({ required: false }),
+    // Note: no `escalated` field — spec §3.8 marks it Auto; the task service
+    // computes it from status/dueAt and never accepts a caller-supplied value.
+  }),
+});
+
+// Spec-gap: generalized communication logging (spec §3.10). Mirrors the
+// TaskInput/DocumentInput free-linking convention — every link is optional
+// here at the GraphQL layer; the service enforces "at least one" at runtime.
+export const LogActivityInput = builder.inputType("LogActivityInput", {
+  fields: (t) => ({
+    type: t.field({ type: InteractionTypeEnum, required: true }),
+    channel: t.field({ type: CommChannelEnum, required: false }),
+    direction: t.field({ type: CommDirectionEnum, required: false }),
+    subject: t.string({ required: true }),
+    body: t.string({ required: false }),
+    occurredAt: t.field({ type: "DateTime", required: false }),
+    clientId: t.id({ required: false }),
+    mandateId: t.id({ required: false }),
+    transactionId: t.id({ required: false }),
+    investorId: t.id({ required: false }),
+    engagementId: t.id({ required: false }),
   }),
 });
 
@@ -194,6 +302,46 @@ export const EngagementInput = builder.inputType("EngagementInput", {
     dateReceived: t.field({ type: "DateTime", required: false }),
     probability: t.int({ required: false }),
     feedback: t.string({ required: false }),
+    notes: t.string({ required: false }),
+  }),
+});
+
+// Person (contact) CRUD (spec §3.5). The parent FK trio mirrors the Prisma
+// model; the service enforces "at least one parent" at runtime.
+export const PersonInput = builder.inputType("PersonInput", {
+  fields: (t) => ({
+    firstName: t.string({ required: true }),
+    lastName: t.string({ required: false }),
+    email: t.string({ required: false }),
+    phone: t.string({ required: false }),
+    jobTitle: t.string({ required: false }),
+    linkedinUrl: t.string({ required: false }),
+    isPrimaryContact: t.boolean({ required: false }),
+    isSSAContact: t.boolean({ required: false }),
+    investorId: t.id({ required: false }),
+    clientId: t.id({ required: false }),
+    partnerId: t.id({ required: false }),
+  }),
+});
+
+export const MilestoneInput = builder.inputType("MilestoneInput", {
+  fields: (t) => ({
+    engagementId: t.id({ required: true }),
+    key: t.field({ type: MilestoneKeyEnum, required: true }),
+    completedAt: t.field({ type: "DateTime", required: false }),
+    notes: t.string({ required: false }),
+  }),
+});
+
+export const DueDiligenceTrackInput = builder.inputType("DueDiligenceTrackInput", {
+  fields: (t) => ({
+    transactionId: t.id({ required: true }),
+    track: t.field({ type: DDTrackEnum, required: true }),
+    status: t.field({ type: DDStatusEnum, required: false }),
+    ownerId: t.id({ required: false }),
+    serviceProviderId: t.id({ required: false }),
+    startedAt: t.field({ type: "DateTime", required: false }),
+    completedAt: t.field({ type: "DateTime", required: false }),
     notes: t.string({ required: false }),
   }),
 });

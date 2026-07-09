@@ -17,6 +17,7 @@ type InvestorRow = {
   geographicFocus: string[];
   ticketMin: Prisma.Decimal | null;
   ticketMax: Prisma.Decimal | null;
+  onboardingStatus: string;
 };
 
 interface RecordTableProps {
@@ -25,39 +26,41 @@ interface RecordTableProps {
 
 /**
  * RecordTable — renders the investor list as a styled table.
- * Columns: Investor (avatar+name link), Type, Ticket Size, Sectors, Geography, Status.
+ * Columns: Investor (avatar+name link), Type, Ticket Size, Sectors, Geography, Status, Onboarding.
  * (No Contact column on the list page — listInvestors omits contacts to avoid an N+1.)
  */
 export function RecordTable({ investors }: RecordTableProps) {
   if (investors.length === 0) {
     return (
-      <div className="rounded-xl bg-white border border-zinc-200/80 shadow-[0_1px_3px_rgba(16,24,40,0.06)] px-5 py-12 text-center text-zinc-500">
+      <div className="rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] px-5 py-12 text-center text-[var(--text-tertiary)]">
         No investors match the current filters.
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl bg-white border border-zinc-200/80 shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
+    <div className="rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] overflow-hidden">
       <Table className="table-fixed">
         {/* Fixed column proportions so the table always fits its card (no
             horizontal scroll); the Investor name truncates to absorb the slack. */}
         <colgroup>
-          <col className="w-[26%]" />
-          <col className="w-[11%]" />
-          <col className="w-[11%]" />
-          <col className="w-[17%]" />
-          <col className="w-[17%]" />
-          <col className="w-[18%]" />
+          <col className="w-[22%]" />
+          <col className="w-[10%]" />
+          <col className="w-[10%]" />
+          <col className="w-[15%]" />
+          <col className="w-[15%]" />
+          <col className="w-[14%]" />
+          <col className="w-[14%]" />
         </colgroup>
         <THead>
           <Tr className="hover:bg-transparent">
             <Th>Investor</Th>
             <Th>Type</Th>
-            <Th>Ticket Size</Th>
             <Th>Sectors</Th>
             <Th>Geography</Th>
             <Th>Status</Th>
+            <Th>Onboarding</Th>
+            <Th>Ticket Size</Th>
           </Tr>
         </THead>
         <TBody>
@@ -84,7 +87,7 @@ export function RecordTable({ investors }: RecordTableProps) {
                     title={inv.name}
                   >
                     <Avatar name={inv.name} size="sm" />
-                    <span className="min-w-0 truncate font-medium text-zinc-900 group-hover:text-accent transition-colors">
+                    <span className="min-w-0 truncate font-medium text-[var(--text-primary)] group-hover:text-accent transition-colors">
                       {inv.name}
                     </span>
                   </Link>
@@ -95,9 +98,6 @@ export function RecordTable({ investors }: RecordTableProps) {
                   <Chip value={inv.investorType} group="InvestorType" />
                 </Td>
 
-                {/* Ticket size range — wraps in its fixed-width column */}
-                <Td className="text-zinc-700">{ticketRange}</Td>
-
                 {/* Sector chips — primary sector + count, rest summarised */}
                 <Td>
                   <div className="flex flex-nowrap items-center gap-1">
@@ -105,7 +105,7 @@ export function RecordTable({ investors }: RecordTableProps) {
                       <Chip key={s} value={s} group="Sector" className="min-w-0 max-w-full" />
                     ))}
                     {inv.sectorFocus.length > 1 && (
-                      <span className="inline-flex flex-shrink-0 items-center rounded-md bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-500">
+                      <span className="inline-flex flex-shrink-0 items-center rounded-md bg-[var(--bg-tertiary)] px-1.5 py-0.5 text-xs font-medium text-[var(--text-tertiary)]">
                         +{inv.sectorFocus.length - 1}
                       </span>
                     )}
@@ -119,7 +119,7 @@ export function RecordTable({ investors }: RecordTableProps) {
                       <Chip key={g} value={g} group="Geography" />
                     ))}
                     {inv.geographicFocus.length > 1 && (
-                      <span className="inline-flex items-center rounded-md bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-500">
+                      <span className="inline-flex items-center rounded-md bg-[var(--bg-tertiary)] px-1.5 py-0.5 text-xs font-medium text-[var(--text-tertiary)]">
                         +{inv.geographicFocus.length - 1}
                       </span>
                     )}
@@ -131,9 +131,19 @@ export function RecordTable({ investors }: RecordTableProps) {
                   {inv.status ? (
                     <Chip value={inv.status} group="InvestorStatus" />
                   ) : (
-                    <span className="text-zinc-400">—</span>
+                    <span className="text-[var(--text-tertiary)]">—</span>
                   )}
                 </Td>
+
+                {/* Onboarding dot + label */}
+                <Td>
+                  <Chip value={inv.onboardingStatus} group="OnboardingStatus" />
+                </Td>
+
+                {/* Ticket size range — moved to the end: sparse for many
+                    investors (source has structured tickets for only ~12/40),
+                    so it trails the always-populated columns per design. */}
+                <Td className="text-[var(--text-secondary)]">{ticketRange}</Td>
               </Tr>
             );
           })}

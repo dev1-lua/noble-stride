@@ -9,6 +9,7 @@ import type {
   MandateStage,
   TransactionStage,
   EngagementStatus,
+  OnboardingStatus,
 } from "@prisma/client";
 
 // ─── Re-export enum types so callers can import from one place ───────────────
@@ -20,6 +21,7 @@ export type {
   MandateStage,
   TransactionStage,
   EngagementStatus,
+  OnboardingStatus,
 };
 
 // ─── Pipeline constants ──────────────────────────────────────────────────────
@@ -52,6 +54,7 @@ export interface InvestorFilter {
   ticketMin?: number | null;
   ticketMax?: number | null;
   search?: string | null;
+  onboardingStatus?: OnboardingStatus;
 }
 
 export interface Pagination {
@@ -85,6 +88,8 @@ export interface InvestorSegments {
   ventureCapital: number;
   dfi: number;
   debtProvider: number;
+  pendingReview: number;
+  rejected: number;
 }
 
 // ─── Partner referral input ───────────────────────────────────────────────────

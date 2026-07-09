@@ -9,6 +9,7 @@ import {
 function investor(overrides: Partial<DiscoveryInvestor> = {}): DiscoveryInvestor {
   return {
     engagementClassification: "Active",
+    onboardingStatus: "Approved",
     sectorFocus: [],
     geographicFocus: [],
     ticketMin: null,

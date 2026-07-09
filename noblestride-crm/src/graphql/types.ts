@@ -1,6 +1,5 @@
 // GraphQL object types for the NobleStride Capital CRM.
-// One `builder.prismaObject` per Prisma model (9 total).
-// Task is OUT OF SCOPE — do NOT expose it or any `tasks` relation.
+// One `builder.prismaObject` per Prisma model.
 
 import { builder } from "./builder";
 import {
@@ -15,6 +14,7 @@ import {
   EngagementStatusEnum,
   EngagementStageEnum,
   InterestLevelEnum,
+  MilestoneKeyEnum,
   NdaTypeEnum,
   DisbursementStatusEnum,
   SourceEnum,
@@ -31,8 +31,26 @@ import {
   DocumentStatusEnum,
   InvestorEngagementClassificationEnum,
   InvestorNdaStatusEnum,
+  OnboardingStatusEnum,
   AdvisorTypeEnum,
   PartnerAgreementStatusEnum,
+  DealStatusEnum,
+  DealMilestoneEnum,
+  DealFinancingTypeEnum,
+  MaxSellingStakeEnum,
+  ImpactFlagEnum,
+  ClientStatusEnum,
+  ProfitabilityEnum,
+  CommChannelEnum,
+  CommDirectionEnum,
+  TaskStatusEnum,
+  TaskSourceEnum,
+  RegulatoryStatusEnum,
+  DDTrackEnum,
+  DDStatusEnum,
+  OrgRoleEnum,
+  PriorityEnum,
+  PartnerFeeStatusEnum,
 } from "./builder";
 import { daysInStage } from "@/server/domain/metrics";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
@@ -47,6 +65,7 @@ export const UserRef = builder.prismaObject("User", {
     jobTitle: t.exposeString("jobTitle", { nullable: true }),
     avatarColor: t.exposeString("avatarColor", { nullable: true }),
     isActive: t.exposeBoolean("isActive"),
+    role: t.field({ type: OrgRoleEnum, resolve: (u) => u.role }),
     createdAt: t.field({ type: "DateTime", resolve: (u) => u.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (u) => u.updatedAt }),
     // Relations — tasks excluded per brief
@@ -110,6 +129,13 @@ export const InvestorRef = builder.prismaObject("Investor", {
     // Task 5: engagement classification, NDA status, profile fields
     engagementClassification: t.field({ type: InvestorEngagementClassificationEnum, resolve: (i) => i.engagementClassification }),
     ndaStatus: t.field({ type: InvestorNdaStatusEnum, resolve: (i) => i.ndaStatus }),
+    // Investor onboarding (design spec 2026-07-05): approval gate + demo-OTP stamps + open-NDA record
+    onboardingStatus: t.field({ type: OnboardingStatusEnum, resolve: (i) => i.onboardingStatus }),
+    registeredAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.registeredAt }),
+    emailVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.emailVerifiedAt }),
+    phoneVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.phoneVerifiedAt }),
+    openNdaSignedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.openNdaSignedAt }),
+    criteriaVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (i) => i.criteriaVerifiedAt }),
     shareholdingPreference: t.exposeString("shareholdingPreference", { nullable: true }),
     minRevenue: t.float({ nullable: true, resolve: (i) => (i.minRevenue == null ? null : Number(i.minRevenue)) }),
     minEbitda: t.float({ nullable: true, resolve: (i) => (i.minEbitda == null ? null : Number(i.minEbitda)) }),
@@ -159,15 +185,45 @@ export const ClientRef = builder.prismaObject("Client", {
     coreProduct: t.exposeString("coreProduct", { nullable: true }),
     description: t.exposeString("description", { nullable: true }),
     founders: t.exposeString("founders", { nullable: true }),
-    founderGender: t.field({ type: FounderGenderEnum, nullable: true, resolve: (c) => c.founderGender }),
+    founderGenders: t.field({ type: [FounderGenderEnum], resolve: (c) => c.founderGenders }),
     // Money
     revenueLastYear: t.float({ nullable: true, resolve: (c) => (c.revenueLastYear == null ? null : Number(c.revenueLastYear)) }),
     revenueForecast: t.float({ nullable: true, resolve: (c) => (c.revenueForecast == null ? null : Number(c.revenueForecast)) }),
     currency: t.exposeString("currency"),
-    profitable: t.exposeBoolean("profitable", { nullable: true }),
+    profitability: t.field({ type: ProfitabilityEnum, nullable: true, resolve: (c) => c.profitability }),
     existingInvestors: t.exposeString("existingInvestors", { nullable: true }),
     source: t.field({ type: SourceEnum, nullable: true, resolve: (c) => c.source }),
     pitchDeckUrl: t.exposeString("pitchDeckUrl", { nullable: true }),
+    // Spec-gap: company profile fields (spec §3.1/§3.2)
+    codename: t.exposeString("codename", { nullable: true }),
+    registrationNo: t.exposeString("registrationNo", { nullable: true }),
+    hqCountry: t.exposeString("hqCountry", { nullable: true }),
+    businessModel: t.exposeString("businessModel", { nullable: true }),
+    foundersNationality: t.exposeString("foundersNationality", { nullable: true }),
+    ownershipStructure: t.exposeString("ownershipStructure", { nullable: true }),
+    directorsManagement: t.exposeString("directorsManagement", { nullable: true }),
+    targetClients: t.exposeString("targetClients", { nullable: true }),
+    staffCount: t.exposeInt("staffCount", { nullable: true }),
+    branchCount: t.exposeInt("branchCount", { nullable: true }),
+    ebitda: t.float({ nullable: true, resolve: (c) => (c.ebitda == null ? null : Number(c.ebitda)) }),
+    netProfit: t.float({ nullable: true, resolve: (c) => (c.netProfit == null ? null : Number(c.netProfit)) }),
+    existingDebt: t.float({ nullable: true, resolve: (c) => (c.existingDebt == null ? null : Number(c.existingDebt)) }),
+    loanBook: t.float({ nullable: true, resolve: (c) => (c.loanBook == null ? null : Number(c.loanBook)) }),
+    totalAssets: t.float({ nullable: true, resolve: (c) => (c.totalAssets == null ? null : Number(c.totalAssets)) }),
+    impactFlags: t.field({ type: [ImpactFlagEnum], resolve: (c) => c.impactFlags }),
+    status: t.field({ type: ClientStatusEnum, resolve: (c) => c.status }),
+    // Task 7: compliance & operations fields (Task 6 migration)
+    pepExposure: t.exposeBoolean("pepExposure"),
+    governmentOwned: t.exposeBoolean("governmentOwned"),
+    complianceNotes: t.exposeString("complianceNotes", { nullable: true }),
+    auditedFinancialsYears: t.exposeInt("auditedFinancialsYears", { nullable: true }),
+    groupStructure: t.exposeString("groupStructure", { nullable: true }),
+    suppliers: t.exposeString("suppliers", { nullable: true }),
+    competitors: t.exposeString("competitors", { nullable: true }),
+    capacityUtilization: t.exposeString("capacityUtilization", { nullable: true }),
+    repaymentAbilityNotes: t.exposeString("repaymentAbilityNotes", { nullable: true }),
+    pricingExpectations: t.exposeString("pricingExpectations", { nullable: true }),
+    proposedTimeline: t.exposeString("proposedTimeline", { nullable: true }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (c) => c.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (c) => c.updatedAt }),
@@ -175,6 +231,7 @@ export const ClientRef = builder.prismaObject("Client", {
     contacts: t.relation("contacts"),
     mandates: t.relation("mandates"),
     transactions: t.relation("transactions"),
+    activities: t.relation("activities"),
   }),
 });
 
@@ -186,6 +243,7 @@ export const MandateRef = builder.prismaObject("Mandate", {
     name: t.exposeString("name"),
     stage: t.field({ type: MandateStageEnum, resolve: (m) => m.stage }),
     stageEnteredAt: t.field({ type: "DateTime", resolve: (m) => m.stageEnteredAt }),
+    dealStatus: t.field({ type: DealStatusEnum, resolve: (m) => m.dealStatus }),
     // Derived: whole days elapsed in current stage
     daysInStage: t.int({ resolve: (m) => daysInStage(m.stageEnteredAt) }),
     // Money
@@ -203,6 +261,16 @@ export const MandateRef = builder.prismaObject("Mandate", {
     eaSignedDate: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.eaSignedDate }),
     nextAction: t.exposeString("nextAction", { nullable: true }),
     notes: t.exposeString("notes", { nullable: true }),
+    // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
+    retainerAmount: t.float({ nullable: true, resolve: (m) => (m.retainerAmount == null ? null : Number(m.retainerAmount)) }),
+    retainerInvoicedDate: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.retainerInvoicedDate }),
+    retainerPaidDate: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.retainerPaidDate }),
+    priority: t.field({ type: PriorityEnum, nullable: true, resolve: (m) => m.priority }),
+    referralQualified: t.exposeBoolean("referralQualified", { nullable: true }),
+    // Task 11/12: public-intake qualification verdict + reasons, reviewed here.
+    qualificationVerdict: t.exposeString("qualificationVerdict", { nullable: true }),
+    qualificationReasons: t.exposeStringList("qualificationReasons"),
+    qualifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.qualifiedAt }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (m) => m.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (m) => m.updatedAt }),
@@ -239,6 +307,26 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     successFeeAmount: t.float({ nullable: true, resolve: (tx) => (tx.successFeeAmount == null ? null : Number(tx.successFeeAmount)) }),
     successFeeInvoicedDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.successFeeInvoicedDate }),
     successFeePaidDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.successFeePaidDate }),
+    // Spec-gap: deal status/milestone/financing fields (spec §4.1/§4.3/§4.5/§4.7)
+    dealStatus: t.field({ type: DealStatusEnum, resolve: (tx) => tx.dealStatus }),
+    dealMilestone: t.field({ type: DealMilestoneEnum, nullable: true, resolve: (tx) => tx.dealMilestone }),
+    financingType: t.field({ type: DealFinancingTypeEnum, nullable: true, resolve: (tx) => tx.financingType }),
+    maxSellingStake: t.field({ type: MaxSellingStakeEnum, nullable: true, resolve: (tx) => tx.maxSellingStake }),
+    targetProfile: t.exposeString("targetProfile", { nullable: true }),
+    useOfFunds: t.exposeString("useOfFunds", { nullable: true }),
+    vdrLink: t.exposeString("vdrLink", { nullable: true }),
+    probability: t.exposeInt("probability", { nullable: true }),
+    notes: t.exposeString("notes", { nullable: true }),
+    // §3.2 IC approvals + CAK/COMESA regulatory tracking
+    icFirstApprovalDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.icFirstApprovalDate }),
+    icSecondApprovalDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.icSecondApprovalDate }),
+    cakComesaStatus: t.field({ type: RegulatoryStatusEnum, resolve: (tx) => tx.cakComesaStatus }),
+    cakComesaFiledDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.cakComesaFiledDate }),
+    cakComesaApprovedDate: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.cakComesaApprovedDate }),
+    // Task 8: priority + partner fee tracking (Task 6 migration)
+    priority: t.field({ type: PriorityEnum, nullable: true, resolve: (tx) => tx.priority }),
+    partnerFeeStatus: t.field({ type: PartnerFeeStatusEnum, nullable: true, resolve: (tx) => tx.partnerFeeStatus }),
+    partnerFeeAmount: t.float({ nullable: true, resolve: (tx) => (tx.partnerFeeAmount == null ? null : Number(tx.partnerFeeAmount)) }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (tx) => tx.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (tx) => tx.updatedAt }),
@@ -246,13 +334,18 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     clientId: t.exposeString("clientId"),
     mandateId: t.exposeString("mandateId", { nullable: true }),
     ownerId: t.exposeString("ownerId", { nullable: true }),
+    assistantId: t.exposeString("assistantId", { nullable: true }),
+    referredById: t.exposeString("referredById", { nullable: true }),
     // Relations — tasks excluded per brief
     client: t.relation("client"),
     mandate: t.relation("mandate", { nullable: true }),
     owner: t.relation("owner", { nullable: true }),
+    assistant: t.relation("assistant", { nullable: true }),
+    referredBy: t.relation("referredBy", { nullable: true }),
     engagements: t.relation("engagements"),
     activities: t.relation("activities"),
     serviceProviders: t.relation("serviceProviders"),
+    ddTracks: t.relation("ddTracks"),
     // Derived counts
     investorsContacted: t.relationCount("engagements"),
     activeConversations: t.int({
@@ -276,6 +369,7 @@ export const EngagementRef = builder.prismaObject("Engagement", {
     engagementStage: t.field({ type: EngagementStageEnum, resolve: (e) => e.engagementStage }),
     interestLevel: t.field({ type: InterestLevelEnum, nullable: true, resolve: (e) => e.interestLevel }),
     ndaType: t.field({ type: NdaTypeEnum, nullable: true, resolve: (e) => e.ndaType }),
+    ndaSignedAt: t.field({ type: "DateTime", nullable: true, resolve: (e) => e.ndaSignedAt }),
     termSheetIssued: t.exposeBoolean("termSheetIssued"),
     termSheetDate: t.field({ type: "DateTime", nullable: true, resolve: (e) => e.termSheetDate }),
     totalAmount: t.float({ nullable: true, resolve: (e) => (e.totalAmount == null ? null : Number(e.totalAmount)) }),
@@ -324,6 +418,8 @@ export const PartnerRef = builder.prismaObject("Partner", {
     feeSharingTerms: t.exposeString("feeSharingTerms", { nullable: true }),
     partnerAgreementStatus: t.field({ type: PartnerAgreementStatusEnum, resolve: (p) => p.partnerAgreementStatus }),
     internalOnly: t.exposeBoolean("internalOnly"),
+    // Task 8: internal feedback notes (Task 6 migration) — never projected to the portal
+    feedbackNotes: t.exposeString("feedbackNotes", { nullable: true }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (p) => p.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (p) => p.updatedAt }),
@@ -368,17 +464,22 @@ export const ActivityRef = builder.prismaObject("Activity", {
     occurredAt: t.field({ type: "DateTime", resolve: (a) => a.occurredAt }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (a) => a.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (a) => a.createdAt }),
+    // Spec-gap: communication channel/direction (spec §3.10)
+    channel: t.field({ type: CommChannelEnum, nullable: true, resolve: (a) => a.channel }),
+    direction: t.field({ type: CommDirectionEnum, nullable: true, resolve: (a) => a.direction }),
     // FK scalars
     engagementId: t.exposeString("engagementId", { nullable: true }),
     transactionId: t.exposeString("transactionId", { nullable: true }),
     investorId: t.exposeString("investorId", { nullable: true }),
     mandateId: t.exposeString("mandateId", { nullable: true }),
+    clientId: t.exposeString("clientId", { nullable: true }),
     createdById: t.exposeString("createdById", { nullable: true }),
-    // Relations
+    // Relations — tasks excluded per brief
     engagement: t.relation("engagement", { nullable: true }),
     transaction: t.relation("transaction", { nullable: true }),
     investor: t.relation("investor", { nullable: true }),
     mandate: t.relation("mandate", { nullable: true }),
+    client: t.relation("client", { nullable: true }),
     createdBy: t.relation("createdBy", { nullable: true }),
   }),
 });
@@ -394,6 +495,14 @@ export const DocumentRef = builder.prismaObject("Document", {
     accessLevel: t.field({ type: DocumentAccessLevelEnum, resolve: (d) => d.accessLevel }),
     status: t.field({ type: DocumentStatusEnum, nullable: true, resolve: (d) => d.status }),
     fileUrl: t.exposeString("fileUrl", { nullable: true }),
+    mimeType: t.exposeString("mimeType", { nullable: true }),
+    sizeBytes: t.exposeInt("sizeBytes", { nullable: true }),
+    originalFilename: t.exposeString("originalFilename", { nullable: true }),
+    isCurrent: t.exposeBoolean("isCurrent"),
+    downloadHref: t.string({
+      nullable: true,
+      resolve: (d) => (d.storageKey ? `/api/documents/${d.id}/download` : null),
+    }),
     uploadedAt: t.field({ type: "DateTime", resolve: (d) => d.uploadedAt }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (d) => d.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (d) => d.createdAt }),
@@ -407,6 +516,8 @@ export const DocumentRef = builder.prismaObject("Document", {
     transactionId: t.exposeString("transactionId", { nullable: true }),
     clientId: t.exposeString("clientId", { nullable: true }),
     investorId: t.exposeString("investorId", { nullable: true }),
+    mandateId: t.exposeString("mandateId", { nullable: true }),
+    partnerId: t.exposeString("partnerId", { nullable: true }),
     // Relations
     uploadedBy: t.relation("uploadedBy", { nullable: true }),
     reviewer: t.relation("reviewer", { nullable: true }),
@@ -414,5 +525,116 @@ export const DocumentRef = builder.prismaObject("Document", {
     transaction: t.relation("transaction", { nullable: true }),
     client: t.relation("client", { nullable: true }),
     investor: t.relation("investor", { nullable: true }),
+    mandate: t.relation("mandate", { nullable: true }),
+    partner: t.relation("partner", { nullable: true }),
+  }),
+});
+
+// ─── Task ────────────────────────────────────────────────────────────────────
+// Lightweight action-point tracker (spec §3.8/§3.10). No `createdSource` field.
+
+export const TaskRef = builder.prismaObject("Task", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    title: t.exposeString("title"),
+    status: t.field({ type: TaskStatusEnum, resolve: (task) => task.status }),
+    source: t.field({ type: TaskSourceEnum, nullable: true, resolve: (task) => task.source }),
+    dueAt: t.field({ type: "DateTime", nullable: true, resolve: (task) => task.dueAt }),
+    body: t.exposeString("body", { nullable: true }),
+    escalated: t.exposeBoolean("escalated"),
+    createdAt: t.field({ type: "DateTime", resolve: (task) => task.createdAt }),
+    updatedAt: t.field({ type: "DateTime", resolve: (task) => task.updatedAt }),
+    // FK scalars
+    assigneeId: t.exposeString("assigneeId", { nullable: true }),
+    assistantId: t.exposeString("assistantId", { nullable: true }),
+    mandateId: t.exposeString("mandateId", { nullable: true }),
+    transactionId: t.exposeString("transactionId", { nullable: true }),
+    investorId: t.exposeString("investorId", { nullable: true }),
+    clientId: t.exposeString("clientId", { nullable: true }),
+    activityId: t.exposeString("activityId", { nullable: true }),
+    // Relations
+    assignee: t.relation("assignee", { nullable: true }),
+    assistant: t.relation("assistant", { nullable: true }),
+    mandate: t.relation("mandate", { nullable: true }),
+    transaction: t.relation("transaction", { nullable: true }),
+    investor: t.relation("investor", { nullable: true }),
+    client: t.relation("client", { nullable: true }),
+    activity: t.relation("activity", { nullable: true }),
+  }),
+});
+
+// ─── EngagementMilestone ─────────────────────────────────────────────────────
+
+export const EngagementMilestoneRef = builder.prismaObject("EngagementMilestone", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    engagementId: t.exposeString("engagementId"),
+    key: t.field({ type: MilestoneKeyEnum, resolve: (m) => m.key }),
+    completedAt: t.field({ type: "DateTime", resolve: (m) => m.completedAt }),
+    notes: t.exposeString("notes", { nullable: true }),
+  }),
+});
+
+// ─── DueDiligenceTrack ───────────────────────────────────────────────────────
+
+export const DueDiligenceTrackRef = builder.prismaObject("DueDiligenceTrack", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    track: t.field({ type: DDTrackEnum, resolve: (d) => d.track }),
+    status: t.field({ type: DDStatusEnum, resolve: (d) => d.status }),
+    startedAt: t.field({ type: "DateTime", nullable: true, resolve: (d) => d.startedAt }),
+    completedAt: t.field({ type: "DateTime", nullable: true, resolve: (d) => d.completedAt }),
+    notes: t.exposeString("notes", { nullable: true }),
+    createdAt: t.field({ type: "DateTime", resolve: (d) => d.createdAt }),
+    updatedAt: t.field({ type: "DateTime", resolve: (d) => d.updatedAt }),
+    // FK scalars
+    transactionId: t.exposeString("transactionId"),
+    ownerId: t.exposeString("ownerId", { nullable: true }),
+    serviceProviderId: t.exposeString("serviceProviderId", { nullable: true }),
+    // Relations
+    transaction: t.relation("transaction"),
+    owner: t.relation("owner", { nullable: true }),
+    serviceProvider: t.relation("serviceProvider", { nullable: true }),
+  }),
+});
+
+// ─── Notification ────────────────────────────────────────────────────────────
+// In-app notification bell (Task 14). `kind` is a plain String on the Prisma
+// model (not a Prisma enum), so it's exposed as String here too.
+
+export const NotificationRef = builder.prismaObject("Notification", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    kind: t.exposeString("kind"),
+    title: t.exposeString("title"),
+    body: t.exposeString("body", { nullable: true }),
+    href: t.exposeString("href", { nullable: true }),
+    createdAt: t.field({ type: "DateTime", resolve: (n) => n.createdAt }),
+    readAt: t.field({ type: "DateTime", nullable: true, resolve: (n) => n.readAt }),
+  }),
+});
+
+// ─── SavedView ───────────────────────────────────────────────────────────────
+// Domain-shaped (builder.objectRef, not builder.prismaObject) because the
+// service layer (src/server/services/saved-views.ts) parses/normalizes the
+// underlying Json `config` column into a typed object before it ever reaches
+// this layer — same "non-Prisma output" convention used in queries.ts for
+// other service-shaped results. No JSON scalar is registered on the builder,
+// so `config` is exposed as a JSON string (parsed/stringified at the resolver
+// boundary), matching this schema's existing scalar conventions.
+
+export interface SavedViewData {
+  id: string;
+  name: string;
+  entity: string;
+  config: unknown;
+}
+
+export const SavedViewRef = builder.objectRef<SavedViewData>("SavedView").implement({
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    name: t.exposeString("name"),
+    entity: t.exposeString("entity"),
+    config: t.string({ resolve: (v) => JSON.stringify(v.config) }),
   }),
 });

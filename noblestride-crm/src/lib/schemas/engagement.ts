@@ -3,9 +3,9 @@ import { EngagementStage, InterestLevel, NdaType, DisbursementStatus } from "@pr
 export const engagementCreateSchema = z.object({
   transactionId: z.string(), investorId: z.string(), name: z.string().optional(),
   engagementStage: z.nativeEnum(EngagementStage).optional(), interestLevel: z.nativeEnum(InterestLevel).optional(), ndaType: z.nativeEnum(NdaType).optional(),
-  termSheetIssued: z.boolean().optional(), termSheetDate: z.date().optional(),
+  termSheetIssued: z.boolean().optional(), termSheetDate: z.coerce.date().optional(),
   totalAmount: z.number().optional(), amountDisbursed: z.number().optional(),
-  disbursementStatus: z.nativeEnum(DisbursementStatus).optional(), dateReceived: z.date().optional(),
+  disbursementStatus: z.nativeEnum(DisbursementStatus).optional(), dateReceived: z.coerce.date().optional(),
   probability: z.number().optional(), feedback: z.string().optional(), notes: z.string().optional(),
 });
 export const engagementUpdateSchema = engagementCreateSchema.partial();

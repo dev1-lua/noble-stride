@@ -6,6 +6,7 @@
 
 import type { MandateStage } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { LABELS } from "@/lib/vocab";
 
 // ─── Referral conversion funnel (spec §3.6 lifecycle) ────────────────────────
 // introduced → progressing → signed / lost, derived from Mandate.stage.
@@ -28,6 +29,32 @@ export function referralFunnel(deals: { stage: MandateStage }[]): ReferralFunnel
     signed: deals.filter((d) => d.stage === "Signed").length,
     lost: deals.filter((d) => d.stage === "Lost").length,
   };
+}
+
+// ─── Referrals by stage (§13 partner dashboard) ─────────────────────────────
+// Pure: derives entirely from the already-projected referredDeals list, so it
+// introduces no new leak surface.
+
+export interface ReferralStageRow {
+  stage: MandateStage;
+  count: number;
+  totalSize: number;
+}
+
+/** Referred-deal counts + total deal size per stage, in vocab order; empty stages dropped. */
+export function referralsByStage(
+  deals: { stage: MandateStage; dealSize: number | null }[],
+): ReferralStageRow[] {
+  const byStage = new Map<MandateStage, ReferralStageRow>();
+  for (const d of deals) {
+    const row = byStage.get(d.stage) ?? { stage: d.stage, count: 0, totalSize: 0 };
+    row.count += 1;
+    row.totalSize += d.dealSize ?? 0;
+    byStage.set(d.stage, row);
+  }
+  return (Object.keys(LABELS.MandateStage) as MandateStage[])
+    .map((s) => byStage.get(s))
+    .filter((r): r is ReferralStageRow => r != null);
 }
 
 // ─── Own-record details (My Details page) ────────────────────────────────────

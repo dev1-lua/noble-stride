@@ -31,7 +31,7 @@ async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 describe("graphql schema", () => {
-  it("builds without errors and exposes a query type with 26 queries and 26 mutations", async () => {
+  it("builds without errors and exposes a query type with 29 queries and 50 mutations", async () => {
     // Dynamic import so the module graph is resolved lazily — errors surface here.
     const { schema } = await import("@/graphql/schema");
     expect(schema).toBeTruthy();
@@ -39,12 +39,12 @@ describe("graphql schema", () => {
     const queryType = schema.getQueryType();
     expect(queryType).toBeTruthy();
     const queryFields = Object.keys(queryType?.getFields() ?? {});
-    expect(queryFields).toHaveLength(26);
+    expect(queryFields).toHaveLength(29);
 
     const mutationType = schema.getMutationType();
     expect(mutationType).toBeTruthy();
     const mutationFields = Object.keys(mutationType?.getFields() ?? {});
-    expect(mutationFields).toHaveLength(26);
+    expect(mutationFields).toHaveLength(50);
 
     // Spot-check that key query fields exist
     expect(queryFields).toContain("dashboardStats");
@@ -53,11 +53,15 @@ describe("graphql schema", () => {
     expect(queryFields).toContain("aiAsk");
     expect(queryFields).toContain("documents");
     expect(queryFields).toContain("document");
+    expect(queryFields).toContain("savedViews");
+    expect(queryFields).toContain("myUnreadNotifications");
+    expect(queryFields).toContain("myUnreadNotificationCount");
 
     // Spot-check mutation fields
     expect(mutationFields).toContain("updateMandateStage");
     expect(mutationFields).toContain("updateTransactionStage");
     expect(mutationFields).toContain("logEngagement");
+    expect(mutationFields).toContain("logActivity");
     expect(mutationFields).toContain("createEngagement");
     expect(mutationFields).toContain("updateEngagement");
     expect(mutationFields).toContain("createServiceProvider");
@@ -66,6 +70,29 @@ describe("graphql schema", () => {
     expect(mutationFields).toContain("createDocument");
     expect(mutationFields).toContain("updateDocument");
     expect(mutationFields).toContain("deleteDocument");
+    expect(mutationFields).toContain("setInvestorOnboardingStatus");
+    expect(mutationFields).toContain("greylistInvestor");
+    expect(mutationFields).toContain("markInvestorCriteriaVerified");
+    expect(mutationFields).toContain("recordOpenNda");
+    expect(mutationFields).toContain("recordClosedNda");
+    expect(mutationFields).toContain("createTask");
+    expect(mutationFields).toContain("updateTask");
+    expect(mutationFields).toContain("deleteTask");
+    expect(mutationFields).toContain("createPerson");
+    expect(mutationFields).toContain("updatePerson");
+    expect(mutationFields).toContain("deletePerson");
+    expect(mutationFields).toContain("recordMilestone");
+    expect(mutationFields).toContain("unrecordMilestone");
+    expect(mutationFields).toContain("upsertDueDiligenceTrack");
+    expect(mutationFields).toContain("deleteDueDiligenceTrack");
+    expect(mutationFields).toContain("createSavedView");
+    expect(mutationFields).toContain("renameSavedView");
+    expect(mutationFields).toContain("deleteSavedView");
+    expect(mutationFields).toContain("acceptIntakeMandate");
+    expect(mutationFields).toContain("deprioritizeIntakeMandate");
+    expect(mutationFields).toContain("rerunQualification");
+    expect(mutationFields).toContain("markNotificationsRead");
+    expect(mutationFields).toContain("markAllNotificationsRead");
   });
 
   it("dashboardStats service resolves correctly (DB-guarded)", async () => {

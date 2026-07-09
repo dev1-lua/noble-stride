@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
 import { formatDate } from "@/lib/format";
+import { EngagementFormDrawer } from "@/components/crm/engagement-form-drawer";
 
 export interface DisbursementRow {
   id: string;
@@ -17,6 +18,8 @@ export interface DisbursementRow {
   amountPending: number | null;
   disbursementStatus: string | null;
   dateReceived: Date | null;
+  /** Prebuilt EngagementFormDrawer initial (plain serializable values). */
+  editInitial: Record<string, unknown> & { id: string; transactionId: string; investorId: string };
 }
 
 const sum = (rows: DisbursementRow[], key: "totalAmount" | "amountDisbursed" | "amountPending") =>
@@ -29,14 +32,14 @@ const sum = (rows: DisbursementRow[], key: "totalAmount" | "amountDisbursed" | "
 export function DisbursementTable({ rows }: { rows: DisbursementRow[] }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl bg-white border border-zinc-200/80 shadow-[0_1px_3px_rgba(16,24,40,0.06)] px-5 py-10 text-center text-sm text-zinc-400">
-        No invested engagements yet.
+      <div className="rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] px-5 py-10 text-center text-sm text-[var(--text-tertiary)]">
+        No invested deals yet.
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl bg-white border border-zinc-200/80 shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
+    <div className="rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] overflow-hidden">
       <Table>
         <THead>
           <Tr className="hover:bg-transparent">
@@ -47,6 +50,7 @@ export function DisbursementTable({ rows }: { rows: DisbursementRow[] }) {
             <Th>Pending</Th>
             <Th>Status</Th>
             <Th>Received</Th>
+            <Th>{null}</Th>
           </Tr>
         </THead>
         <TBody>
@@ -55,7 +59,7 @@ export function DisbursementTable({ rows }: { rows: DisbursementRow[] }) {
               <Td>
                 <Link
                   href={`/investors/${r.investorId}`}
-                  className="font-medium text-zinc-900 hover:text-accent transition-colors"
+                  className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
                 >
                   {r.investorName}
                 </Link>
@@ -63,31 +67,35 @@ export function DisbursementTable({ rows }: { rows: DisbursementRow[] }) {
               <Td>
                 <Link
                   href={`/transactions/${r.transactionId}`}
-                  className="text-zinc-600 hover:text-accent transition-colors"
+                  className="text-[var(--text-secondary)] hover:text-accent transition-colors"
                 >
                   {r.transactionName}
                 </Link>
               </Td>
-              <Td className="text-zinc-700">{r.totalAmount != null ? formatMoney(r.totalAmount) : "—"}</Td>
-              <Td className="text-zinc-700">{r.amountDisbursed != null ? formatMoney(r.amountDisbursed) : "—"}</Td>
-              <Td className="text-zinc-700">{r.amountPending != null ? formatMoney(r.amountPending) : "—"}</Td>
+              <Td className="text-[var(--text-secondary)]">{r.totalAmount != null ? formatMoney(r.totalAmount) : "—"}</Td>
+              <Td className="text-[var(--text-secondary)]">{r.amountDisbursed != null ? formatMoney(r.amountDisbursed) : "—"}</Td>
+              <Td className="text-[var(--text-secondary)]">{r.amountPending != null ? formatMoney(r.amountPending) : "—"}</Td>
               <Td>
                 {r.disbursementStatus ? (
                   <Chip value={r.disbursementStatus} group="DisbursementStatus" />
                 ) : (
-                  <span className="text-zinc-400">—</span>
+                  <span className="text-[var(--text-tertiary)]">—</span>
                 )}
               </Td>
-              <Td className="text-zinc-600">{formatDate(r.dateReceived) || "—"}</Td>
+              <Td className="text-[var(--text-secondary)]">{formatDate(r.dateReceived) || "—"}</Td>
+              <Td>
+                <EngagementFormDrawer initial={r.editInitial} triggerLabel="Edit" />
+              </Td>
             </Tr>
           ))}
           {/* Column totals */}
-          <Tr className="hover:bg-transparent bg-zinc-50/80">
-            <Td className="font-semibold text-zinc-900">Total</Td>
+          <Tr className="hover:bg-transparent bg-[var(--bg-secondary)]">
+            <Td className="font-semibold text-[var(--text-primary)]">Total</Td>
             <Td />
-            <Td className="font-semibold text-zinc-900">{formatMoney(sum(rows, "totalAmount"))}</Td>
-            <Td className="font-semibold text-zinc-900">{formatMoney(sum(rows, "amountDisbursed"))}</Td>
-            <Td className="font-semibold text-zinc-900">{formatMoney(sum(rows, "amountPending"))}</Td>
+            <Td className="font-semibold text-[var(--text-primary)]">{formatMoney(sum(rows, "totalAmount"))}</Td>
+            <Td className="font-semibold text-[var(--text-primary)]">{formatMoney(sum(rows, "amountDisbursed"))}</Td>
+            <Td className="font-semibold text-[var(--text-primary)]">{formatMoney(sum(rows, "amountPending"))}</Td>
+            <Td />
             <Td />
             <Td />
           </Tr>

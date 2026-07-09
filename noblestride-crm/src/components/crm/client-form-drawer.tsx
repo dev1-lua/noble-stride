@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { z } from "zod";
 import { Button } from "@/components/ui";
 import { Drawer } from "@/components/ui/drawer";
 import { TextField, TextAreaField, NumberField, MoneyField, SelectField, MultiSelectField, CheckboxField } from "@/components/ui/fields";
@@ -11,11 +12,27 @@ import { options } from "@/lib/vocab";
 const CREATE = `mutation CreateClient($input: ClientInput!) { createClient(input: $input) { id } }`;
 const UPDATE = `mutation UpdateClient($id: ID!, $input: ClientInput!) { updateClient(id: $id, input: $input) { id } }`;
 
+// UI-only rule (SPEC §3.1): codename is required when creating a company; the
+// API stays lenient because imported legacy rows and agent-created records may
+// lack one.
+const clientCreateUiSchema = clientCreateSchema.extend({
+  projectCodename: z.string().trim().min(1, "Project codename is required"),
+});
+
 const EMPTY: Record<string, unknown> = {
   name: "", yearFounded: undefined, hqCity: "", countries: [], website: "", sector: [],
-  coreProduct: "", description: "", founders: "", founderGender: "",
+  coreProduct: "", description: "", founders: "", founderGenders: [],
   revenueLastYear: undefined, revenueForecast: undefined, currency: "",
-  profitable: false, existingInvestors: "", source: "", pitchDeckUrl: "",
+  profitability: "", existingInvestors: "", source: "", pitchDeckUrl: "",
+  // Spec-gap: company profile fields (spec §3.1/§3.2)
+  codename: "", status: "", registrationNo: "", hqCountry: "", businessModel: "",
+  foundersNationality: "", ownershipStructure: "", directorsManagement: "", targetClients: "",
+  staffCount: undefined, branchCount: undefined, ebitda: undefined, netProfit: undefined,
+  existingDebt: undefined, loanBook: undefined, totalAssets: undefined, impactFlags: [],
+  // Task 7: compliance & operations fields (Task 6 migration)
+  pepExposure: false, governmentOwned: false, complianceNotes: "", auditedFinancialsYears: undefined,
+  groupStructure: "", suppliers: "", competitors: "", capacityUtilization: "",
+  repaymentAbilityNotes: "", pricingExpectations: "", proposedTimeline: "",
 };
 
 export function ClientFormDrawer({ mode, initial, triggerLabel }: {
@@ -26,7 +43,7 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
   const [open, setOpen] = useState(false);
   const f = useEntityForm({
     initial: { ...EMPTY, ...(initial ?? {}) },
-    schema: mode === "create" ? clientCreateSchema : clientUpdateSchema,
+    schema: mode === "create" ? clientCreateUiSchema : clientUpdateSchema,
     createMutation: CREATE, updateMutation: UPDATE,
     mode, recordId: initial?.id as string | undefined,
     onSuccess: () => setOpen(false),
@@ -51,6 +68,7 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
       >
         <div className="space-y-4">
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
+          <TextField label="Project Codename" required={mode === "create"} value={v.projectCodename as string} onChange={(x) => f.setValue("projectCodename", x)} error={f.errors.projectCodename} />
           <div className="grid grid-cols-2 gap-3">
             <NumberField label="Year Founded" value={v.yearFounded as number} onChange={(x) => f.setValue("yearFounded", x)} />
             <TextField label="HQ City" value={v.hqCity as string} onChange={(x) => f.setValue("hqCity", x)} />
@@ -60,16 +78,58 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
           <TextField label="Website" value={v.website as string} onChange={(x) => f.setValue("website", x)} />
           <TextField label="Core Product" value={v.coreProduct as string} onChange={(x) => f.setValue("coreProduct", x)} />
           <TextField label="Founders" value={v.founders as string} onChange={(x) => f.setValue("founders", x)} />
-          <SelectField label="Founder Gender" value={v.founderGender as string} onChange={(x) => f.setValue("founderGender", x)} options={options("FounderGender")} />
-          <div className="grid grid-cols-2 gap-3">
-            <MoneyField label="Revenue (Last Year)" value={v.revenueLastYear as number} onChange={(x) => f.setValue("revenueLastYear", x)} />
-            <MoneyField label="Revenue (Forecast)" value={v.revenueForecast as number} onChange={(x) => f.setValue("revenueForecast", x)} />
-          </div>
+          <MultiSelectField label="Founders' Gender" value={v.founderGenders as string[]} onChange={(x) => f.setValue("founderGenders", x)} options={options("FounderGender")} />
           <SelectField label="Source" value={v.source as string} onChange={(x) => f.setValue("source", x)} options={options("Source")} />
           <TextField label="Existing Investors" value={v.existingInvestors as string} onChange={(x) => f.setValue("existingInvestors", x)} />
           <TextField label="Pitch Deck URL" value={v.pitchDeckUrl as string} onChange={(x) => f.setValue("pitchDeckUrl", x)} />
-          <CheckboxField label="Profitable" value={v.profitable as boolean} onChange={(x) => f.setValue("profitable", x)} />
           <TextAreaField label="Description" value={v.description as string} onChange={(x) => f.setValue("description", x)} />
+
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Identity</p>
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label="Codename" value={v.codename as string} onChange={(x) => f.setValue("codename", x)} />
+            <SelectField label="Status" value={v.status as string} onChange={(x) => f.setValue("status", x)} options={options("ClientStatus")} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label="Registration No." value={v.registrationNo as string} onChange={(x) => f.setValue("registrationNo", x)} />
+            <TextField label="HQ Country" value={v.hqCountry as string} onChange={(x) => f.setValue("hqCountry", x)} />
+          </div>
+          <TextField label="Founders' Nationality" value={v.foundersNationality as string} onChange={(x) => f.setValue("foundersNationality", x)} />
+          <MultiSelectField label="Impact Flags" value={v.impactFlags as string[]} onChange={(x) => f.setValue("impactFlags", x)} options={options("ImpactFlag")} />
+
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Financials</p>
+          <div className="grid grid-cols-2 gap-3">
+            <MoneyField label="Revenue (Last Year)" value={v.revenueLastYear as number} onChange={(x) => f.setValue("revenueLastYear", x)} />
+            <MoneyField label="Revenue (Forecast)" value={v.revenueForecast as number} onChange={(x) => f.setValue("revenueForecast", x)} />
+            <MoneyField label="EBITDA" value={v.ebitda as number} onChange={(x) => f.setValue("ebitda", x)} />
+            <MoneyField label="Net Profit" value={v.netProfit as number} onChange={(x) => f.setValue("netProfit", x)} />
+            <MoneyField label="Existing Debt" value={v.existingDebt as number} onChange={(x) => f.setValue("existingDebt", x)} />
+            <MoneyField label="Loan Book" value={v.loanBook as number} onChange={(x) => f.setValue("loanBook", x)} />
+            <MoneyField label="Total Assets" value={v.totalAssets as number} onChange={(x) => f.setValue("totalAssets", x)} />
+            <NumberField label="Staff Count" value={v.staffCount as number} onChange={(x) => f.setValue("staffCount", x)} min={0} />
+            <NumberField label="Branch Count" value={v.branchCount as number} onChange={(x) => f.setValue("branchCount", x)} min={0} />
+          </div>
+          <SelectField label="Profitability" value={v.profitability as string} onChange={(x) => f.setValue("profitability", x)} options={options("Profitability")} />
+          <TextAreaField label="Repayment Ability" value={v.repaymentAbilityNotes as string} onChange={(x) => f.setValue("repaymentAbilityNotes", x)} />
+          <TextAreaField label="Pricing Expectations" value={v.pricingExpectations as string} onChange={(x) => f.setValue("pricingExpectations", x)} />
+          <TextAreaField label="Proposed Timeline" value={v.proposedTimeline as string} onChange={(x) => f.setValue("proposedTimeline", x)} />
+
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Governance</p>
+          <TextAreaField label="Business Model" value={v.businessModel as string} onChange={(x) => f.setValue("businessModel", x)} />
+          <TextAreaField label="Ownership Structure" value={v.ownershipStructure as string} onChange={(x) => f.setValue("ownershipStructure", x)} />
+          <TextAreaField label="Directors / Management" value={v.directorsManagement as string} onChange={(x) => f.setValue("directorsManagement", x)} />
+          <TextAreaField label="Target Clients" value={v.targetClients as string} onChange={(x) => f.setValue("targetClients", x)} />
+
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Compliance</p>
+          <CheckboxField label="PEP involvement" value={v.pepExposure as boolean} onChange={(x) => f.setValue("pepExposure", x)} />
+          <CheckboxField label="Government-owned" value={v.governmentOwned as boolean} onChange={(x) => f.setValue("governmentOwned", x)} />
+          <TextAreaField label="Compliance Notes" value={v.complianceNotes as string} onChange={(x) => f.setValue("complianceNotes", x)} />
+          <NumberField label="Audited Financial Years" value={v.auditedFinancialsYears as number} onChange={(x) => f.setValue("auditedFinancialsYears", x)} min={0} max={10} />
+
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Operations</p>
+          <TextAreaField label="Group Structure" value={v.groupStructure as string} onChange={(x) => f.setValue("groupStructure", x)} />
+          <TextAreaField label="Suppliers" value={v.suppliers as string} onChange={(x) => f.setValue("suppliers", x)} />
+          <TextAreaField label="Competitors" value={v.competitors as string} onChange={(x) => f.setValue("competitors", x)} />
+          <TextAreaField label="Capacity Utilization" value={v.capacityUtilization as string} onChange={(x) => f.setValue("capacityUtilization", x)} />
           {f.formError && <p className="text-xs text-rose-600">{f.formError}</p>}
         </div>
       </Drawer>

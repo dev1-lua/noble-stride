@@ -167,6 +167,7 @@ describe("loadInvestorPipeline", () => {
     id: OWN_INVESTOR_ID,
     name: "Own Fund LP",
     engagementClassification: "Active",
+    onboardingStatus: "Approved",
   };
 
   function makeEngagementRow(overrides: Record<string, unknown> = {}) {

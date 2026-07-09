@@ -30,6 +30,8 @@ import type {
 // tsx does not reliably resolve the `@/` tsconfig alias in this seed script,
 // so import the disbursement helpers via a relative path (single source of truth).
 import { amountPending, deriveYearQuarter } from "../src/server/domain/disbursement";
+import { stageRequiresNda } from "../src/server/domain/nda-guard";
+import { hashPassword } from "../src/server/auth/password";
 import seedData from "./seed-data.json";
 
 const prisma = new PrismaClient();
@@ -153,6 +155,9 @@ async function main() {
   // ─────────────────────────────────────────────────────────────────────────
   // §1  IDEMPOTENCY — delete child → parent
   // ─────────────────────────────────────────────────────────────────────────
+  // AuthAccount FKs to User/Person — delete first so no FK dangles when those
+  // are recreated below (cascades AuthSession/AuthToken at the DB level).
+  await prisma.authAccount.deleteMany();
   // Documents FK to transactions/clients/investors/users — delete first.
   await prisma.document.deleteMany();
   await prisma.activity.deleteMany();
@@ -172,19 +177,31 @@ async function main() {
   // §3  INSERT REAL ENTITIES
   // ─────────────────────────────────────────────────────────────────────────
 
-  // USERS
+  // USERS — real-auth role bootstrap (spec §11): Evans & Solomon are the
+  // full-access admins; "Deal Lead" job titles map to DealLead; rest TeamMember.
+  const ADMIN_EMAILS = new Set(["evans@noblestride.capital", "solomon@noblestride.capital"]);
+  const seedPassword = process.env.SEED_USER_PASSWORD ?? "NobleStride!Demo2026";
+  const seedPasswordHash = await hashPassword(seedPassword);
+
   const usersByFirst = new Map<string, string>();
   for (const u of seedData.users) {
+    const email = u.email.toLowerCase();
+    const role = ADMIN_EMAILS.has(email) ? "Admin" : u.jobTitle === "Deal Lead" ? "DealLead" : "TeamMember";
     const user = await prisma.user.create({
       data: {
         name: u.name,
         email: u.email,
         jobTitle: u.jobTitle,
         avatarColor: u.avatarColor,
+        role,
       },
+    });
+    await prisma.authAccount.create({
+      data: { email, passwordHash: seedPasswordHash, kind: "INTERNAL", status: "ACTIVE", userId: user.id },
     });
     usersByFirst.set(u.name.split(" ")[0].toLowerCase(), user.id);
   }
+  console.log(`Seeded ${seedData.users.length} internal accounts (password: ${seedPassword})`);
 
   // INVESTORS
   const investors: Array<{
@@ -229,6 +246,28 @@ async function main() {
       ticketMin: inv.ticketMin ?? null,
       ticketMax: inv.ticketMax ?? null,
     });
+  }
+
+  // One ACTIVE investor account so the portal is directly loggable-into (spec §11).
+  // Uses the first contact with an email of the first Approved investor.
+  const demoContact = await prisma.person.findFirst({
+    where: { email: { not: null }, investor: { onboardingStatus: "Approved" } },
+    orderBy: { createdAt: "asc" },
+    include: { investor: { select: { name: true } } },
+  });
+  if (demoContact?.email) {
+    await prisma.authAccount.create({
+      data: {
+        email: demoContact.email.toLowerCase(),
+        passwordHash: seedPasswordHash,
+        kind: "INVESTOR",
+        status: "ACTIVE",
+        personId: demoContact.id,
+      },
+    });
+    console.log(`Seeded investor account: ${demoContact.email} (${demoContact.investor?.name})`);
+  } else {
+    console.log("No demo investor account seeded: no Person with an email found on an Approved investor.");
   }
 
   // PARTNERS
@@ -466,6 +505,14 @@ async function main() {
       const engagementStage = STATUS_TO_STAGE[status];
       const interestLevel = INTEREST_BY_SLOT[j];
 
+      // SOW §06 guard invariant (nda-guard.ts): an engagement seeded into an
+      // NDA-gated stage must have its NDA satisfied, or it can never be
+      // restaged. Investors with an Open NDA are covered fund-wide; everyone
+      // else gets a deal-level Closed NDA recorded at seed time.
+      const investorNdaStatus = ndaStatusFor((ti * 5 + j) % investors.length);
+      const needsEngagementNda =
+        stageRequiresNda(engagementStage) && investorNdaStatus !== "OpenNDA";
+
       // Disbursement: populate for committed/invested engagements (the money
       // is flowing) and a couple of mid-funnel ones marked Ongoing. Leaves the
       // rest null so the funnel shows a realistic mix.
@@ -522,6 +569,8 @@ async function main() {
           status,
           engagementStage,
           interestLevel,
+          ndaType: needsEngagementNda ? "Closed" : null,
+          ndaSignedAt: needsEngagementNda ? daysAgo(20 + ti * 3 + j) : null,
           totalAmount: disbursement?.totalAmount ?? null,
           amountDisbursed: disbursement?.amountDisbursed ?? null,
           amountPending: disbursement?.amountPending ?? null,
@@ -750,6 +799,45 @@ async function main() {
         occurredAt: daysAgo(8 + idx * 3),
       },
     });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // §7b  IMPACT FLAGS (SPEC §3.1)
+  // Org roles are now set at USER creation time (real-auth role bootstrap,
+  // spec §11) — evans@/solomon@ = Admin, jobTitle "Deal Lead" = DealLead,
+  // rest TeamMember. Do NOT re-derive roles here (the old ledMandates/
+  // first-two-users heuristic below was superseded and would clobber that).
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Impact flags: derive women-led from founder gender so the investor
+  // impact filter has demo data.
+  await prisma.client.updateMany({
+    where: { founderGenders: { has: "Female" } },
+    data: { impactFlags: { set: ["WomenLed"] } },
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // §7c  SAVED VIEWS — starter views for the unified deals queue.
+  // Idempotent by (name, entity) since this seed can re-run against a DB
+  // that already has team-created views.
+  // ─────────────────────────────────────────────────────────────────────────
+  const starterViews = [
+    {
+      name: "Active mandates",
+      config: { filters: { type: "mandate" }, sort: "dateOnboarded", dir: "desc", columns: [], groupBy: "stage", view: "list" },
+    },
+    {
+      name: "Live transactions",
+      config: { filters: { type: "transaction" }, sort: "ticket", dir: "desc", columns: [], groupBy: "stage", view: "list" },
+    },
+    {
+      name: "Closing this quarter",
+      config: { filters: { type: "transaction", stage: "Closing" }, sort: "daysInStage", dir: "desc", columns: [], groupBy: "", view: "list" },
+    },
+  ];
+  for (const v of starterViews) {
+    const existing = await prisma.savedView.findFirst({ where: { name: v.name, entity: "deals" } });
+    if (!existing) await prisma.savedView.create({ data: { name: v.name, entity: "deals", config: v.config } });
   }
 
   // ─────────────────────────────────────────────────────────────────────────

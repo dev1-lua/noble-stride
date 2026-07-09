@@ -17,6 +17,9 @@ export const documentCreateSchema = z.object({
   transactionId: z.string().trim().optional(),
   clientId: z.string().trim().optional(),
   investorId: z.string().trim().optional(),
+  mandateId: z.string().trim().optional(),
+  partnerId: z.string().trim().optional(),
+  supersedesId: z.string().trim().optional(),
 });
 
 export const documentUpdateSchema = documentCreateSchema.partial();

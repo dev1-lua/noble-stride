@@ -27,6 +27,7 @@ function list(fd: FormData, key: string): string[] {
 
 export async function saveFundProfile(formData: FormData): Promise<void> {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
   const investorId = vp.recordId as string;
 

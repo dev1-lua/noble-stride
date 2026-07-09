@@ -58,7 +58,11 @@ export function EngagementRestageSelect({
     if (result.error) {
       console.error("[EngagementRestageSelect] failed:", result.error.message);
       setStage(prevStage);
-      setError("Stage update failed — please try again.");
+      const rawMessage = result.error.graphQLErrors?.[0]?.message ?? result.error.message;
+      const message = rawMessage.startsWith("[GraphQL] ")
+        ? rawMessage.slice("[GraphQL] ".length)
+        : rawMessage;
+      setError(message || "Stage update failed — please try again.");
       return;
     }
 

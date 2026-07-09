@@ -9,6 +9,11 @@ import { formatMoney } from "@/lib/money";
 import { label } from "@/lib/vocab";
 import { PartnerFormDrawer } from "@/components/crm/partner-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
+import { ContactsCard } from "@/components/crm/contacts-card";
+import { StageHistory } from "@/components/crm/stage-history";
+import type { StageHistoryItem } from "@/components/crm/stage-history";
+import { getOrgLens } from "@/server/rbac/context";
+import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -17,6 +22,7 @@ interface PageProps {
 
 export default async function PartnerDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const lens = await getOrgLens();
   const partner = await getPartner(id);
 
   if (!partner) notFound();
@@ -30,24 +36,39 @@ export default async function PartnerDetailPage({ params }: PageProps) {
     location: partner.location ?? "",
     amount: partner.amount == null ? undefined : Number(partner.amount),
     advisorType: partner.advisorType ?? "",
+    organization: partner.organization ?? "",
+    email: partner.email ?? "",
+    phone: partner.phone ?? "",
     feeSharingAgreement: partner.feeSharingAgreement,
     feeSharingTerms: partner.feeSharingTerms ?? "",
     partnerAgreementStatus: partner.partnerAgreementStatus ?? "",
     internalOnly: partner.internalOnly,
+    // Task 8: internal feedback notes (Task 6 migration) — CRM-only, edited via this drawer
+    feedbackNotes: partner.feedbackNotes ?? "",
   };
   const DELETE_PARTNER = `mutation DeletePartner($id: ID!) { deletePartner(id: $id) { id } }`;
 
   const amount = partner.amount != null ? Number(partner.amount) : null;
 
+  const changeHistoryItems: StageHistoryItem[] = (partner.stageChanges ?? []).map((s) => ({
+    id: s.id,
+    field: s.field,
+    fromValue: s.fromValue,
+    toValue: s.toValue,
+    changedAt: s.changedAt,
+    changedByName: s.changedBy?.name,
+    createdSource: s.createdSource,
+  }));
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-zinc-500">
-        <Link href="/partners" className="hover:text-zinc-700 transition-colors">
+      <nav className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
+        <Link href="/partners" className="hover:text-[var(--text-secondary)] transition-colors">
           Partners
         </Link>
         <span>/</span>
-        <span className="text-zinc-900 font-medium">{partner.name}</span>
+        <span className="text-[var(--text-primary)] font-medium">{partner.name}</span>
       </nav>
 
       {/* Header */}
@@ -55,7 +76,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
         <Avatar name={partner.name} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{partner.name}</h1>
+            <h1 className="text-2xl font-bold text-[var(--text-primary)] leading-tight">{partner.name}</h1>
             {partner.partnerType && (
               <Chip value={partner.partnerType} group="PartnerType" />
             )}
@@ -65,44 +86,55 @@ export default async function PartnerDetailPage({ params }: PageProps) {
             <Chip value={partner.status} group="PartnerStatus" />
             {partner.internalOnly && <Badge tone="neutral">Internal Only</Badge>}
           </div>
-          {partner.location && (
-            <p className="mt-1 text-sm text-zinc-500">{partner.location}</p>
-          )}
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--text-tertiary)]">
+            {partner.organization && <span>{partner.organization}</span>}
+            {partner.location && <span>{partner.location}</span>}
+            {partner.email && (
+              <a href={`mailto:${partner.email}`} className="text-accent hover:underline">{partner.email}</a>
+            )}
+            {partner.phone && (
+              <a href={`tel:${partner.phone}`} className="hover:underline">{partner.phone}</a>
+            )}
+          </div>
         </div>
         <div className="flex shrink-0 gap-2">
-          <PartnerFormDrawer mode="edit" initial={initial} />
-          <DeleteConfirm mutation={DELETE_PARTNER} recordId={partner.id} entityLabel="partner" redirectTo="/partners" />
+          {canUpdateRecord(lens.orgRole, "Partners", lens.userId, {}) && (
+            <PartnerFormDrawer mode="edit" initial={initial} />
+          )}
+          {canDeleteRecord(lens.orgRole, "Partners") && (
+            <DeleteConfirm mutation={DELETE_PARTNER} recordId={partner.id} entityLabel="partner" redirectTo="/partners" />
+          )}
         </div>
       </div>
 
       {/* Key facts */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">Profile</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Profile</h2>
         </CardHeader>
         <CardBody>
           <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {amount != null && (
               <div>
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Amount</dt>
-                <dd className="mt-1 text-sm font-semibold text-zinc-900">{formatMoney(amount)}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Amount</dt>
+                <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{formatMoney(amount)}</dd>
               </div>
             )}
 
             {/* Fee sharing */}
             <div>
-              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Fee Sharing</dt>
-              <dd className="mt-1 text-sm font-semibold text-zinc-900">
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Fee Sharing</dt>
+              <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
                 {partner.feeSharingAgreement ? "Yes" : "No"}
               </dd>
               {partner.feeSharingAgreement && partner.feeSharingTerms && (
-                <p className="mt-0.5 text-xs text-zinc-500 whitespace-pre-line">{partner.feeSharingTerms}</p>
+                <p className="mt-0.5 text-xs text-[var(--text-tertiary)] whitespace-pre-line">{partner.feeSharingTerms}</p>
               )}
             </div>
 
             {/* Partner agreement status */}
             <div>
-              <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Partner Agreement</dt>
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Partner Agreement</dt>
               <dd className="mt-1">
                 <Chip value={partner.partnerAgreementStatus} group="PartnerAgreementStatus" />
               </dd>
@@ -110,63 +142,33 @@ export default async function PartnerDetailPage({ params }: PageProps) {
 
             {partner.profile && (
               <div className="sm:col-span-2 lg:col-span-3">
-                <dt className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Profile</dt>
-                <dd className="mt-1 text-sm text-zinc-700 whitespace-pre-line">{partner.profile}</dd>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Profile</dt>
+                <dd className="mt-1 text-sm text-[var(--text-secondary)] whitespace-pre-line">{partner.profile}</dd>
               </div>
             )}
           </dl>
         </CardBody>
       </Card>
 
-      {/* Contacts */}
-      <Card>
-        <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
-            Contacts
-            {partner.contacts.length > 0 && (
-              <Badge tone="neutral" className="ml-2">{partner.contacts.length}</Badge>
-            )}
-          </h2>
-        </CardHeader>
-        <CardBody>
-          {partner.contacts.length === 0 ? (
-            <p className="text-sm text-zinc-400">No contacts on record.</p>
-          ) : (
-            <ul className="divide-y divide-zinc-100">
-              {partner.contacts.map((c) => (
-                <li key={c.id} className="py-3 flex items-start gap-4">
-                  <Avatar name={`${c.firstName} ${c.lastName ?? ""}`} size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900">
-                      {c.firstName} {c.lastName ?? ""}
-                    </p>
-                    {c.jobTitle && (
-                      <p className="text-xs text-zinc-500">{c.jobTitle}</p>
-                    )}
-                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                      {c.email && (
-                        <a href={`mailto:${c.email}`} className="text-xs text-accent hover:underline">
-                          {c.email}
-                        </a>
-                      )}
-                      {c.phone && (
-                        <a href={`tel:${c.phone}`} className="text-xs text-zinc-500 hover:underline">
-                          {c.phone}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
+      <ContactsCard
+        contacts={partner.contacts.map((p) => ({
+          id: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          email: p.email,
+          phone: p.phone,
+          jobTitle: p.jobTitle,
+          linkedinUrl: p.linkedinUrl,
+          isPrimaryContact: p.isPrimaryContact,
+          isSSAContact: p.isSSAContact,
+        }))}
+        parent={{ partnerId: partner.id }}
+      />
 
       {/* Referred mandates */}
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-zinc-900">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Referred Mandates
             {partner.referredMandates.length > 0 && (
               <Badge tone="neutral" className="ml-2">{partner.referredMandates.length}</Badge>
@@ -175,16 +177,16 @@ export default async function PartnerDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardBody>
           {partner.referredMandates.length === 0 ? (
-            <p className="text-sm text-zinc-400">No mandates referred.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">No mandates referred.</p>
           ) : (
-            <ul className="divide-y divide-zinc-100">
+            <ul className="divide-y divide-[var(--border-subtle)]">
               {partner.referredMandates.map((mandate) => (
                 <li key={mandate.id} className="py-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <Link
                         href={`/mandates/${mandate.id}`}
-                        className="text-sm font-medium text-zinc-900 hover:text-accent transition-colors"
+                        className="text-sm font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
                       >
                         {mandate.client?.name ?? mandate.name}
                       </Link>
@@ -195,16 +197,26 @@ export default async function PartnerDetailPage({ params }: PageProps) {
                     <ul className="mt-2 ml-3 space-y-1">
                       {mandate.transactions.map((txn) => (
                         <li key={txn.id} className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 rounded-full bg-zinc-300 flex-shrink-0" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--border-strong)] flex-shrink-0" />
                           <Link
                             href={`/transactions/${txn.id}`}
-                            className="text-xs text-zinc-600 hover:text-accent transition-colors"
+                            className="text-xs text-[var(--text-secondary)] hover:text-accent transition-colors"
                           >
                             {txn.name}
                           </Link>
-                          <span className="text-xs text-zinc-400">
+                          <span className="text-xs text-[var(--text-tertiary)]">
                             {label("TransactionStage", txn.stage)}
                           </span>
+                          {/* Fee status (Task 8) — only meaningful when this transaction has a fee-earning referrer */}
+                          {txn.referredById && (
+                            <span className="text-xs">
+                              {txn.partnerFeeStatus ? (
+                                <Chip value={txn.partnerFeeStatus} group="PartnerFeeStatus" />
+                              ) : (
+                                <span className="text-[var(--text-tertiary)]">Fee status: —</span>
+                              )}
+                            </span>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -215,6 +227,8 @@ export default async function PartnerDetailPage({ params }: PageProps) {
           )}
         </CardBody>
       </Card>
+
+      <StageHistory title="Change History" items={changeHistoryItems} />
     </div>
   );
 }

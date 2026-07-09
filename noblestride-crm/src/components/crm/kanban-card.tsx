@@ -1,8 +1,16 @@
 // kanban-card.tsx — Individual draggable cards for the Kanban boards.
 // Pure rendering — receives plain DTO props; no Prisma types cross the RSC boundary.
 
-import { Chip, Avatar } from "@/components/ui";
+import { Chip, Avatar, Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
+
+// Task 8: High=rose, Medium=amber, Low=neutral — mirrors deal-summary-panel.tsx's
+// priorityTone (kept local; too small a helper to warrant a shared module).
+function priorityTone(value: string): "danger" | "warning" | "neutral" {
+  if (value === "High") return "danger";
+  if (value === "Medium") return "warning";
+  return "neutral";
+}
 
 // ─── Card DTO types ───────────────────────────────────────────────────────────
 
@@ -14,6 +22,8 @@ export interface MandateCardDTO {
   daysInStage: number;
   ownerName: string | null;
   ownerColor: string | null;
+  // Task 8: Mandate.priority — pre-labeled ("High"/"Medium"/"Low") or null when unset
+  priorityLabel: string | null;
 }
 
 export interface TransactionCardDTO {
@@ -28,6 +38,8 @@ export interface TransactionCardDTO {
   daysInStage: number;
   ownerName: string | null;
   ownerColor: string | null;
+  // Task 8: Transaction.priority — pre-labeled or null when unset
+  priorityLabel: string | null;
 }
 
 // ─── Mandate card ─────────────────────────────────────────────────────────────
@@ -43,14 +55,14 @@ export function MandateKanbanCard({ card, href, className }: MandateKanbanCardPr
   return (
     <div
       className={cn(
-        "bg-white rounded-lg border border-zinc-200 shadow-sm p-3.5 space-y-2.5 cursor-grab active:cursor-grabbing",
+        "bg-[var(--bg-primary)] rounded-md border border-[var(--border-subtle)] p-3 space-y-2 cursor-grab active:cursor-grabbing",
         className
       )}
     >
       {/* Client name */}
       <a
         href={href}
-        className="block text-sm font-semibold text-zinc-900 hover:text-accent transition-colors leading-snug"
+        className="block text-sm font-semibold text-[var(--text-primary)] hover:text-accent transition-colors leading-snug"
         onClick={(e) => e.stopPropagation()}
       >
         {card.clientName}
@@ -63,29 +75,32 @@ export function MandateKanbanCard({ card, href, className }: MandateKanbanCardPr
             <Chip key={s} value={s} group="Sector" />
           ))}
           {card.sectors.length > 2 && (
-            <span className="text-xs text-zinc-400">+{card.sectors.length - 2}</span>
+            <span className="text-xs text-[var(--text-tertiary)]">+{card.sectors.length - 2}</span>
           )}
         </div>
       )}
 
       {/* Next action */}
       {card.nextAction && (
-        <p className="text-xs text-zinc-500 leading-snug line-clamp-2">
-          <span className="font-medium text-zinc-700">Next: </span>
+        <p className="text-xs text-[var(--text-tertiary)] leading-snug line-clamp-2">
+          <span className="font-medium text-[var(--text-secondary)]">Next: </span>
           {card.nextAction}
         </p>
       )}
 
-      {/* Footer: days in stage + owner avatar */}
-      <div className="flex items-center justify-between pt-0.5">
-        <span className="text-xs text-zinc-400">{card.daysInStage}d in stage</span>
-        {card.ownerName && (
-          <Avatar
-            name={card.ownerName}
-            color={card.ownerColor ?? undefined}
-            size="sm"
-          />
-        )}
+      {/* Footer: days in stage + priority + owner avatar */}
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        <span className="text-xs text-[var(--text-tertiary)]">{card.daysInStage}d in stage</span>
+        <div className="flex items-center gap-2">
+          {card.priorityLabel && <Badge tone={priorityTone(card.priorityLabel)}>{card.priorityLabel}</Badge>}
+          {card.ownerName && (
+            <Avatar
+              name={card.ownerName}
+              color={card.ownerColor ?? undefined}
+              size="sm"
+            />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -103,7 +118,7 @@ export function TransactionKanbanCard({ card, href, className }: TransactionKanb
   return (
     <div
       className={cn(
-        "bg-white rounded-lg border border-zinc-200 shadow-sm p-3.5 space-y-2.5 cursor-grab active:cursor-grabbing",
+        "bg-[var(--bg-primary)] rounded-md border border-[var(--border-subtle)] p-3 space-y-2 cursor-grab active:cursor-grabbing",
         className
       )}
     >
@@ -111,13 +126,13 @@ export function TransactionKanbanCard({ card, href, className }: TransactionKanb
       <div>
         <a
           href={href}
-          className="block text-sm font-semibold text-zinc-900 hover:text-accent transition-colors leading-snug"
+          className="block text-sm font-semibold text-[var(--text-primary)] hover:text-accent transition-colors leading-snug"
           onClick={(e) => e.stopPropagation()}
         >
           {card.clientName}
         </a>
         {card.dealTypeName && (
-          <p className="text-xs text-zinc-500 mt-0.5">{card.dealTypeName}</p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{card.dealTypeName}</p>
         )}
       </div>
 
@@ -133,16 +148,16 @@ export function TransactionKanbanCard({ card, href, className }: TransactionKanb
 
       {/* Deal size */}
       {card.targetRaise && (
-        <p className="text-sm font-bold text-zinc-900">{card.targetRaise}</p>
+        <p className="text-sm font-bold text-[var(--text-primary)]">{card.targetRaise}</p>
       )}
 
       {/* Investor engagement counts */}
-      <div className="flex items-center gap-3 text-xs text-zinc-500">
+      <div className="flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
         <span>
-          <span className="font-medium text-zinc-700">{card.investorsContacted}</span> contacted
+          <span className="font-medium text-[var(--text-secondary)]">{card.investorsContacted}</span> contacted
         </span>
         <span>
-          <span className="font-medium text-zinc-700">{card.activeConversations}</span> active
+          <span className="font-medium text-[var(--text-secondary)]">{card.activeConversations}</span> active
         </span>
         <a
           href={href}
@@ -153,16 +168,19 @@ export function TransactionKanbanCard({ card, href, className }: TransactionKanb
         </a>
       </div>
 
-      {/* Footer: days in stage + owner avatar */}
-      <div className="flex items-center justify-between pt-0.5">
-        <span className="text-xs text-zinc-400">{card.daysInStage}d in stage</span>
-        {card.ownerName && (
-          <Avatar
-            name={card.ownerName}
-            color={card.ownerColor ?? undefined}
-            size="sm"
-          />
-        )}
+      {/* Footer: days in stage + priority + owner avatar */}
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        <span className="text-xs text-[var(--text-tertiary)]">{card.daysInStage}d in stage</span>
+        <div className="flex items-center gap-2">
+          {card.priorityLabel && <Badge tone={priorityTone(card.priorityLabel)}>{card.priorityLabel}</Badge>}
+          {card.ownerName && (
+            <Avatar
+              name={card.ownerName}
+              color={card.ownerColor ?? undefined}
+              size="sm"
+            />
+          )}
+        </div>
       </div>
     </div>
   );

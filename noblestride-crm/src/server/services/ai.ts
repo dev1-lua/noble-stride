@@ -8,9 +8,25 @@ import { label } from "@/lib/vocab";
 import { rankInvestorMatches } from "@/server/domain/ranking";
 import type { MatchInvestor, MatchTxn, InvestorMatch } from "@/server/domain/ranking";
 import type { Insight } from "@/server/domain/types";
-import { dashboardStats, pipelineOverview } from "@/server/services/dashboard";
+import { dashboardStats, pipelineOverview, quietTransactions } from "@/server/services/dashboard";
 
 // ─── Public AI functions ──────────────────────────────────────────────────────
+
+// Decimal (or plain number) → number | null. Mirrors the ticketMin/ticketMax
+// conversion below — Prisma returns Decimal fields as Decimal.js instances.
+function num(value: unknown): number | null {
+  return value == null ? null : Number(value);
+}
+
+// SSA contact first, else primary contact, else first contact, else null.
+function resolveContactName(
+  contacts: { firstName: string; lastName: string | null; isPrimaryContact: boolean; isSSAContact: boolean }[]
+): string | null {
+  const chosen =
+    contacts.find((c) => c.isSSAContact) ?? contacts.find((c) => c.isPrimaryContact) ?? contacts[0];
+  if (chosen == null) return null;
+  return `${chosen.firstName} ${chosen.lastName ?? ""}`.trim();
+}
 
 // SEAM: replace body with Lua (Data API semantic search / LuaTool) — see SPEC §8. Signature stays identical.
 export async function aiMatchInvestors(transactionId: string): Promise<InvestorMatch[]> {
@@ -20,6 +36,7 @@ export async function aiMatchInvestors(transactionId: string): Promise<InvestorM
       include: { client: true },
     }),
     prisma.investor.findMany({
+      where: { engagementClassification: "Active", onboardingStatus: "Approved" },
       select: {
         id: true,
         name: true,
@@ -28,6 +45,14 @@ export async function aiMatchInvestors(transactionId: string): Promise<InvestorM
         ticketMin: true,
         ticketMax: true,
         status: true,
+        instruments: true,
+        minRevenue: true,
+        minEbitda: true,
+        minLoanBook: true,
+        criteriaVerifiedAt: true,
+        contacts: {
+          select: { firstName: true, lastName: true, isPrimaryContact: true, isSSAContact: true },
+        },
       },
     }),
   ]);
@@ -38,6 +63,12 @@ export async function aiMatchInvestors(transactionId: string): Promise<InvestorM
     sector: txn.sector,
     targetRaise: Number(txn.targetRaise ?? 0),
     geography: txn.client?.countries ?? [],
+    instrument: txn.instrument,
+    clientFinancials: {
+      revenue: num(txn.client?.revenueLastYear),
+      ebitda: num(txn.client?.ebitda),
+      loanBook: num(txn.client?.loanBook),
+    },
   };
 
   const matchInvestors: MatchInvestor[] = investors.map((inv) => ({
@@ -48,6 +79,12 @@ export async function aiMatchInvestors(transactionId: string): Promise<InvestorM
     ticketMin: inv.ticketMin != null ? Number(inv.ticketMin) : null,
     ticketMax: inv.ticketMax != null ? Number(inv.ticketMax) : null,
     status: inv.status,
+    instruments: inv.instruments as string[],
+    minRevenue: num(inv.minRevenue),
+    minEbitda: num(inv.minEbitda),
+    minLoanBook: num(inv.minLoanBook),
+    contactName: resolveContactName(inv.contacts),
+    criteriaVerifiedAt: inv.criteriaVerifiedAt,
   }));
 
   return rankInvestorMatches(matchInvestors, matchTxn, 8);
@@ -81,8 +118,6 @@ export async function aiFindProspects(
 
 // SEAM: replace body with Lua (Data API semantic search / LuaTool) — see SPEC §8. Signature stays identical.
 export async function aiOverviewInsights(): Promise<Insight[]> {
-  const now = new Date();
-  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
   const insights: Insight[] = [];
 
   // 1. Convert insight: mandates in Proposal or Negotiation
@@ -97,20 +132,10 @@ export async function aiOverviewInsights(): Promise<Insight[]> {
     });
   }
 
-  // 2. Attention insight: active transactions with no activity in the last 14d
-  const activeTransactions = await prisma.transaction.findMany({
-    where: { stage: { notIn: ["ClosedWon", "ClosedLost"] } },
-    select: {
-      id: true,
-      name: true,
-      activities: {
-        where: { occurredAt: { gte: fourteenDaysAgo } },
-        select: { id: true },
-        take: 1,
-      },
-    },
-  });
-  const staleCount = activeTransactions.filter((t) => t.activities.length === 0).length;
+  // 2. Attention insight: active transactions with no activity in the last 14d.
+  // Org-wide count reused from the shared `quietTransactions()` (Task 17) —
+  // same query, same filter, identical result to the previous inline version.
+  const staleCount = (await quietTransactions()).length;
   if (staleCount > 0) {
     insights.push({
       kind: "attention",

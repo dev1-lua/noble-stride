@@ -1,32 +1,74 @@
 // Viewpoint = which lens the CRM is being viewed through (design spec §6).
-// Demo construct: carried in a cookie, not real authentication.
+// The ns_viewpoint cookie is now a signed admin "view as" impersonation lens
+// (see src/server/auth/impersonation.ts) — not the caller's real identity.
 
 export type ViewpointRole = "admin" | "investor" | "partner";
+
+/** In-org demo roles (§7.2) — string mirror of Prisma's OrgRole (kept dependency-free). */
+export type OrgRoleLens = "Admin" | "DealLead" | "TeamMember";
+const ORG_ROLES: readonly OrgRoleLens[] = ["Admin", "DealLead", "TeamMember"];
 
 export type Viewpoint = {
   role: ViewpointRole;
   /** Impersonated Investor/Partner id when role is investor/partner. */
   recordId?: string;
+  /** In-org role lens — only meaningful when role is "admin". */
+  orgRole?: OrgRoleLens;
+  /** Impersonated User id for DealLead/TeamMember lenses. */
+  userId?: string;
+  /** True only for admin-initiated portal impersonation (via /api/viewpoint);
+   *  absent for a real /login. Gates the in-portal "view as" switcher. */
+  impersonating?: boolean;
 };
 
 export const VIEWPOINT_COOKIE = "ns_viewpoint";
 
-export const ADMIN_VIEWPOINT: Viewpoint = { role: "admin" };
+export const ADMIN_VIEWPOINT: Viewpoint = { role: "admin", orgRole: "Admin" };
 
-export function parseViewpoint(raw: string | undefined | null): Viewpoint {
-  if (!raw) return ADMIN_VIEWPOINT;
+export function parseViewpoint(raw: string | undefined | null): Viewpoint | null {
+  if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as { role?: string; recordId?: string };
+    const parsed = JSON.parse(raw) as {
+      role?: string;
+      recordId?: string;
+      orgRole?: string;
+      userId?: string;
+      impersonating?: boolean;
+    };
     if (parsed.role === "investor" || parsed.role === "partner") {
-      if (!parsed.recordId) return ADMIN_VIEWPOINT;
-      return { role: parsed.role, recordId: parsed.recordId };
+      if (!parsed.recordId) return null;
+      const vp: Viewpoint = { role: parsed.role, recordId: parsed.recordId };
+      if (parsed.impersonating === true) vp.impersonating = true;
+      return vp;
     }
-    return ADMIN_VIEWPOINT;
+    if (parsed.role !== "admin") return null;
+    const orgRole = ORG_ROLES.includes(parsed.orgRole as OrgRoleLens)
+      ? (parsed.orgRole as OrgRoleLens)
+      : "Admin";
+    if (orgRole === "Admin") return ADMIN_VIEWPOINT;
+    return { role: "admin", orgRole, userId: parsed.userId };
   } catch {
-    return ADMIN_VIEWPOINT;
+    return null;
   }
 }
 
 export function serializeViewpoint(vp: Viewpoint): string {
-  return JSON.stringify(vp.role === "admin" ? { role: "admin" } : vp);
+  if (vp.role !== "admin") {
+    return JSON.stringify(
+      vp.impersonating
+        ? { role: vp.role, recordId: vp.recordId, impersonating: true }
+        : { role: vp.role, recordId: vp.recordId },
+    );
+  }
+  if (!vp.orgRole || vp.orgRole === "Admin") return JSON.stringify({ role: "admin" });
+  return JSON.stringify({ role: "admin", orgRole: vp.orgRole, userId: vp.userId });
+}
+
+/** Home route for a viewpoint — where "/" forwards a signed-in lens (landing spec §3). */
+export function viewpointHome(vp: Viewpoint): string {
+  return vp.role === "investor"
+    ? "/portal/investor"
+    : vp.role === "partner"
+      ? "/portal/partner"
+      : "/dashboard";
 }

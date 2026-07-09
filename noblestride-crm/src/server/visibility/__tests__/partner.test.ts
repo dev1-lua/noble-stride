@@ -61,6 +61,7 @@ describe("projectForPartner (§5.4)", () => {
         currency: "USD",
         converted: true,
         feeSharingStatus: "20% of success fee",
+        partnerFeeStatusValue: null,
       },
       {
         mandateName: "Mandate Beta",
@@ -70,8 +71,22 @@ describe("projectForPartner (§5.4)", () => {
         currency: "USD",
         converted: false,
         feeSharingStatus: "20% of success fee",
+        partnerFeeStatusValue: null,
       },
     ]);
+  });
+
+  // Task 8: fee status is read from the mandate's linked transaction, not the
+  // mandate itself — a mandate with no transaction yet reports null (no fee
+  // status to show), one with a transaction reports its partnerFeeStatus.
+  it("reads partnerFeeStatusValue from the mandate's first linked transaction", () => {
+    const withTxn = [
+      { ...referredMandates[0], transactions: [{ partnerFeeStatus: "Invoiced" as const }] },
+      referredMandates[1],
+    ];
+    const view = projectForPartner(partner, withTxn);
+    expect(view.referredDeals[0]?.partnerFeeStatusValue).toBe("Invoiced");
+    expect(view.referredDeals[1]?.partnerFeeStatusValue).toBeNull();
   });
 
   it("reports fee-sharing status None when there is no agreement", () => {

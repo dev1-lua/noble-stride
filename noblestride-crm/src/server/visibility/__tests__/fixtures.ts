@@ -12,6 +12,9 @@ export const INTERNAL_DOC = "Internal Valuation Memo SECRET";
 export const CLIENT_SHARED_DOC = "Client Board Pack SECRET";
 export const TEAM_MEMBER_NAME = "Alice NobleStride";
 export const INTERNAL_MESSAGE = "internal-team-thread-about-pricing";
+export const DD_TRACK_NOTE = "DD-TRACK-NOTE-financial-red-flag";
+/** Structured-field sentinel: no projected key may even mention CAK/COMESA. */
+export const CAK_SENTINEL = "cakComesa";
 
 export const FORBIDDEN_STRINGS = [
   OTHER_INVESTOR_NAME,
@@ -24,6 +27,7 @@ export const FORBIDDEN_STRINGS = [
   CLIENT_SHARED_DOC,
   TEAM_MEMBER_NAME,
   INTERNAL_MESSAGE,
+  DD_TRACK_NOTE,
 ] as const;
 
 export const OWN_INVESTOR_ID = "inv-own";
@@ -50,7 +54,13 @@ export function makeDealFixture(): DealInput {
       yearFounded: 2012,
       revenueLastYear: 7_200_000,
       revenueForecast: 12_500_000,
-      profitable: true,
+      profitability: "Profitable",
+      impactFlags: ["WomenLed"],
+      // fullFinancials group — loaded but never projected:
+      ebitda: 1_500_000,
+      netProfit: 1_000_000,
+      existingDebt: 900_000,
+      totalAssets: 5_000_000,
       contacts: [
         {
           firstName: "Grace",
@@ -94,5 +104,11 @@ export function makeDealFixture(): DealInput {
     serviceProviders: [{ name: SERVICE_PROVIDER_NAME, type: "LawFirm" }],
     activities: [{ body: INTERNAL_MESSAGE, createdBy: { name: TEAM_MEMBER_NAME } }],
     owner: { name: TEAM_MEMBER_NAME },
+    // §3.2/§6.2 internal-only deal fields — loaded but never projected:
+    icFirstApprovalDate: new Date("2026-01-15"),
+    icSecondApprovalDate: new Date("2026-03-01"),
+    cakComesaStatus: "Filed",
+    cakComesaFiledDate: new Date("2026-04-01"),
+    ddTracks: [{ track: "Financial", status: "Flagged", notes: DD_TRACK_NOTE }],
   };
 }

@@ -8,17 +8,24 @@ import { listTransactions } from "@/server/services/transactions";
 import { listClients } from "@/server/services/clients";
 import { listInvestors } from "@/server/services/investors";
 import { listUsers } from "@/server/services/users";
-import { StatCard, Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
+import { listMandates } from "@/server/services/mandates";
+import { relationOptions } from "@/server/services/relation-options";
+import { StatCard, Chip, Table, THead, TBody, Tr, Th, Td, HelpHint } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { DocumentFormDrawer } from "@/components/crm/document-form-drawer";
+import { getOrgLens } from "@/server/rbac/context";
+import { can } from "@/server/rbac/matrix";
 
 export default async function DocumentsPage() {
-  const [documents, transactions, clients, investors, users] = await Promise.all([
+  const lens = await getOrgLens();
+  const [documents, transactions, clients, investors, users, mandates, rel] = await Promise.all([
     listDocuments(),
     listTransactions(),
     listClients(),
     listInvestors({}),
     listUsers(),
+    listMandates(),
+    relationOptions(),
   ]);
 
   // SelectOption[] for the drawer (plain strings — safe to pass to client component)
@@ -26,6 +33,8 @@ export default async function DocumentsPage() {
   const clientOptions = clients.map((c) => ({ value: c.id, label: c.name }));
   const invOptions = investors.map((i) => ({ value: i.id, label: i.name }));
   const userOptions = users.map((u) => ({ value: u.id, label: u.name }));
+  const mandateOptions = mandates.map((m) => ({ value: m.id, label: m.name }));
+  const partnerOptions = rel.partners;
 
   const underReview = documents.filter((d) => d.status === "UnderReview").length;
   const executed = documents.filter((d) => d.status === "Executed").length;
@@ -38,18 +47,25 @@ export default async function DocumentsPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Documents</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Deal documents, versions, and review status
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-[var(--text-primary)]">
+            Documents
+            <HelpHint term="VDR" />
+          </h1>
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+            The register of documents — versions, review status, and who is allowed to see each
           </p>
         </div>
-        <DocumentFormDrawer
-          mode="create"
-          transactions={txnOptions}
-          clients={clientOptions}
-          investors={invOptions}
-          users={userOptions}
-        />
+        {can(lens.orgRole, "Documents", "C") && (
+          <DocumentFormDrawer
+            mode="create"
+            transactions={txnOptions}
+            clients={clientOptions}
+            investors={invOptions}
+            users={userOptions}
+            mandates={mandateOptions}
+            partners={partnerOptions}
+          />
+        )}
       </div>
 
       {/* Counters strip — 4 tiles */}
@@ -62,7 +78,7 @@ export default async function DocumentsPage() {
 
       {/* Documents table */}
       <div>
-        <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3">
           Document Register
         </h2>
         <Table>
@@ -75,6 +91,7 @@ export default async function DocumentsPage() {
               <Th>Status</Th>
               <Th>Linked Record</Th>
               <Th>Uploaded</Th>
+              {can(lens.orgRole, "Documents", "C") && <Th>Actions</Th>}
             </Tr>
           </THead>
           <TBody>
@@ -91,25 +108,27 @@ export default async function DocumentsPage() {
               return (
                 <Tr key={doc.id}>
                   <Td>
-                    {doc.fileUrl ? (
+                    {doc.storageKey ? (
                       <a
-                        href={doc.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-zinc-900 hover:text-accent transition-colors"
-                        title={doc.fileUrl}
+                        href={`/api/documents/${doc.id}/download`}
+                        className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
+                        title={doc.originalFilename ?? doc.name}
                       >
                         {doc.name}
                       </a>
+                    ) : doc.fileUrl ? (
+                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors" title={doc.fileUrl}>
+                        {doc.name}
+                      </a>
                     ) : (
-                      <span className="font-medium text-zinc-900">{doc.name}</span>
+                      <span className="font-medium text-[var(--text-primary)]">{doc.name}</span>
                     )}
                   </Td>
                   <Td>
                     <Chip value={doc.type} group="DocumentType" />
                   </Td>
                   <Td>
-                    <span className="text-zinc-600">{doc.version ?? "—"}</span>
+                    <span className="text-[var(--text-secondary)]">{doc.version ?? "—"}</span>
                   </Td>
                   <Td>
                     <Chip value={doc.accessLevel} group="DocumentAccessLevel" />
@@ -118,31 +137,61 @@ export default async function DocumentsPage() {
                     {doc.status ? (
                       <Chip value={doc.status} group="DocumentStatus" />
                     ) : (
-                      <span className="text-zinc-400">—</span>
+                      <span className="text-[var(--text-tertiary)]">—</span>
                     )}
                   </Td>
                   <Td>
                     {linked ? (
                       <Link
                         href={linked.href}
-                        className="text-zinc-600 hover:text-accent transition-colors"
+                        className="text-[var(--text-secondary)] hover:text-accent transition-colors"
                       >
                         {linked.name}
                       </Link>
                     ) : (
-                      <span className="text-zinc-400">—</span>
+                      <span className="text-[var(--text-tertiary)]">—</span>
                     )}
                   </Td>
                   <Td>
-                    <span className="text-zinc-600">{formatDate(doc.uploadedAt)}</span>
+                    <span className="text-[var(--text-secondary)]">{formatDate(doc.uploadedAt)}</span>
                   </Td>
+                  {can(lens.orgRole, "Documents", "C") && (
+                    <Td>
+                      {doc.storageKey ? (
+                        <DocumentFormDrawer
+                          mode="create"
+                          triggerLabel="New version"
+                          triggerVariant="ghost"
+                          supersedesId={doc.id}
+                          initial={{
+                            name: doc.name,
+                            type: doc.type,
+                            accessLevel: doc.accessLevel,
+                            transactionId: doc.transactionId ?? undefined,
+                            clientId: doc.clientId ?? undefined,
+                            investorId: doc.investorId ?? undefined,
+                            mandateId: doc.mandateId ?? undefined,
+                            partnerId: doc.partnerId ?? undefined,
+                          }}
+                          transactions={txnOptions}
+                          clients={clientOptions}
+                          investors={invOptions}
+                          users={userOptions}
+                          mandates={mandateOptions}
+                          partners={partnerOptions}
+                        />
+                      ) : (
+                        <span className="text-[var(--text-tertiary)]">—</span>
+                      )}
+                    </Td>
+                  )}
                 </Tr>
               );
             })}
             {documents.length === 0 && (
               <Tr>
-                <Td colSpan={7}>
-                  <span className="text-zinc-400">No documents on record.</span>
+                <Td colSpan={can(lens.orgRole, "Documents", "C") ? 8 : 7}>
+                  <span className="text-[var(--text-tertiary)]">No documents on record.</span>
                 </Td>
               </Tr>
             )}

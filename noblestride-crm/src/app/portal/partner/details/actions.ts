@@ -10,6 +10,7 @@ import { updatePartner } from "@/server/services/partners";
 
 export async function updateOwnDetailsAction(formData: FormData): Promise<void> {
   const vp = await getViewpoint();
+  if (!vp) redirect("/login");
   if (vp.role !== "partner" || !vp.recordId) redirect("/dashboard");
 
   const field = (name: string) => String(formData.get(name) ?? "").trim() || undefined;

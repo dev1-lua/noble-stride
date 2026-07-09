@@ -18,7 +18,7 @@ export function PartnerTabs() {
   return (
     <nav
       aria-label="Partner portal"
-      className="inline-flex w-fit gap-1 rounded-full border border-zinc-200 bg-white p-1"
+      className="inline-flex w-fit gap-1 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-1"
     >
       {TABS.map((tab) => {
         const active = pathname === tab.href;
@@ -30,8 +30,8 @@ export function PartnerTabs() {
             className={
               "rounded-full px-4 py-1.5 text-xs font-semibold transition-colors " +
               (active
-                ? "bg-emerald-950 text-white"
-                : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900")
+                ? "bg-[var(--accent)] text-white"
+                : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]")
             }
           >
             {tab.label}

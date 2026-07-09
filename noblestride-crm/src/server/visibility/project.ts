@@ -9,19 +9,25 @@ import type {
   DocumentType,
   EngagementStage,
   Geography,
+  ImpactFlag,
   Instrument,
   InvestorEngagementClassification,
   MandateStage,
   MilestoneKey,
+  OnboardingStatus,
   PartnerAgreementStatus,
+  PartnerFeeStatus,
   AdvisorType,
+  Profitability,
   Sector,
   TransactionStage,
 } from "@prisma/client";
 import { effectiveMilestones, MILESTONE_ORDER } from "@/lib/milestones";
 import type { Tier } from "./tiers";
-import { isBlockedClassification } from "./tiers";
+import { isBlockedClassification, isOnboardingBlocked } from "./tiers";
 import { fieldAccess, isFieldVisible } from "./matrix";
+import { dealCodename } from "./codename";
+import { label } from "@/lib/vocab";
 
 // ─── Numeric helpers ─────────────────────────────────────────────────────────
 
@@ -70,6 +76,10 @@ export interface DocumentInput {
   accessLevel: DocumentAccessLevel;
   status?: DocumentStatus | null;
   fileUrl?: string | null;
+  /** Superseded versions (isCurrent === false) are hidden from external roles.
+   *  Undefined is treated as current for backward compatibility with existing
+   *  fixtures/rows predating the versioning feature. */
+  isCurrent?: boolean;
 }
 
 export interface EngagementInput {
@@ -91,8 +101,16 @@ export interface DealClientInput {
   yearFounded?: number | null;
   revenueLastYear?: DecimalLike | null;
   revenueForecast?: DecimalLike | null;
-  profitable?: boolean | null;
+  profitability?: Profitability | null;
+  /** §3.1 impact flags — projected as booleans in companyProfile, visible at all tiers. */
+  impactFlags?: ImpactFlag[];
   contacts?: PersonInput[];
+  // Present on loaded records but NEVER projected at any tier (they belong to
+  // the fullFinancials group, which stays internal for now):
+  ebitda?: DecimalLike | null;
+  netProfit?: DecimalLike | null;
+  existingDebt?: DecimalLike | null;
+  totalAssets?: DecimalLike | null;
 }
 
 /** A transaction loaded with its relations, as the portal loaders fetch it. */
@@ -113,6 +131,12 @@ export interface DealInput {
   serviceProviders?: unknown[];
   activities?: unknown[];
   owner?: unknown;
+  ddTracks?: unknown[];
+  icFirstApprovalDate?: unknown;
+  icSecondApprovalDate?: unknown;
+  cakComesaStatus?: unknown;
+  cakComesaFiledDate?: unknown;
+  cakComesaApprovedDate?: unknown;
 }
 
 // ─── Projected (external-safe) shapes ────────────────────────────────────────
@@ -145,6 +169,8 @@ export interface ProjectedDeal {
     hqCity: string | null;
     countries: Geography[];
     yearFounded: number | null;
+    womenLed: boolean;
+    youthLed: boolean;
   };
   dealTypeTicket: {
     dealType: DealType | null;
@@ -157,7 +183,7 @@ export interface ProjectedDeal {
     disclosure: "limited" | "full";
     revenueLastYear: string | number | null;
     revenueForecast: string | number | null;
-    profitable: boolean | null;
+    profitability: Profitability | null;
   };
   matchingMandateStatus: MandateStage | null;
   documents: ProjectedDocument[];
@@ -178,29 +204,47 @@ const PRE_INTEREST_DOC_TYPES: readonly DocumentType[] = ["Teaser", "PitchDeck"];
 /** Hard rule: engagement contracts never leave the building (§5.2). */
 const NEVER_SHARED_DOC_TYPES: readonly DocumentType[] = ["EngagementContract"];
 
-function projectDocuments(documents: DocumentInput[], tier: Exclude<Tier, "NONE">): ProjectedDocument[] {
+function projectDocuments(
+  documents: DocumentInput[],
+  tier: Exclude<Tier, "NONE">,
+  ndaSatisfied: boolean,
+  codename: string,
+): ProjectedDocument[] {
+  const masked = tier === "PRE_INTEREST";
   return documents
     .filter((doc) => {
+      // Superseded versions are never investor-visible; undefined ⇒ current
+      // (pre-versioning fixtures/rows have no isCurrent value at all).
+      if (doc.isCurrent === false) return false;
       if (NEVER_SHARED_DOC_TYPES.includes(doc.type)) return false;
       // Internal and ClientShared documents are never investor-visible.
       if (doc.accessLevel === "Internal" || doc.accessLevel === "ClientShared") return false;
-      // VDR files: hidden until tier DD ("on request" → hidden, spec §10).
-      if (doc.accessLevel === "VDR") return fieldAccess("vdrFiles", tier) === "full";
+      // VDR files: hidden until tier DD ("on request" → hidden, spec §10) AND
+      // the correct signed NDA (SOW §06).
+      if (doc.accessLevel === "VDR") return fieldAccess("vdrFiles", tier) === "full" && ndaSatisfied;
       // InvestorShared: teaser-level only before NDA; everything after.
       if (tier === "PRE_INTEREST") return PRE_INTEREST_DOC_TYPES.includes(doc.type);
       return true;
     })
     .map((doc) => ({
       id: doc.id,
-      name: doc.name,
+      // §11: at PRE_INTEREST the document title must not carry the real client
+      // identity — replace it with the doc-type label + deal codename, and drop
+      // fileUrl (a path could embed the real name).
+      name: masked ? `${label("DocumentType", doc.type)} — ${codename}` : doc.name,
       type: doc.type,
       version: doc.version ?? null,
       status: doc.status ?? null,
-      fileUrl: doc.fileUrl ?? null,
+      fileUrl: masked ? null : (doc.fileUrl ?? null),
     }));
 }
 
 // ─── Deal projection ─────────────────────────────────────────────────────────
+
+export interface ProjectDealOptions {
+  /** Open NDA on the investor, or a Closed NDA on THIS deal's engagement. */
+  ndaSatisfied?: boolean;
+}
 
 /**
  * Project one deal for an external investor at a resolved tier (§5.2).
@@ -208,9 +252,19 @@ function projectDocuments(documents: DocumentInput[], tier: Exclude<Tier, "NONE"
  * engagements or identities, partner/provider identities, internal notes or
  * feedback, engagement contracts, Internal/ClientShared documents, or named
  * team members — regardless of tier (hard rules).
+ *
+ * At PRE_INTEREST the deal and client identity are masked with a
+ * deterministic codename (design spec §5); they unmask once the investor
+ * moves past PRE_INTEREST (AFTER_NDA/DD). VDR documents additionally require
+ * a satisfied NDA — see `opts.ndaSatisfied` (secure default: false).
  */
-export function projectDealForInvestor(deal: DealInput, tier: Tier): ProjectedDeal | null {
+export function projectDealForInvestor(
+  deal: DealInput,
+  tier: Tier,
+  opts: ProjectDealOptions = {},
+): ProjectedDeal | null {
   if (tier === "NONE") return null;
+  const ndaSatisfied = opts.ndaSatisfied ?? false;
 
   const client = deal.client ?? null;
   const sectors = [...new Set([...(deal.sector ?? []), ...(client?.sector ?? [])])];
@@ -219,18 +273,23 @@ export function projectDealForInvestor(deal: DealInput, tier: Tier): ProjectedDe
   const revenueLastYear = client?.revenueLastYear ?? null;
   const revenueForecast = client?.revenueForecast ?? null;
 
+  const masked = tier === "PRE_INTEREST";
+  const displayName = masked ? dealCodename(deal.id) : deal.name;
+
   return {
     id: deal.id,
-    name: deal.name,
+    name: displayName,
     tier,
     companyProfile: {
-      clientName: client?.name ?? deal.name,
+      clientName: masked ? displayName : (client?.name ?? deal.name),
       sector: sectors,
       description: client?.description ?? null,
       coreProduct: client?.coreProduct ?? null,
       hqCity: client?.hqCity ?? null,
       countries: client?.countries ?? [],
       yearFounded: client?.yearFounded ?? null,
+      womenLed: (client?.impactFlags ?? []).includes("WomenLed"),
+      youthLed: (client?.impactFlags ?? []).includes("YouthLed"),
     },
     dealTypeTicket: {
       dealType: deal.dealType ?? null,
@@ -243,16 +302,16 @@ export function projectDealForInvestor(deal: DealInput, tier: Tier): ProjectedDe
           disclosure: "full",
           revenueLastYear: toNum(revenueLastYear),
           revenueForecast: toNum(revenueForecast),
-          profitable: client?.profitable ?? null,
+          profitability: client?.profitability ?? null,
         }
       : {
           disclosure: "limited",
           revenueLastYear: bandCurrency(revenueLastYear),
           revenueForecast: bandCurrency(revenueForecast),
-          profitable: client?.profitable ?? null,
+          profitability: client?.profitability ?? null,
         },
     matchingMandateStatus: deal.mandate?.stage ?? null,
-    documents: projectDocuments(deal.documents ?? [], tier),
+    documents: projectDocuments(deal.documents ?? [], tier, ndaSatisfied, displayName),
     advisorClientContacts: isFieldVisible("advisorClientContacts", tier)
       ? (client?.contacts ?? []).map((c) => ({
           name: [c.firstName, c.lastName ?? ""].join(" ").trim(),
@@ -334,6 +393,7 @@ export function projectOwnEngagement(
 
 export interface DiscoveryInvestor {
   engagementClassification: InvestorEngagementClassification;
+  onboardingStatus: OnboardingStatus;
   sectorFocus?: Sector[];
   geographicFocus?: Geography[];
   ticketMin?: DecimalLike | null;
@@ -362,6 +422,7 @@ export function discoverableDealsForInvestor<T extends DealInput>(
   investor: DiscoveryInvestor,
   deals: T[],
 ): T[] {
+  if (isOnboardingBlocked(investor.onboardingStatus)) return [];
   if (isBlockedClassification(investor.engagementClassification)) return [];
 
   const sectorFocus = investor.sectorFocus ?? [];
@@ -414,6 +475,9 @@ export interface ReferredMandateInput {
   dealSize?: DecimalLike | null;
   currency?: string;
   client?: { name: string } | null;
+  // Task 8: the mandate's linked transaction(s) carry the fee-execution status —
+  // only the first is used (mirrors deals-queue's linkedCounterpartId convention).
+  transactions?: { partnerFeeStatus?: PartnerFeeStatus | null }[];
 }
 
 export interface ProjectedPartnerView {
@@ -433,6 +497,9 @@ export interface ProjectedPartnerView {
     currency: string;
     converted: boolean;
     feeSharingStatus: string;
+    // Task 8: read-only fee STATUS for the referred deal's transaction (never
+    // feedbackNotes — that field is internal-only and never projected here).
+    partnerFeeStatusValue: PartnerFeeStatus | null;
   }[];
 }
 
@@ -467,6 +534,7 @@ export function projectForPartner(
       currency: mandate.currency ?? "USD",
       converted: mandate.stage === "Signed",
       feeSharingStatus,
+      partnerFeeStatusValue: mandate.transactions?.[0]?.partnerFeeStatus ?? null,
     })),
   };
 }

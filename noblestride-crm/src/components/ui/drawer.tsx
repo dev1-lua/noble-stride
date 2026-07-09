@@ -34,7 +34,7 @@ export function Drawer({ open, onClose, title, children, footer }: DrawerProps) 
             onClick={onClose}
           />
           <motion.aside
-            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col bg-white shadow-2xl"
+            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col bg-[var(--bg-primary)] shadow-2xl"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -43,20 +43,20 @@ export function Drawer({ open, onClose, title, children, footer }: DrawerProps) 
             aria-modal="true"
             aria-label={title}
           >
-            <header className="flex flex-shrink-0 items-center justify-between border-b border-zinc-200 px-5 py-4">
-              <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
+            <header className="flex flex-shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">{title}</h2>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Close"
-                className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100"
+                className="flex h-8 w-8 items-center justify-center rounded text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)]"
               >
                 <X className="h-4 w-4" />
               </button>
             </header>
             <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
             {footer && (
-              <footer className="flex-shrink-0 border-t border-zinc-200 px-5 py-3">{footer}</footer>
+              <footer className="flex-shrink-0 border-t border-[var(--border-subtle)] px-5 py-3">{footer}</footer>
             )}
           </motion.aside>
         </>

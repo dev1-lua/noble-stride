@@ -18,6 +18,8 @@ export const partnerCreateSchema = z.object({
   feeSharingTerms: z.string().trim().optional(),
   partnerAgreementStatus: z.nativeEnum(PartnerAgreementStatus).optional(),
   internalOnly: z.boolean().optional(),
+  // Task 8: internal feedback notes (Task 6 migration) — never exposed to the partner portal
+  feedbackNotes: z.string().trim().optional(),
 });
 export const partnerUpdateSchema = partnerCreateSchema.partial();
 export type PartnerCreateInput = z.infer<typeof partnerCreateSchema>;

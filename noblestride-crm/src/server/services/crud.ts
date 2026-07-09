@@ -18,3 +18,14 @@ export function actorSource(actor: Actor): ActorSource {
   if (actor.type === "API") return "API";
   return "HUMAN";
 }
+
+/**
+ * Compare two dates at calendar-date (UTC) granularity rather than exact
+ * instant. Edit drawers seed date fields as yyyy-mm-dd strings, which the
+ * DateTime scalar coerces to UTC midnight; seeded/legacy rows may carry a
+ * real time-of-day. An unchanged resend at the UI's date granularity must
+ * not be treated as a change.
+ */
+export function sameCalendarDate(a: Date, b: Date): boolean {
+  return a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
+}

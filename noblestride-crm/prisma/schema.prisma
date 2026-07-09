@@ -41,6 +41,25 @@ enum Sector {
   Services
   TransportLogistics
   WaterSanitation
+  Energy
+  OilAndGas
+  Mining
+  Gambling
+  Alcohol
+  Tobacco
+}
+
+enum Priority {
+  High
+  Medium
+  Low
+}
+
+enum PartnerFeeStatus {
+  NotDue
+  Due
+  Invoiced
+  Paid
 }
 
 enum InvestorType {
@@ -70,6 +89,7 @@ enum Instrument {
   Mezzanine
   Grant
   Convertible
+  Hybrid
 }
 
 enum InvestmentStage {
@@ -134,6 +154,13 @@ enum Source {
   Outreach
   Event
   Website
+  DirectEnquiry
+  Consultant
+  Investor
+  Partner
+  SocialMedia
+  InternalBusinessDev
+  Other
 }
 
 enum DocStatus {
@@ -177,6 +204,7 @@ enum TaskStatus {
   Pending
   Ongoing
   Done
+  Dropped
 }
 
 // Engagement-tracker interaction types (wireframe stat cards + timeline).
@@ -250,6 +278,17 @@ enum InvestorNdaStatus {
   ClosedNDA
 }
 
+enum OnboardingStatus {
+  PendingReview
+  Approved
+  Rejected
+}
+
+enum BlockedRegistrationKind {
+  Domain
+  Email
+}
+
 enum AdvisorType {
   Lawyer
   Investor
@@ -271,6 +310,7 @@ enum ServiceProviderType {
 enum DocumentType {
   NDA
   EngagementContract
+  FeeShareAgreement
   Teaser
   IM
   FinancialModel
@@ -307,6 +347,38 @@ enum PartnerAgreementStatus {
   Signed
 }
 
+// CAK / COMESA competition-approval lifecycle (SPEC §3.2)
+enum RegulatoryStatus {
+  NotStarted
+  Filed
+  Approved
+  NotRequired
+}
+
+// §6.2 due-diligence workstreams
+enum DDTrack {
+  Financial
+  Tax
+  Commercial
+  ESG
+  Legal
+}
+
+enum DDStatus {
+  NotStarted
+  InProgress
+  Complete
+  Flagged
+  NotApplicable
+}
+
+// §7.2 in-org roles (demo lens, not auth)
+enum OrgRole {
+  Admin
+  DealLead
+  TeamMember
+}
+
 // "Sectors and Milestones" doc — fixed milestones for investors (14 steps + post-deal).
 enum MilestoneKey {
   TeaserReview // Receipt and review of the teaser
@@ -327,6 +399,83 @@ enum MilestoneKey {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Spec-gap enums (SPEC §3.1/§3.10/§4.x) — deal financing/status/milestone,
+// max selling stake, task source, communication channel/direction, client
+// status, impact flags.
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum DealFinancingType {
+  Debt
+  Equity
+  EquityAndDebt
+}
+
+enum DealStatus {
+  Open
+  OnHold
+  Closed
+  ClosedReopened
+  ClosedOnHold
+  Dropped
+}
+
+enum DealMilestone {
+  TermSheet
+  NonBindingOffer
+  LoanAgreement
+  SpaSha
+  DueDiligence
+  IC
+  TA
+  Closed
+}
+
+enum MaxSellingStake {
+  Minority
+  Majority
+  FullSale
+  NA
+}
+
+enum TaskSource {
+  MondayMeeting
+  WhatsApp
+  Email
+  Verbal
+  Other
+}
+
+enum CommChannel {
+  WhatsApp
+  Email
+  Slack
+  WebChat
+  Call
+  Meeting
+}
+
+enum CommDirection {
+  Inbound
+  Outbound
+}
+
+enum ClientStatus {
+  Active
+  Prospect
+  Archived
+}
+
+enum ImpactFlag {
+  WomenLed
+  YouthLed
+}
+
+enum Profitability {
+  Profitable
+  LossMaking
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Team & contacts
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -337,17 +486,25 @@ model User {
   jobTitle    String?
   avatarColor String? // hex for the avatar chip
   isActive    Boolean  @default(true)
+  role        OrgRole  @default(Admin) // §7.2 in-org role (demo lens)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   ledMandates       Mandate[]     @relation("MandateLead")
   ownedTransactions Transaction[] @relation("TransactionOwner")
   ownedEngagements  Engagement[]  @relation("EngagementOwner")
+  ddTracks          DueDiligenceTrack[] @relation("DDTrackOwner")
   activities        Activity[]    @relation("ActivityCreatedBy")
   assignedTasks     Task[]        @relation("TaskAssignee")
   documents         Document[]    @relation("DocumentUploadedBy")
   reviewedDocuments Document[]    @relation("DocumentReviewer")
   approvedDocuments Document[]    @relation("DocumentApprover")
+  assistantTransactions Transaction[] @relation("TransactionAssistant")
+  assistantTasks        Task[]        @relation("TaskAssistant")
+  stageChanges          StageChange[] @relation("StageChangeActor")
+  savedViews   SavedView[] @relation("SavedViewCreatedBy")
+  notifications Notification[]
+  authAccount AuthAccount?
 }
 
 model Person {
@@ -372,6 +529,7 @@ model Person {
   partner    Partner?  @relation(fields: [partnerId], references: [id], onDelete: SetNull)
 
   ssaForInvestors Investor[] @relation("InvestorSsaContact")
+  authAccount AuthAccount?
 
   @@index([investorId])
   @@index([clientId])
@@ -404,6 +562,12 @@ model Investor {
   // Task 5: engagement classification, NDA status, profile fields
   engagementClassification InvestorEngagementClassification @default(Active)
   ndaStatus                InvestorNdaStatus                @default(None)
+  // Investor onboarding (design spec 2026-07-05): approval gate + demo-OTP stamps + open-NDA record
+  onboardingStatus         OnboardingStatus                 @default(Approved)
+  emailVerifiedAt          DateTime?
+  phoneVerifiedAt          DateTime?
+  registeredAt             DateTime?
+  openNdaSignedAt          DateTime?
   shareholdingPreference   String?
   minRevenue               Decimal?  @db.Decimal(20, 2)
   minEbitda                Decimal?  @db.Decimal(20, 2)
@@ -427,6 +591,8 @@ model Investor {
   reputationalRisks    String? // §7 controversial sectors or geographies
   ssaRegionContactId       String?
   ssaRegionContact         Person?   @relation("InvestorSsaContact", fields: [ssaRegionContactId], references: [id], onDelete: SetNull)
+  // Task 6: criteria verification stamp
+  criteriaVerifiedAt  DateTime?
   createdSource       ActorSource     @default(HUMAN)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
@@ -436,10 +602,29 @@ model Investor {
   activities  Activity[]
   tasks       Task[]
   documents   Document[]
+  stageChanges StageChange[]
+  blockedRegistrations BlockedRegistration[]
 
   @@index([investorType])
   @@index([status])
   @@index([engagementClassification])
+  @@index([onboardingStatus])
+}
+
+// BlockedRegistration — email domains/addresses barred from self-registration.
+// Populated when an investor is greylisted (anti-broker guardrail): corporate
+// domains block the whole domain; free-provider addresses block the exact email.
+model BlockedRegistration {
+  id         String                  @id @default(cuid())
+  kind       BlockedRegistrationKind
+  value      String // normalized lower-case: domain ("acme.com") or full email
+  reason     String?
+  investorId String?
+  investor   Investor?               @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  createdAt  DateTime                @default(now())
+
+  @@unique([kind, value])
+  @@index([investorId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -457,14 +642,44 @@ model Client {
   coreProduct       String?
   description       String?
   founders          String?
-  founderGender     FounderGender?
+  founderGenders    FounderGender[] @default([])
   revenueLastYear   Decimal?       @db.Decimal(20, 2)
   revenueForecast   Decimal?       @db.Decimal(20, 2)
   currency          String         @default("USD")
-  profitable        Boolean?
+  profitability     Profitability?
   existingInvestors String?
   source            Source?
   pitchDeckUrl      String?
+  // Spec-gap: company profile fields (spec §3.1/§3.2)
+  codename             String? // project codename, kept separate from legal name
+  registrationNo       String?
+  hqCountry            String?
+  businessModel        String?
+  foundersNationality  String?
+  ownershipStructure   String?
+  directorsManagement  String?
+  targetClients        String?
+  staffCount           Int?
+  branchCount          Int?
+  ebitda               Decimal?     @db.Decimal(20, 2)
+  netProfit            Decimal?     @db.Decimal(20, 2)
+  existingDebt         Decimal?     @db.Decimal(20, 2)
+  loanBook             Decimal?     @db.Decimal(20, 2)
+  totalAssets          Decimal?     @db.Decimal(20, 2)
+  impactFlags          ImpactFlag[] @default([])
+  status               ClientStatus @default(Prospect)
+  // Task 6: qualification/scoping gap fields
+  pepExposure            Boolean  @default(false)
+  governmentOwned        Boolean  @default(false)
+  complianceNotes        String?
+  auditedFinancialsYears Int?
+  groupStructure         String?
+  suppliers              String?
+  competitors            String?
+  capacityUtilization    String?
+  repaymentAbilityNotes  String?
+  pricingExpectations    String?
+  proposedTimeline       String?
   createdSource     ActorSource    @default(HUMAN)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
@@ -474,6 +689,10 @@ model Client {
   transactions Transaction[]
   tasks        Task[]
   documents    Document[]
+  activities   Activity[]
+  stageChanges StageChange[]
+
+  @@index([status])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -485,6 +704,7 @@ model Mandate {
   name           String
   stage          MandateStage @default(NewLead)
   stageEnteredAt DateTime     @default(now()) // drives "days in stage"
+  dealStatus     DealStatus   @default(Open)
   dealSize       Decimal?     @db.Decimal(20, 2)
   currency       String       @default("USD")
   sector         Sector[]     @default([])
@@ -498,6 +718,15 @@ model Mandate {
   eaSignedDate   DateTime?
   nextAction     String?
   notes          String?
+  // Task 6: retainer + qualification fields
+  retainerAmount       Decimal?  @db.Decimal(20, 2)
+  retainerInvoicedDate DateTime?
+  retainerPaidDate     DateTime?
+  priority             Priority?
+  referralQualified    Boolean?
+  qualificationVerdict String?
+  qualificationReasons String[]
+  qualifiedAt          DateTime?
   createdSource  ActorSource  @default(HUMAN)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -511,6 +740,8 @@ model Mandate {
   transactions Transaction[]
   activities   Activity[]
   tasks        Task[]
+  documents    Document[]
+  stageChanges StageChange[]
 
   @@index([stage])
   @@index([clientId])
@@ -537,6 +768,26 @@ model Transaction {
   successFeeAmount       Decimal?  @db.Decimal(20, 2)
   successFeeInvoicedDate DateTime?
   successFeePaidDate     DateTime?
+  // Spec-gap: deal status/milestone/financing fields (spec §4.1/§4.3/§4.5/§4.7)
+  dealStatus      DealStatus         @default(Open)
+  dealMilestone   DealMilestone?
+  financingType   DealFinancingType?
+  maxSellingStake MaxSellingStake?
+  targetProfile   String?
+  useOfFunds      String?
+  vdrLink         String?
+  probability     Int?
+  notes           String?
+  // §3.2 IC approvals + CAK/COMESA regulatory tracking (deal-level, internal-only)
+  icFirstApprovalDate   DateTime?
+  icSecondApprovalDate  DateTime?
+  cakComesaStatus       RegulatoryStatus @default(NotStarted)
+  cakComesaFiledDate    DateTime?
+  cakComesaApprovedDate DateTime?
+  // Task 6: priority + partner fee tracking
+  priority          Priority?
+  partnerFeeStatus  PartnerFeeStatus?
+  partnerFeeAmount  Decimal?           @db.Decimal(20, 2)
   createdSource  ActorSource      @default(HUMAN)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -547,11 +798,17 @@ model Transaction {
   mandate     Mandate?     @relation(fields: [mandateId], references: [id], onDelete: SetNull)
   ownerId     String?
   owner       User?        @relation("TransactionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  assistantId String?
+  assistant   User?        @relation("TransactionAssistant", fields: [assistantId], references: [id], onDelete: SetNull)
+  referredById String?
+  referredBy   Partner?    @relation("PartnerTransactionReferral", fields: [referredById], references: [id], onDelete: SetNull)
   engagements      Engagement[]
   activities       Activity[]
   tasks            Task[]
   serviceProviders ServiceProvider[] @relation("TransactionServiceProviders")
   documents        Document[]
+  stageChanges     StageChange[]
+  ddTracks         DueDiligenceTrack[]
 
   @@index([stage])
   @@index([clientId])
@@ -575,6 +832,7 @@ model Engagement {
   engagementStage    EngagementStage     @default(Shared)
   interestLevel      InterestLevel?
   ndaType            NdaType?
+  ndaSignedAt        DateTime?
   termSheetIssued    Boolean             @default(false)
   termSheetDate      DateTime?
   totalAmount        Decimal?            @db.Decimal(20, 2)
@@ -595,6 +853,7 @@ model Engagement {
   owner         User?       @relation("EngagementOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   activities    Activity[]
   milestones    EngagementMilestone[]
+  stageChanges  StageChange[]
 
   @@unique([transactionId, investorId])
   @@index([status])
@@ -621,6 +880,32 @@ model EngagementMilestone {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// DueDiligenceTrack — deal-level DD workstreams (SPEC §6.2): financial / tax /
+// commercial / ESG / legal. INTERNAL ONLY — never projected to the portal.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model DueDiligenceTrack {
+  id          String    @id @default(cuid())
+  track       DDTrack
+  status      DDStatus  @default(NotStarted)
+  startedAt   DateTime?
+  completedAt DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  transactionId     String
+  transaction       Transaction      @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  ownerId           String?
+  owner             User?            @relation("DDTrackOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  serviceProviderId String?
+  serviceProvider   ServiceProvider? @relation("DDTrackProvider", fields: [serviceProviderId], references: [id], onDelete: SetNull)
+
+  @@unique([transactionId, track])
+  @@index([transactionId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Partner — service providers & referral sources (SPEC §3.6)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -642,12 +927,17 @@ model Partner {
   feeSharingTerms        String?
   partnerAgreementStatus PartnerAgreementStatus @default(None)
   internalOnly           Boolean                @default(true)
+  // Task 6: feedback notes
+  feedbackNotes          String?
   createdSource ActorSource   @default(HUMAN)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   contacts         Person[]
   referredMandates Mandate[] @relation("PartnerReferral")
+  referredTransactions Transaction[] @relation("PartnerTransactionReferral")
+  stageChanges     StageChange[]
+  documents            Document[]
 
   @@index([partnerType])
   @@index([status])
@@ -666,6 +956,9 @@ model Activity {
   occurredAt    DateTime        @default(now())
   createdSource ActorSource     @default(HUMAN)
   createdAt     DateTime        @default(now())
+  // Spec-gap: communication channel/direction (spec §3.10)
+  channel       CommChannel?
+  direction     CommDirection?
 
   engagementId  String?
   engagement    Engagement?  @relation(fields: [engagementId], references: [id], onDelete: Cascade)
@@ -675,8 +968,11 @@ model Activity {
   investor      Investor?    @relation(fields: [investorId], references: [id], onDelete: SetNull)
   mandateId     String?
   mandate       Mandate?     @relation(fields: [mandateId], references: [id], onDelete: SetNull)
+  clientId      String?
+  client        Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
   createdById   String?
   createdBy     User?        @relation("ActivityCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  tasks         Task[]       @relation("ActivityTasks")
 
   @@index([type])
   @@index([engagementId])
@@ -695,6 +991,9 @@ model Task {
   body      String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  // Spec-gap: source of the task + escalation flag (spec §3.10/§4.12)
+  source    TaskSource?
+  escalated Boolean     @default(false)
 
   assigneeId    String?
   assignee      User?        @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
@@ -706,6 +1005,10 @@ model Task {
   investor      Investor?    @relation(fields: [investorId], references: [id], onDelete: SetNull)
   clientId      String?
   client        Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  assistantId   String?
+  assistant     User?        @relation("TaskAssistant", fields: [assistantId], references: [id], onDelete: SetNull)
+  activityId    String?
+  activity      Activity?    @relation("ActivityTasks", fields: [activityId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@index([assigneeId])
@@ -731,6 +1034,7 @@ model ServiceProvider {
   updatedAt     DateTime            @updatedAt
 
   engagedOn     Transaction[]       @relation("TransactionServiceProviders")
+  ddTracks      DueDiligenceTrack[] @relation("DDTrackProvider")
 
   @@index([type])
 }
@@ -748,6 +1052,17 @@ model Document {
   accessLevel   DocumentAccessLevel @default(Internal)
   status        DocumentStatus?
   fileUrl       String?
+  storageProvider   String?   @default("local")
+  storageKey        String?
+  mimeType          String?
+  sizeBytes         Int?
+  checksum          String?
+  originalFilename  String?
+  previousVersionId String?
+  previousVersion   Document?  @relation("DocumentVersions", fields: [previousVersionId], references: [id], onDelete: SetNull)
+  supersededBy      Document[] @relation("DocumentVersions")
+  isCurrent         Boolean    @default(true)
+  accessLogs        DocumentAccessLog[]
   uploadedById  String?
   uploadedBy    User?               @relation("DocumentUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
   uploadedAt    DateTime            @default(now())
@@ -765,10 +1080,191 @@ model Document {
   client        Client?             @relation(fields: [clientId], references: [id], onDelete: SetNull)
   investorId    String?
   investor      Investor?           @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  mandateId     String?
+  mandate       Mandate?            @relation(fields: [mandateId], references: [id], onDelete: SetNull)
+  partnerId     String?
+  partner       Partner?            @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   createdSource ActorSource         @default(HUMAN)
   createdAt     DateTime            @default(now())
 
   @@index([type])
   @@index([accessLevel])
   @@index([transactionId])
+  @@index([mandateId])
+  @@index([isCurrent])
+}
+
+model DocumentAccessLog {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String?
+  action     String   // UPLOAD | DOWNLOAD | DELETE
+  at         DateTime @default(now())
+
+  @@index([documentId])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// StageChange — append-only stage/status change history (SPEC §7.1).
+// Never updated or deleted; a new row is written on every stage/status move.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model StageChange {
+  id            String       @id @default(cuid())
+  field         String       // "stage" | "dealStatus" | "engagementStage" | "dealMilestone" | "name" | "registrationNo" | "primaryContact"
+  fromValue     String?
+  toValue       String
+  changedAt     DateTime     @default(now())
+  changedById   String?
+  changedBy     User?        @relation("StageChangeActor", fields: [changedById], references: [id], onDelete: SetNull)
+  createdSource ActorSource  @default(HUMAN)
+  mandateId     String?
+  mandate       Mandate?     @relation(fields: [mandateId], references: [id], onDelete: Cascade)
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  engagementId  String?
+  engagement    Engagement?  @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  clientId      String?
+  client        Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  investorId    String?
+  investor      Investor?    @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  partnerId     String?
+  partner       Partner?     @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@index([mandateId])
+  @@index([transactionId])
+  @@index([engagementId])
+  @@index([clientId])
+  @@index([investorId])
+  @@index([partnerId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SavedView — team-shared queue views (name + serialized filter/sort/columns).
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SavedView {
+  id          String   @id @default(cuid())
+  name        String
+  entity      String   @default("deals") // future-proof; only "deals" today
+  config      Json     // { filters, sort, dir, columns, groupBy, view }
+  createdById String?
+  createdBy   User?    @relation("SavedViewCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entity])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification — per-user notification feed (Task 6 gap closure).
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String
+  title     String
+  body      String?
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+// Real authentication (design spec 2026-07-08): credentials + DB sessions.
+// AuthAccount links to User (internal staff) or Person (investor contact).
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum AccountKind {
+  INTERNAL
+  INVESTOR
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum AuthTokenPurpose {
+  RESET_PASSWORD
+  VERIFY_EMAIL
+}
+
+enum AuthOtpPurpose {
+  LOGIN_2FA
+}
+
+model AuthAccount {
+  id           String        @id @default(cuid())
+  email        String        @unique // always stored lowercase
+  passwordHash String
+  kind         AccountKind
+  status       AccountStatus @default(PENDING)
+  // Pre-approval signup details for internal accounts not yet in the directory:
+  displayName  String?
+  jobTitle     String?
+  userId       String?       @unique
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personId     String?       @unique
+  person       Person?       @relation(fields: [personId], references: [id], onDelete: Cascade)
+  failedLogins Int           @default(0)
+  lockedUntil  DateTime?
+  lastLoginAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  sessions      AuthSession[]
+  tokens        AuthToken[]
+  otpChallenges AuthOtpChallenge[]
+
+  @@index([kind, status])
+}
+
+model AuthSession {
+  id         String      @id @default(cuid())
+  tokenHash  String      @unique // sha256 hex of the opaque token; raw token never stored
+  accountId  String
+  account    AuthAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  createdAt  DateTime    @default(now())
+  lastUsedAt DateTime    @default(now())
+  ip         String?
+  userAgent  String?
+
+  @@index([accountId])
+}
+
+model AuthToken {
+  id        String           @id @default(cuid())
+  tokenHash String           @unique
+  accountId String
+  account   AuthAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  purpose   AuthTokenPurpose
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([accountId])
+}
+
+model AuthOtpChallenge {
+  id          String         @id @default(cuid())
+  accountId   String
+  account     AuthAccount    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  purpose     AuthOtpPurpose
+  codeHash    String // sha256 hex of the 6-digit code; raw code never stored
+  destination String // email the code was actually sent to (audit)
+  attempts    Int            @default(0)
+  maxAttempts Int            @default(5)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime       @default(now())
+
+  @@index([accountId, purpose])
 }

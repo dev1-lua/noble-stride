@@ -20,11 +20,11 @@ export function MilestoneStepper({
         const isCurrent = !muted && i === currentIndex;
         const cls = complete
           ? muted
-            ? "bg-zinc-300"
-            : "bg-emerald-500"
+            ? "bg-[var(--border-strong)]"
+            : "bg-[var(--accent)]"
           : isCurrent
-            ? "bg-emerald-100 ring-1 ring-inset ring-emerald-500"
-            : "bg-zinc-100";
+            ? "bg-[var(--t-tag-bg-emerald)] ring-1 ring-inset ring-[var(--accent)]"
+            : "bg-[var(--bg-tertiary)]";
         return (
           <span
             key={key}

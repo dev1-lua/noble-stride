@@ -1,7 +1,9 @@
 data/
+decrypted/
 my-twenty-app/
 twenty-main/
 .playwright-mcp/
 .claude/
 .superpowers/
 .DS_Store
+node_modules/

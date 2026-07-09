@@ -21,7 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1">
         {label && (
-          <label htmlFor={inputId} className="text-xs font-medium text-zinc-700">
+          <label htmlFor={inputId} className="text-xs font-medium text-[var(--text-secondary)]">
             {label}
           </label>
         )}
@@ -29,9 +29,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            "h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-400",
-            "focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent",
-            "disabled:bg-zinc-50 disabled:text-zinc-400 disabled:cursor-not-allowed",
+            "h-8 w-full rounded border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
+            "focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)]",
+            "disabled:bg-[var(--bg-secondary)] disabled:text-[var(--text-tertiary)] disabled:cursor-not-allowed",
             error && "border-rose-400 focus:ring-rose-400",
             className
           )}
