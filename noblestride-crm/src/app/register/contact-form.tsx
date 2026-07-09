@@ -5,6 +5,7 @@
 // record already exists, so no fund details are re-collected.
 
 import { useActionState } from "react";
+import { PasswordInput } from "@/components/ui";
 import type { WizardActionState } from "./actions";
 
 const inputClass =
@@ -42,28 +43,26 @@ export default function ContactForm({
           <label htmlFor="password" className={labelClass}>
             Password <span className="text-rose-500">*</span>
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             required
             minLength={10}
             placeholder="At least 10 characters"
-            className={"mt-1 " + inputClass}
+            className="mt-1"
           />
         </div>
         <div>
           <label htmlFor="confirm" className={labelClass}>
             Confirm password <span className="text-rose-500">*</span>
           </label>
-          <input
+          <PasswordInput
             id="confirm"
             name="confirm"
-            type="password"
             required
             minLength={10}
             placeholder="Re-enter your password"
-            className={"mt-1 " + inputClass}
+            className="mt-1"
           />
         </div>
         <div className="flex items-center justify-end border-t border-[var(--border-subtle)] pt-4">

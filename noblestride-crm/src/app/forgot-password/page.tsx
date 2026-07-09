@@ -36,8 +36,7 @@ export default async function ForgotPasswordPage({ searchParams }: PageProps) {
           {sent ? (
             <div className="space-y-4">
               <p className="text-sm text-[var(--text-primary)]">
-                If an account exists for that address, a reset link has been sent. (While email delivery is not
-                configured, the link appears in the server console.)
+                If an account exists for that address, a reset link has been sent.
               </p>
               <Link href="/login" className="text-xs font-medium text-[var(--accent)] hover:underline">
                 ← Back to sign in

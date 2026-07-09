@@ -18,7 +18,15 @@ export function buildResendPayload(msg: MailMessage, from: string) {
 
 export async function sendMail(msg: MailMessage): Promise<void> {
   if (mailProvider() === "console") {
-    console.log(`\n[mailer] To: ${msg.to}\n[mailer] Subject: ${msg.subject}\n[mailer] ${msg.text}\n`);
+    if (process.env.NODE_ENV !== "production") {
+      // Dev convenience: dump the message (incl. OTP codes / reset links) so
+      // it's usable without a real mail provider configured.
+      console.log(`\n[mailer] To: ${msg.to}\n[mailer] Subject: ${msg.subject}\n[mailer] ${msg.text}\n`);
+    } else {
+      // Prod + misconfigured (no RESEND_API_KEY): never log credentials-
+      // adjacent message contents (recipient, OTP codes, reset links).
+      console.error("[mailer] no email transport configured; message not sent");
+    }
     return;
   }
   const from = process.env.RESEND_FROM ?? "NobleStride <onboarding@resend.dev>";

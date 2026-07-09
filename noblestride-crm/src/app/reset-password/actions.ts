@@ -9,11 +9,11 @@ export async function resetPasswordAction(formData: FormData): Promise<void> {
   const confirm = String(formData.get("confirm") ?? "");
   if (!token) redirect("/login");
   if (password !== confirm) {
-    redirect(`/reset-password/${encodeURIComponent(token)}?error=${encodeURIComponent("Passwords do not match.")}`);
+    redirect(`/reset-password/${encodeURIComponent(token)}?error=mismatch`);
   }
   const res = await performPasswordReset(token, password);
   if (!res.ok) {
-    redirect(`/reset-password/${encodeURIComponent(token)}?error=${encodeURIComponent(res.error ?? "Reset failed.")}`);
+    redirect(`/reset-password/${encodeURIComponent(token)}?error=${res.reason}`);
   }
-  redirect(`/login?error=${encodeURIComponent("Password updated — sign in with your new password.")}`);
+  redirect("/login?notice=password-updated");
 }

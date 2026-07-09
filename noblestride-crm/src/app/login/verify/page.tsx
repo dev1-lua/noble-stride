@@ -30,6 +30,8 @@ export default async function VerifyPage({ searchParams }: PageProps) {
 
   const next = safeNext(sp.next) ?? "";
   const errorMsg = sp.error ? (ERRORS[sp.error] ?? "That code is incorrect.") : null;
+  const remaining = Number(sp.remaining);
+  const showRemaining = Number.isInteger(remaining) && remaining >= 0 && remaining <= 10;
 
   return (
     <div className="flex min-h-screen items-start justify-center bg-[var(--bg-secondary)] px-4 py-12">
@@ -54,7 +56,7 @@ export default async function VerifyPage({ searchParams }: PageProps) {
             role="alert"
           >
             {errorMsg}
-            {sp.remaining ? ` ${sp.remaining} attempt(s) left.` : ""}
+            {showRemaining ? ` ${remaining} attempt(s) left.` : ""}
           </div>
         ) : null}
 

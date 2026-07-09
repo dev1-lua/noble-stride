@@ -16,3 +16,5 @@ export type { InputProps } from "./input";
 export { Select } from "./select";
 export type { SelectProps, SelectOption } from "./select";
 export { HelpHint } from "./help-hint";
+export { PasswordInput } from "./password-input";
+export type { PasswordInputProps } from "./password-input";

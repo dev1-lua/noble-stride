@@ -34,20 +34,22 @@ export async function requestPasswordReset(emailRaw: string, baseUrl: string): P
 export async function performPasswordReset(
   rawToken: string,
   newPassword: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: true } | { ok: false; reason: "invalid" | "weak"; error: string }> {
   // Peek at the token to policy-check against the right email WITHOUT consuming.
   const peek = await prisma.authToken.findUnique({
     where: { tokenHash: hashToken(rawToken) },
     include: { account: true },
   });
   if (!peek || peek.purpose !== "RESET_PASSWORD" || peek.usedAt || peek.expiresAt.getTime() <= Date.now()) {
-    return { ok: false, error: "This reset link is invalid or has expired. Request a new one." };
+    return { ok: false, reason: "invalid", error: "This reset link is invalid or has expired. Request a new one." };
   }
   const policyError = validatePassword(newPassword, peek.account.email);
-  if (policyError) return { ok: false, error: policyError };
+  if (policyError) return { ok: false, reason: "weak", error: policyError };
 
   const account = await consumeAuthToken(rawToken, "RESET_PASSWORD");
-  if (!account) return { ok: false, error: "This reset link is invalid or has expired. Request a new one." };
+  if (!account) {
+    return { ok: false, reason: "invalid", error: "This reset link is invalid or has expired. Request a new one." };
+  }
 
   await prisma.authAccount.update({
     where: { id: account.id },
