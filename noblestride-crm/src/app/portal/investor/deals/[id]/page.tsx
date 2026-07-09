@@ -166,9 +166,9 @@ export default async function InvestorDealPage({
                     {doc.version ? ` · v${doc.version}` : ""}
                   </div>
                 </div>
-                {doc.fileUrl ? (
+                {doc.downloadUrl ? (
                   <a
-                    href={doc.fileUrl}
+                    href={doc.downloadUrl}
                     className="rounded-md bg-[var(--t-tag-bg-emerald)] px-3 py-1 text-xs font-medium text-[var(--t-tag-text-emerald)] transition-colors hover:opacity-80"
                   >
                     Open

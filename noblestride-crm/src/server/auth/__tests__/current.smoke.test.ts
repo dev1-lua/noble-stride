@@ -16,12 +16,12 @@ function internalAuth(role: "Admin" | "DealLead" | "TeamMember"): CurrentAuth {
 describe("resolveViewpointFor", () => {
   it("returns null when signed out", async () => {
     const { resolveViewpointFor } = await import("../current");
-    expect(await resolveViewpointFor(null, undefined)).toBeNull();
+    expect(await resolveViewpointFor(null)).toBeNull();
   });
   it("derives admin viewpoint for internal users from User.role", async () => {
     const { resolveViewpointFor } = await import("../current");
-    expect(await resolveViewpointFor(internalAuth("Admin"), undefined)).toEqual({ role: "admin", orgRole: "Admin" });
-    expect(await resolveViewpointFor(internalAuth("TeamMember"), undefined)).toEqual({
+    expect(await resolveViewpointFor(internalAuth("Admin"))).toEqual({ role: "admin", orgRole: "Admin" });
+    expect(await resolveViewpointFor(internalAuth("TeamMember"))).toEqual({
       role: "admin", orgRole: "TeamMember", userId: "user1",
     });
   });
@@ -32,24 +32,20 @@ describe("resolveViewpointFor", () => {
       user: null,
       person: { id: "p1", investorId: "inv9", investor: { id: "inv9" } },
     } as unknown as CurrentAuth;
-    expect(await resolveViewpointFor(auth, undefined)).toEqual({ role: "investor", recordId: "inv9" });
+    expect(await resolveViewpointFor(auth)).toEqual({ role: "investor", recordId: "inv9" });
   });
-  it("applies a signed impersonation lens ONLY for Admin org-role", async () => {
+  it("real role always governs — an Admin account gets no override (lens removed)", async () => {
     const { resolveViewpointFor } = await import("../current");
-    const { signImpersonation } = await import("../impersonation");
-    const lens = await signImpersonation({ role: "investor", recordId: "inv1", impersonating: true });
-    expect(await resolveViewpointFor(internalAuth("Admin"), lens)).toEqual({
-      role: "investor", recordId: "inv1", impersonating: true,
-    });
-    // Non-admin real role: lens ignored
-    expect(await resolveViewpointFor(internalAuth("TeamMember"), lens)).toEqual({
+    // Admin resolves to the plain admin viewpoint, with no way to land on an
+    // investor/partner viewpoint or another user's org-role lens anymore.
+    expect(await resolveViewpointFor(internalAuth("Admin"))).toEqual({ role: "admin", orgRole: "Admin" });
+    expect(await resolveViewpointFor(internalAuth("TeamMember"))).toEqual({
       role: "admin", orgRole: "TeamMember", userId: "user1",
     });
-    // Investor account: lens ignored
     const inv = {
       account: { id: "acc2", kind: "INVESTOR" }, user: null,
       person: { id: "p1", investorId: "inv9", investor: { id: "inv9" } },
     } as unknown as CurrentAuth;
-    expect(await resolveViewpointFor(inv, lens)).toEqual({ role: "investor", recordId: "inv9" });
+    expect(await resolveViewpointFor(inv)).toEqual({ role: "investor", recordId: "inv9" });
   });
 });

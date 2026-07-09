@@ -8,24 +8,10 @@ import { getCurrentAuth } from "@/server/auth/current";
 import { prisma } from "@/lib/db";
 import { label } from "@/lib/vocab";
 import { UserActionsClient } from "./user-actions-client";
+import { AccountsTable, type AccountRow } from "./accounts-table";
 
-const STATUS_CHIP: Record<string, string> = {
-  PENDING: "bg-[var(--t-tag-bg-amber)] text-[var(--t-tag-text-amber)]",
-  ACTIVE: "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]",
-  SUSPENDED: "bg-[var(--t-tag-bg-rose)] text-[var(--t-tag-text-rose)]",
-};
-
-function StatusChip({ status }: { status: string }) {
-  return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-        STATUS_CHIP[status] ?? "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]"
-      }`}
-    >
-      {status}
-    </span>
-  );
-}
+// StatusChip is duplicated in accounts-table.tsx (client component) rather
+// than imported from here — see that file's header comment for why.
 
 function formatDate(d: Date | null): string {
   if (!d) return "—";
@@ -42,13 +28,30 @@ export default async function UsersSettingsPage() {
     include: { user: true, person: { include: { investor: { select: { id: true, name: true, onboardingStatus: true } } } } },
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
   });
+  // Pending onboarding approvals include ALL kinds (internal + investor
+  // sign-ups) — the product owner still wants investor-contact onboarding
+  // approved from this page. Only the active/all-accounts log below is
+  // restricted to internal accounts (investor accounts are managed day-to-day
+  // on the Investors page — see auth-enhancements plan, Task 9).
   const pending = accounts.filter((a) => a.status === "PENDING");
-  const rest = accounts.filter((a) => a.status !== "PENDING");
+  const rest = accounts.filter((a) => a.status !== "PENDING" && a.kind === "INTERNAL");
 
   function displayNameFor(a: (typeof accounts)[number]): string {
     if (a.kind === "INTERNAL") return a.displayName ?? a.user?.name ?? "—";
     return a.person?.investor?.name ?? (a.person ? `${a.person.firstName} ${a.person.lastName ?? ""}`.trim() : "—");
   }
+
+  // Serialize to primitives only (no Date/Prisma objects) before crossing
+  // into the client component.
+  const accountRows: AccountRow[] = rest.map((a) => ({
+    id: a.id,
+    email: a.email,
+    kind: a.kind,
+    status: a.status,
+    role: a.user?.role ?? null,
+    roleLabel: label("OrgRole", a.user?.role ?? "TeamMember"),
+    lastLogin: formatDate(a.lastLoginAt),
+  }));
 
   return (
     <div className="space-y-5">
@@ -106,40 +109,8 @@ export default async function UsersSettingsPage() {
         <div className="border-b border-[var(--border-subtle)] px-4 py-3">
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">All accounts</h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Kind</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Last login</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rest.map((a) => (
-                <tr key={a.id} className="border-b border-[var(--border-subtle)] last:border-0">
-                  <td className="px-4 py-3 text-[var(--text-primary)]">{a.email}</td>
-                  <td className="px-4 py-3 text-[var(--text-secondary)]">{a.kind}</td>
-                  <td className="px-4 py-3 text-[var(--text-secondary)]">
-                    {a.kind === "INTERNAL" ? label("OrgRole", a.user?.role ?? "TeamMember") : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusChip status={a.status} />
-                  </td>
-                  <td className="px-4 py-3 text-[var(--text-secondary)]">{formatDate(a.lastLoginAt)}</td>
-                  <td className="px-4 py-3">
-                    <UserActionsClient
-                      account={{ id: a.id, email: a.email, kind: a.kind, status: a.status, role: a.user?.role ?? null }}
-                      mode="active"
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="px-4 py-3">
+          <AccountsTable rows={accountRows} />
         </div>
       </div>
     </div>

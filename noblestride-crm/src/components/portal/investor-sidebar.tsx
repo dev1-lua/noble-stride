@@ -7,8 +7,9 @@
 // h-full instead of h-screen: the demo-lens banner sits above it in the
 // investor layout's flex column.
 import { usePathname } from "next/navigation";
-import { LayoutGrid, TrendingUp, BarChart3, Building2, ChevronLeft } from "lucide-react";
+import { LayoutGrid, TrendingUp, BarChart3, Building2 } from "lucide-react";
 import { BrandMark, NavItem } from "@/components/shell/sidebar";
+import { SidebarProfile } from "@/components/shell/sidebar-profile";
 import { INVESTOR_NAV, isInvestorNavActive } from "./investor-portal-nav";
 
 const NAV_ICONS = {
@@ -18,7 +19,7 @@ const NAV_ICONS = {
   "/portal/investor/profile": Building2,
 } as const;
 
-export function InvestorSidebar() {
+export function InvestorSidebar({ name, email }: { name: string; email: string }) {
   const pathname = usePathname();
 
   return (
@@ -42,21 +43,9 @@ export function InvestorSidebar() {
         </nav>
       </div>
 
-      <div className="flex-shrink-0 border-t border-[var(--border-subtle)] px-4 py-3">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
-          Investor Portal
-        </p>
-      </div>
-
-      <div className="flex flex-shrink-0 items-center justify-center border-t border-[var(--border-subtle)] py-3">
-        <button
-          type="button"
-          className="flex h-7 w-7 items-center justify-center rounded text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)]"
-          aria-label="Collapse sidebar"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-      </div>
+      {/* Profile block — pinned footer, always visible. Click opens an
+          upward logout dropdown (Task 7). */}
+      <SidebarProfile name={name} email={email} />
     </aside>
   );
 }

@@ -1,12 +1,12 @@
 // portal/investor/layout.tsx — CRM-style shell for the investor portal (one
-// design language with the internal CRM): amber demo-lens banner on top,
-// light sidebar, slim topbar, neutral canvas. External-safe: the nav is
-// portal-only and every page still renders only visibility-projected data.
+// design language with the internal CRM): light sidebar, slim topbar, neutral
+// canvas. External-safe: the nav is portal-only and every page still renders
+// only visibility-projected data.
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
+import { getCurrentAuth } from "@/server/auth/current";
 import { isBlockedClassification } from "@/server/visibility/tiers";
-import { ViewingBanner } from "@/components/portal/viewing-banner";
 import { InvestorSidebar } from "@/components/portal/investor-sidebar";
 import { InvestorTopbar } from "@/components/portal/investor-topbar";
 
@@ -15,8 +15,8 @@ export default async function InvestorPortalLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Fund name for the topbar avatar; pages themselves gate + redirect
-  // non-investor viewpoints, so a fallback label is fine here.
+  // Fund name for the topbar; pages themselves gate + redirect non-investor
+  // viewpoints, so a fallback label is fine here.
   const vp = await getViewpoint();
   if (!vp) redirect("/login");
   const investor =
@@ -27,6 +27,17 @@ export default async function InvestorPortalLayout({
         })
       : null;
 
+  // Task 7 sidebar profile: person's name if we have one, else the fund
+  // name, else the account email; the account email is always the second
+  // (fallback/secondary) line. getCurrentAuth is React-cached, so this is
+  // not an extra DB round trip beyond what getViewpoint already did.
+  const auth = await getCurrentAuth();
+  const personName = auth?.person
+    ? [auth.person.firstName, auth.person.lastName].filter(Boolean).join(" ")
+    : "";
+  const sidebarName = personName || investor?.name || auth?.account.email || "";
+  const sidebarEmail = auth?.account.email ?? "";
+
   // Blocked classification wins over onboarding status (build spec §11.2:
   // excluded/greylisted funds never see opportunities): a greylisted
   // registration is also Rejected, but must NOT see the "not approved" copy.
@@ -34,9 +45,6 @@ export default async function InvestorPortalLayout({
   if (investor && isBlockedClassification(investor.engagementClassification)) {
     return (
       <div className="flex h-screen flex-col overflow-hidden bg-[var(--bg-secondary)]">
-        <div className="flex-shrink-0">
-          <ViewingBanner />
-        </div>
         <main className="flex flex-1 items-center justify-center p-6">
           <div className="max-w-md rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-8 text-center">
             <h1 className="text-xl font-semibold text-[var(--text-primary)]">Portal access restricted</h1>
@@ -57,9 +65,6 @@ export default async function InvestorPortalLayout({
     const pending = investor.onboardingStatus === "PendingReview";
     return (
       <div className="flex h-screen flex-col overflow-hidden bg-[var(--bg-secondary)]">
-        <div className="flex-shrink-0">
-          <ViewingBanner />
-        </div>
         <main className="flex flex-1 items-center justify-center p-6">
           <div className="max-w-md rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-8 text-center">
             <h1 className="text-xl font-semibold text-[var(--text-primary)]">
@@ -81,13 +86,10 @@ export default async function InvestorPortalLayout({
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--bg-secondary)]">
-      <div className="flex-shrink-0">
-        <ViewingBanner />
-      </div>
       <div className="flex flex-1 overflow-hidden">
-        <InvestorSidebar />
+        <InvestorSidebar name={sidebarName} email={sidebarEmail} />
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <InvestorTopbar investorName={investor?.name ?? "Investor"} />
+          <InvestorTopbar />
           <main className="flex-1 overflow-y-auto p-6">
             {children}
             <p className="pt-8 text-xs text-[var(--text-tertiary)]">

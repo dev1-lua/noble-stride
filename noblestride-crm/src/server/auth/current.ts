@@ -1,6 +1,6 @@
 // The single source of request identity (real-auth spec §7).
 // getCurrentAuth: session cookie → account (+User / +Person+Investor).
-// resolveViewpointFor: identity (+optional signed admin lens) → Viewpoint.
+// resolveViewpointFor: identity → Viewpoint (always the real login role).
 
 import { cache } from "react";
 import { cookies } from "next/headers";
@@ -8,7 +8,6 @@ import type { AuthAccount, Investor, Person, User } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { validateSessionToken } from "./session";
 import { SESSION_COOKIE } from "./session-cookie";
-import { verifyImpersonation } from "./impersonation";
 import type { Viewpoint } from "@/lib/viewpoint";
 
 export type CurrentAuth = {
@@ -33,10 +32,7 @@ export const getCurrentAuth = cache(async (): Promise<CurrentAuth | null> => {
 });
 
 /** Derivation core — shared with the GraphQL context (which has no cookies()). */
-export async function resolveViewpointFor(
-  auth: CurrentAuth | null,
-  impersonationJwt: string | undefined,
-): Promise<Viewpoint | null> {
+export async function resolveViewpointFor(auth: CurrentAuth | null): Promise<Viewpoint | null> {
   if (!auth) return null;
 
   if (auth.account.kind === "INVESTOR") {
@@ -48,14 +44,7 @@ export async function resolveViewpointFor(
   // INTERNAL
   const user = auth.user;
   if (!user || !user.isActive) return null;
-  const base: Viewpoint =
-    user.role === "Admin"
-      ? { role: "admin", orgRole: "Admin" }
-      : { role: "admin", orgRole: user.role, userId: user.id };
-
-  if (user.role === "Admin" && impersonationJwt) {
-    const lens = await verifyImpersonation(impersonationJwt);
-    if (lens) return lens;
-  }
-  return base;
+  return user.role === "Admin"
+    ? { role: "admin", orgRole: "Admin" }
+    : { role: "admin", orgRole: user.role, userId: user.id };
 }

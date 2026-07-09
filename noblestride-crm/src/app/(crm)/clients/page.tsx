@@ -1,6 +1,6 @@
 // clients/page.tsx — Clients list page (RSC).
 import { prisma } from "@/lib/db";
-import { ClientsTable } from "@/components/crm/clients-table";
+import { ClientsTableSearch } from "./clients-table-search";
 import { ClientFormDrawer } from "@/components/crm/client-form-drawer";
 import { getOrgLens } from "@/server/rbac/context";
 import { can } from "@/server/rbac/matrix";
@@ -34,7 +34,7 @@ export default async function ClientsPage() {
         </div>
         {can(lens.orgRole, "Clients", "C") && <ClientFormDrawer mode="create" />}
       </div>
-      <ClientsTable clients={clients} />
+      <ClientsTableSearch clients={clients} />
     </div>
   );
 }

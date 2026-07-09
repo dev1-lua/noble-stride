@@ -2,7 +2,6 @@
 // Server Component: metadata table over all documents + New Document drawer.
 // Binary storage is external; rows carry metadata + fileUrl links.
 
-import Link from "next/link";
 import { listDocuments } from "@/server/services/documents";
 import { listTransactions } from "@/server/services/transactions";
 import { listClients } from "@/server/services/clients";
@@ -10,9 +9,10 @@ import { listInvestors } from "@/server/services/investors";
 import { listUsers } from "@/server/services/users";
 import { listMandates } from "@/server/services/mandates";
 import { relationOptions } from "@/server/services/relation-options";
-import { StatCard, Chip, Table, THead, TBody, Tr, Th, Td, HelpHint } from "@/components/ui";
+import { StatCard, HelpHint } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { DocumentFormDrawer } from "@/components/crm/document-form-drawer";
+import { DocumentsTable, type DocumentRowData } from "./documents-table";
 import { getOrgLens } from "@/server/rbac/context";
 import { can } from "@/server/rbac/matrix";
 
@@ -41,6 +41,36 @@ export default async function DocumentsPage() {
   const shared = documents.filter(
     (d) => d.accessLevel === "InvestorShared" || d.accessLevel === "VDR"
   ).length;
+
+  // Serialize to primitives only (no Date objects) before crossing into the
+  // client <DocumentsTable> — see that file's header comment.
+  const documentRows: DocumentRowData[] = documents.map((doc) => {
+    const linked = doc.transaction
+      ? { href: `/transactions/${doc.transaction.id}`, name: doc.transaction.name }
+      : doc.client
+      ? { href: `/clients/${doc.client.id}`, name: doc.client.name }
+      : doc.investor
+      ? { href: `/investors/${doc.investor.id}`, name: doc.investor.name }
+      : null;
+    return {
+      id: doc.id,
+      name: doc.name,
+      type: doc.type,
+      version: doc.version,
+      accessLevel: doc.accessLevel,
+      status: doc.status,
+      storageKey: doc.storageKey,
+      originalFilename: doc.originalFilename,
+      fileUrl: doc.fileUrl,
+      uploadedAtDisplay: formatDate(doc.uploadedAt),
+      linked,
+      transactionId: doc.transactionId,
+      clientId: doc.clientId,
+      investorId: doc.investorId,
+      mandateId: doc.mandateId,
+      partnerId: doc.partnerId,
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -81,122 +111,16 @@ export default async function DocumentsPage() {
         <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3">
           Document Register
         </h2>
-        <Table>
-          <THead>
-            <Tr>
-              <Th>Document</Th>
-              <Th>Type</Th>
-              <Th>Version</Th>
-              <Th>Access</Th>
-              <Th>Status</Th>
-              <Th>Linked Record</Th>
-              <Th>Uploaded</Th>
-              {can(lens.orgRole, "Documents", "C") && <Th>Actions</Th>}
-            </Tr>
-          </THead>
-          <TBody>
-            {documents.map((doc) => {
-              // Linked record: transaction takes precedence, then client, then investor
-              const linked = doc.transaction
-                ? { href: `/transactions/${doc.transaction.id}`, name: doc.transaction.name }
-                : doc.client
-                ? { href: `/clients/${doc.client.id}`, name: doc.client.name }
-                : doc.investor
-                ? { href: `/investors/${doc.investor.id}`, name: doc.investor.name }
-                : null;
-
-              return (
-                <Tr key={doc.id}>
-                  <Td>
-                    {doc.storageKey ? (
-                      <a
-                        href={`/api/documents/${doc.id}/download`}
-                        className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
-                        title={doc.originalFilename ?? doc.name}
-                      >
-                        {doc.name}
-                      </a>
-                    ) : doc.fileUrl ? (
-                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors" title={doc.fileUrl}>
-                        {doc.name}
-                      </a>
-                    ) : (
-                      <span className="font-medium text-[var(--text-primary)]">{doc.name}</span>
-                    )}
-                  </Td>
-                  <Td>
-                    <Chip value={doc.type} group="DocumentType" />
-                  </Td>
-                  <Td>
-                    <span className="text-[var(--text-secondary)]">{doc.version ?? "—"}</span>
-                  </Td>
-                  <Td>
-                    <Chip value={doc.accessLevel} group="DocumentAccessLevel" />
-                  </Td>
-                  <Td>
-                    {doc.status ? (
-                      <Chip value={doc.status} group="DocumentStatus" />
-                    ) : (
-                      <span className="text-[var(--text-tertiary)]">—</span>
-                    )}
-                  </Td>
-                  <Td>
-                    {linked ? (
-                      <Link
-                        href={linked.href}
-                        className="text-[var(--text-secondary)] hover:text-accent transition-colors"
-                      >
-                        {linked.name}
-                      </Link>
-                    ) : (
-                      <span className="text-[var(--text-tertiary)]">—</span>
-                    )}
-                  </Td>
-                  <Td>
-                    <span className="text-[var(--text-secondary)]">{formatDate(doc.uploadedAt)}</span>
-                  </Td>
-                  {can(lens.orgRole, "Documents", "C") && (
-                    <Td>
-                      {doc.storageKey ? (
-                        <DocumentFormDrawer
-                          mode="create"
-                          triggerLabel="New version"
-                          triggerVariant="ghost"
-                          supersedesId={doc.id}
-                          initial={{
-                            name: doc.name,
-                            type: doc.type,
-                            accessLevel: doc.accessLevel,
-                            transactionId: doc.transactionId ?? undefined,
-                            clientId: doc.clientId ?? undefined,
-                            investorId: doc.investorId ?? undefined,
-                            mandateId: doc.mandateId ?? undefined,
-                            partnerId: doc.partnerId ?? undefined,
-                          }}
-                          transactions={txnOptions}
-                          clients={clientOptions}
-                          investors={invOptions}
-                          users={userOptions}
-                          mandates={mandateOptions}
-                          partners={partnerOptions}
-                        />
-                      ) : (
-                        <span className="text-[var(--text-tertiary)]">—</span>
-                      )}
-                    </Td>
-                  )}
-                </Tr>
-              );
-            })}
-            {documents.length === 0 && (
-              <Tr>
-                <Td colSpan={can(lens.orgRole, "Documents", "C") ? 8 : 7}>
-                  <span className="text-[var(--text-tertiary)]">No documents on record.</span>
-                </Td>
-              </Tr>
-            )}
-          </TBody>
-        </Table>
+        <DocumentsTable
+          documents={documentRows}
+          canCreate={can(lens.orgRole, "Documents", "C")}
+          transactions={txnOptions}
+          clients={clientOptions}
+          investors={invOptions}
+          users={userOptions}
+          mandates={mandateOptions}
+          partners={partnerOptions}
+        />
       </div>
     </div>
   );

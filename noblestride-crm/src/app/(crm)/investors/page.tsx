@@ -17,16 +17,24 @@ interface PageProps {
   searchParams: Promise<{ [k: string]: string | string[] | undefined }>;
 }
 
+// Multi-value filter params are comma-joined in the URL (e.g. ?sector=Tech,Health)
+// by the FilterBar multi-select; split back into an array here. Empty/absent
+// param → empty array → no constraint (see buildInvestorWhere).
+function parseList<T extends string>(v: string | string[] | undefined): T[] {
+  const s = Array.isArray(v) ? v[0] : v;
+  return s ? (s.split(",").filter(Boolean) as T[]) : [];
+}
+
 export default async function InvestorsPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const lens = await getOrgLens();
 
   // Build filter from URL params — leave undefined when param is absent
   const filter: InvestorFilter = {
-    investorType: sp.type ? (sp.type as InvestorType) : undefined,
-    sector: sp.sector ? (sp.sector as Sector) : undefined,
-    geography: sp.geography ? (sp.geography as Geography) : undefined,
-    status: sp.status ? (sp.status as InvestorStatus) : undefined,
+    investorType: parseList<InvestorType>(sp.type),
+    sector: parseList<Sector>(sp.sector),
+    geography: parseList<Geography>(sp.geography),
+    status: parseList<InvestorStatus>(sp.status),
     search: typeof sp.q === "string" && sp.q.trim() ? sp.q.trim() : undefined,
     onboardingStatus: sp.onboarding ? (sp.onboarding as OnboardingStatus) : undefined,
   };

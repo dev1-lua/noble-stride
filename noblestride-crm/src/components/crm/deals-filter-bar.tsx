@@ -3,12 +3,20 @@
 // deals-filter-bar.tsx — Search + dimension filters + group-by for the unified
 // deals queue. Mirrors filter-bar.tsx: a client island that mutates URL
 // searchParams so the server page (`/deals`) re-queries. No client-side fetch.
+// Every true filter dimension is a searchable multi-select (comma-joined in
+// the URL); Group-by is a view control, not a filter, and stays single-select.
 
 import { useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Input, Select } from "@/components/ui";
+import { Input, MultiSelect, Select } from "@/components/ui";
 import { options } from "@/lib/vocab";
 import { TICKET_BANDS } from "@/server/domain/deals-queue";
+
+// Multi-value params are comma-joined in the URL, e.g. ?status=Won,Lost.
+// Empty/absent param → empty array → no constraint.
+function parseList(v: string | null): string[] {
+  return v ? v.split(",").filter(Boolean) : [];
+}
 
 export function DealsFilterBar({ leads }: { leads: { value: string; label: string }[] }) {
   const router = useRouter();
@@ -26,20 +34,20 @@ export function DealsFilterBar({ leads }: { leads: { value: string; label: strin
     [router, sp, pathname]
   );
 
+  const updateMulti = useCallback(
+    (key: string, values: string[]) => update(key, values.join(",")),
+    [update]
+  );
+
   const typeOpts = [
-    { value: "", label: "All types" },
     { value: "mandate", label: "Mandate" },
     { value: "transaction", label: "Transaction" },
   ];
-  const statusOpts = [{ value: "", label: "All statuses" }, ...options("DealStatus")];
-  const sectorOpts = [{ value: "", label: "All sectors" }, ...options("Sector")];
-  const ticketOpts = [
-    { value: "", label: "Any ticket" },
-    ...TICKET_BANDS.map((b) => ({ value: b.value, label: b.label })),
-  ];
-  const leadOpts = [{ value: "", label: "All leads" }, ...leads];
-  const priorityOpts = [{ value: "", label: "All priorities" }, ...options("Priority")];
-  const sourceOpts = [{ value: "", label: "All sources" }, ...options("Source")];
+  const statusOpts = options("DealStatus");
+  const sectorOpts = options("Sector");
+  const ticketOpts = TICKET_BANDS.map((b) => ({ value: b.value, label: b.label }));
+  const priorityOpts = options("Priority");
+  const sourceOpts = options("Source");
   const groupOpts = [{ value: "", label: "No grouping" }, ...options("DealQueueGroupBy")];
 
   return (
@@ -54,26 +62,27 @@ export function DealsFilterBar({ leads }: { leads: { value: string; label: strin
         />
       </div>
       <div className="w-40">
-        <Select options={typeOpts} value={sp.get("type") ?? ""} onChange={(v) => update("type", v)} placeholder="Type" />
+        <MultiSelect options={typeOpts} selected={parseList(sp.get("type"))} onChange={(v) => updateMulti("type", v)} placeholder="Type" />
       </div>
       <div className="w-44">
-        <Select options={statusOpts} value={sp.get("status") ?? ""} onChange={(v) => update("status", v)} placeholder="Status" />
+        <MultiSelect options={statusOpts} selected={parseList(sp.get("status"))} onChange={(v) => updateMulti("status", v)} placeholder="Status" />
       </div>
       <div className="w-44">
-        <Select options={sectorOpts} value={sp.get("sector") ?? ""} onChange={(v) => update("sector", v)} placeholder="Sector" />
+        <MultiSelect options={sectorOpts} selected={parseList(sp.get("sector"))} onChange={(v) => updateMulti("sector", v)} placeholder="Sector" />
       </div>
       <div className="w-40">
-        <Select options={ticketOpts} value={sp.get("ticket") ?? ""} onChange={(v) => update("ticket", v)} placeholder="Ticket" />
+        <MultiSelect options={ticketOpts} selected={parseList(sp.get("ticket"))} onChange={(v) => updateMulti("ticket", v)} placeholder="Ticket" />
       </div>
       <div className="w-44">
-        <Select options={leadOpts} value={sp.get("lead") ?? ""} onChange={(v) => update("lead", v)} placeholder="Lead" />
+        <MultiSelect options={leads} selected={parseList(sp.get("lead"))} onChange={(v) => updateMulti("lead", v)} placeholder="Lead" />
       </div>
       <div className="w-40">
-        <Select options={priorityOpts} value={sp.get("priority") ?? ""} onChange={(v) => update("priority", v)} placeholder="Priority" />
+        <MultiSelect options={priorityOpts} selected={parseList(sp.get("priority"))} onChange={(v) => updateMulti("priority", v)} placeholder="Priority" />
       </div>
       <div className="w-44">
-        <Select options={sourceOpts} value={sp.get("source") ?? ""} onChange={(v) => update("source", v)} placeholder="Source" />
+        <MultiSelect options={sourceOpts} selected={parseList(sp.get("source"))} onChange={(v) => updateMulti("source", v)} placeholder="Source" />
       </div>
+      {/* Group-by is a VIEW control (chooses grouping), not a filter — stays single-select. */}
       <div className="w-44">
         <Select options={groupOpts} value={sp.get("group") ?? ""} onChange={(v) => update("group", v)} placeholder="Group by" />
       </div>

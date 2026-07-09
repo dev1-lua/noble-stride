@@ -19,6 +19,19 @@ import { StageHistory } from "@/components/crm/stage-history";
 import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { getOrgLens } from "@/server/rbac/context";
 import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
+import { prisma } from "@/lib/db";
+import { getCurrentAuth } from "@/server/auth/current";
+import { AccountPanel, type InvestorAccountSummary } from "./account-panel";
+
+function displayNameForPerson(person: { firstName: string; lastName: string | null } | null): string | null {
+  if (!person) return null;
+  return [person.firstName, person.lastName].filter(Boolean).join(" ") || null;
+}
+
+function formatAccountDate(d: Date | null): string {
+  if (!d) return "—";
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+}
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -31,6 +44,30 @@ export default async function InvestorDetailPage({ params }: PageProps) {
   const investor = await getInvestor(id);
 
   if (!investor) notFound();
+
+  // Account access panel (auth-enhancements plan, Task 9): investor login
+  // accounts are managed here rather than /settings/users. Re-check the REAL
+  // role server-side (never the impersonation lens) before allowing management.
+  const auth = await getCurrentAuth();
+  const isRealAdmin = !!auth && auth.account.kind === "INTERNAL" && auth.user?.role === "Admin" && !!auth.user?.isActive;
+
+  // Only fetched for real admins — this is PII (login email, last-login) that
+  // non-admins must never see (FIX 13), so don't even query it for them.
+  const linkedAccounts = isRealAdmin
+    ? await prisma.authAccount.findMany({
+        where: { kind: "INVESTOR", person: { investorId: investor.id } },
+        include: { person: true },
+        orderBy: { createdAt: "asc" },
+      })
+    : [];
+
+  const accountSummaries: InvestorAccountSummary[] = linkedAccounts.map((a) => ({
+    id: a.id,
+    email: a.email,
+    status: a.status,
+    lastLogin: formatAccountDate(a.lastLoginAt),
+    contactName: displayNameForPerson(a.person),
+  }));
 
   const initial = {
     id: investor.id,
@@ -273,6 +310,10 @@ export default async function InvestorDetailPage({ params }: PageProps) {
           )}
         </div>
       </div>
+
+      {/* Account access — investor login accounts. Admin-only: never rendered
+          for non-admins, since it exposes login email + last-login (FIX 13). */}
+      {isRealAdmin && <AccountPanel investorId={investor.id} accounts={accountSummaries} />}
 
       {/* Onboarding panel — first card while a registration awaits/failed review */}
       {onboardingProminent && onboardingPanel}

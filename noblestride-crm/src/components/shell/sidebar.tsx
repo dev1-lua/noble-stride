@@ -18,6 +18,7 @@ import {
   UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { SidebarProfile } from "./sidebar-profile";
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
@@ -156,9 +157,13 @@ function EngagementNavGroup({ active }: { active: boolean }) {
 export function Sidebar({
   pendingReview = 0,
   isAdmin = false,
+  userName = "",
+  userEmail = "",
 }: {
   pendingReview?: number;
   isAdmin?: boolean;
+  userName?: string;
+  userEmail?: string;
 }) {
   const pathname = usePathname();
   const navItems = isAdmin ? [...MAIN_NAV, ADMIN_NAV_ITEM] : MAIN_NAV;
@@ -197,6 +202,10 @@ export function Sidebar({
           )}
         </nav>
       </div>
+
+      {/* Profile block — pinned footer, always visible. Click opens an
+          upward logout dropdown (Task 7). */}
+      <SidebarProfile name={userName} email={userEmail} />
     </aside>
   );
 }

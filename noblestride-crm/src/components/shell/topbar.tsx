@@ -2,12 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import { Search } from "lucide-react";
-import { Avatar } from "@/components/ui";
 import { AskBar } from "./ask-bar";
-import { ViewpointSwitcher, type ViewpointOption } from "./viewpoint-switcher";
 import { NotificationBell, type NotificationItem } from "./notification-bell";
 import { HelpPanel } from "./help-panel";
-import { logoutAction } from "@/app/logout/actions";
 
 // ─── Route → title/subtitle map ──────────────────────────────────────────────
 
@@ -84,23 +81,11 @@ function derivePageMeta(pathname: string): PageMeta {
 // ─── Topbar ──────────────────────────────────────────────────────────────────
 
 export function Topbar({
-  investors = [],
-  partners = [],
-  users = [],
-  activeOrgRole,
-  activeUserId,
   notifications = [],
   notificationCount = 0,
-  switcherEnabled = false,
 }: {
-  investors?: ViewpointOption[];
-  partners?: ViewpointOption[];
-  users?: ViewpointOption[];
-  activeOrgRole?: string;
-  activeUserId?: string;
   notifications?: NotificationItem[];
   notificationCount?: number;
-  switcherEnabled?: boolean;
 }) {
   const pathname = usePathname();
   const { title, subtitle } = derivePageMeta(pathname);
@@ -125,26 +110,6 @@ export function Topbar({
         {/* Help panel (Task 18) — journey guide, glossary, access matrix link. Supports ?help=journey deep link. */}
         <HelpPanel />
 
-        {/* View-as switcher (admin-only lens, spec §6 + §7.2 org roles) */}
-        <ViewpointSwitcher
-          investors={investors}
-          partners={partners}
-          users={users}
-          activeOrgRole={activeOrgRole}
-          activeUserId={activeUserId}
-          enabled={switcherEnabled}
-        />
-
-        {/* Sign out — real logout: revokes the DB session, clears cookies */}
-        <form action={logoutAction}>
-          <button
-            type="submit"
-            className="rounded border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] transition-colors"
-          >
-            Sign out
-          </button>
-        </form>
-
         {/* Search */}
         <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-3 py-1.5">
           <Search className="h-3.5 w-3.5 text-[var(--text-tertiary)] flex-shrink-0" />
@@ -157,9 +122,6 @@ export function Topbar({
 
         {/* Notification bell (Task 14) — server-fetched initial data, no polling */}
         <NotificationBell initialItems={notifications} initialCount={notificationCount} />
-
-        {/* Avatar */}
-        <Avatar name="NS" size="sm" color="bg-emerald-600" />
       </div>
     </header>
   );

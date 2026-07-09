@@ -12,18 +12,29 @@ describe("applyOpportunityFilters — narrowing only (§11.1)", () => {
   });
 
   it("never returns a deal not in the input (cannot widen)", () => {
-    const out = applyOpportunityFilters([deal], { sector: "Technology" });
+    const out = applyOpportunityFilters([deal], { sector: ["Technology"] });
     expect(out.every((d) => d === deal)).toBe(true);
     expect(out).toHaveLength(0);
   });
 
-  it("filters by sector, country, instrument, dealType", () => {
-    expect(applyOpportunityFilters([deal], { sector: "Agribusiness" })).toHaveLength(1);
-    expect(applyOpportunityFilters([deal], { country: "EastAfrica" })).toHaveLength(1);
-    expect(applyOpportunityFilters([deal], { country: "WestAfrica" })).toHaveLength(0);
-    expect(applyOpportunityFilters([deal], { instrument: "Equity" })).toHaveLength(1);
-    expect(applyOpportunityFilters([deal], { instrument: "Debt" })).toHaveLength(0);
-    expect(applyOpportunityFilters([deal], { dealType: "Growth" })).toHaveLength(1);
+  it("filters by sector, country, instrument, dealType (single selected value)", () => {
+    expect(applyOpportunityFilters([deal], { sector: ["Agribusiness"] })).toHaveLength(1);
+    expect(applyOpportunityFilters([deal], { country: ["EastAfrica"] })).toHaveLength(1);
+    expect(applyOpportunityFilters([deal], { country: ["WestAfrica"] })).toHaveLength(0);
+    expect(applyOpportunityFilters([deal], { instrument: ["Equity"] })).toHaveLength(1);
+    expect(applyOpportunityFilters([deal], { instrument: ["Debt"] })).toHaveLength(0);
+    expect(applyOpportunityFilters([deal], { dealType: ["Growth"] })).toHaveLength(1);
+  });
+
+  it("OR-matches within a dimension when multiple values are selected", () => {
+    expect(applyOpportunityFilters([deal], { sector: ["Technology", "Agribusiness"] })).toHaveLength(1);
+    expect(applyOpportunityFilters([deal], { country: ["WestAfrica", "EastAfrica"] })).toHaveLength(1);
+    expect(applyOpportunityFilters([deal], { instrument: ["Debt", "Equity"] })).toHaveLength(1);
+    expect(applyOpportunityFilters([deal], { dealType: ["SeriesA", "Growth"] })).toHaveLength(1);
+  });
+
+  it("an empty selected array imposes no constraint on that dimension", () => {
+    expect(applyOpportunityFilters([deal], { sector: [] })).toHaveLength(1);
   });
 
   it("filters by ticket band", () => {
@@ -77,8 +88,20 @@ describe("parseOpportunityFilters — defensive", () => {
 
   it("parses valid params", () => {
     expect(parseOpportunityFilters({ sector: "Agribusiness", ticketMax: "5000000" })).toEqual({
-      sector: "Agribusiness",
+      sector: ["Agribusiness"],
       ticketMax: 5_000_000,
+    });
+  });
+
+  it("parses comma-joined multi-select params into arrays", () => {
+    expect(parseOpportunityFilters({ sector: "Agribusiness,Technology" })).toEqual({
+      sector: ["Agribusiness", "Technology"],
+    });
+  });
+
+  it("drops invalid values out of a multi-select list rather than the whole param", () => {
+    expect(parseOpportunityFilters({ sector: "Agribusiness,NotASector" })).toEqual({
+      sector: ["Agribusiness"],
     });
   });
 
@@ -98,9 +121,9 @@ describe("parseOpportunityFilters — defensive", () => {
     });
   });
 
-  it("takes the first value of repeated params", () => {
+  it("takes the first value of repeated (non-comma-joined) params", () => {
     expect(parseOpportunityFilters({ sector: ["Agribusiness", "Technology"] })).toEqual({
-      sector: "Agribusiness",
+      sector: ["Agribusiness"],
     });
   });
 });

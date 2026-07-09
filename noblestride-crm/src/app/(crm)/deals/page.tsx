@@ -197,7 +197,10 @@ export default async function DealsPage({ searchParams }: PageProps) {
   // Mandates/Transactions sub-toggle bound to `?type=` (defaults to the active
   // `type` filter, else Transactions per design spec §4.6 / Task 10).
   if (spec.view === "board") {
-    const boardType: "mandate" | "transaction" = spec.type === "mandate" ? "mandate" : "transaction";
+    // Board mode shows one type at a time; defaults to the active type filter
+    // when it resolves unambiguously to a single kind, else Transactions.
+    const boardType: "mandate" | "transaction" =
+      spec.type.length === 1 && spec.type[0] === "mandate" ? "mandate" : "transaction";
     const now = new Date();
     const boardTypeHref = (t: "mandate" | "transaction") => withParams(sp, { type: t });
 

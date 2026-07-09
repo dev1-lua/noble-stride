@@ -3,7 +3,6 @@ import { jwtVerify } from "jose";
 import type { OrgRole } from "@prisma/client";
 import { validateSessionToken } from "@/server/auth/session";
 import { SESSION_COOKIE } from "@/server/auth/session-cookie";
-import { IMPERSONATION_COOKIE } from "@/server/auth/impersonation";
 import { resolveViewpointFor, type CurrentAuth } from "@/server/auth/current";
 
 export interface Actor {
@@ -89,7 +88,7 @@ export async function createContext(request: Request): Promise<GraphQLContext> {
           : null,
       ]);
       const current: CurrentAuth = { account, user, person };
-      const vp = await resolveViewpointFor(current, readCookie(request, IMPERSONATION_COOKIE));
+      const vp = await resolveViewpointFor(current);
       if (vp) {
         actor = {
           type: "HUMAN",
