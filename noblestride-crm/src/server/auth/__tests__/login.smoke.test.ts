@@ -1,7 +1,16 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { rateLimit } from "../rate-limit";
 import { hashPassword } from "../password";
 import { signTrust } from "../two-factor";
+
+// Task E gates the investor OTP branch behind twoFactorEnabled() (RESEND_API_KEY
+// present). The investor-2FA tests below need that gate ON to exercise the OTP
+// path, regardless of whatever RESEND_API_KEY happens to be in the ambient
+// .env — so force a key in beforeAll and mock sendMail (never hit real Resend).
+vi.mock("../mailer", async () => {
+  const actual = await vi.importActual<typeof import("../mailer")>("../mailer");
+  return { ...actual, sendMail: vi.fn().mockResolvedValue(undefined) };
+});
 
 const hasDb = Boolean(process.env.DATABASE_URL);
 const d = hasDb ? describe : describe.skip;
@@ -19,9 +28,11 @@ d("loginWithPassword (DB)", () => {
   const EMAIL = `zz-test-login-${SUFFIX}@noblestride.capital`;
   const PASSWORD = "long-enough-pass-1";
   const PREV_AUTH_SECRET = process.env.AUTH_SECRET;
+  const PREV_RESEND_KEY = process.env.RESEND_API_KEY;
 
   beforeAll(() => {
     if (!process.env.AUTH_SECRET) process.env.AUTH_SECRET = "zz-test-login-secret-do-not-use-in-prod";
+    process.env.RESEND_API_KEY = "re_test_zz_login_smoke_2fa_on";
   });
 
   afterAll(async () => {
@@ -31,6 +42,8 @@ d("loginWithPassword (DB)", () => {
     await prisma.activity.deleteMany({ where: { subject: { contains: "zz-test-login" } } });
     await prisma.authAccount.deleteMany({ where: { email: { startsWith: "zz-test-login" } } });
     process.env.AUTH_SECRET = PREV_AUTH_SECRET;
+    if (PREV_RESEND_KEY === undefined) delete process.env.RESEND_API_KEY;
+    else process.env.RESEND_API_KEY = PREV_RESEND_KEY;
   });
 
   async function makeActiveAccount() {

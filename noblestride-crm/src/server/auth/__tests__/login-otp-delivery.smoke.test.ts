@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("../mailer", () => ({
   mailProvider: () => "resend",
+  twoFactorEnabled: () => true, // Task E gate: this test exercises the OTP path, so 2FA must read as "on".
   buildResendPayload: (msg: unknown, from: string) => ({ from, ...(msg as object) }),
   sendMail: vi.fn().mockRejectedValue(new Error("zz-test: simulated Resend outage")),
 }));

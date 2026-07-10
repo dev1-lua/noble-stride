@@ -12,6 +12,14 @@ export function mailProvider(): "resend" | "console" {
   return process.env.RESEND_API_KEY ? "resend" : "console";
 }
 
+// Task E / Option B: RESEND_API_KEY is the on/off switch for investor 2FA.
+// A real, domain-verified key means we can actually deliver OTP emails, so
+// 2FA is enforced; without one, gate off and let login be password-only
+// rather than blocking every investor with `otp_unavailable`.
+export function twoFactorEnabled(): boolean {
+  return mailProvider() === "resend";
+}
+
 export function buildResendPayload(msg: MailMessage, from: string) {
   return { from, to: [msg.to], subject: msg.subject, text: msg.text };
 }
