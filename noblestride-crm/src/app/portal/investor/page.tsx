@@ -10,6 +10,7 @@ import { label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
 import { TierBadge } from "@/components/portal/tier-badge";
 import { OpportunityFilters } from "@/components/portal/opportunity-filters";
+import { Card, CardBody } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -42,25 +43,27 @@ export default async function InvestorPortalPage({
       </p>
 
       {deals.length === 0 ? (
-        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-6 py-16 text-center">
-          <p className="text-sm font-medium text-[var(--text-secondary)]">
-            {filtering
-              ? "No opportunities match your filters."
-              : "No opportunities available right now."}
-          </p>
-          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-            {filtering
-              ? "Try widening or clearing the filters above."
-              : "Please contact your NobleStride advisor for more information."}
-          </p>
-        </div>
+        <Card>
+          <CardBody className="px-6 py-16 text-center">
+            <p className="text-sm font-medium text-[var(--text-secondary)]">
+              {filtering
+                ? "No opportunities match your filters."
+                : "No opportunities available right now."}
+            </p>
+            <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+              {filtering
+                ? "Try widening or clearing the filters above."
+                : "Please contact your NobleStride advisor for more information."}
+            </p>
+          </CardBody>
+        </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {deals.map((deal) => (
             <Link
               key={deal.id}
               href={`/portal/investor/deals/${deal.id}`}
-              className="group rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5 transition-colors hover:border-[var(--border-strong)]"
+              className="group rounded-lg border border-[var(--border-strong)] bg-[var(--bg-primary)] p-5 shadow-[var(--shadow-card)] transition-colors hover:border-[var(--accent)]"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-hover)]">

@@ -5,7 +5,7 @@
 
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { classifyEmailForSignup, normalizeEmail } from "@/server/auth/guardrails";
 import { AuthFlowError, signupExistingContact, signupInternal } from "@/server/auth/accounts";
@@ -33,32 +33,44 @@ export async function routeEmailAction(formData: FormData): Promise<void> {
   // throttled caller never triggers them. Generic message only — never echo
   // the email back on this path.
   if (!(await checkRate("signup"))) {
-    redirect(`/register?error=${encodeURIComponent("Too many attempts — please try again later.")}`);
+    redirect("/register?error=rate-limited");
   }
 
   const cls = await classifyEmailForSignup(email);
   if (cls.kind === "blocked") {
-    const msg =
+    const errorSlug =
       cls.reason === "free-provider"
-        ? "Please use your official company email address — free providers (Gmail, Yahoo, …) are not accepted."
+        ? "free-provider"
         : cls.reason === "greylisted"
-          ? "This email is not eligible to register. Contact NobleStride if you believe this is an error."
-          : "Enter a valid email address.";
-    redirect(`/register?error=${encodeURIComponent(msg)}&email=${encodeURIComponent(email)}`);
+          ? "greylisted"
+          : "invalid-email";
+    redirect(`/register?error=${errorSlug}`);
   }
+
+  // Prefill the classified email on the next page via a short-lived,
+  // httpOnly cookie rather than a URL param — a URL-borne email leaks into
+  // logs/history/referer headers.
+  await setRegEmailCookie(email);
+
   if (cls.kind === "internal") {
-    redirect(`/register?path=internal&email=${encodeURIComponent(email)}`);
+    redirect("/register?path=internal");
   }
 
   const contact = await prisma.person.findFirst({
     where: { email: { equals: email, mode: "insensitive" }, investorId: { not: null } },
     select: { id: true },
   });
-  redirect(
-    contact
-      ? `/register?path=contact&email=${encodeURIComponent(email)}`
-      : `/register?path=fund&email=${encodeURIComponent(email)}`,
-  );
+  redirect(contact ? "/register?path=contact" : "/register?path=fund");
+}
+
+async function setRegEmailCookie(email: string): Promise<void> {
+  (await cookies()).set("reg_email", email, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/register",
+    maxAge: 600,
+  });
 }
 
 /** Internal staff signup. */
@@ -75,8 +87,7 @@ export async function internalSignupAction(_prev: WizardActionState, formData: F
       jobTitle: String(formData.get("jobTitle") ?? "").trim() || undefined,
       password,
     });
-    target =
-      res.status === "active" ? `/login?error=${encodeURIComponent("Account created — sign in.")}` : "/register?step=pending";
+    target = res.status === "active" ? "/login?notice=account-created" : "/register?step=pending";
   } catch (err) {
     if (err instanceof AuthFlowError) return { error: err.message };
     throw err;

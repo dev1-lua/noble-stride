@@ -3,7 +3,6 @@ import { jwtVerify } from "jose";
 import type { OrgRole } from "@prisma/client";
 import { validateSessionToken } from "@/server/auth/session";
 import { SESSION_COOKIE } from "@/server/auth/session-cookie";
-import { IMPERSONATION_COOKIE } from "@/server/auth/impersonation";
 import { resolveViewpointFor, type CurrentAuth } from "@/server/auth/current";
 
 export interface Actor {
@@ -22,6 +21,14 @@ export interface Actor {
   /** Effective in-org role (lens-aware) — internal HUMAN actors only. */
   orgRole?: OrgRole;
   accountKind?: "INTERNAL" | "INVESTOR";
+  /**
+   * The signed-in Investor record id — set only when accountKind is
+   * "INVESTOR" (mirrors Viewpoint.recordId, resolveViewpointFor's investor
+   * branch). Resolvers that must scope data to "this investor's own
+   * records" (e.g. globalSearch) read this instead of trusting any
+   * client-supplied id.
+   */
+  investorId?: string;
 }
 
 export interface GraphQLContext {
@@ -89,7 +96,7 @@ export async function createContext(request: Request): Promise<GraphQLContext> {
           : null,
       ]);
       const current: CurrentAuth = { account, user, person };
-      const vp = await resolveViewpointFor(current, readCookie(request, IMPERSONATION_COOKIE));
+      const vp = await resolveViewpointFor(current);
       if (vp) {
         actor = {
           type: "HUMAN",
@@ -97,6 +104,7 @@ export async function createContext(request: Request): Promise<GraphQLContext> {
           accountKind: account.kind,
           userId: vp.role === "admin" ? (vp.userId ?? user?.id) : undefined,
           orgRole: vp.role === "admin" ? ((vp.orgRole ?? "Admin") as OrgRole) : undefined,
+          investorId: vp.role === "investor" ? vp.recordId : undefined,
         };
       }
     }

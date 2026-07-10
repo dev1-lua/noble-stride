@@ -6,6 +6,8 @@
 import { useState } from "react";
 import { Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
+import { options } from "@/lib/vocab";
+import { TableSearch, type TableFilter } from "@/components/crm/table-search";
 import { ServiceProviderFormDrawer } from "./service-provider-form-drawer";
 import { DeleteConfirm } from "./delete-confirm";
 
@@ -25,67 +27,74 @@ export interface ServiceProviderRowData {
   engagedCount: number;
 }
 
+const providerFilters: TableFilter<ServiceProviderRowData>[] = [
+  { key: "type", label: "Type", options: options("ServiceProviderType"), get: (row) => row.type },
+];
+
 export function ServiceProvidersTable({ providers }: { providers: ServiceProviderRowData[] }) {
   const [editing, setEditing] = useState<ServiceProviderRowData | null>(null);
 
   return (
     <>
-      <Table>
-        <THead>
-          <Tr>
-            <Th>Name</Th>
-            <Th>Type</Th>
-            <Th>Contact Person</Th>
-            <Th>Email / Phone</Th>
-            <Th>Fee</Th>
-            <Th>Engaged On</Th>
-            <Th>Status</Th>
-            <Th>{null}</Th>
-          </Tr>
-        </THead>
-        <TBody>
-          {providers.map((p) => (
-            <Tr key={p.id} onClick={() => setEditing(p)} className="cursor-pointer">
-              <Td>
-                <span className="font-medium text-[var(--text-primary)]">{p.name}</span>
-              </Td>
-              <Td>
-                <Chip value={p.type} group="ServiceProviderType" />
-              </Td>
-              <Td>
-                <span className="text-[var(--text-secondary)]">{p.contactPerson ?? "—"}</span>
-              </Td>
-              <Td>
-                <div className="text-xs text-[var(--text-tertiary)]">
-                  {p.email && <div>{p.email}</div>}
-                  {p.phone && <div>{p.phone}</div>}
-                  {!p.email && !p.phone && "—"}
-                </div>
-              </Td>
-              <Td>{p.fee != null ? formatMoney(p.fee, p.currency) : "—"}</Td>
-              <Td>{p.engagedCount}</Td>
-              <Td>
-                <span className="text-[var(--text-secondary)]">{p.status ?? "—"}</span>
-              </Td>
-              <Td className="text-right" onClick={(e) => e.stopPropagation()}>
-                <DeleteConfirm
-                  mutation={DELETE_SERVICE_PROVIDER}
-                  recordId={p.id}
-                  entityLabel="service provider"
-                  redirectTo="/service-providers"
-                />
-              </Td>
-            </Tr>
-          ))}
-          {providers.length === 0 && (
-            <Tr>
-              <Td colSpan={8}>
-                <span className="text-[var(--text-tertiary)]">No service providers on record.</span>
-              </Td>
-            </Tr>
-          )}
-        </TBody>
-      </Table>
+      <TableSearch
+        rows={providers}
+        searchText={(p) => [p.name, p.contactPerson ?? "", p.email ?? ""]}
+        filters={providerFilters}
+        searchPlaceholder="Search service providers…"
+        emptyLabel="No service providers on record."
+      >
+        {(filtered) => (
+          <Table>
+            <THead>
+              <Tr>
+                <Th>Name</Th>
+                <Th>Type</Th>
+                <Th>Contact Person</Th>
+                <Th>Email / Phone</Th>
+                <Th>Fee</Th>
+                <Th>Engaged On</Th>
+                <Th>Status</Th>
+                <Th>{null}</Th>
+              </Tr>
+            </THead>
+            <TBody>
+              {filtered.map((p) => (
+                <Tr key={p.id} onClick={() => setEditing(p)} className="cursor-pointer">
+                  <Td>
+                    <span className="font-medium text-[var(--text-primary)]">{p.name}</span>
+                  </Td>
+                  <Td>
+                    <Chip value={p.type} group="ServiceProviderType" />
+                  </Td>
+                  <Td>
+                    <span className="text-[var(--text-secondary)]">{p.contactPerson ?? "—"}</span>
+                  </Td>
+                  <Td>
+                    <div className="text-xs text-[var(--text-tertiary)]">
+                      {p.email && <div>{p.email}</div>}
+                      {p.phone && <div>{p.phone}</div>}
+                      {!p.email && !p.phone && "—"}
+                    </div>
+                  </Td>
+                  <Td>{p.fee != null ? formatMoney(p.fee, p.currency) : "—"}</Td>
+                  <Td>{p.engagedCount}</Td>
+                  <Td>
+                    <span className="text-[var(--text-secondary)]">{p.status ?? "—"}</span>
+                  </Td>
+                  <Td className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <DeleteConfirm
+                      mutation={DELETE_SERVICE_PROVIDER}
+                      recordId={p.id}
+                      entityLabel="service provider"
+                      redirectTo="/service-providers"
+                    />
+                  </Td>
+                </Tr>
+              ))}
+            </TBody>
+          </Table>
+        )}
+      </TableSearch>
 
       {editing && (
         <ServiceProviderFormDrawer

@@ -5,10 +5,12 @@
 // No viewpoint/auth — this is the pre-approval front door; visibility stays
 // zero until a team member approves (anti-broker gate).
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getViewpoint } from "@/server/viewpoint";
 import { viewpointHome } from "@/lib/viewpoint";
 import { routeEmailAction, contactSignupAction } from "./actions";
+import { registerError } from "./messages";
 import RegisterWizard from "./register-wizard";
 import InternalForm from "./internal-form";
 import ContactForm from "./contact-form";
@@ -16,7 +18,7 @@ import ContactForm from "./contact-form";
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: Promise<{ path?: string; step?: string; email?: string; error?: string }>;
+  searchParams: Promise<{ path?: string; step?: string; error?: string }>;
 }
 
 const inputClass =
@@ -34,7 +36,8 @@ export default async function RegisterPage({ searchParams }: PageProps) {
   if (vp) redirect(viewpointHome(vp));
 
   const sp = await searchParams;
-  const email = sp.email ?? "";
+  const email = (await cookies()).get("reg_email")?.value ?? "";
+  const errorText = registerError(sp.error);
 
   const view: "email" | "internal" | "contact" | "fund" | "pending" =
     sp.step === "pending"
@@ -61,9 +64,9 @@ export default async function RegisterPage({ searchParams }: PageProps) {
           </div>
         )}
 
-        {sp.error && (
+        {errorText && (
           <div className="rounded-lg border border-[var(--t-tag-bg-rose)] bg-[var(--t-tag-bg-rose)] p-4 text-sm text-[var(--t-tag-text-rose)]">
-            {sp.error}
+            {errorText}
           </div>
         )}
 

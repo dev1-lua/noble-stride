@@ -47,10 +47,13 @@ export const ACTIVE_CONVERSATION_STATUSES: EngagementStatus[] = [
 // ─── Filter / pagination types ───────────────────────────────────────────────
 
 export interface InvestorFilter {
-  investorType?: InvestorType | null;
-  sector?: Sector | null;
-  geography?: Geography | null;
-  status?: InvestorStatus | null;
+  // Each accepts a single value (scalar equality — used by the GraphQL API)
+  // or an array (multi-select, OR-matched; empty array/undefined imposes no
+  // constraint — used by the investors list filter bar).
+  investorType?: InvestorType | InvestorType[] | null;
+  sector?: Sector | Sector[] | null;
+  geography?: Geography | Geography[] | null;
+  status?: InvestorStatus | InvestorStatus[] | null;
   ticketMin?: number | null;
   ticketMax?: number | null;
   search?: string | null;

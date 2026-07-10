@@ -1,30 +1,26 @@
 // Viewpoint = which lens the CRM is being viewed through (design spec §6).
-// The ns_viewpoint cookie is now a signed admin "view as" impersonation lens
-// (see src/server/auth/impersonation.ts) — not the caller's real identity.
+// Derived solely from the real login role (server/auth/current.ts) — there is
+// no admin "view as" override anymore (real-auth spec, role-cleanup Task 3).
 
 export type ViewpointRole = "admin" | "investor" | "partner";
 
-/** In-org demo roles (§7.2) — string mirror of Prisma's OrgRole (kept dependency-free). */
+/** In-org role (§7.2) — string mirror of Prisma's OrgRole (kept dependency-free). */
 export type OrgRoleLens = "Admin" | "DealLead" | "TeamMember";
 const ORG_ROLES: readonly OrgRoleLens[] = ["Admin", "DealLead", "TeamMember"];
 
 export type Viewpoint = {
   role: ViewpointRole;
-  /** Impersonated Investor/Partner id when role is investor/partner. */
+  /** Investor/Partner id when role is investor/partner. */
   recordId?: string;
-  /** In-org role lens — only meaningful when role is "admin". */
+  /** In-org role — only meaningful when role is "admin". */
   orgRole?: OrgRoleLens;
-  /** Impersonated User id for DealLead/TeamMember lenses. */
+  /** The signed-in User id for DealLead/TeamMember. */
   userId?: string;
-  /** True only for admin-initiated portal impersonation (via /api/viewpoint);
-   *  absent for a real /login. Gates the in-portal "view as" switcher. */
-  impersonating?: boolean;
 };
-
-export const VIEWPOINT_COOKIE = "ns_viewpoint";
 
 export const ADMIN_VIEWPOINT: Viewpoint = { role: "admin", orgRole: "Admin" };
 
+/** Parse a serialized viewpoint (still used by the home-route helper/tests). */
 export function parseViewpoint(raw: string | undefined | null): Viewpoint | null {
   if (!raw) return null;
   try {
@@ -33,13 +29,10 @@ export function parseViewpoint(raw: string | undefined | null): Viewpoint | null
       recordId?: string;
       orgRole?: string;
       userId?: string;
-      impersonating?: boolean;
     };
     if (parsed.role === "investor" || parsed.role === "partner") {
       if (!parsed.recordId) return null;
-      const vp: Viewpoint = { role: parsed.role, recordId: parsed.recordId };
-      if (parsed.impersonating === true) vp.impersonating = true;
-      return vp;
+      return { role: parsed.role, recordId: parsed.recordId };
     }
     if (parsed.role !== "admin") return null;
     const orgRole = ORG_ROLES.includes(parsed.orgRole as OrgRoleLens)
@@ -54,11 +47,7 @@ export function parseViewpoint(raw: string | undefined | null): Viewpoint | null
 
 export function serializeViewpoint(vp: Viewpoint): string {
   if (vp.role !== "admin") {
-    return JSON.stringify(
-      vp.impersonating
-        ? { role: vp.role, recordId: vp.recordId, impersonating: true }
-        : { role: vp.role, recordId: vp.recordId },
-    );
+    return JSON.stringify({ role: vp.role, recordId: vp.recordId });
   }
   if (!vp.orgRole || vp.orgRole === "Admin") return JSON.stringify({ role: "admin" });
   return JSON.stringify({ role: "admin", orgRole: vp.orgRole, userId: vp.userId });

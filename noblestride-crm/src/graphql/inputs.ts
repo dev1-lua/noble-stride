@@ -333,6 +333,40 @@ export const MilestoneInput = builder.inputType("MilestoneInput", {
   }),
 });
 
+// E-sign envelope send (Task 7). `kind` mirrors ESignKind in
+// src/server/integrations/esign/provider.ts (OpenNda | ClosedNda | TermSheet);
+// left as a plain string here rather than a new Pothos enum since the
+// service layer already validates/narrows it.
+export const SendEsignInput = builder.inputType("SendEsignInput", {
+  fields: (t) => ({
+    kind: t.string({ required: true }),
+    documentBase64: t.string({ required: true }),
+    documentName: t.string({ required: true }),
+    signerEmail: t.string({ required: true }),
+    signerName: t.string({ required: true }),
+    subject: t.string({ required: true }),
+    investorId: t.id({ required: false }),
+    engagementId: t.id({ required: false }),
+    transactionId: t.id({ required: false }),
+  }),
+});
+
+// Schedule-a-Teams-call (Task 15). `attendeesJson` is a JSON-encoded array of
+// `{email, name}` — left as a plain string here (mirroring SendEsignInput's
+// documentBase64 convention) so the resolver, not the GraphQL layer, owns
+// parsing/validation of attendee shape.
+export const ScheduleMeetingInput = builder.inputType("ScheduleMeetingInput", {
+  fields: (t) => ({
+    subject: t.string({ required: true }),
+    startAt: t.string({ required: true }),
+    endAt: t.string({ required: true }),
+    attendeesJson: t.string({ required: true }),
+    engagementId: t.id({ required: false }),
+    transactionId: t.id({ required: false }),
+    investorId: t.id({ required: false }),
+  }),
+});
+
 export const DueDiligenceTrackInput = builder.inputType("DueDiligenceTrackInput", {
   fields: (t) => ({
     transactionId: t.id({ required: true }),

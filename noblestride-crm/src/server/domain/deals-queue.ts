@@ -10,14 +10,18 @@ const SORT_KEYS: DealsSortKey[] = ["name", "company", "stage", "status", "ticket
 const GROUP_KEYS: DealsGroupBy[] = ["", "stage", "lead", "sector", "type", "status"];
 
 export interface DealsQuerySpec {
-  type?: DealKind;
+  // Multi-select filter dimensions (OR-matched within a dimension, AND across
+  // dimensions); empty array imposes no constraint. `stage` is not exposed as
+  // a filter-bar dropdown (only linked to directly, e.g. intake callouts) so
+  // it stays single-valued.
+  type: DealKind[];
   stage?: string;
-  status?: string;
-  sector?: string;
-  lead?: string;
-  ticketBand?: string;
-  priority?: string;
-  source?: string;
+  status: string[];
+  sector: string[];
+  lead: string[];
+  ticketBand: string[];
+  priority: string[];
+  source: string[];
   search?: string;
   sort: DealsSortKey;
   dir: "asc" | "desc";
@@ -65,20 +69,28 @@ function str(v: string | string[] | undefined): string | undefined {
   return t ? t : undefined;
 }
 
+// Multi-select filter params are comma-joined in the URL (e.g. ?status=Won,Lost)
+// by the DealsFilterBar multi-select; split back into an array here.
+// Empty/absent param → empty array → no constraint (see matches()).
+function list(v: string | string[] | undefined): string[] {
+  const s = str(v);
+  return s ? s.split(",").filter(Boolean) : [];
+}
+
 export function parseDealsQuery(sp: Record<string, string | string[] | undefined>): DealsQuerySpec {
-  const type = str(sp.type);
+  const types = list(sp.type).filter((t): t is DealKind => t === "mandate" || t === "transaction");
   const sortRaw = str(sp.sort) as DealsSortKey | undefined;
   const groupRaw = str(sp.group) as DealsGroupBy | undefined;
   const pageNum = Number.parseInt(str(sp.page) ?? "1", 10);
   return {
-    type: type === "mandate" || type === "transaction" ? type : undefined,
+    type: types,
     stage: str(sp.stage),
-    status: str(sp.status),
-    sector: str(sp.sector),
-    lead: str(sp.lead),
-    ticketBand: str(sp.ticket),
-    priority: str(sp.priority),
-    source: str(sp.source),
+    status: list(sp.status),
+    sector: list(sp.sector),
+    lead: list(sp.lead),
+    ticketBand: list(sp.ticket),
+    priority: list(sp.priority),
+    source: list(sp.source),
     search: str(sp.q),
     sort: sortRaw && SORT_KEYS.includes(sortRaw) ? sortRaw : "dateOnboarded",
     dir: str(sp.dir) === "asc" ? "asc" : "desc",

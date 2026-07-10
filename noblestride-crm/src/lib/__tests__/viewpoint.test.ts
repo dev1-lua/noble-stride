@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ADMIN_VIEWPOINT, parseViewpoint, serializeViewpoint } from "@/lib/viewpoint";
 
-describe("viewpoint org-role lens (§7.2 demo lens)", () => {
+describe("viewpoint org-role serialization (§7.2 in-org roles)", () => {
   it("round-trips an org-role lens", () => {
     const raw = serializeViewpoint({ role: "admin", orgRole: "DealLead", userId: "u1" });
     expect(parseViewpoint(raw)).toEqual({ role: "admin", orgRole: "DealLead", userId: "u1" });
@@ -31,15 +31,8 @@ describe("viewpoint org-role lens (§7.2 demo lens)", () => {
     expect(parseViewpoint("not-json")).toBeNull();
     expect(parseViewpoint(JSON.stringify({ role: "investor" }))).toBeNull(); // external without recordId
   });
-});
 
-describe("viewpoint impersonation flag (BLOCKER-A gate)", () => {
-  it("round-trips impersonating=true for a portal role", () => {
-    const raw = serializeViewpoint({ role: "investor", recordId: "i1", impersonating: true });
-    expect(parseViewpoint(raw)).toEqual({ role: "investor", recordId: "i1", impersonating: true });
-  });
-
-  it("a real login (no flag) has no impersonating key", () => {
+  it("a real login round-trips a portal role with no impersonation flag (lens removed)", () => {
     const raw = serializeViewpoint({ role: "investor", recordId: "i1" });
     expect(parseViewpoint(raw)).toEqual({ role: "investor", recordId: "i1" });
   });

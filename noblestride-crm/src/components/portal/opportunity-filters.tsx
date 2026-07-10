@@ -5,6 +5,7 @@
 // Filters can only narrow what the visibility engine already allows.
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { MultiSelect } from "@/components/ui";
 import { options } from "@/lib/vocab";
 
 const SELECTS = [
@@ -13,6 +14,12 @@ const SELECTS = [
   { key: "dealType", label: "Deal type", group: "DealType" },
   { key: "instrument", label: "Instrument", group: "Instrument" },
 ] as const;
+
+// Multi-value params are comma-joined in the URL (e.g. ?sector=Tech,Health).
+// Empty/absent param → empty array → no constraint.
+function parseList(v: string | null): string[] {
+  return v ? v.split(",").filter(Boolean) : [];
+}
 
 const NUMBERS = [
   { key: "ticketMin", label: "Ticket min (USD)" },
@@ -42,27 +49,27 @@ export function OpportunityFilters() {
     router.replace(qs ? `/portal/investor?${qs}` : "/portal/investor", { scroll: false });
   }
 
+  // Comma-joins the selected values so the server-side parseOpportunityFilters
+  // (multi-select, OR-matched) can split them back out.
+  function setListParam(key: string, values: string[]) {
+    setParam(key, values.join(","));
+  }
+
   const hasAny = [...SELECTS, ...NUMBERS, ...FLAGS].some((f) => params.get(f.key));
 
   return (
     <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4">
       <div className="flex flex-wrap items-end gap-3">
         {SELECTS.map((f) => (
-          <label key={f.key} className="flex flex-col gap-1 text-xs font-medium text-[var(--text-tertiary)]">
-            {f.label}
-            <select
-              value={params.get(f.key) ?? ""}
-              onChange={(e) => setParam(f.key, e.target.value)}
-              className="rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-2 py-1.5 text-sm text-[var(--text-primary)]"
-            >
-              <option value="">All</option>
-              {options(f.group).map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div key={f.key} className="w-40">
+            <MultiSelect
+              label={f.label}
+              options={options(f.group)}
+              selected={parseList(params.get(f.key))}
+              onChange={(v) => setListParam(f.key, v)}
+              placeholder="All"
+            />
+          </div>
         ))}
         {NUMBERS.map((f) => (
           <label key={f.key} className="flex flex-col gap-1 text-xs font-medium text-[var(--text-tertiary)]">

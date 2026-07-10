@@ -187,7 +187,24 @@ describe("BUG-01 — document titles must not leak client identity at PRE_INTERE
     const teaser = p!.documents.find((d) => d.id === "doc-teaser")!;
     expect(teaser.name).toBe(`${label("DocumentType", "Teaser")} — ${dealCodename("txn-1")}`);
     expect(teaser.fileUrl).toBeNull();
+    expect(teaser.downloadUrl).toBeNull();
     expect(JSON.stringify(p)).not.toContain("SECRETCO");
+  });
+
+  it("masks downloadUrl even when a stored file exists at PRE_INTEREST", () => {
+    const deal = makeDealFixture();
+    deal.documents = [
+      {
+        id: "doc-teaser",
+        name: "Teaser — SECRETCO Holdings Ltd",
+        type: "Teaser",
+        accessLevel: "InvestorShared",
+        storageKey: "transaction/txn-1/doc-teaser/v1.0-teaser.pdf",
+      },
+    ];
+    const p = projectDealForInvestor(deal, "PRE_INTEREST");
+    const teaser = p!.documents.find((d) => d.id === "doc-teaser")!;
+    expect(teaser.downloadUrl).toBeNull();
   });
 
   it("shows the real document title + fileUrl once past PRE_INTEREST", () => {
@@ -205,6 +222,24 @@ describe("BUG-01 — document titles must not leak client identity at PRE_INTERE
     const teaser = p!.documents.find((d) => d.id === "doc-teaser")!;
     expect(teaser.name).toBe("Teaser — Acme Agri Ltd");
     expect(teaser.fileUrl).toBe("https://vdr.example/acme.pdf");
+    // Legacy fileUrl-only docs still link via fileUrl.
+    expect(teaser.downloadUrl).toBe("https://vdr.example/acme.pdf");
+  });
+
+  it("links a stored file via the download route once past PRE_INTEREST", () => {
+    const deal = makeDealFixture();
+    deal.documents = [
+      {
+        id: "doc-im",
+        name: "IM — Acme Agri Ltd",
+        type: "IM",
+        accessLevel: "InvestorShared",
+        storageKey: "transaction/txn-1/doc-im/v1.0-im.pdf",
+      },
+    ];
+    const p = projectDealForInvestor(deal, "AFTER_NDA");
+    const im = p!.documents.find((d) => d.id === "doc-im")!;
+    expect(im.downloadUrl).toBe("/api/documents/doc-im/download");
   });
 });
 

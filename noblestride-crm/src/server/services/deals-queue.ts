@@ -101,18 +101,19 @@ async function loadRows(): Promise<DealRow[]> {
 }
 
 function matches(r: DealRow, spec: DealsQuerySpec): boolean {
-  if (spec.type && r.kind !== spec.type) return false;
+  if (spec.type.length > 0 && !spec.type.includes(r.kind)) return false;
   if (spec.stage && r.stageValue !== spec.stage) return false;
-  if (spec.status && r.statusValue !== spec.status) return false;
-  if (spec.sector && !r.sectors.includes(spec.sector)) return false;
-  if (spec.lead && r.leadName !== spec.lead) return false;
-  if (spec.priority && r.priorityValue !== spec.priority) return false;
-  if (spec.source && r.sourceValue !== spec.source) return false;
-  if (spec.ticketBand) {
-    const band = TICKET_BANDS.find((b) => b.value === spec.ticketBand);
-    if (band) {
+  if (spec.status.length > 0 && (r.statusValue == null || !spec.status.includes(r.statusValue))) return false;
+  if (spec.sector.length > 0 && !r.sectors.some((s) => spec.sector.includes(s))) return false;
+  if (spec.lead.length > 0 && (r.leadName == null || !spec.lead.includes(r.leadName))) return false;
+  if (spec.priority.length > 0 && (r.priorityValue == null || !spec.priority.includes(r.priorityValue))) return false;
+  if (spec.source.length > 0 && (r.sourceValue == null || !spec.source.includes(r.sourceValue))) return false;
+  if (spec.ticketBand.length > 0) {
+    const bands = TICKET_BANDS.filter((b) => spec.ticketBand.includes(b.value));
+    if (bands.length > 0) {
       const v = r.ticket ?? -1;
-      if (v < band.min || (band.max != null && v >= band.max)) return false;
+      const inAnyBand = bands.some((band) => v >= band.min && (band.max == null || v < band.max));
+      if (!inAnyBand) return false;
     }
   }
   if (spec.search) {

@@ -9,7 +9,7 @@ describe("parseDealsQuery", () => {
     expect(s.page).toBe(1);
     expect(s.pageSize).toBe(50);
     expect(s.groupBy).toBe("");
-    expect(s.type).toBeUndefined();
+    expect(s.type).toEqual([]);
     expect(s.view).toBe("list");
   });
   it("parses view=board, and falls back to list for anything else", () => {
@@ -17,15 +17,25 @@ describe("parseDealsQuery", () => {
     expect(parseDealsQuery({ view: "list" }).view).toBe("list");
     expect(parseDealsQuery({ view: "haxx" }).view).toBe("list");
   });
-  it("reads filter params through", () => {
+  it("reads filter params through (single value)", () => {
     const s = parseDealsQuery({ type: "transaction", sector: "Healthcare", q: "  amber ", sort: "ticket", dir: "asc", group: "lead", page: "3" });
-    expect(s.type).toBe("transaction");
-    expect(s.sector).toBe("Healthcare");
+    expect(s.type).toEqual(["transaction"]);
+    expect(s.sector).toEqual(["Healthcare"]);
     expect(s.search).toBe("amber");
     expect(s.sort).toBe("ticket");
     expect(s.dir).toBe("asc");
     expect(s.groupBy).toBe("lead");
     expect(s.page).toBe(3);
+  });
+  it("parses comma-joined multi-select filter params into arrays", () => {
+    const s = parseDealsQuery({ status: "Won,Lost", sector: "Healthcare,Technology", priority: "High,Medium" });
+    expect(s.status).toEqual(["Won", "Lost"]);
+    expect(s.sector).toEqual(["Healthcare", "Technology"]);
+    expect(s.priority).toEqual(["High", "Medium"]);
+  });
+  it("drops an unrecognized type value rather than defaulting it", () => {
+    expect(parseDealsQuery({ type: "haxx" }).type).toEqual([]);
+    expect(parseDealsQuery({ type: "mandate,haxx" }).type).toEqual(["mandate"]);
   });
   it("rejects an unknown sort key back to the default", () => {
     expect(parseDealsQuery({ sort: "haxx" }).sort).toBe("dateOnboarded");
@@ -40,8 +50,8 @@ describe("parseDealsQuery", () => {
     expect(parseDealsQuery({ sort: "priority" }).sort).toBe("priority");
   });
   it("reads the priority filter param through", () => {
-    expect(parseDealsQuery({ priority: "High" }).priority).toBe("High");
-    expect(parseDealsQuery({}).priority).toBeUndefined();
+    expect(parseDealsQuery({ priority: "High" }).priority).toEqual(["High"]);
+    expect(parseDealsQuery({}).priority).toEqual([]);
   });
 });
 

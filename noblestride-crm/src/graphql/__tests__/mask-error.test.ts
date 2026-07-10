@@ -6,6 +6,7 @@ import { maskDomainError } from "../mask-error";
 import { NdaGuardError, assertStageAllowed } from "@/server/domain/nda-guard";
 import { CrudError } from "@/server/services/crud";
 import { RegistrationError } from "@/server/onboarding/register-investor";
+import { IntegrationError } from "@/server/integrations/errors";
 
 const MASK = "Unexpected error.";
 
@@ -54,6 +55,24 @@ describe("maskDomainError", () => {
       { code: "custom", message: "Required", path: ["engagementStage"] },
     ]);
     expect(maskDomainError(zerr, MASK).message).toBe("engagementStage: Required");
+  });
+
+  it("surfaces IntegrationError 'not configured' gates (status 503)", () => {
+    const masked = maskDomainError(
+      new IntegrationError("Document sharing (Box) not configured", 503),
+      MASK,
+    );
+    expect(masked).toBeInstanceOf(GraphQLError);
+    expect(masked.message).toBe("Document sharing (Box) not configured");
+  });
+
+  it("still masks real IntegrationError provider failures (status 502)", () => {
+    const masked = maskDomainError(
+      new IntegrationError("Box upload failed (403)", 502),
+      MASK,
+    );
+    expect(masked.message).toBe(MASK);
+    expect(masked.message).not.toContain("Box upload failed");
   });
 
   it("still masks unexpected errors", () => {

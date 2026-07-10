@@ -1,11 +1,11 @@
 // partners/page.tsx — Partners list page.
 // Server Component: stats counters + partners table + referral bar list.
 
-import Link from "next/link";
 import { listPartners, partnerReferralStats } from "@/server/services/partners";
-import { StatCard, Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
+import { StatCard } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
 import { PartnerFormDrawer } from "@/components/crm/partner-form-drawer";
+import { PartnersTable, type PartnerRowData } from "./partners-table";
 import { getOrgLens } from "@/server/rbac/context";
 import { can } from "@/server/rbac/matrix";
 
@@ -21,6 +21,22 @@ export default async function PartnersPage() {
 
   // For bar chart: find max referred
   const maxReferred = Math.max(1, ...stats.byPartner.map((p) => p.referred));
+
+  // Join partner + referral stats into flat, serializable rows for the client
+  // <PartnersTable> (auth-enhancements Task 8, Point 2).
+  const partnerRows: PartnerRowData[] = partners.map((partner) => {
+    const row = statsByName.get(partner.name);
+    return {
+      id: partner.id,
+      name: partner.name,
+      partnerType: partner.partnerType,
+      location: partner.location,
+      referred: row?.referred ?? 0,
+      active: row?.active ?? 0,
+      closed: row?.closed ?? 0,
+      revenue: row ? row.revenue : null,
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -53,57 +69,7 @@ export default async function PartnersPage() {
         <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3">
           Partner Directory
         </h2>
-        <Table>
-          <THead>
-            <Tr>
-              <Th>Partner</Th>
-              <Th>Type</Th>
-              <Th>Location</Th>
-              <Th>Referred</Th>
-              <Th>Active</Th>
-              <Th>Closed</Th>
-              <Th>Revenue</Th>
-            </Tr>
-          </THead>
-          <TBody>
-            {partners.map((partner) => {
-              const row = statsByName.get(partner.name);
-              return (
-                <Tr key={partner.id}>
-                  <Td>
-                    <Link
-                      href={`/partners/${partner.id}`}
-                      className="font-medium text-[var(--text-primary)] hover:text-accent transition-colors"
-                    >
-                      {partner.name}
-                    </Link>
-                  </Td>
-                  <Td>
-                    {partner.partnerType ? (
-                      <Chip value={partner.partnerType} group="PartnerType" />
-                    ) : (
-                      <span className="text-[var(--text-tertiary)]">—</span>
-                    )}
-                  </Td>
-                  <Td>
-                    <span className="text-[var(--text-secondary)]">{partner.location ?? "—"}</span>
-                  </Td>
-                  <Td>{row?.referred ?? 0}</Td>
-                  <Td>{row?.active ?? 0}</Td>
-                  <Td>{row?.closed ?? 0}</Td>
-                  <Td>{row ? formatMoney(row.revenue) : "—"}</Td>
-                </Tr>
-              );
-            })}
-            {partners.length === 0 && (
-              <Tr>
-                <Td colSpan={7}>
-                  <span className="text-[var(--text-tertiary)]">No partners on record.</span>
-                </Td>
-              </Tr>
-            )}
-          </TBody>
-        </Table>
+        <PartnersTable partners={partnerRows} />
       </div>
 
       {/* Referrals by Partner — CSS bar list */}

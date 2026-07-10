@@ -31,7 +31,7 @@ async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 describe("graphql schema", () => {
-  it("builds without errors and exposes a query type with 29 queries and 50 mutations", async () => {
+  it("builds without errors and exposes a query type with 30 queries and 53 mutations", async () => {
     // Dynamic import so the module graph is resolved lazily — errors surface here.
     const { schema } = await import("@/graphql/schema");
     expect(schema).toBeTruthy();
@@ -39,12 +39,12 @@ describe("graphql schema", () => {
     const queryType = schema.getQueryType();
     expect(queryType).toBeTruthy();
     const queryFields = Object.keys(queryType?.getFields() ?? {});
-    expect(queryFields).toHaveLength(29);
+    expect(queryFields).toHaveLength(30);
 
     const mutationType = schema.getMutationType();
     expect(mutationType).toBeTruthy();
     const mutationFields = Object.keys(mutationType?.getFields() ?? {});
-    expect(mutationFields).toHaveLength(50);
+    expect(mutationFields).toHaveLength(53);
 
     // Spot-check that key query fields exist
     expect(queryFields).toContain("dashboardStats");
@@ -56,6 +56,7 @@ describe("graphql schema", () => {
     expect(queryFields).toContain("savedViews");
     expect(queryFields).toContain("myUnreadNotifications");
     expect(queryFields).toContain("myUnreadNotificationCount");
+    expect(queryFields).toContain("globalSearch");
 
     // Spot-check mutation fields
     expect(mutationFields).toContain("updateMandateStage");
@@ -75,6 +76,9 @@ describe("graphql schema", () => {
     expect(mutationFields).toContain("markInvestorCriteriaVerified");
     expect(mutationFields).toContain("recordOpenNda");
     expect(mutationFields).toContain("recordClosedNda");
+    expect(mutationFields).toContain("sendEsignEnvelope");
+    expect(mutationFields).toContain("shareDocumentViaBox");
+    expect(mutationFields).toContain("scheduleMeeting");
     expect(mutationFields).toContain("createTask");
     expect(mutationFields).toContain("updateTask");
     expect(mutationFields).toContain("deleteTask");

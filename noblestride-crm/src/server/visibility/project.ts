@@ -76,6 +76,9 @@ export interface DocumentInput {
   accessLevel: DocumentAccessLevel;
   status?: DocumentStatus | null;
   fileUrl?: string | null;
+  /** Set when a file is stored via the file-storage system; served through
+   *  /api/documents/[id]/download rather than a bare fileUrl. */
+  storageKey?: string | null;
   /** Superseded versions (isCurrent === false) are hidden from external roles.
    *  Undefined is treated as current for backward compatibility with existing
    *  fixtures/rows predating the versioning feature. */
@@ -148,6 +151,10 @@ export interface ProjectedDocument {
   version: string | null;
   status: DocumentStatus | null;
   fileUrl: string | null;
+  /** Where the portal links the "Open" button. Null ⇒ render "On request".
+   *  Prefers the file-storage download route (storageKey), falls back to a
+   *  legacy fileUrl. Always null when the projection is masked. */
+  downloadUrl: string | null;
 }
 
 export interface ProjectedContact {
@@ -236,6 +243,13 @@ function projectDocuments(
       version: doc.version ?? null,
       status: doc.status ?? null,
       fileUrl: masked ? null : (doc.fileUrl ?? null),
+      // Prefer the file-storage download route; fall back to a legacy fileUrl.
+      // Masked (PRE_INTEREST) projections expose no link at all.
+      downloadUrl: masked
+        ? null
+        : doc.storageKey
+          ? `/api/documents/${doc.id}/download`
+          : (doc.fileUrl ?? null),
     }));
 }
 

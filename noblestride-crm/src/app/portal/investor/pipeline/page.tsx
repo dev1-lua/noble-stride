@@ -10,6 +10,7 @@ import { getViewpoint } from "@/server/viewpoint";
 import { label } from "@/lib/vocab";
 import { MILESTONE_ORDER } from "@/lib/milestones";
 import { MilestoneStepper } from "@/components/portal/milestone-stepper";
+import { Card, CardBody } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -37,18 +38,20 @@ export default async function InvestorPipelinePage() {
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-6 py-16 text-center">
-          <p className="text-sm font-medium text-[var(--text-secondary)]">No active engagements yet.</p>
-          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-            Express interest on an opportunity to start your journey.
-          </p>
-          <Link
-            href="/portal/investor"
-            className="mt-4 inline-block rounded bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
-          >
-            Browse opportunities
-          </Link>
-        </div>
+        <Card>
+          <CardBody className="px-6 py-16 text-center">
+            <p className="text-sm font-medium text-[var(--text-secondary)]">No active engagements yet.</p>
+            <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+              Express interest on an opportunity to start your journey.
+            </p>
+            <Link
+              href="/portal/investor"
+              className="mt-4 inline-block rounded bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+            >
+              Browse opportunities
+            </Link>
+          </CardBody>
+        </Card>
       ) : (
         <div className="space-y-4">
           {items.map(({ deal, own }) => {
@@ -57,7 +60,7 @@ export default async function InvestorPipelinePage() {
               <Link
                 key={deal.id}
                 href={`/portal/investor/deals/${deal.id}`}
-                className={`block rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5 transition-colors hover:border-[var(--border-strong)] ${
+                className={`block rounded-lg border border-[var(--border-strong)] bg-[var(--bg-primary)] p-5 shadow-[var(--shadow-card)] transition-colors hover:border-[var(--accent)] ${
                   declined ? "opacity-60" : ""
                 }`}
               >

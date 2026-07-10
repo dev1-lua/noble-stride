@@ -3,6 +3,7 @@
 // form field; errors round-trip via query params, same pattern as login.
 
 import Link from "next/link";
+import { PasswordInput } from "@/components/ui";
 import { resetPasswordAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -12,15 +13,20 @@ interface PageProps {
   searchParams: Promise<{ error?: string }>;
 }
 
-const inputClass =
-  "w-full rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] " +
-  "placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]";
-
 const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]";
+
+// Fixed allow-list for the ?error slug. Never render the raw query value —
+// unknown slugs collapse to a generic line (anti content-spoofing).
+const RESET_ERRORS: Record<string, string> = {
+  mismatch: "Passwords do not match.",
+  invalid: "This reset link is invalid or has expired. Request a new one.",
+  weak: "Password must be at least 10 characters and not easily guessable.",
+};
 
 export default async function ResetPasswordPage({ params, searchParams }: PageProps) {
   const { token } = await params;
   const sp = await searchParams;
+  const errorText = sp.error ? RESET_ERRORS[sp.error] ?? "Reset failed. Request a new link." : null;
 
   return (
     <div className="flex min-h-screen items-start justify-center bg-[var(--bg-secondary)] px-4 py-12">
@@ -33,9 +39,9 @@ export default async function ResetPasswordPage({ params, searchParams }: PagePr
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">Choose a new password for your account.</p>
         </div>
 
-        {sp.error && (
+        {errorText && (
           <div className="rounded-lg border border-[var(--t-tag-bg-rose)] bg-[var(--t-tag-bg-rose)] p-4 text-sm text-[var(--t-tag-text-rose)]">
-            {sp.error}
+            {errorText}
           </div>
         )}
 
@@ -46,28 +52,26 @@ export default async function ResetPasswordPage({ params, searchParams }: PagePr
               <label htmlFor="password" className={labelClass}>
                 New password <span className="text-rose-500">*</span>
               </label>
-              <input
+              <PasswordInput
                 id="password"
                 name="password"
-                type="password"
                 required
                 minLength={10}
                 placeholder="At least 10 characters"
-                className={"mt-1 " + inputClass}
+                className="mt-1"
               />
             </div>
             <div>
               <label htmlFor="confirm" className={labelClass}>
                 Confirm password <span className="text-rose-500">*</span>
               </label>
-              <input
+              <PasswordInput
                 id="confirm"
                 name="confirm"
-                type="password"
                 required
                 minLength={10}
                 placeholder="Re-enter your new password"
-                className={"mt-1 " + inputClass}
+                className="mt-1"
               />
             </div>
             <div className="flex items-center justify-end border-t border-[var(--border-subtle)] pt-4">

@@ -3,6 +3,7 @@
 import { cloneElement, isValidElement, useActionState, useId, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { PasswordInput } from "@/components/ui";
 import { options, label } from "@/lib/vocab";
 import { TICKET_BANDS } from "@/lib/ticket-bands";
 import { EASE } from "@/components/ui/motion";
@@ -259,25 +260,21 @@ export default function RegisterWizard({ initialEmail = "" }: { initialEmail?: s
                   <Review values={values} onEdit={goTo} serverError={serverState.error} />
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Create a password">
-                      <input
-                        type="password"
+                      <PasswordInput
                         name="password"
                         form="register-wizard-submit"
                         required
                         minLength={10}
                         placeholder="At least 10 characters"
-                        className={inputClass}
                       />
                     </Field>
                     <Field label="Confirm password">
-                      <input
-                        type="password"
+                      <PasswordInput
                         name="confirmPassword"
                         form="register-wizard-submit"
                         required
                         minLength={10}
                         placeholder="Re-enter your password"
-                        className={inputClass}
                       />
                     </Field>
                   </div>

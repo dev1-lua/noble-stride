@@ -7,7 +7,7 @@ import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor, markInvestorCriteriaVerified } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
@@ -20,11 +20,15 @@ import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
 import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
 import { createSavedView, renameSavedView, deleteSavedView, type SavedViewConfig } from "@/server/services/saved-views";
-import { SavedViewRef } from "./types";
+import { SavedViewRef, EsignEnvelopeResult } from "./types";
 import { markNotificationsRead, markAllNotificationsRead } from "@/server/services/notifications";
 import { getOrgLens } from "@/server/rbac/context";
 import { assertAdmin, assertCan, assertCanDelete, assertCanUpdateOwnScoped } from "@/server/rbac/enforce";
 import { prisma } from "@/lib/db";
+import { sendEsignEnvelope } from "@/server/services/esign";
+import type { ESignKind } from "@/server/integrations/esign/provider";
+import { shareDocumentViaBox } from "@/server/services/docshare";
+import { scheduleMeeting } from "@/server/services/meetings";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -164,6 +168,30 @@ builder.mutationFields((t) => ({
     resolve: async (_q, _r, args, ctx) => {
       assertCan(ctx.actor, "Engagements", "U");
       return recordClosedNda(String(args.engagementId), ctx.actor);
+    },
+  }),
+
+  // ── E-sign (Task 7) — sends an envelope via the configured provider seam
+  // (manual no-op fallback when DocuSign is unconfigured; see
+  // src/server/integrations/esign/provider.ts). Guarded the same as
+  // recordClosedNda: a staff-write check on Engagements.
+  sendEsignEnvelope: t.field({
+    type: EsignEnvelopeResult, nullable: false,
+    args: { input: t.arg({ type: SendEsignInput, required: true }) },
+    resolve: async (_r, { input }, ctx) => {
+      assertCan(ctx.actor, "Engagements", "U");
+      return sendEsignEnvelope({
+        kind: input.kind as ESignKind,
+        documentBase64: input.documentBase64,
+        documentName: input.documentName,
+        signer: { email: input.signerEmail, name: input.signerName },
+        subject: input.subject,
+        linkRecord: {
+          investorId: input.investorId != null ? String(input.investorId) : undefined,
+          engagementId: input.engagementId != null ? String(input.engagementId) : undefined,
+          transactionId: input.transactionId != null ? String(input.transactionId) : undefined,
+        },
+      }, ctx.actor);
     },
   }),
 
@@ -351,6 +379,55 @@ builder.mutationFields((t) => ({
     resolve: async (_q, _r, args, ctx) => {
       assertCanDelete(ctx.actor, "Documents");
       return deleteDocumentVersion(args.id);
+    },
+  }),
+
+  // ── Share via Box (Task 12b) — fetches the document's stored bytes from
+  // its fileUrl and hands them to the docshare provider seam (manual no-op
+  // fallback when Box is unconfigured; see src/server/integrations/docshare/provider.ts).
+  // Guarded the same as updateDocument: a staff-write check on Documents.
+  shareDocumentViaBox: t.string({
+    nullable: false,
+    args: { documentId: t.arg.id({ required: true }) },
+    resolve: async (_r, args, ctx) => {
+      assertCan(ctx.actor, "Documents", "U");
+      const doc = await prisma.document.findUnique({ where: { id: String(args.documentId) } });
+      if (!doc) throw new Error("Document not found");
+      if (!doc.fileUrl) throw new Error("Document has no fileUrl to share");
+      const r = await fetch(doc.fileUrl);
+      const bytes = Buffer.from(await r.arrayBuffer());
+      const { sharedUrl } = await shareDocumentViaBox(doc.id, bytes, {
+        filename: doc.name,
+        contentType: r.headers.get("content-type") ?? "application/octet-stream",
+      });
+      return sharedUrl;
+    },
+  }),
+
+  // ── Schedule a Teams call (Task 15) — schedules a meeting via the
+  // configured provider seam (manual no-op fallback throws when Teams is
+  // unconfigured; see src/server/integrations/meetings/provider.ts). The UI
+  // only renders the trigger button when isConfigured("teams") is true.
+  // Guarded the same as recordClosedNda/sendEsignEnvelope: a staff-write
+  // check on Engagements.
+  scheduleMeeting: t.string({
+    nullable: false,
+    args: { input: t.arg({ type: ScheduleMeetingInput, required: true }) },
+    resolve: async (_r, { input }, ctx) => {
+      assertCan(ctx.actor, "Engagements", "U");
+      const attendees = JSON.parse(input.attendeesJson) as { email: string; name?: string }[];
+      const result = await scheduleMeeting({
+        subject: input.subject,
+        startAt: new Date(input.startAt),
+        endAt: new Date(input.endAt),
+        attendees,
+        linkRecord: {
+          engagementId: input.engagementId != null ? String(input.engagementId) : undefined,
+          transactionId: input.transactionId != null ? String(input.transactionId) : undefined,
+          investorId: input.investorId != null ? String(input.investorId) : undefined,
+        },
+      }, ctx.actor);
+      return result.joinUrl;
     },
   }),
 

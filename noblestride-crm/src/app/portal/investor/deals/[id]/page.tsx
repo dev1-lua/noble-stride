@@ -9,6 +9,7 @@ import { label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
 import { MILESTONE_ORDER, MILESTONE_LABELS } from "@/lib/milestones";
 import { TierBadge } from "@/components/portal/tier-badge";
+import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { expressInterest } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -87,151 +88,171 @@ export default async function InvestorDealPage({
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-            Company Profile
-          </h2>
-          <dl className="mt-2 divide-y divide-[var(--border-subtle)]">
-            <Row k="Sector" v={deal.companyProfile.sector.map((s) => label("Sector", s)).join(", ")} />
-            <Row k="Core product" v={deal.companyProfile.coreProduct} />
-            <Row k="HQ" v={deal.companyProfile.hqCity} />
-            <Row
-              k="Countries"
-              v={deal.companyProfile.countries.map((c) => label("Geography", c)).join(", ") || null}
-            />
-            <Row k="Founded" v={deal.companyProfile.yearFounded} />
-          </dl>
-          {deal.companyProfile.description && (
-            <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
-              {deal.companyProfile.description}
-            </p>
-          )}
-        </section>
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+              Company Profile
+            </h2>
+          </CardHeader>
+          <CardBody>
+            <dl className="divide-y divide-[var(--border-subtle)]">
+              <Row k="Sector" v={deal.companyProfile.sector.map((s) => label("Sector", s)).join(", ")} />
+              <Row k="Core product" v={deal.companyProfile.coreProduct} />
+              <Row k="HQ" v={deal.companyProfile.hqCity} />
+              <Row
+                k="Countries"
+                v={deal.companyProfile.countries.map((c) => label("Geography", c)).join(", ") || null}
+              />
+              <Row k="Founded" v={deal.companyProfile.yearFounded} />
+            </dl>
+            {deal.companyProfile.description && (
+              <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+                {deal.companyProfile.description}
+              </p>
+            )}
+          </CardBody>
+        </Card>
 
-        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-            Deal &amp; Financials
-          </h2>
-          <dl className="mt-2 divide-y divide-[var(--border-subtle)]">
-            <Row k="Deal type" v={deal.dealTypeTicket.dealType ? label("DealType", deal.dealTypeTicket.dealType) : null} />
-            <Row
-              k="Instrument"
-              v={deal.dealTypeTicket.instrument.map((i) => label("Instrument", i)).join(", ") || null}
-            />
-            <Row
-              k="Target raise"
-              v={
-                deal.dealTypeTicket.targetRaise != null
-                  ? formatMoney(deal.dealTypeTicket.targetRaise, deal.dealTypeTicket.currency)
-                  : null
-              }
-            />
-            <Row
-              k={fin.disclosure === "limited" ? "Revenue (range)" : "Revenue (last year)"}
-              v={typeof fin.revenueLastYear === "number" ? formatMoney(fin.revenueLastYear) : fin.revenueLastYear}
-            />
-            <Row
-              k={fin.disclosure === "limited" ? "Forecast (range)" : "Revenue forecast"}
-              v={typeof fin.revenueForecast === "number" ? formatMoney(fin.revenueForecast) : fin.revenueForecast}
-            />
-            <Row k="Profitability" v={fin.profitability == null ? null : label("Profitability", fin.profitability)} />
-            <Row
-              k="Mandate status"
-              v={deal.matchingMandateStatus ? label("MandateStage", deal.matchingMandateStatus) : null}
-            />
-          </dl>
-          {fin.disclosure === "limited" && (
-            <p className="mt-3 rounded-md bg-[var(--bg-secondary)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
-              Detailed financials are shared after an NDA is signed. Contact your NobleStride
-              advisor to proceed.
-            </p>
-          )}
-        </section>
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+              Deal &amp; Financials
+            </h2>
+          </CardHeader>
+          <CardBody>
+            <dl className="divide-y divide-[var(--border-subtle)]">
+              <Row k="Deal type" v={deal.dealTypeTicket.dealType ? label("DealType", deal.dealTypeTicket.dealType) : null} />
+              <Row
+                k="Instrument"
+                v={deal.dealTypeTicket.instrument.map((i) => label("Instrument", i)).join(", ") || null}
+              />
+              <Row
+                k="Target raise"
+                v={
+                  deal.dealTypeTicket.targetRaise != null
+                    ? formatMoney(deal.dealTypeTicket.targetRaise, deal.dealTypeTicket.currency)
+                    : null
+                }
+              />
+              <Row
+                k={fin.disclosure === "limited" ? "Revenue (range)" : "Revenue (last year)"}
+                v={typeof fin.revenueLastYear === "number" ? formatMoney(fin.revenueLastYear) : fin.revenueLastYear}
+              />
+              <Row
+                k={fin.disclosure === "limited" ? "Forecast (range)" : "Revenue forecast"}
+                v={typeof fin.revenueForecast === "number" ? formatMoney(fin.revenueForecast) : fin.revenueForecast}
+              />
+              <Row k="Profitability" v={fin.profitability == null ? null : label("Profitability", fin.profitability)} />
+              <Row
+                k="Mandate status"
+                v={deal.matchingMandateStatus ? label("MandateStage", deal.matchingMandateStatus) : null}
+              />
+            </dl>
+            {fin.disclosure === "limited" && (
+              <p className="mt-3 rounded-md bg-[var(--bg-secondary)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
+                Detailed financials are shared after an NDA is signed. Contact your NobleStride
+                advisor to proceed.
+              </p>
+            )}
+          </CardBody>
+        </Card>
       </div>
 
-      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">Documents</h2>
-        {deal.documents.length === 0 ? (
-          <p className="mt-3 text-sm text-[var(--text-tertiary)]">
-            No documents available at your current access level.
-          </p>
-        ) : (
-          <ul className="mt-2 divide-y divide-[var(--border-subtle)]">
-            {deal.documents.map((doc) => (
-              <li key={doc.id} className="flex items-center justify-between gap-4 py-2.5">
-                <div>
-                  <div className="text-sm font-medium text-[var(--text-primary)]">{doc.name}</div>
-                  <div className="text-xs text-[var(--text-tertiary)]">
-                    {label("DocumentType", doc.type)}
-                    {doc.version ? ` · v${doc.version}` : ""}
+      <Card>
+        <CardHeader>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">Documents</h2>
+        </CardHeader>
+        <CardBody>
+          {deal.documents.length === 0 ? (
+            <p className="text-sm text-[var(--text-tertiary)]">
+              No documents available at your current access level.
+            </p>
+          ) : (
+            <ul className="divide-y divide-[var(--border-subtle)]">
+              {deal.documents.map((doc) => (
+                <li key={doc.id} className="flex items-center justify-between gap-4 py-2.5">
+                  <div>
+                    <div className="text-sm font-medium text-[var(--text-primary)]">{doc.name}</div>
+                    <div className="text-xs text-[var(--text-tertiary)]">
+                      {label("DocumentType", doc.type)}
+                      {doc.version ? ` · v${doc.version}` : ""}
+                    </div>
                   </div>
-                </div>
-                {doc.fileUrl ? (
-                  <a
-                    href={doc.fileUrl}
-                    className="rounded-md bg-[var(--t-tag-bg-emerald)] px-3 py-1 text-xs font-medium text-[var(--t-tag-text-emerald)] transition-colors hover:opacity-80"
-                  >
-                    Open
-                  </a>
-                ) : (
-                  <span className="text-xs text-[var(--text-tertiary)]">On request</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                  {doc.downloadUrl ? (
+                    <a
+                      href={doc.downloadUrl}
+                      className="rounded-md bg-[var(--t-tag-bg-emerald)] px-3 py-1 text-xs font-medium text-[var(--t-tag-text-emerald)] transition-colors hover:opacity-80"
+                    >
+                      Open
+                    </a>
+                  ) : (
+                    <span className="text-xs text-[var(--text-tertiary)]">On request</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
 
       {deal.advisorClientContacts && deal.advisorClientContacts.length > 0 && (
-        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-            Company Contacts
-          </h2>
-          <ul className="mt-2 divide-y divide-[var(--border-subtle)]">
-            {deal.advisorClientContacts.map((c, i) => (
-              <li key={i} className="py-2.5 text-sm">
-                <span className="font-medium text-[var(--text-primary)]">{c.name}</span>
-                {c.jobTitle && <span className="text-[var(--text-tertiary)]"> — {c.jobTitle}</span>}
-                {c.email && <span className="block text-xs text-[var(--text-tertiary)]">{c.email}</span>}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+              Company Contacts
+            </h2>
+          </CardHeader>
+          <CardBody>
+            <ul className="divide-y divide-[var(--border-subtle)]">
+              {deal.advisorClientContacts.map((c, i) => (
+                <li key={i} className="py-2.5 text-sm">
+                  <span className="font-medium text-[var(--text-primary)]">{c.name}</span>
+                  {c.jobTitle && <span className="text-[var(--text-tertiary)]"> — {c.jobTitle}</span>}
+                  {c.email && <span className="block text-xs text-[var(--text-tertiary)]">{c.email}</span>}
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
       )}
 
       {journey ? (
-        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-              Your Progress on This Deal
-            </h2>
-            <span className="text-xs text-[var(--text-tertiary)]">
-              <span className="font-semibold text-[var(--text-secondary)]">
-                {journey.own.milestoneKeys.length} of {MILESTONE_ORDER.length}
-              </span>{" "}
-              milestones · {label("EngagementStage", journey.own.stage)}
-            </span>
-          </div>
-          <ol className="mt-3 divide-y divide-[var(--border-subtle)]">
-            {MILESTONE_ORDER.map((key) => {
-              const done = journey.own.milestoneKeys.includes(key);
-              const date = journey.milestoneDates[key];
-              return (
-                <li key={key} className="flex items-center gap-3 py-2">
-                  <CheckIcon done={done} />
-                  <span
-                    className={`text-sm ${done ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
-                  >
-                    {MILESTONE_LABELS[key]}
-                  </span>
-                  {done && date && (
-                    <span className="ml-auto text-xs text-[var(--text-tertiary)]">{DATE_FMT.format(date)}</span>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        </section>
+        <Card>
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                Your Progress on This Deal
+              </h2>
+              <span className="text-xs text-[var(--text-tertiary)]">
+                <span className="font-semibold text-[var(--text-secondary)]">
+                  {journey.own.milestoneKeys.length} of {MILESTONE_ORDER.length}
+                </span>{" "}
+                milestones · {label("EngagementStage", journey.own.stage)}
+              </span>
+            </div>
+          </CardHeader>
+          <CardBody>
+            <ol className="divide-y divide-[var(--border-subtle)]">
+              {MILESTONE_ORDER.map((key) => {
+                const done = journey.own.milestoneKeys.includes(key);
+                const date = journey.milestoneDates[key];
+                return (
+                  <li key={key} className="flex items-center gap-3 py-2">
+                    <CheckIcon done={done} />
+                    <span
+                      className={`text-sm ${done ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
+                    >
+                      {MILESTONE_LABELS[key]}
+                    </span>
+                    {done && date && (
+                      <span className="ml-auto text-xs text-[var(--text-tertiary)]">{DATE_FMT.format(date)}</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </CardBody>
+        </Card>
       ) : null}
 
       <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] p-5">
@@ -255,7 +276,7 @@ export default async function InvestorDealPage({
             name="message"
             rows={3}
             placeholder="Optional message for the deal team…"
-            className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+            className="w-full rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs text-[var(--t-tag-text-emerald)]">{deal.contact}</span>

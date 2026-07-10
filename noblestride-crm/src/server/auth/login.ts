@@ -7,6 +7,7 @@ import { normalizeEmail } from "./guardrails";
 import { DUMMY_HASH, verifyPassword } from "./password";
 import { createSession } from "./session";
 import { logAuthEvent } from "./audit";
+import { twoFactorEnabled } from "./mailer";
 import { OtpDeliveryError, issueLoginOtp, signPending, verifyTrust } from "./two-factor";
 
 const MAX_FAILURES = 10;
@@ -55,7 +56,10 @@ export async function loginWithPassword(
 
   // Investor 2FA: password was correct, so clear the password-lockout counters,
   // but require an email OTP before issuing a session unless this device is trusted.
-  if (account.kind === "INVESTOR") {
+  // Gated by twoFactorEnabled() (Option B: RESEND_API_KEY is the switch) — when
+  // no key is configured we can't deliver OTP emails, so skip straight to normal
+  // session issuance (password-only) instead of blocking every investor login.
+  if (account.kind === "INVESTOR" && twoFactorEnabled()) {
     const trusted = await verifyTrust(opts?.trustedDeviceToken, account.id);
     if (!trusted) {
       await prisma.authAccount.update({
