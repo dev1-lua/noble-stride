@@ -7,12 +7,13 @@ import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
 import { options } from "@/lib/vocab";
 import { ContactEmailField } from "@/components/portal/contact-email-field";
+import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { saveFundProfile } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 const INPUT_CLS =
-  "w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]";
+  "w-full rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -54,10 +55,12 @@ function ChipGroup({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">{title}</h2>
-      <div className="mt-4 space-y-4">{children}</div>
-    </section>
+    <Card>
+      <CardHeader>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">{title}</h2>
+      </CardHeader>
+      <CardBody className="space-y-4">{children}</CardBody>
+    </Card>
   );
 }
 

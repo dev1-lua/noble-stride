@@ -19,6 +19,13 @@ const NAV_ICONS = {
   "/portal/investor/profile": Building2,
 } as const;
 
+const NAV_ICON_COLORS = {
+  "/portal/investor": "text-[var(--t-tag-text-emerald)]",
+  "/portal/investor/pipeline": "text-[var(--t-tag-text-amber)]",
+  "/portal/investor/dashboard": "text-[var(--t-tag-text-sky)]",
+  "/portal/investor/profile": "text-[var(--t-tag-text-violet)]",
+} as const;
+
 export function InvestorSidebar({ name, email }: { name: string; email: string }) {
   const pathname = usePathname();
 
@@ -38,6 +45,7 @@ export function InvestorSidebar({ name, email }: { name: string; email: string }
               label={label}
               Icon={NAV_ICONS[href]}
               active={isInvestorNavActive(pathname, href)}
+              iconColor={NAV_ICON_COLORS[href]}
             />
           ))}
         </nav>

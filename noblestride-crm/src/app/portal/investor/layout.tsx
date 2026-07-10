@@ -9,6 +9,7 @@ import { getCurrentAuth } from "@/server/auth/current";
 import { isBlockedClassification } from "@/server/visibility/tiers";
 import { InvestorSidebar } from "@/components/portal/investor-sidebar";
 import { InvestorTopbar } from "@/components/portal/investor-topbar";
+import { Card, CardBody } from "@/components/ui/card";
 
 export default async function InvestorPortalLayout({
   children,
@@ -46,16 +47,18 @@ export default async function InvestorPortalLayout({
     return (
       <div className="flex h-screen flex-col overflow-hidden bg-[var(--bg-secondary)]">
         <main className="flex flex-1 items-center justify-center p-6">
-          <div className="max-w-md rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-8 text-center">
-            <h1 className="text-xl font-semibold text-[var(--text-primary)]">Portal access restricted</h1>
-            <p className="mt-3 text-sm text-[var(--text-tertiary)]">
-              Your portal access is currently restricted. Contact NobleStride Capital if you believe
-              this is an error.
-            </p>
-            <p className="mt-6 text-xs text-[var(--text-tertiary)]">
-              No opportunity information is available for this account.
-            </p>
-          </div>
+          <Card className="max-w-md">
+            <CardBody className="p-8 text-center">
+              <h1 className="text-xl font-semibold text-[var(--text-primary)]">Portal access restricted</h1>
+              <p className="mt-3 text-sm text-[var(--text-tertiary)]">
+                Your portal access is currently restricted. Contact NobleStride Capital if you believe
+                this is an error.
+              </p>
+              <p className="mt-6 text-xs text-[var(--text-tertiary)]">
+                No opportunity information is available for this account.
+              </p>
+            </CardBody>
+          </Card>
         </main>
       </div>
     );
@@ -66,19 +69,21 @@ export default async function InvestorPortalLayout({
     return (
       <div className="flex h-screen flex-col overflow-hidden bg-[var(--bg-secondary)]">
         <main className="flex flex-1 items-center justify-center p-6">
-          <div className="max-w-md rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-8 text-center">
-            <h1 className="text-xl font-semibold text-[var(--text-primary)]">
-              {pending ? "Registration under review" : "Registration not approved"}
-            </h1>
-            <p className="mt-3 text-sm text-[var(--text-tertiary)]">
-              {pending
-                ? `Thank you for registering ${investor.name}. The NobleStride team reviews every investor before granting deal visibility. You will be contacted at your corporate email once approved.`
-                : "This registration was not approved. Contact NobleStride Capital if you believe this is an error."}
-            </p>
-            <p className="mt-6 text-xs text-[var(--text-tertiary)]">
-              No opportunity information is visible before approval.
-            </p>
-          </div>
+          <Card className="max-w-md">
+            <CardBody className="p-8 text-center">
+              <h1 className="text-xl font-semibold text-[var(--text-primary)]">
+                {pending ? "Registration under review" : "Registration not approved"}
+              </h1>
+              <p className="mt-3 text-sm text-[var(--text-tertiary)]">
+                {pending
+                  ? `Thank you for registering ${investor.name}. The NobleStride team reviews every investor before granting deal visibility. You will be contacted at your corporate email once approved.`
+                  : "This registration was not approved. Contact NobleStride Capital if you believe this is an error."}
+              </p>
+              <p className="mt-6 text-xs text-[var(--text-tertiary)]">
+                No opportunity information is visible before approval.
+              </p>
+            </CardBody>
+          </Card>
         </main>
       </div>
     );
