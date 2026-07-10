@@ -1,10 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Search } from "lucide-react";
 import { AskBar } from "./ask-bar";
 import { NotificationBell, type NotificationItem } from "./notification-bell";
 import { HelpPanel } from "./help-panel";
+import { CommandPalette } from "@/components/search/command-palette";
 
 // ─── Route → title/subtitle map ──────────────────────────────────────────────
 
@@ -110,15 +110,8 @@ export function Topbar({
         {/* Help panel (Task 18) — journey guide, glossary, access matrix link. Supports ?help=journey deep link. */}
         <HelpPanel />
 
-        {/* Search */}
-        <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-3 py-1.5">
-          <Search className="h-3.5 w-3.5 text-[var(--text-tertiary)] flex-shrink-0" />
-          <input
-            type="text"
-            placeholder="Search…"
-            className="w-28 bg-transparent text-xs text-[var(--text-secondary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
-          />
-        </div>
+        {/* Global search (Task 3/D) — Cmd/Ctrl-K command palette */}
+        <CommandPalette />
 
         {/* Notification bell (Task 14) — server-fetched initial data, no polling */}
         <NotificationBell initialItems={notifications} initialCount={notificationCount} />

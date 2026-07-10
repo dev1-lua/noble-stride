@@ -5,8 +5,9 @@
 // no AskBar (agents are internal). The avatar + sign-out live in the sidebar
 // footer (SidebarProfile) instead.
 import { usePathname } from "next/navigation";
-import { Search, Bell } from "lucide-react";
+import { Bell } from "lucide-react";
 import { deriveInvestorPageMeta } from "./investor-portal-nav";
+import { CommandPalette } from "@/components/search/command-palette";
 
 export function InvestorTopbar() {
   const pathname = usePathname();
@@ -22,14 +23,8 @@ export function InvestorTopbar() {
       <div className="flex-1" />
 
       <div className="flex flex-shrink-0 items-center gap-3">
-        <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-3 py-1.5">
-          <Search className="h-3.5 w-3.5 flex-shrink-0 text-[var(--text-tertiary)]" />
-          <input
-            type="text"
-            placeholder="Search…"
-            className="w-28 bg-transparent text-xs text-[var(--text-secondary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
-          />
-        </div>
+        {/* Global search (Task 3/D) — same query, server scopes to this investor */}
+        <CommandPalette />
 
         <button
           type="button"

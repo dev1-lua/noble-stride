@@ -52,6 +52,7 @@ import { aiOverviewInsights, aiMatchInvestors, aiFindProspects, aiAsk } from "@/
 import { listSavedViews } from "@/server/services/saved-views";
 import { unreadFor, unreadCountFor } from "@/server/services/notifications";
 import { getOrgLens } from "@/server/rbac/context";
+import { globalSearch, type SearchResult } from "@/server/search/global-search";
 
 // ── Input types ───────────────────────────────────────────────────────────────
 
@@ -239,6 +240,18 @@ const AiAnswerRef = builder.objectRef<AiAnswer>("AiAnswer").implement({
   fields: (t) => ({
     answer: t.exposeString("answer"),
     sources: t.exposeStringList("sources"),
+  }),
+});
+
+// SearchResult (Task C: global search) — plain service-shaped output, same
+// non-Prisma-objectRef convention as the refs above.
+const SearchResultRef = builder.objectRef<SearchResult>("SearchResult").implement({
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    type: t.exposeString("type"),
+    title: t.exposeString("title"),
+    subtitle: t.exposeString("subtitle", { nullable: true }),
+    href: t.exposeString("href"),
   }),
 });
 
@@ -550,5 +563,18 @@ builder.queryFields((t) => ({
       if (!lens.userId) return 0;
       return unreadCountFor(lens.userId);
     },
+  }),
+
+  // 28. globalSearch(query, limit): [SearchResult!]! — Task C. The viewer is
+  // read from ctx.actor (never a client-supplied id); see
+  // server/search/global-search.ts for the investor-vs-internal branching
+  // and the visibility guarantees.
+  globalSearch: t.field({
+    type: [SearchResultRef],
+    args: {
+      query: t.arg.string({ required: true }),
+      limit: t.arg.int({ required: false }),
+    },
+    resolve: (_root, args, ctx) => globalSearch(ctx.actor, args.query, args.limit ?? undefined),
   }),
 }));
