@@ -13,6 +13,7 @@ import { Prisma } from "@prisma/client";
 import { NdaGuardError } from "@/server/domain/nda-guard";
 import { CrudError } from "@/server/services/crud";
 import { RegistrationError } from "@/server/onboarding/register-investor";
+import { IntegrationError } from "@/server/integrations/errors";
 
 /** Errors whose message is written for end users and safe to surface. */
 function userFacingMessage(error: unknown): string | null {
@@ -21,6 +22,14 @@ function userFacingMessage(error: unknown): string | null {
     error instanceof CrudError ||
     error instanceof RegistrationError
   ) {
+    return error.message;
+  }
+  // Integration "not configured" gates (status 503) carry a fixed, user-safe
+  // message ("… not configured") and are reachable only as defense-in-depth
+  // when a flag is off — surface it so the UI can explain the dormant state.
+  // Real upstream provider failures use status 502 and stay masked, so their
+  // status codes / API detail never leak to clients.
+  if (error instanceof IntegrationError && error.status === 503) {
     return error.message;
   }
   // Stale id (e.g. a kanban card rendered before a reseed) → row is gone.
