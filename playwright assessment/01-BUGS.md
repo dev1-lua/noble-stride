@@ -132,3 +132,16 @@ Spec §3.1 marks many of these fields required (Sector, Sub-sector, Founders gen
 **Repro (pre-fix):** The 2026-07-08 focal-views rework replaced the 12-column `EngagementStageBoard` with the read-only `FocalPipelineBoard`, orphaning the per-card `EngagementRestageSelect` — the only UI that fired `updateEngagement` with an `engagementStage`. The edit drawer deliberately excludes stage ("restage control owns it"), so after an investor expressed interest (engagement created at Shared/Interested) no admin surface could move it through the pipeline — only a raw GraphQL call.
 **Fix:** Spec/plan `2026-07-08-engagement-restage-restore-design.md` (commits `33eced7..0c5d86e`): remounted `EngagementRestageSelect` on every expanded focal-board row (both views) and as the first Details entry on `/engagement/[id]` (which previously never displayed the current stage outside history); per-row RBAC via `canUpdateRecord` (own-scope aware); edit drawer now RBAC-gated like every other detail page; shared `engagementStageOptions()` helper (+ unit test).
 **Verified (Playwright):** see "Engagement restage restore" section in `03-COVERAGE-MAP.md` (`verify-RS1-board-inline-restage.png`).
+
+### BUG-19 (P2) — CRM admin sidebar does not collapse at mobile width; main content becomes unreadable
+**Where:** Every `(crm)/*` route (shared shell layout).
+**Repro:**
+1. Sign in as Admin, load `/dashboard`.
+2. Resize the viewport to 390×844 (iPhone-class mobile breakpoint).
+3. The full ~255px desktop sidebar (all 10 nav items) stays rendered inline, unchanged from desktop — no hamburger/menu-toggle control exists anywhere in the DOM at this width (confirmed via accessibility snapshot).
+4. The main content column is squeezed into the remaining ~135px: headings/text wrap into unreadable fragments — e.g. "Dashboard" renders as "Dashboa", "Approve" as "Ap", the onboarding-queue banner text wraps to a ~5-character-wide column.
+5. `document.body.scrollWidth === document.documentElement.clientWidth === 390` — no page-level horizontal scrollbar (that specific anti-pattern is avoided), but the CRM is effectively unusable at this width regardless.
+
+**Expected (per `test-scripts/06-cross-cutting.md` §2):** sidebar collapses to a drawer/hamburger pattern at mobile widths rather than squeezing content.
+**Note:** the command palette (Ctrl/Cmd-K) modal itself DOES render correctly at this same width (fits viewport, no clipping) — so this is specifically a sidebar/shell-layout gap, not a global mobile-breakage issue.
+**Evidence:** `verify-responsive-dashboard-mobile.png`, `verify-responsive-search-mobile.png` (2026-07-10 pass, see `2026-07-10-crm-polish-search-2fa-verification.md`).

@@ -31,5 +31,7 @@ and keep the coverage map current. The goal is a running, honest picture of how 
 | Pass | Date | Scope | Result |
 |------|------|-------|--------|
 | 1 | 2026-07-07 | Full E2E: onboarding → portals → CRM, all routes & personas | 1 high / 5 medium / ~10 low bugs; 3 blockers; ~7 known scope gaps |
+| 2 | 2026-07-10 | Design-unification + global-search + 2FA-gate build; live E2E on :3000 (~25 routes); + full [`test-scripts/`](test-scripts/) suite authored | 46 pass / 0 new console errors; global search secure (no leak); 1 new bug (BUG-19, mobile sidebar); 6 known bugs still reproduce → [`2026-07-10-crm-polish-search-2fa-verification.md`](2026-07-10-crm-polish-search-2fa-verification.md) |
+| 3 | 2026-07-10 | Word-by-word conformance vs Full Scoping Document (10 §) | Core CRM/visibility/data-model strongly conformant; shortfall concentrated in channel/agent layer (WhatsApp, Email/M365, autonomous agents) → [`2026-07-10-scoping-document-conformance.md`](2026-07-10-scoping-document-conformance.md) |
 
-_Last updated: 2026-07-07._
+_Last updated: 2026-07-10._
