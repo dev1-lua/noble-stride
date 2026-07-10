@@ -109,7 +109,11 @@ export async function getEngagement(id: string) {
     where: { id },
     include: {
       transaction: true,
-      investor: true,
+      // Task 7: nested `contacts` so the engagement page can resolve a
+      // signer email for the gated Send-for-e-signature (ClosedNda) button
+      // without a second query. Purely additive — no existing consumer of
+      // `engagement.investor` reads fewer fields than before.
+      investor: { include: { contacts: true } },
       owner: true,
       activities: { orderBy: { occurredAt: "desc" }, include: { tasks: { select: { id: true, title: true, status: true } } } },
       stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },

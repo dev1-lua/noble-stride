@@ -10,6 +10,7 @@ import type { SelectOption } from "@/components/ui";
 import { options } from "@/lib/vocab";
 import { TableSearch, type TableFilter } from "@/components/crm/table-search";
 import { DocumentFormDrawer } from "@/components/crm/document-form-drawer";
+import { ShareBoxButton } from "@/components/crm/share-box-button";
 
 export interface DocumentRowData {
   id: string;
@@ -44,6 +45,7 @@ export function DocumentsTable({
   users,
   mandates,
   partners,
+  boxEnabled = false,
 }: {
   documents: DocumentRowData[];
   canCreate: boolean;
@@ -53,6 +55,7 @@ export function DocumentsTable({
   users: SelectOption[];
   mandates: SelectOption[];
   partners: SelectOption[];
+  boxEnabled?: boolean;
 }) {
   return (
     <TableSearch
@@ -94,6 +97,11 @@ export function DocumentsTable({
                     </a>
                   ) : (
                     <span className="font-medium text-[var(--text-primary)]">{doc.name}</span>
+                  )}
+                  {boxEnabled && (
+                    <span className="ml-2 inline-block align-middle">
+                      <ShareBoxButton documentId={doc.id} />
+                    </span>
                   )}
                 </Td>
                 <Td>

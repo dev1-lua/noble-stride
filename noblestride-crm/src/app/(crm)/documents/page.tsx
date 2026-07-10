@@ -15,6 +15,7 @@ import { DocumentFormDrawer } from "@/components/crm/document-form-drawer";
 import { DocumentsTable, type DocumentRowData } from "./documents-table";
 import { getOrgLens } from "@/server/rbac/context";
 import { can } from "@/server/rbac/matrix";
+import { isConfigured } from "@/server/integrations/config";
 
 export default async function DocumentsPage() {
   const lens = await getOrgLens();
@@ -120,6 +121,7 @@ export default async function DocumentsPage() {
           users={userOptions}
           mandates={mandateOptions}
           partners={partnerOptions}
+          boxEnabled={isConfigured("box")}
         />
       </div>
     </div>
