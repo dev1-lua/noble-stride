@@ -23,6 +23,8 @@ describe("weekOf", () => {
   it("returns the ISO date of the week's Monday", () => {
     expect(weekOf(new Date("2026-07-13T09:00:00Z"))).toBe("2026-07-13"); // Monday itself
     expect(weekOf(new Date("2026-07-16T22:00:00Z"))).toBe("2026-07-13"); // Thursday
+    expect(weekOf(new Date("2026-07-19T12:00:00Z"))).toBe("2026-07-13"); // Sunday → PREVIOUS Monday
+    expect(weekOf(new Date("2026-08-02T12:00:00Z"))).toBe("2026-07-27"); // Sunday across month boundary
   });
 });
 
