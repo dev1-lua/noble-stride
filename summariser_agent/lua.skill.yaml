@@ -1,0 +1,22 @@
+agent:
+  agentId: baseAgent_agent_1783947462006_xzk0qoqdv
+  orgId: 357e05c4-a054-4ee3-8ada-e84ff05c5921
+skills:
+  - name: crm-summary
+    skillId: 2a0cb186-3614-416f-98c8-098e11567a01
+    version: 1.0.2
+webhooks: []
+jobs:
+  - jobId: 30625343-f3f8-4fc9-926b-b71dc42f9e6a
+    name: weekly-digest
+    version: 1.0.2
+preprocessors:
+  - name: passphrase-gate
+    preprocessorId: preprocessor_f820c15b-44b9-4240-ade8-da8aeaf77cc6
+    version: 1.0.2
+postprocessors: []
+mcpServers: []
+backup:
+  activeVersion: 2
+  lastHash: 3a3691ccc790b40eb7e075eef2c907cd3c2f94b703b0c9349cea6add6dbdce73
+  lastPushedAt: '2026-07-13T19:39:58.598Z'
