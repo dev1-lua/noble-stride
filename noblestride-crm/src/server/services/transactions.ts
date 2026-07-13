@@ -157,10 +157,12 @@ function transactionStageNotification(id: string, name: string, fromStage: Trans
 
 export async function createTransaction(input: TransactionCreateInput, actor: Actor) {
   const { serviceProviderIds, ...data } = transactionCreateSchema.parse(input);
+  const now = new Date();
   return prisma.transaction.create({
     data: {
       ...data,
       createdSource: actorSource(actor),
+      ...(data.stage && CLOSED_TXN_STAGES.includes(data.stage) ? { closedAt: now } : {}),
       ...(serviceProviderIds ? { serviceProviders: { connect: serviceProviderIds.map((id) => ({ id })) } } : {}),
     },
   });
@@ -179,6 +181,9 @@ export async function updateTransaction(id: string, input: TransactionUpdateInpu
       throw new CrudError("Date opened is locked once set (spec §7.1: creation date is immutable).");
     }
 
+    // Inlined restage logic (history row + stageEnteredAt reset + notify + closedAt)
+    // must stay behaviorally identical to the dedicated setTransactionStage sibling.
+    // Not extracted into a shared helper so both paths keep a single atomic tx.transaction.update.
     const stageChanging = stage !== undefined && stage !== existing.stage;
     const closedAt = stageChanging ? (CLOSED_TXN_STAGES.includes(stage) ? now : null) : undefined;
 

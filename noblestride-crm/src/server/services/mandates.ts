@@ -154,6 +154,9 @@ export async function updateMandate(id: string, input: MandateUpdateInput, actor
       throw new CrudError("Source is locked once set (spec §7.1: originating source is immutable).");
     }
 
+    // Inlined restage logic (history row + stageEnteredAt reset + notify) must
+    // stay behaviorally identical to the dedicated setMandateStage sibling.
+    // Not extracted into a shared helper so both paths keep a single atomic tx.mandate.update.
     const docDates = reconcileMandateDocDates(rest, existing, now);
     const stageChanging = stage !== undefined && stage !== existing.stage;
 

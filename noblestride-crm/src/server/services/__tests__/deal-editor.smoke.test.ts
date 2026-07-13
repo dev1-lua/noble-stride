@@ -133,4 +133,23 @@ describe("deal editor — transaction (smoke)", () => {
     });
     void ran;
   });
+
+  it("creating a transaction directly at ClosedWon stamps closedAt", async () => {
+    const ran = await withDb(async () => {
+      const client = await createClient({ name: "__editor_txn_create_closed_client__" }, { type: "HUMAN" });
+      const txn = await createTransaction(
+        { name: "__editor_txn_create_closed__", clientId: client.id, stage: "ClosedWon" },
+        { type: "HUMAN" },
+      );
+      try {
+        const row = await prisma.transaction.findUniqueOrThrow({ where: { id: txn.id } });
+        expect(row.closedAt).not.toBeNull();
+      } finally {
+        await deleteTransaction(txn.id);
+        await deleteClient(client.id);
+      }
+      return true;
+    });
+    void ran;
+  });
 });
