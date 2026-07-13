@@ -19,6 +19,8 @@ describe("gateDecision", () => {
 
   it("missing TEAM_PASSPHRASE fails closed", () => {
     expect(gateDecision(false, "secret", undefined)).toBe("unconfigured");
+    expect(gateDecision(false, "anything", "")).toBe("unconfigured"); // empty-string env is unconfigured too
+    expect(gateDecision(false, "", "")).toBe("unconfigured");
     expect(gateDecision(true, "hi", undefined)).toBe("proceed"); // already-verified users unaffected
   });
 });
