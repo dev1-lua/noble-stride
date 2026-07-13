@@ -20,7 +20,7 @@ export const UNAUTHENTICATED_CODE = "UNAUTHENTICATED";
 export function useAuthGate(): Plugin {
   return {
     onExecute({ args }) {
-      const ctx = args.contextValue as GraphQLContext;
+      const ctx = args.contextValue as unknown as GraphQLContext;
       if (ctx.actor?.authenticated) return;
       if (isIntrospectionOnly(args.document, args.operationName)) return;
       throw new GraphQLError("Unauthorized: authentication required", {
