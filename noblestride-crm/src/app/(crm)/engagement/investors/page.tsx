@@ -8,7 +8,7 @@ import { listTransactions } from "@/server/services/transactions";
 import { listInvestors } from "@/server/services/investors";
 import { FocalPipelineBoard } from "@/components/crm/focal-pipeline-board";
 import type { FocalGroupDTO } from "@/components/crm/focal-pipeline-board";
-import { StatCard, HelpHint } from "@/components/ui";
+import { StatCard, HelpHint, Badge } from "@/components/ui";
 import { LogEngagementDialog } from "@/components/crm/log-engagement-dialog";
 import { ENGAGEMENT_STAGES, stageColorSwatch, engagementStageOptions } from "@/lib/engagement-stage-colors";
 import { label } from "@/lib/vocab";
@@ -56,6 +56,9 @@ export default async function EngagementByInvestorPage() {
             <HelpHint term="Investor Engagement" />
           </h1>
           <p className="mt-1 text-sm text-zinc-500">Each investor and the deals they&apos;re engaged on, by pipeline stage</p>
+          <Badge tone="warning" title="Illustrative sample data — the investor engagement pipeline is not sourced from the client trackers. Real engagements appear here as the team logs them.">
+            Demo data
+          </Badge>
         </div>
         {can(lens.orgRole, "Engagements", "C") && (
           <LogEngagementDialog transactions={txnOptions} investors={invOptions} />

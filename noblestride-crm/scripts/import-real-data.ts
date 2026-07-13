@@ -30,6 +30,12 @@ import {
   DocStatus,
   TaskStatus,
   ActorSource,
+  InvestorType,
+  Sector,
+  Geography,
+  ServiceProviderType,
+  AdvisorType,
+  PartnerType,
 } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -60,6 +66,44 @@ interface RealTask {
   ownerName: string | null;
   assistName: string | null;
   notes: string | null;
+}
+
+interface RealInvestorContact {
+  firstName: string;
+  lastName: string | null;
+  jobTitle: string | null;
+  email: string | null;
+  phone: string | null;
+  isPrimary?: boolean;
+}
+
+interface RealInvestor {
+  name: string;
+  investorType: string;
+  website: string | null;
+  sectorFocus: string[];
+  geographicFocus: string[];
+  investmentMandate: string | null;
+  notes: string | null;
+  contacts: RealInvestorContact[];
+}
+
+interface RealServiceProvider {
+  name: string;
+  type: string;
+  contactPerson: string | null;
+  email: string | null;
+  phone: string | null;
+  profile: string | null;
+  status: string | null;
+}
+
+interface RealPartner {
+  name: string;
+  advisorType: string | null;
+  partnerType: string | null;
+  internalOnly: boolean;
+  referredClients: string[];
 }
 
 const norm = (s: string) => s.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
@@ -95,9 +139,20 @@ function matchUser(
 
 async function main() {
   const dataPath = join(__dirname, "..", "prisma", "real-data.json");
-  const { mandates: realMandates, tasks: realTasks } = JSON.parse(
-    readFileSync(dataPath, "utf8")
-  ) as { mandates: RealMandate[]; tasks: RealTask[] };
+  const parsed = JSON.parse(readFileSync(dataPath, "utf8")) as {
+    mandates?: RealMandate[];
+    tasks?: RealTask[];
+    investors?: RealInvestor[];
+    serviceProviders?: RealServiceProvider[];
+    partners?: RealPartner[];
+  };
+  // Guard every top-level key: a stale/partial real-data.json must not throw
+  // "not iterable" AFTER the task/mandate wipe-and-reload has already run.
+  const realMandates = parsed.mandates ?? [];
+  const realTasks = parsed.tasks ?? [];
+  const realInvestors = parsed.investors ?? [];
+  const realServiceProviders = parsed.serviceProviders ?? [];
+  const realPartners = parsed.partners ?? [];
 
   const users = await prisma.user.findMany({ select: { id: true, name: true } });
   const clients = await prisma.client.findMany({ select: { id: true, name: true } });
@@ -115,10 +170,18 @@ async function main() {
     docsSkippedExisting: 0,
     rowsSkippedOld: 0,
     rowsSkippedBeforeCutoff: 0,
+    investorsCreated: 0,
+    investorsEnriched: 0,
+    contactsCreated: 0,
+    serviceProvidersCreated: 0,
+    serviceProvidersUpdated: 0,
+    partnersCreated: 0,
+    referralLinks: 0,
   };
   const unmatchedLeads = new Map<string, number>();
   const unlinkedTaskProjects = new Map<string, number>();
   const unmatchedOwners = new Map<string, number>();
+  const unmatchedReferralClients = new Map<string, number>();
 
   // ── 1. Wipe tasks ──────────────────────────────────────────────────────
   summary.tasksDeleted = (await prisma.task.deleteMany({})).count;
@@ -299,6 +362,190 @@ async function main() {
   }
   summary.docsCreated = (await prisma.document.createMany({ data: docRows })).count;
 
+  // ── 7. Investors + contacts (gap-fill enrich, never clobber) ───────────
+  const existingInvestors = await prisma.investor.findMany({
+    select: {
+      id: true,
+      name: true,
+      website: true,
+      sectorFocus: true,
+      geographicFocus: true,
+      investmentMandate: true,
+      notes: true,
+      contacts: { select: { id: true, firstName: true, lastName: true, email: true } },
+    },
+  });
+
+  for (const inv of realInvestors) {
+    let match = existingInvestors.find((e) => norm(e.name) === norm(inv.name));
+
+    if (match) {
+      const data: Prisma.InvestorUpdateInput = {};
+      if (!match.website && inv.website) data.website = inv.website;
+      if (match.sectorFocus.length === 0 && inv.sectorFocus.length) {
+        data.sectorFocus = inv.sectorFocus as Sector[];
+      }
+      if (match.geographicFocus.length === 0 && inv.geographicFocus.length) {
+        data.geographicFocus = inv.geographicFocus as Geography[];
+      }
+      if (!match.investmentMandate && inv.investmentMandate) {
+        data.investmentMandate = inv.investmentMandate;
+      }
+      if (!match.notes && inv.notes) data.notes = inv.notes;
+      if (Object.keys(data).length) {
+        await prisma.investor.update({ where: { id: match.id }, data });
+        summary.investorsEnriched++;
+      }
+    } else {
+      const created = await prisma.investor.create({
+        data: {
+          name: inv.name,
+          investorType: inv.investorType as InvestorType,
+          website: inv.website,
+          sectorFocus: inv.sectorFocus as Sector[],
+          geographicFocus: inv.geographicFocus as Geography[],
+          investmentMandate: inv.investmentMandate,
+          notes: inv.notes,
+          createdSource: ActorSource.IMPORT,
+        },
+        select: {
+          id: true,
+          name: true,
+          website: true,
+          sectorFocus: true,
+          geographicFocus: true,
+          investmentMandate: true,
+          notes: true,
+        },
+      });
+      match = { ...created, contacts: [] };
+      existingInvestors.push(match);
+      summary.investorsCreated++;
+    }
+
+    for (const c of inv.contacts ?? []) {
+      const emailN = c.email ? c.email.toLowerCase() : null;
+      const dup = match.contacts.some(
+        (p) =>
+          (emailN && p.email && p.email.toLowerCase() === emailN) ||
+          (norm(p.firstName) === norm(c.firstName) && norm(p.lastName ?? "") === norm(c.lastName ?? ""))
+      );
+      if (dup) continue;
+
+      const person = await prisma.person.create({
+        data: {
+          firstName: c.firstName,
+          lastName: c.lastName ?? null,
+          jobTitle: c.jobTitle ?? null,
+          email: c.email ?? null,
+          phone: c.phone ?? null,
+          isPrimaryContact: !!c.isPrimary,
+          investorId: match.id,
+        },
+        select: { id: true, firstName: true, lastName: true, email: true },
+      });
+      match.contacts.push(person);
+      summary.contactsCreated++;
+    }
+  }
+
+  // ── 8. Service providers (gap-fill enrich) ──────────────────────────────
+  const existingServiceProviders = await prisma.serviceProvider.findMany({
+    select: {
+      id: true,
+      name: true,
+      contactPerson: true,
+      email: true,
+      phone: true,
+      profile: true,
+      status: true,
+    },
+  });
+
+  for (const sp of realServiceProviders) {
+    const match = existingServiceProviders.find((e) => norm(e.name) === norm(sp.name));
+    if (match) {
+      const data: Prisma.ServiceProviderUpdateInput = {};
+      if (!match.contactPerson && sp.contactPerson) data.contactPerson = sp.contactPerson;
+      if (!match.email && sp.email) data.email = sp.email;
+      if (!match.phone && sp.phone) data.phone = sp.phone;
+      if (!match.profile && sp.profile) data.profile = sp.profile;
+      if (!match.status && sp.status) data.status = sp.status;
+      if (Object.keys(data).length) {
+        await prisma.serviceProvider.update({ where: { id: match.id }, data });
+        summary.serviceProvidersUpdated++;
+      }
+    } else {
+      const created = await prisma.serviceProvider.create({
+        data: {
+          name: sp.name,
+          type: sp.type as ServiceProviderType,
+          contactPerson: sp.contactPerson,
+          email: sp.email,
+          phone: sp.phone,
+          profile: sp.profile,
+          status: sp.status,
+          createdSource: ActorSource.IMPORT,
+        },
+        select: {
+          id: true,
+          name: true,
+          contactPerson: true,
+          email: true,
+          phone: true,
+          profile: true,
+          status: true,
+        },
+      });
+      existingServiceProviders.push(created);
+      summary.serviceProvidersCreated++;
+    }
+  }
+
+  // ── 9. Partners + referral links ────────────────────────────────────────
+  const existingPartners = await prisma.partner.findMany({ select: { id: true, name: true } });
+  const clientsWithMandates = await prisma.client.findMany({
+    select: { id: true, name: true, mandates: { select: { id: true, referredById: true } } },
+  });
+
+  for (const p of realPartners) {
+    let partner = existingPartners.find((e) => norm(e.name) === norm(p.name));
+    if (!partner) {
+      partner = await prisma.partner.create({
+        data: {
+          name: p.name,
+          advisorType: (p.advisorType as AdvisorType | null) ?? null,
+          partnerType: (p.partnerType as PartnerType | null) ?? null,
+          internalOnly: true,
+          createdSource: ActorSource.IMPORT,
+        },
+        select: { id: true, name: true },
+      });
+      existingPartners.push(partner);
+      summary.partnersCreated++;
+    }
+
+    for (const clientName of p.referredClients ?? []) {
+      const client = findFuzzy(clientName, clientsWithMandates);
+      if (!client) {
+        unmatchedReferralClients.set(
+          clientName,
+          (unmatchedReferralClients.get(clientName) ?? 0) + 1
+        );
+        continue;
+      }
+      for (const mandate of client.mandates) {
+        if (mandate.referredById) continue;
+        await prisma.mandate.update({
+          where: { id: mandate.id },
+          data: { referredById: partner.id },
+        });
+        mandate.referredById = partner.id; // avoid double-linking within this run
+        summary.referralLinks++;
+      }
+    }
+  }
+
   // ── Summary ──────────────────────────────────────────────────────────────
   const stageDist = await prisma.mandate.groupBy({ by: ["stage"], _count: true });
   const statusDist = await prisma.task.groupBy({ by: ["status"], _count: true });
@@ -329,6 +576,12 @@ async function main() {
     console.log(
       `Task projects left unlinked (${list.reduce((a, [, v]) => a + v, 0)} tasks, ${list.length} names) — first 25:`,
       list.slice(0, 25).map(([k, v]) => `${k} x${v}`).join(", ")
+    );
+  }
+  if (unmatchedReferralClients.size) {
+    console.log(
+      "Partner referredClients with no matching client (left unlinked):",
+      [...unmatchedReferralClients.entries()].map(([k, v]) => `${k} x${v}`).join(", ")
     );
   }
 }

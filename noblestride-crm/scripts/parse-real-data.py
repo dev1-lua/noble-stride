@@ -20,9 +20,21 @@ warnings.filterwarnings("ignore")  # openpyxl extension warnings
 import openpyxl
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = REPO_ROOT.parent / "data" / "decrypted"
+
+
+def _resolve_data_dir():
+    """The decrypted spreadsheets live at <repo-parent>/decrypted (current layout)
+    or <repo-parent>/data/decrypted (older layout). Use whichever exists."""
+    for cand in (REPO_ROOT.parent / "decrypted", REPO_ROOT.parent / "data" / "decrypted"):
+        if cand.is_dir():
+            return cand
+    return REPO_ROOT.parent / "decrypted"
+
+
+DATA_DIR = _resolve_data_dir()
 ENGAGEMENT_XLSX = DATA_DIR / "Engagement contract Tracker _ CRM.xlsx"
 TASKS_XLSX = DATA_DIR / "Tasks Tracker Whatsapp 2026_ CRM.xlsx"
+INVESTOR_XLSX = DATA_DIR / "Investor Tracker _ CRM.xlsx"
 OUT_PATH = REPO_ROOT / "prisma" / "real-data.json"
 
 RECENT_CUTOFF = datetime.datetime(2025, 1, 1)
@@ -201,11 +213,314 @@ def parse_tasks():
     return tasks, dividers, empty, skipped_no_action
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Investors, investor contacts, service providers (law firms), partners/referees
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Free-text sector prose -> Sector[] enum. Keyword => enum value(s). Best-effort;
+# the full raw text is always preserved in the investor's investmentMandate field.
+SECTOR_KEYWORDS = [
+    (r"agri|farm|crop|agro", ["Agribusiness"]),
+    (r"microfinanc|\bmfi\b|sacco|financial|fintech|insur|lending|\bloan|credit|banking|\bbank\b", ["FinancialServices"]),
+    (r"fintech|insutech|insurtech", ["Technology", "FinancialServices"]),
+    (r"\bict\b|software|telecom|digital|\btech\b|technolog|\bit services", ["Technology"]),
+    (r"renewable|solar|wind|hydro|geothermal|biomass", ["RenewableEnergy"]),
+    (r"energy|power", ["Energy"]),
+    (r"health|pharma|medical|hospital|healthcare", ["Healthcare"]),
+    (r"manufactur", ["Manufacturing"]),
+    (r"educat|edtech|school", ["Education"]),
+    (r"fmcg|consumer goods", ["FMCG"]),
+    (r"transport|logistic", ["TransportLogistics"]),
+    (r"real estate|proptech|property", ["RealEstate"]),
+    (r"infrastructure", ["Infrastructure"]),
+    (r"water|sanitation", ["WaterSanitation"]),
+    (r"hospitality|tourism", ["Hospitality"]),
+]
+
+GEO_KEYWORDS = [
+    (r"east africa", "EastAfrica"),
+    (r"west africa", "WestAfrica"),
+    (r"south(ern)? africa", "SouthernAfrica"),
+    (r"north africa", "NorthAfrica"),
+    (r"sub[- ]?saharan|\bssa\b", "SubSaharanAfrica"),
+    (r"pan[- ]?africa", "PanAfrica"),
+    (r"\bmena\b", "MENA"),
+    (r"europe", "Europe"),
+    (r"\busa\b|united states|north america", "USA"),
+    (r"global|worldwide", "Global"),
+    (r"\bafrica\b", "PanAfrica"),  # bare "Africa" last, so specifics win
+]
+
+# Plain substrings; infer_investor_type wraps each in \b…\b word boundaries, so
+# short tokens ("bii", "bio", "deg") won't match inside longer words ("biomass").
+DFI_NAMES = (
+    "ifc", "norfund", "fmo", "cdc", "proparco", "dfc", "bii", "finnfund", "deg",
+    "swedfund", "bio", "oikocredit", "incofin", "responsability", "blueorchard",
+    "afdb", "afrexim", "symbiotics", "grassroots business fund", "triodos",
+)
+
+
+def map_sectors(text):
+    if not text:
+        return []
+    low = text.casefold()
+    out = []
+    for pat, vals in SECTOR_KEYWORDS:
+        if re.search(pat, low):
+            for v in vals:
+                if v not in out:
+                    out.append(v)
+    return out
+
+
+def map_geographies(text):
+    if not text:
+        return []
+    low = text.casefold()
+    out = []
+    for pat, val in GEO_KEYWORDS:
+        if re.search(pat, low) and val not in out:
+            out.append(val)
+    # if a specific African region matched, drop the bare PanAfrica fallback
+    if len(out) > 1 and "PanAfrica" in out and any(
+        v in out for v in ("EastAfrica", "WestAfrica", "SouthernAfrica", "NorthAfrica", "SubSaharanAfrica")
+    ):
+        out = [v for v in out if v != "PanAfrica"]
+    return out
+
+
+def infer_investor_type(name):
+    low = (name or "").casefold()
+    if any(re.search(rf"\b{re.escape(d)}\b", low) for d in DFI_NAMES):
+        return "DFI"
+    if "ventures" in low or re.search(r"\bvc\b", low):
+        return "VentureCapital"
+    if "family office" in low:
+        return "FamilyOffice"
+    if "angel" in low:
+        return "Angel"
+    if re.search(r"\bbank\b", low):
+        return "DebtProvider"
+    return "PrivateEquity"  # sheet is "Contacts VC PE DFI"; PE is the safe default
+
+
+def clean_org_name(name):
+    """Firm names carry embedded addresses/newlines/notes — keep the first line."""
+    if not name:
+        return None
+    first = str(name).splitlines()[0]
+    first = re.sub(r"\s+", " ", first).strip()
+    return first or None
+
+
+def split_contact(raw):
+    """'Fidaa Haddad - MD' -> ('Fidaa', 'Haddad', 'MD'). Role after first -/–."""
+    if not raw:
+        return None
+    s = re.sub(r"\s+", " ", str(raw)).strip()
+    if not s or s.casefold() == "none":
+        return None
+    role = None
+    m = re.split(r"\s[-–]\s?", s, maxsplit=1)
+    if len(m) == 2:
+        s, role = m[0].strip(), m[1].strip() or None
+    parts = s.split(" ", 1)
+    first = parts[0]
+    last = parts[1] if len(parts) > 1 else None
+    if not first:
+        return None
+    return {"firstName": first, "lastName": last, "jobTitle": role}
+
+
+def parse_investors():
+    """Investor Tracker 'Contacts VC PE DFI' -> investors with grouped contacts.
+    Firm name only appears on the first row of each firm's block; forward-fill."""
+    wb = openpyxl.load_workbook(INVESTOR_XLSX, data_only=True, read_only=True)
+    ws = wb["Contacts VC PE DFI"]
+
+    investors = []
+    cur = None
+    for row in ws.iter_rows(min_row=3, max_col=9, values_only=True):
+        _sno, firm, website, person, email, tel, geo, sector, others = row
+        firm_c = clean_org_name(firm)
+        if firm_c and not looks_like_junk_client(firm_c):
+            cur = {
+                "name": firm_c,
+                "investorType": infer_investor_type(firm_c),
+                "website": clean_str(website),
+                "sectorFocus": map_sectors(clean_str(sector)),
+                "geographicFocus": map_geographies(clean_str(geo)),
+                "investmentMandate": clean_str(sector),  # preserve raw prose
+                "notes": clean_str(others),
+                "contacts": [],
+            }
+            investors.append(cur)
+        elif firm_c:
+            # a junk firm-name row (section header etc.) ends the current block,
+            # so following contacts don't misattach to the previous firm.
+            cur = None
+        if cur is None:
+            continue
+        c = split_contact(person)
+        if c:
+            e = clean_str(email)
+            c["email"] = None if (e and e.casefold() == "none") else e
+            c["phone"] = clean_str(tel)
+            cur["contacts"].append(c)
+
+    # mark first contact of each investor as primary
+    for inv in investors:
+        if inv["contacts"]:
+            inv["contacts"][0]["isPrimary"] = True
+    return investors
+
+
+def extract_email_phone(blob):
+    """Pull the first email and first phone-looking run out of a messy cell."""
+    if not blob:
+        return None, None
+    m = re.search(r"[\w.+-]+@[\w.-]+\.\w+", blob)
+    email = m.group(0) if m else None
+    rest = blob.replace(email, " ") if email else blob
+    pm = re.search(r"[+\d][\d\s()+\-]{6,}\d", rest)
+    phone = re.sub(r"\s+", " ", pm.group(0)).strip() if pm else None
+    return email, phone
+
+
+def parse_service_providers():
+    """Investor Tracker 'Law Firms' sheet -> ServiceProvider(type=LawFirm)."""
+    wb = openpyxl.load_workbook(INVESTOR_XLSX, data_only=True, read_only=True)
+    if "Law Firms" not in wb.sheetnames:
+        return []
+    ws = wb["Law Firms"]
+    providers = []
+    cur = None
+    for row in ws.iter_rows(min_row=3, max_col=7, values_only=True):
+        _sno, firm, person, contacts, amount, profile, status = row
+        firm_c = clean_org_name(firm)
+        cval = clean_str(contacts)
+        email, phone = extract_email_phone(cval)
+        if firm_c and not looks_like_junk_client(firm_c):
+            cur = {
+                "name": firm_c,
+                "type": "LawFirm",
+                "contactPerson": clean_str(person),
+                "email": email,
+                "phone": phone,
+                "profile": clean_str(profile),
+                "status": clean_str(status),
+            }
+            providers.append(cur)
+        elif firm_c:
+            # junk firm-name row ends the current block
+            cur = None
+        elif cur is not None:
+            # fill gaps from continuation rows
+            if email and not cur["email"]:
+                cur["email"] = email
+            if phone and not cur["phone"]:
+                cur["phone"] = phone
+            if not cur["contactPerson"]:
+                cur["contactPerson"] = clean_str(person)
+    return providers
+
+
+# Referral/Source values that are internal staff or status noise, not partners.
+INTERNAL_FIRST_NAMES = {
+    "amos", "ken", "duncan", "brenda", "brian", "cliff", "james", "evans",
+    "sheilla", "susan", "amos g", "evans m", "evans w",
+}
+STATUS_NOISE = {
+    "on hold", "completed", "dropped", "drop", "closed", "to small", "too small",
+    "startup", "n/a", "na", "complete", "pending", "done", "ongoing",
+}
+
+
+def clean_referee(raw):
+    """Return a cleaned partner name, or None if the value is staff/status noise."""
+    s = re.sub(r"\s+", " ", str(raw)).strip()
+    if not s:
+        return None
+    base = re.sub(r"\s*\([^)]*\)\s*$", "", s).strip()  # drop trailing "(Completed)" etc.
+    if not base:
+        return None
+    low = base.casefold()
+    if low in STATUS_NOISE or low in INTERNAL_FIRST_NAMES:
+        return None
+    # phrases like "Dropped too small", "To small", "On hold - ..."
+    if any(low.startswith(p) for p in ("dropped", "drop ", "on hold", "closed", "completed")):
+        return None
+    if "too small" in low or "to small" in low:
+        return None
+    parts = [p.strip() for p in re.split(r"[/,]", low) if p.strip()]
+    if parts and all(p in INTERNAL_FIRST_NAMES for p in parts):
+        return None
+    return base
+
+
+def advisor_type_for(name):
+    low = name.casefold()
+    if re.search(r"\blaw\b|advocat|\bllp\b|khanna|bowmans|legal", low):
+        return "Lawyer"
+    if re.search(r"advisor|advisory", low):
+        return "AdvisoryFirm"
+    if re.search(r"consult|accountant|\bcpa\b", low):
+        return "Consultant"
+    return "Other"
+
+
+def partner_type_for(name):
+    low = name.casefold()
+    if re.search(r"\blaw\b|advocat|\bllp\b|legal|khanna|bowmans", low):
+        return "LawFirm"
+    if re.search(r"consult|advisor|advisory|accountant|capital|investment", low):
+        return "Consulting"
+    return None
+
+
+def parse_partners():
+    """Engagement Contract Tracker 'Source/Referee' column -> referral partners,
+    accumulating the client names each referred (for referredMandates linking)."""
+    wb = openpyxl.load_workbook(ENGAGEMENT_XLSX, data_only=True)
+    ws = wb["Engagement Contract Tracker"]
+    by_name = {}  # norm -> dict
+    for row in ws.iter_rows(min_row=4, max_row=ws.max_row, max_col=10, values_only=True):
+        client = clean_str(row[2])
+        src = row[8] if len(row) > 8 else None
+        if not client or not src:
+            continue
+        name = clean_referee(src)
+        if not name:
+            continue
+        key = norm_name(name)
+        if key not in by_name:
+            by_name[key] = {
+                "name": name,
+                "advisorType": advisor_type_for(name),
+                "partnerType": partner_type_for(name),
+                "internalOnly": True,
+                "referredClients": [],
+            }
+        rc = by_name[key]["referredClients"]
+        if client not in rc:
+            rc.append(client)
+    return list(by_name.values())
+
+
 def main():
     mandates, raw_rows, no_client, junk = parse_mandates()
     tasks, dividers, empty, no_action = parse_tasks()
+    investors = parse_investors()
+    service_providers = parse_service_providers()
+    partners = parse_partners()
 
-    OUT_PATH.write_text(json.dumps({"mandates": mandates, "tasks": tasks}, indent=2))
+    OUT_PATH.write_text(json.dumps({
+        "mandates": mandates,
+        "tasks": tasks,
+        "investors": investors,
+        "serviceProviders": service_providers,
+        "partners": partners,
+    }, indent=2))
 
     recent = sum(1 for m in mandates if m["recent"])
     stages = {}
@@ -215,6 +530,9 @@ def main():
     for t in tasks:
         statuses[t["status"]] = statuses.get(t["status"], 0) + 1
 
+    inv_contacts = sum(len(i["contacts"]) for i in investors)
+    partner_links = sum(len(p["referredClients"]) for p in partners)
+
     print(f"Engagement tracker: {raw_rows} client rows "
           f"(skipped: {no_client} no-client, {junk} junk)")
     print(f"  -> {len(mandates)} deduped mandates ({recent} recent >= {RECENT_CUTOFF.date()})")
@@ -222,6 +540,9 @@ def main():
     print(f"Task tracker: {len(tasks)} tasks "
           f"(skipped: {dividers} week dividers, {empty} empty, {no_action} without action point)")
     print(f"  statuses: {statuses}")
+    print(f"Investor tracker: {len(investors)} firms, {inv_contacts} contacts")
+    print(f"Service providers (law firms): {len(service_providers)}")
+    print(f"Partners/referees: {len(partners)} ({partner_links} referral links)")
     print(f"Wrote {OUT_PATH}")
 
 
