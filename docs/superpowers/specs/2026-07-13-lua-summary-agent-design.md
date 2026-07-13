@@ -121,6 +121,10 @@ immediately; the guard hardens it at deploy time.
 ## 5. Weekly digest job
 
 - `LuaJob`, cron `0 9 * * 1`, timezone `Africa/Nairobi`, 7-day window, 2 retries.
+  Timezone is NobleStride's home timezone, not the dev team's: the company is
+  Kenya-based (scoping doc + build spec in `decrypted/` both mandate compliance with
+  Kenya's Data Protection Act, 2019; investor tracker is Nairobi-addressed). Staff
+  receive the digest at 9 AM EAT.
 - Generates via the `pipeline_digest` code path, stores `{ weekOf, markdown }` in Data
   collection `digests`, proactively sends to known widget users.
 - "Show this week's digest" reads the stored entry instead of regenerating.
