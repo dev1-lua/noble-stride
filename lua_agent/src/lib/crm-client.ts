@@ -35,7 +35,12 @@ export function makeCrmClient(opts: { apiUrl: string; agentKey: string; fetchFn?
         throw new CrmError(CRM_DOWN_MESSAGE, err instanceof Error ? err.message : String(err));
       }
       if (!res.ok) throw new CrmError(CRM_DOWN_MESSAGE, `HTTP ${res.status}`);
-      const body = (await res.json()) as { data?: T; errors?: Array<{ message: string }> };
+      let body: { data?: T; errors?: Array<{ message: string }> };
+      try {
+        body = (await res.json()) as { data?: T; errors?: Array<{ message: string }> };
+      } catch (err) {
+        throw new CrmError(CRM_DOWN_MESSAGE, `invalid JSON response: ${err instanceof Error ? err.message : String(err)}`);
+      }
       if (body.errors?.length) {
         throw new CrmError(`The CRM rejected the request: ${body.errors.map((e) => e.message).join("; ")}`);
       }
