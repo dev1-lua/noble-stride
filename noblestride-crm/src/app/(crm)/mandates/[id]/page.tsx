@@ -64,6 +64,12 @@ export default async function MandateDetailPage({ params }: PageProps) {
     eaStatus: m.eaStatus ?? "",
     nextAction: m.nextAction ?? "",
     notes: m.notes ?? "",
+    stage: m.stage ?? "",
+    ndaSentDate: toDate(m.ndaSentDate),
+    ndaSignedDate: toDate(m.ndaSignedDate),
+    eaSentDate: toDate(m.eaSentDate),
+    eaSignedDate: toDate(m.eaSignedDate),
+    qualificationVerdict: m.qualificationVerdict ?? "",
     // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
     retainerAmount: m.retainerAmount == null ? undefined : Number(m.retainerAmount),
     retainerInvoicedDate: toDate(m.retainerInvoicedDate),
