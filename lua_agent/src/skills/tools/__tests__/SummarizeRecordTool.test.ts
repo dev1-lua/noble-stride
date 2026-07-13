@@ -52,4 +52,30 @@ describe("SummarizeRecordTool", () => {
     expect(out.status).toBe("ok");
     if (out.status === "ok") expect(out.summary).toContain("Acme Ltd");
   });
+
+  it("still summarizes when the documents metadata fetch fails or returns null", async () => {
+    const failingDocs: CrmClient = {
+      baseUrl: "https://crm.example",
+      query: (async (document: string) => {
+        if (document.includes("globalSearch")) return { globalSearch: [HIT] };
+        if (document.includes("AgentDocuments")) throw new Error("documents unavailable");
+        return { client: { id: "c1", name: "Acme Ltd" } };
+      }) as CrmClient["query"],
+    };
+    const tool = new SummarizeRecordTool({ crm: failingDocs, generate: async () => "## Headline\nOK." });
+    const out = await tool.execute({ recordType: "client", query: "acme ltd" });
+    expect(out).toEqual({ status: "ok", summary: "## Headline\nOK.", link: "https://crm.example/clients/c1" });
+
+    const nullDocs: CrmClient = {
+      baseUrl: "https://crm.example",
+      query: (async (document: string) => {
+        if (document.includes("globalSearch")) return { globalSearch: [HIT] };
+        if (document.includes("AgentDocuments")) return { documents: null };
+        return { client: { id: "c1", name: "Acme Ltd" } };
+      }) as CrmClient["query"],
+    };
+    const tool2 = new SummarizeRecordTool({ crm: nullDocs, generate: async () => "## Headline\nOK." });
+    const out2 = await tool2.execute({ recordType: "client", query: "acme ltd" });
+    expect(out2.status).toBe("ok");
+  });
 });

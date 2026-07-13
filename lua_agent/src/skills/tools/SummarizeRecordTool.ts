@@ -64,12 +64,18 @@ export class SummarizeRecordTool implements LuaTool {
     }
 
     // Attach document METADATA (never file contents) where the CRM supports it.
+    // Metadata is decoration — a failure here must never sink a summary whose
+    // detail record already loaded.
     const docArg = DOCUMENT_ARG[recordType];
     if (docArg) {
-      const docs = await crm.query<{ documents: Array<Record<string, unknown>> }>(DOCUMENTS_QUERY, {
-        [docArg]: resolution.result.id,
-      });
-      record.documents = docs.documents.slice(0, 10);
+      try {
+        const docs = await crm.query<{ documents: Array<Record<string, unknown>> | null }>(DOCUMENTS_QUERY, {
+          [docArg]: resolution.result.id,
+        });
+        record.documents = (docs.documents ?? []).slice(0, 10);
+      } catch {
+        // Summarize without documents rather than failing the request.
+      }
     }
 
     let summary: string;
