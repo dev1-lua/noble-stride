@@ -65,10 +65,12 @@ export default async function MandateDetailPage({ params }: PageProps) {
     nextAction: m.nextAction ?? "",
     notes: m.notes ?? "",
     stage: m.stage ?? "",
-    ndaSentDate: toDate(m.ndaSentDate),
-    ndaSignedDate: toDate(m.ndaSignedDate),
-    eaSentDate: toDate(m.eaSentDate),
-    eaSignedDate: toDate(m.eaSignedDate),
+    // NDA/EA date boxes are intentionally NOT prefilled: a blank box defers to
+    // the status (auto-stamp on Sent/Signed, clear-on-downgrade when lowered),
+    // matching the drawer's "leave blank to auto-stamp" hint. Prefilling them
+    // re-submitted the stored date as a manual override, which blocked
+    // clear-on-downgrade (status lowered but journey stayed green). Type a date
+    // to backdate. Current dates remain visible in the Deal Summary + journey.
     qualificationVerdict: m.qualificationVerdict ?? "",
     // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
     retainerAmount: m.retainerAmount == null ? undefined : Number(m.retainerAmount),
