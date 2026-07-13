@@ -1,22 +1,22 @@
 agent:
-  agentId: baseAgent_agent_1783947462006_xzk0qoqdv
-  orgId: 357e05c4-a054-4ee3-8ada-e84ff05c5921
+  agentId: baseAgent_agent_1783976635757_xgvfd9dr3
+  orgId: 1e5359cc-c465-44cb-b040-44e338433411
 skills:
   - name: crm-summary
-    skillId: 2a0cb186-3614-416f-98c8-098e11567a01
-    version: 1.0.2
+    skillId: 2905b0cd-9979-4de3-a9f4-5c0cc49f5e40
+    version: 1.0.1
 webhooks: []
 jobs:
-  - jobId: 30625343-f3f8-4fc9-926b-b71dc42f9e6a
+  - jobId: 2c3786e7-c097-4d03-80de-a30db5110a65
     name: weekly-digest
-    version: 1.0.2
+    version: 1.0.1
 preprocessors:
   - name: passphrase-gate
-    preprocessorId: preprocessor_f820c15b-44b9-4240-ade8-da8aeaf77cc6
-    version: 1.0.2
+    preprocessorId: preprocessor_53a7ab8a-c46b-44ec-a4ae-d9d2aa6ad70f
+    version: 1.0.1-sandbox
 postprocessors: []
 mcpServers: []
 backup:
-  activeVersion: 2
-  lastHash: 3a3691ccc790b40eb7e075eef2c907cd3c2f94b703b0c9349cea6add6dbdce73
-  lastPushedAt: '2026-07-13T19:39:58.598Z'
+  activeVersion: 1
+  lastHash: d2750d7e837352566dad4c2c2d9bf2591b84534135a1f5d42c91310b54518c57
+  lastPushedAt: '2026-07-13T21:11:14.240Z'
