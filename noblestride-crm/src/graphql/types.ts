@@ -393,6 +393,7 @@ export const EngagementRef = builder.prismaObject("Engagement", {
     investor: t.relation("investor"),
     owner: t.relation("owner", { nullable: true }),
     activities: t.relation("activities"),
+    milestones: t.relation("milestones"),
   }),
 });
 

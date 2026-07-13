@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
+import { LuaPopWidget } from "@/components/shell/lua-pop-widget";
 import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
 import { getCurrentAuth } from "@/server/auth/current";
@@ -61,6 +62,10 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
         {/* Page content */}
         <main className="flex-1 overflow-y-auto bg-[var(--bg-secondary)] p-6">{children}</main>
       </div>
+
+      {process.env.NEXT_PUBLIC_LUA_AGENT_ID ? (
+        <LuaPopWidget agentId={process.env.NEXT_PUBLIC_LUA_AGENT_ID} />
+      ) : null}
     </div>
   );
 }

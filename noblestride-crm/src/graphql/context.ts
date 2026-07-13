@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { jwtVerify } from "jose";
+import { timingSafeEqual } from "node:crypto";
 import type { OrgRole } from "@prisma/client";
 import { validateSessionToken } from "@/server/auth/session";
 import { SESSION_COOKIE } from "@/server/auth/session-cookie";
@@ -58,11 +59,29 @@ function sameOrigin(request: Request): boolean {
   }
 }
 
+/** Constant-time compare of the x-agent-key header against AGENT_API_KEY. Fail closed when unset. */
+function agentKeyMatches(provided: string): boolean {
+  const expected = process.env.AGENT_API_KEY;
+  if (!expected) return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 /**
- * Per-request context. Priority: Bearer JWT (external agents/API — unchanged
- * contract) → session cookie (browser UI) → anonymous (no rights).
+ * Per-request context. Priority: x-agent-key (Lua summary agent) → Bearer JWT
+ * (external agents/API — unchanged contract) → session cookie (browser UI) →
+ * anonymous (no rights).
  */
 export async function createContext(request: Request): Promise<GraphQLContext> {
+  const agentKey = request.headers.get("x-agent-key");
+  if (agentKey !== null) {
+    if (agentKeyMatches(agentKey)) {
+      return { prisma, actor: { type: "AGENT", authenticated: true, label: "lua-summary-agent" } };
+    }
+    return { prisma, actor: { type: "AGENT", authenticated: false } };
+  }
+
   const auth = request.headers.get("authorization");
   let actor: Actor = { type: "HUMAN", authenticated: false };
 
