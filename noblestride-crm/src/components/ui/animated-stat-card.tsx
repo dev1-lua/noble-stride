@@ -5,7 +5,6 @@
 // raw numbers (the format discriminator crosses the RSC boundary, a function can't).
 
 import { motion, type Variants } from "motion/react";
-import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { CountUp } from "./count-up";
 import { EASE } from "./motion";
@@ -30,6 +29,8 @@ interface AnimatedStatCardProps {
   format: Fmt;
   delta?: number;
   deltaFormat?: Fmt;
+  deltaTitle?: string;
+  deltaSuffix?: string;
   sub?: string;
   icon?: React.ReactNode;
 }
@@ -40,6 +41,8 @@ export function AnimatedStatCard({
   format,
   delta,
   deltaFormat = "compact",
+  deltaTitle = "New in the last 30 days",
+  deltaSuffix = "new",
   sub,
   icon,
 }: AnimatedStatCardProps) {
@@ -75,9 +78,11 @@ export function AnimatedStatCard({
           className="text-[1.75rem] font-bold leading-none tracking-tight text-[var(--text-primary)] tabular-nums"
         />
         {deltaText && (
-          <span className="mb-0.5 inline-flex items-center gap-0.5 rounded-full bg-[var(--t-tag-bg-emerald)] px-2 py-0.5 text-xs font-semibold text-[var(--t-tag-text-emerald)]">
-            <ArrowUpRight className="h-3 w-3" />
-            {deltaText}
+          <span
+            title={deltaTitle}
+            className="mb-0.5 inline-flex items-center gap-0.5 rounded-full bg-[var(--t-tag-bg-emerald)] px-2 py-0.5 text-xs font-semibold text-[var(--t-tag-text-emerald)]"
+          >
+            {deltaText}{deltaSuffix ? ` ${deltaSuffix}` : ""}
           </span>
         )}
       </div>

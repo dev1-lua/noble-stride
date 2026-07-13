@@ -17,6 +17,7 @@ import {
 } from "@/server/services/dashboard";
 import { aiOverviewInsights, aiAsk, aiMatchInvestors, aiFindProspects } from "@/server/services/ai";
 import { prisma } from "@/lib/db";
+import { ACTIVE_MANDATE_STAGES, CLOSED_TXN_STAGES } from "@/server/domain/types";
 
 /** Helper: run `fn`, skip on DB errors, re-throw unexpected errors. */
 async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
@@ -70,6 +71,33 @@ describe("dashboard service (smoke)", () => {
       expect(typeof row.label).toBe("string");
       expect(typeof row.count).toBe("number");
     }
+
+    // Active subtotals must be numbers AND self-consistent with the by-stage
+    // arrays, using the same stage sets dashboardStats() uses.
+    expect(typeof overview.mandatesActive).toBe("number");
+    expect(typeof overview.transactionsActive).toBe("number");
+
+    const expectedMandatesActive = overview.mandatesByStage
+      .filter((row) => (ACTIVE_MANDATE_STAGES as string[]).includes(row.stage))
+      .reduce((sum, row) => sum + row.count, 0);
+    expect(overview.mandatesActive).toBe(expectedMandatesActive);
+
+    const expectedTransactionsActive = overview.transactionsByStage
+      .filter((row) => !(CLOSED_TXN_STAGES as string[]).includes(row.stage))
+      .reduce((sum, row) => sum + row.count, 0);
+    expect(overview.transactionsActive).toBe(expectedTransactionsActive);
+  });
+
+  it("dashboard KPI active counts reconcile with pipelineOverview subtotals", async () => {
+    const result = await withDb(async () => {
+      const [stats, overview] = await Promise.all([dashboardStats(), pipelineOverview()]);
+      return { stats, overview };
+    });
+    if (result === null) return;
+
+    const { stats, overview } = result;
+    expect(stats.activeMandates.value).toBe(overview.mandatesActive);
+    expect(stats.activeTransactions.value).toBe(overview.transactionsActive);
   });
 
   it("dealPipelineTrend() returns exactly 6 months with numeric active/closed", async () => {
