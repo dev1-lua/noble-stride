@@ -14,6 +14,7 @@ const UPDATE = `mutation UpdateTransaction($id: ID!, $input: TransactionInput!) 
 
 const EMPTY: Record<string, unknown> = {
   name: "", clientId: "", mandateId: "", ownerId: "", assistantId: "", dealType: "", instrument: [],
+  stage: "",
   targetRaise: undefined, currency: "", sector: [], dateOpened: "",
   successFeeAmount: undefined, successFeeInvoicedDate: "", successFeePaidDate: "",
   // Spec-gap: deal status/milestone/financing fields (spec §4.1/§4.3/§4.5/§4.7)
@@ -71,6 +72,7 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
           <RelationSelect label="Client" required value={v.clientId as string} onChange={(x) => f.setValue("clientId", x)} options={clients} error={f.errors.clientId} placeholder="Select client…" />
           <RelationSelect label="Mandate" value={v.mandateId as string} onChange={(x) => f.setValue("mandateId", x)} options={mandates} placeholder="Select mandate…" />
+          <SelectField label="Stage" value={v.stage as string} onChange={(x) => f.setValue("stage", x)} options={options("TransactionStage")} />
           <RelationSelect label="Owner" value={v.ownerId as string} onChange={(x) => f.setValue("ownerId", x)} options={users} placeholder="Select owner…" />
           <RelationSelect label="Assistant" value={v.assistantId as string} onChange={(x) => f.setValue("assistantId", x)} options={users} placeholder="Select assistant…" />
           <RelationSelect label="Referred By (Consultant/Partner)" value={v.referredById as string} onChange={(x) => f.setValue("referredById", x)} options={partners} placeholder="Select partner…" />

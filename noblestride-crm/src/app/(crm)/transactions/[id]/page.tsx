@@ -66,6 +66,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
     mandateId: txn.mandateId ?? "",
     ownerId: txn.ownerId ?? "",
     assistantId: txn.assistantId ?? "",
+    stage: txn.stage ?? "",
     dealType: txn.dealType ?? "",
     instrument: (txn.instrument ?? []) as string[],
     targetRaise: txn.targetRaise == null ? undefined : Number(txn.targetRaise),
