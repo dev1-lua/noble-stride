@@ -846,7 +846,7 @@ export const DETAIL_QUERIES: Record<RecordType, { document: string; rootField: s
         investor(id: $id) {
           id name investorType status website sectorFocus geographicFocus instruments
           investmentStages aum ticketMin ticketMax currency esgFocus ndaStatus onboardingStatus
-          engagementClassification nextActionDate feedback notes createdAt updatedAt engagementCount
+          engagementClassification nextActionDate feedback notes createdAt updatedAt
           contacts { firstName lastName email jobTitle isPrimaryContact }
           engagements {
             id name status engagementStage interestLevel lastContact totalAmount probability
@@ -879,7 +879,7 @@ export const DETAIL_QUERIES: Record<RecordType, { document: string; rootField: s
         transaction(id: $id) {
           id name stage stageEnteredAt dealType instrument targetRaise currency sector
           dateOpened closedAt dealStatus dealMilestone financingType probability notes priority
-          investorsContacted activeConversations createdAt updatedAt ownerId
+          activeConversations createdAt updatedAt ownerId
           client { id name }
           mandate { id name stage }
           engagements {
@@ -914,7 +914,7 @@ export const DETAIL_QUERIES: Record<RecordType, { document: string; rootField: s
         partner(id: $id) {
           id name partnerType status location organization email phone profile
           feeSharingAgreement feeSharingTerms partnerAgreementStatus internalOnly feedbackNotes
-          createdAt updatedAt referredMandateCount
+          createdAt updatedAt
           contacts { firstName lastName email }
           referredMandates { id name stage }
         }
