@@ -8,7 +8,7 @@ import { listTransactions } from "@/server/services/transactions";
 import { listInvestors } from "@/server/services/investors";
 import { disbursementByPeriod } from "@/server/services/dashboard";
 import { relationOptions } from "@/server/services/relation-options";
-import { StatCard, HelpHint } from "@/components/ui";
+import { StatCard, HelpHint, Badge } from "@/components/ui";
 import { label } from "@/lib/vocab";
 import { ENGAGEMENT_STAGES, stageColorSwatch, engagementStageOptions } from "@/lib/engagement-stage-colors";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
@@ -125,6 +125,9 @@ export default async function EngagementByDealPage() {
           <p className="mt-1 text-sm text-zinc-500">
             Each deal and the investors engaged on it, by pipeline stage
           </p>
+          <Badge tone="warning" title="Illustrative sample data — the investor engagement pipeline is not sourced from the client trackers. Real engagements appear here as the team logs them.">
+            Demo data
+          </Badge>
         </div>
         {can(lens.orgRole, "Engagements", "C") && (
           <LogEngagementDialog transactions={txnOptions} investors={invOptions} />
