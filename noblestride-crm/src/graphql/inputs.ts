@@ -19,7 +19,7 @@ import {
   InteractionTypeEnum, CommChannelEnum, CommDirectionEnum,
   RegulatoryStatusEnum, DDTrackEnum, DDStatusEnum,
   PriorityEnum, PartnerFeeStatusEnum,
-  MandateStageEnum,
+  MandateStageEnum, TransactionStageEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -164,6 +164,7 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     currency: t.string({ required: false }),
     sector: t.field({ type: [SectorEnum], required: false }),
     dateOpened: t.field({ type: "DateTime", required: false }),
+    stage: t.field({ type: TransactionStageEnum, required: false }),
     successFeeAmount: t.float({ required: false }),
     successFeeInvoicedDate: t.field({ type: "DateTime", required: false }),
     successFeePaidDate: t.field({ type: "DateTime", required: false }),

@@ -138,17 +138,22 @@ export async function setTransactionStage(id: string, stage: TransactionStage, a
   // committed (see notifications.ts). Skipped when there is no owner, the
   // stage didn't actually change, or the owner is the one who made the change.
   if (fromStage !== stage && ownerId && ownerId !== actor.userId) {
-    await notify([ownerId], {
-      kind: "stage_change",
-      title: `${name}: ${label("TransactionStage", fromStage)} → ${label("TransactionStage", stage)}`,
-      href: `/transactions/${id}`,
-    });
+    await notify([ownerId], transactionStageNotification(id, name, fromStage, stage));
   }
 
   return updated;
 }
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
+
+// Shared by setTransactionStage and updateTransaction (identical wording).
+function transactionStageNotification(id: string, name: string, fromStage: TransactionStage, toStage: TransactionStage) {
+  return {
+    kind: "stage_change" as const,
+    title: `${name}: ${label("TransactionStage", fromStage)} → ${label("TransactionStage", toStage)}`,
+    href: `/transactions/${id}`,
+  };
+}
 
 export async function createTransaction(input: TransactionCreateInput, actor: Actor) {
   const { serviceProviderIds, ...data } = transactionCreateSchema.parse(input);
@@ -162,24 +167,27 @@ export async function createTransaction(input: TransactionCreateInput, actor: Ac
 }
 
 export async function updateTransaction(id: string, input: TransactionUpdateInput, actor: Actor = { type: "HUMAN" }) {
-  const { serviceProviderIds, ...data } = transactionUpdateSchema.parse(input);
-  return prisma.$transaction(async (tx) => {
+  const { serviceProviderIds, stage, ...data } = transactionUpdateSchema.parse(input);
+  const now = new Date();
+
+  const result = await prisma.$transaction(async (tx) => {
     const existing = await tx.transaction.findUniqueOrThrow({
       where: { id },
-      select: { dealStatus: true, dealMilestone: true, dateOpened: true },
+      select: { dealStatus: true, dealMilestone: true, dateOpened: true, stage: true, name: true, ownerId: true },
     });
-    if (
-      data.dateOpened !== undefined &&
-      existing.dateOpened != null &&
-      !sameCalendarDate(data.dateOpened, existing.dateOpened)
-    ) {
+    if (data.dateOpened !== undefined && existing.dateOpened != null && !sameCalendarDate(data.dateOpened, existing.dateOpened)) {
       throw new CrudError("Date opened is locked once set (spec §7.1: creation date is immutable).");
     }
+
+    const stageChanging = stage !== undefined && stage !== existing.stage;
+    const closedAt = stageChanging ? (CLOSED_TXN_STAGES.includes(stage) ? now : null) : undefined;
+
     const updated = await tx.transaction.update({
       where: { id },
       data: {
         ...data,
         ...(serviceProviderIds ? { serviceProviders: { set: serviceProviderIds.map((spId) => ({ id: spId })) } } : {}),
+        ...(stageChanging ? { stage, stageEnteredAt: now, closedAt } : {}),
       },
     });
     if (data.dealStatus !== undefined) {
@@ -188,8 +196,17 @@ export async function updateTransaction(id: string, input: TransactionUpdateInpu
     if (data.dealMilestone !== undefined) {
       await recordStageChange(tx, { field: "dealMilestone", fromValue: existing.dealMilestone, toValue: data.dealMilestone, actor, transactionId: id });
     }
-    return updated;
+    if (stageChanging) {
+      await recordStageChange(tx, { field: "stage", fromValue: existing.stage, toValue: stage, actor, transactionId: id });
+    }
+    return { updated, existing, stageChanging };
   });
+
+  if (result.stageChanging && result.existing.ownerId && result.existing.ownerId !== actor.userId) {
+    await notify([result.existing.ownerId], transactionStageNotification(id, result.existing.name, result.existing.stage, stage!));
+  }
+
+  return result.updated;
 }
 
 export async function deleteTransaction(id: string) {

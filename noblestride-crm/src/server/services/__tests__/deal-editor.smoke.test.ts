@@ -6,6 +6,7 @@ import { describe, it, expect } from "vitest";
 import { prisma } from "@/lib/db";
 import { createClient, deleteClient } from "@/server/services/clients";
 import { createMandate, deleteMandate, updateMandate } from "@/server/services/mandates";
+import { createTransaction, deleteTransaction, updateTransaction } from "@/server/services/transactions";
 import { journeyForMandate } from "@/server/services/journey";
 
 async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
@@ -91,6 +92,41 @@ describe("deal editor — mandate (smoke)", () => {
         expect(row.ndaSignedDate).not.toBeNull();
       } finally {
         await deleteMandate(mandate.id);
+        await deleteClient(client.id);
+      }
+      return true;
+    });
+    void ran;
+  });
+});
+
+describe("deal editor — transaction (smoke)", () => {
+  it("changing stage via updateTransaction records history, resets timer, and sets closedAt on ClosedWon", async () => {
+    const ran = await withDb(async () => {
+      const client = await createClient({ name: "__editor_t_client__" }, { type: "HUMAN" });
+      const txn = await createTransaction({ name: "__editor_t__", clientId: client.id }, { type: "HUMAN" });
+      try {
+        await updateTransaction(txn.id, { stage: "ClosedWon" }, { type: "HUMAN" });
+        const won = await prisma.transaction.findUniqueOrThrow({ where: { id: txn.id } });
+        expect(won.stage).toBe("ClosedWon");
+        expect(won.closedAt).not.toBeNull();
+
+        const rows = await prisma.stageChange.findMany({ where: { transactionId: txn.id, field: "stage" } });
+        expect(rows).toHaveLength(1);
+        expect(rows[0].toValue).toBe("ClosedWon");
+
+        // Re-opening clears closedAt.
+        await updateTransaction(txn.id, { stage: "DueDiligence" }, { type: "HUMAN" });
+        const reopened = await prisma.transaction.findUniqueOrThrow({ where: { id: txn.id } });
+        expect(reopened.closedAt).toBeNull();
+
+        // Non-stage edit adds no new stage row.
+        await updateTransaction(txn.id, { notes: "x" }, { type: "HUMAN" });
+        const rows2 = await prisma.stageChange.findMany({ where: { transactionId: txn.id, field: "stage" } });
+        expect(rows2).toHaveLength(2); // ClosedWon + DueDiligence, not 3
+      } finally {
+        await prisma.stageChange.deleteMany({ where: { transactionId: txn.id } });
+        await deleteTransaction(txn.id);
         await deleteClient(client.id);
       }
       return true;
