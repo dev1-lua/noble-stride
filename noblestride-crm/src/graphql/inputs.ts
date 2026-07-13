@@ -19,6 +19,7 @@ import {
   InteractionTypeEnum, CommChannelEnum, CommDirectionEnum,
   RegulatoryStatusEnum, DDTrackEnum, DDStatusEnum,
   PriorityEnum, PartnerFeeStatusEnum,
+  MandateStageEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -130,6 +131,8 @@ export const MandateInput = builder.inputType("MandateInput", {
     currency: t.string({ required: false }),
     sector: t.field({ type: [SectorEnum], required: false }),
     source: t.field({ type: SourceEnum, required: false }),
+    stage: t.field({ type: MandateStageEnum, required: false }),
+    qualificationVerdict: t.string({ required: false }),
     dateOpened: t.field({ type: "DateTime", required: false }),
     ndaStatus: t.field({ type: DocStatusEnum, required: false }),
     ndaSentDate: t.field({ type: "DateTime", required: false }),

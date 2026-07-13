@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Sector, Source, DocStatus, DealStatus, Priority } from "@prisma/client";
+import { Sector, Source, DocStatus, DealStatus, Priority, MandateStage } from "@prisma/client";
 
 export const mandateCreateSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -11,6 +11,8 @@ export const mandateCreateSchema = z.object({
   currency: z.string().trim().min(1).optional(),
   sector: z.array(z.nativeEnum(Sector)).optional(),
   source: z.nativeEnum(Source).optional(),
+  stage: z.nativeEnum(MandateStage).optional(),
+  qualificationVerdict: z.string().trim().optional(),
   dateOpened: z.coerce.date().optional(),
   ndaStatus: z.nativeEnum(DocStatus).optional(),
   ndaSentDate: z.coerce.date().optional(),
