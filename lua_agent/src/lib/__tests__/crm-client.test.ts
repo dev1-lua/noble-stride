@@ -34,7 +34,7 @@ describe("makeCrmClient", () => {
 
   it("maps non-200 to the friendly CRM-down error with detail", async () => {
     const client = makeCrmClient({ ...OPTS, fetchFn: fetchReturning(502, {}) });
-    const err = await client.query("{ ping }").catch((e: CrmError) => e);
+    const err = (await client.query("{ ping }").catch((e: unknown) => e)) as CrmError;
     expect(err).toBeInstanceOf(CrmError);
     expect(err.message).toBe(CRM_DOWN_MESSAGE);
     expect(err.detail).toContain("502");
@@ -53,7 +53,7 @@ describe("makeCrmClient", () => {
       new Response("<html>login page</html>", { status: 200, headers: { "content-type": "text/html" } }),
     ) as unknown as typeof fetch;
     const client = makeCrmClient({ ...OPTS, fetchFn });
-    const err = await client.query("{ ping }").catch((e: CrmError) => e);
+    const err = (await client.query("{ ping }").catch((e: unknown) => e)) as CrmError;
     expect(err).toBeInstanceOf(CrmError);
     expect(err.message).toBe(CRM_DOWN_MESSAGE);
     expect(err.detail).toContain("invalid JSON");
