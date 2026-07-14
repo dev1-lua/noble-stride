@@ -4,19 +4,22 @@ agent:
 skills:
   - name: crm-summary
     skillId: 2905b0cd-9979-4de3-a9f4-5c0cc49f5e40
+    version: 1.0.2
+  - name: crm-write
+    skillId: 48594923-1371-4bd8-b4bb-8cf4b16193be
     version: 1.0.1
 webhooks: []
 jobs:
   - jobId: 2c3786e7-c097-4d03-80de-a30db5110a65
     name: weekly-digest
-    version: 1.0.1
+    version: 1.0.2
 preprocessors:
   - name: passphrase-gate
     preprocessorId: preprocessor_53a7ab8a-c46b-44ec-a4ae-d9d2aa6ad70f
-    version: 1.0.1-sandbox
+    version: 1.0.2
 postprocessors: []
 mcpServers: []
 backup:
-  activeVersion: 1
-  lastHash: d2750d7e837352566dad4c2c2d9bf2591b84534135a1f5d42c91310b54518c57
-  lastPushedAt: '2026-07-13T21:11:14.240Z'
+  activeVersion: 2
+  lastHash: 020893303dbd2213ba4fa30e3ed4d76f44a6a0f3d2eb5da1309858ce80ded988
+  lastPushedAt: '2026-07-14T18:23:19.765Z'
