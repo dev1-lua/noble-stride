@@ -214,14 +214,29 @@ interface StageCount {
   count: number;
 }
 
-function StageGroupChart({ heading, stages }: { heading: string; stages: StageCount[] }) {
+function StageGroupChart({
+  heading,
+  stages,
+  active,
+}: {
+  heading: string;
+  stages: StageCount[];
+  active: number;
+}) {
   const total = stages.reduce((sum, s) => sum + s.count, 0);
   const nonZero = stages.filter((s) => s.count > 0);
+  const closed = Math.max(0, total - active);
 
   return (
     <div>
       <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
         {heading}
+      </p>
+
+      <p className="mb-2 text-xs text-[var(--text-tertiary)]">
+        <span className="font-semibold tabular-nums text-[var(--text-primary)]">{active}</span> active
+        {" · "}<span className="tabular-nums">{closed}</span> closed
+        {" · "}<span className="tabular-nums">{total}</span> total
       </p>
 
       {/* Stacked bar — wipes in left→right via clip-path */}
@@ -291,14 +306,18 @@ function StageGroupChart({ heading, stages }: { heading: string; stages: StageCo
 export function PipelineOverviewChart({
   mandatesByStage,
   transactionsByStage,
+  mandatesActive,
+  transactionsActive,
 }: {
   mandatesByStage: StageCount[];
   transactionsByStage: StageCount[];
+  mandatesActive: number;
+  transactionsActive: number;
 }) {
   return (
     <div className="space-y-6">
-      <StageGroupChart heading="Mandates Pipeline" stages={mandatesByStage} />
-      <StageGroupChart heading="Active Transactions" stages={transactionsByStage} />
+      <StageGroupChart heading="Mandates Pipeline" stages={mandatesByStage} active={mandatesActive} />
+      <StageGroupChart heading="Transactions Pipeline" stages={transactionsByStage} active={transactionsActive} />
     </div>
   );
 }

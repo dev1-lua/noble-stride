@@ -14,7 +14,16 @@ import { intakeSubmitSchema } from "@/lib/schemas/intake";
 import { qualifyIntake, type IntakeQualInput } from "@/server/domain/qualification";
 import { notify, adminUserIds } from "@/server/services/notifications";
 
-export async function submitIntake(raw: unknown): Promise<Mandate> {
+export interface IntakeExtras {
+  /** "wizard" (default) preserves today's behavior exactly; "webchat" is the Client Agent (SOW §8.1). */
+  via?: "wizard" | "webchat";
+  conversationSummary?: string;
+  qualificationNotes?: string;
+  attachmentUrls?: string[];
+}
+
+export async function submitIntake(raw: unknown, extras: IntakeExtras = {}): Promise<Mandate> {
+  const via = extras.via ?? "wizard";
   const input = intakeSubmitSchema.parse(raw);
 
   const qualInput: IntakeQualInput = {
@@ -54,7 +63,7 @@ export async function submitIntake(raw: unknown): Promise<Mandate> {
         auditedFinancialsYears: Number(input.auditedYears),
         status: "Prospect",
         source: "Website",
-        createdSource: "API",
+        createdSource: via === "webchat" ? "AGENT" : "API",
         contacts: {
           create: {
             firstName: input.contactName,
@@ -76,23 +85,64 @@ export async function submitIntake(raw: unknown): Promise<Mandate> {
         sector: input.sectors,
         notes: `Use of funds: ${input.useOfFunds}\nTimeline: ${input.proposedTimeline}`,
         clientId: client.id,
-        createdSource: "API",
+        createdSource: via === "webchat" ? "AGENT" : "API",
         qualificationVerdict: verdict,
         qualificationReasons: reasons,
         qualifiedAt: new Date(),
       },
     });
 
+    const summaryBody =
+      via === "webchat"
+        ? [
+            extras.conversationSummary,
+            extras.qualificationNotes ? `Qualification signals (agent-flagged): ${extras.qualificationNotes}` : null,
+          ]
+            .filter(Boolean)
+            .join("\n\n") || undefined
+        : undefined;
+
     await tx.activity.create({
       data: {
         type: "Note",
-        subject: "Website intake received",
+        subject: via === "webchat" ? "Web chat intake received" : "Website intake received",
+        body: summaryBody,
         channel: "WebChat",
         direction: "Inbound",
         clientId: client.id,
         mandateId: mandate.id,
+        ...(via === "webchat" ? { createdSource: "AGENT" as const } : {}),
       },
     });
+
+    if (via === "webchat") {
+      await tx.task.create({
+        data: {
+          title: `Review web-chat intake: ${input.legalName}`,
+          body: extras.conversationSummary,
+          source: "Other",
+          clientId: client.id,
+          mandateId: mandate.id,
+        },
+      });
+      const urls = extras.attachmentUrls ?? [];
+      for (const [i, url] of urls.entries()) {
+        await tx.document.create({
+          data: {
+            name: i === 0 ? `${input.legalName} — pitch deck (web chat)` : `${input.legalName} — web-chat attachment ${i + 1}`,
+            type: i === 0 ? "PitchDeck" : "Other",
+            accessLevel: "Internal",
+            fileUrl: url,
+            clientId: client.id,
+            mandateId: mandate.id,
+            createdSource: "AGENT",
+          },
+        });
+      }
+      if (urls[0] && !input.pitchDeckUrl) {
+        await tx.client.update({ where: { id: client.id }, data: { pitchDeckUrl: urls[0] } });
+      }
+    }
 
     return mandate;
   });

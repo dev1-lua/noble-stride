@@ -11,6 +11,7 @@ import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 import { qualifyIntake, type IntakeQualInput } from "@/server/domain/qualification";
 import { notify } from "./notifications";
+import { reconcileMandateDocDates } from "@/server/domain/doc-dates";
 
 // ─── Filter type ─────────────────────────────────────────────────────────────
 
@@ -101,11 +102,7 @@ export async function setMandateStage(id: string, stage: MandateStage, actor: Ac
   // the stage change. Skipped when there is no lead, the stage didn't
   // actually change, or the lead is the one who made the change.
   if (fromStage !== stage && leadId && leadId !== actor.userId) {
-    await notify([leadId], {
-      kind: "stage_change",
-      title: `${name}: ${label("MandateStage", fromStage)} → ${label("MandateStage", stage)}`,
-      href: `/mandates/${id}`,
-    });
+    await notify([leadId], mandateStageNotification(id, name, fromStage, stage));
   }
 
   return updated;
@@ -113,34 +110,77 @@ export async function setMandateStage(id: string, stage: MandateStage, actor: Ac
 
 // ─── CRUD operations ──────────────────────────────────────────────────────────
 
+// Shared by setMandateStage and updateMandate so the restage notification is
+// worded identically no matter which write path changed the stage.
+function mandateStageNotification(id: string, name: string, fromStage: MandateStage, toStage: MandateStage) {
+  return {
+    kind: "stage_change" as const,
+    title: `${name}: ${label("MandateStage", fromStage)} → ${label("MandateStage", toStage)}`,
+    href: `/mandates/${id}`,
+  };
+}
+
 export async function createMandate(input: MandateCreateInput, actor: Actor) {
   const data = mandateCreateSchema.parse(input);
-  return prisma.mandate.create({ data: { ...data, createdSource: actorSource(actor) } });
+  const now = new Date();
+  const docDates = reconcileMandateDocDates(data, {
+    ndaStatus: data.ndaStatus ?? "NotSent",
+    ndaSentDate: data.ndaSentDate ?? null,
+    ndaSignedDate: data.ndaSignedDate ?? null,
+    eaStatus: data.eaStatus ?? "NotSent",
+    eaSentDate: data.eaSentDate ?? null,
+    eaSignedDate: data.eaSignedDate ?? null,
+  }, now);
+  return prisma.mandate.create({ data: { ...data, ...docDates, createdSource: actorSource(actor) } });
 }
 
 export async function updateMandate(id: string, input: MandateUpdateInput, actor: Actor = { type: "HUMAN" }) {
-  const data = mandateUpdateSchema.parse(input);
-  return prisma.$transaction(async (tx) => {
+  const { stage, ...rest } = mandateUpdateSchema.parse(input);
+  const now = new Date();
+
+  const result = await prisma.$transaction(async (tx) => {
     const existing = await tx.mandate.findUniqueOrThrow({
       where: { id },
-      select: { dealStatus: true, dateOpened: true, source: true },
+      select: {
+        dealStatus: true, dateOpened: true, source: true, stage: true, name: true, leadId: true,
+        ndaStatus: true, ndaSentDate: true, ndaSignedDate: true,
+        eaStatus: true, eaSentDate: true, eaSignedDate: true,
+      },
     });
-    if (
-      data.dateOpened !== undefined &&
-      existing.dateOpened != null &&
-      !sameCalendarDate(data.dateOpened, existing.dateOpened)
-    ) {
+    if (rest.dateOpened !== undefined && existing.dateOpened != null && !sameCalendarDate(rest.dateOpened, existing.dateOpened)) {
       throw new CrudError("Date opened is locked once set (spec §7.1: creation date is immutable).");
     }
-    if (data.source !== undefined && existing.source != null && data.source !== existing.source) {
+    if (rest.source !== undefined && existing.source != null && rest.source !== existing.source) {
       throw new CrudError("Source is locked once set (spec §7.1: originating source is immutable).");
     }
-    const updated = await tx.mandate.update({ where: { id }, data });
-    if (data.dealStatus !== undefined) {
-      await recordStageChange(tx, { field: "dealStatus", fromValue: existing.dealStatus, toValue: data.dealStatus, actor, mandateId: id });
+
+    // Inlined restage logic (history row + stageEnteredAt reset + notify) must
+    // stay behaviorally identical to the dedicated setMandateStage sibling.
+    // Not extracted into a shared helper so both paths keep a single atomic tx.mandate.update.
+    const docDates = reconcileMandateDocDates(rest, existing, now);
+    const stageChanging = stage !== undefined && stage !== existing.stage;
+
+    const updated = await tx.mandate.update({
+      where: { id },
+      data: { ...rest, ...docDates, ...(stageChanging ? { stage, stageEnteredAt: now } : {}) },
+    });
+
+    if (rest.dealStatus !== undefined) {
+      await recordStageChange(tx, { field: "dealStatus", fromValue: existing.dealStatus, toValue: rest.dealStatus, actor, mandateId: id });
     }
-    return updated;
+    if (stageChanging) {
+      await recordStageChange(tx, { field: "stage", fromValue: existing.stage, toValue: stage, actor, mandateId: id });
+    }
+
+    return { updated, existing, stageChanging };
   });
+
+  // Notify the lead of a restage after commit (never rolls back the change).
+  if (result.stageChanging && result.existing.leadId && result.existing.leadId !== actor.userId) {
+    await notify([result.existing.leadId], mandateStageNotification(id, result.existing.name, result.existing.stage, stage!));
+  }
+
+  return result.updated;
 }
 
 // ─── Intake review actions (Task 12) ───────────────────────────────────────

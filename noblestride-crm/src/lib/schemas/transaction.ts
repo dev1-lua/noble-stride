@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Sector, DealType, Instrument, DealStatus, DealMilestone, DealFinancingType, MaxSellingStake, RegulatoryStatus, Priority, PartnerFeeStatus } from "@prisma/client";
+import { Sector, DealType, Instrument, DealStatus, DealMilestone, DealFinancingType, MaxSellingStake, RegulatoryStatus, Priority, PartnerFeeStatus, TransactionStage } from "@prisma/client";
 
 export const transactionCreateSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -13,6 +13,7 @@ export const transactionCreateSchema = z.object({
   currency: z.string().trim().min(1).optional(),
   sector: z.array(z.nativeEnum(Sector)).optional(),
   dateOpened: z.coerce.date().optional(),
+  stage: z.nativeEnum(TransactionStage).optional(),
   successFeeAmount: z.number().nonnegative().optional(),
   successFeeInvoicedDate: z.coerce.date().optional(),
   successFeePaidDate: z.coerce.date().optional(),

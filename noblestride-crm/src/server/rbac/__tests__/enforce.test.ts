@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertCan, assertCanDelete, assertCanUpdateOwnScoped, assertAdmin } from "../enforce";
+import { assertCan, assertCanDelete, assertCanUpdateOwnScoped, assertAdmin, assertAutomation } from "../enforce";
 import type { Actor } from "@/graphql/context";
 
 const admin: Actor = { type: "HUMAN", authenticated: true, accountKind: "INTERNAL", orgRole: "Admin", userId: "u1" };
@@ -49,5 +49,21 @@ describe("assertAdmin", () => {
     expect(() => assertAdmin(apiAgent)).not.toThrow();
     expect(() => assertAdmin(dealLead)).toThrow();
     expect(() => assertAdmin(anonymous)).toThrow();
+  });
+});
+
+describe("assertAutomation", () => {
+  it("allows authenticated AGENT and API actors", () => {
+    expect(() => assertAutomation({ type: "AGENT", authenticated: true })).not.toThrow();
+    expect(() => assertAutomation({ type: "API", authenticated: true })).not.toThrow();
+  });
+  it("rejects humans (even Admin) — this surface is for agents only", () => {
+    expect(() =>
+      assertAutomation({ type: "HUMAN", authenticated: true, accountKind: "INTERNAL", orgRole: "Admin" }),
+    ).toThrow();
+  });
+  it("rejects unauthenticated agents and anonymous actors", () => {
+    expect(() => assertAutomation({ type: "AGENT", authenticated: false })).toThrow();
+    expect(() => assertAutomation({ type: "HUMAN" })).toThrow();
   });
 });

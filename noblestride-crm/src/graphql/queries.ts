@@ -23,6 +23,7 @@ import {
   ActivityRef,
   DocumentRef,
   SavedViewRef,
+  CheckCompanyResultRef,
 } from "./types";
 import type { StatValue, DashboardStats, InvestorSegments, Insight } from "@/server/domain/types";
 import type { InvestorMatch } from "@/server/domain/ranking";
@@ -53,6 +54,8 @@ import { listSavedViews } from "@/server/services/saved-views";
 import { unreadFor, unreadCountFor } from "@/server/services/notifications";
 import { getOrgLens } from "@/server/rbac/context";
 import { globalSearch, type SearchResult } from "@/server/search/global-search";
+import { assertAutomation } from "@/server/rbac/enforce";
+import { checkCompany } from "@/server/services/client-intake";
 
 // ── Input types ───────────────────────────────────────────────────────────────
 
@@ -576,5 +579,20 @@ builder.queryFields((t) => ({
       limit: t.arg.int({ required: false }),
     },
     resolve: (_root, args, ctx) => globalSearch(ctx.actor, args.query, args.limit ?? undefined),
+  }),
+
+  // Client Agent (SOW §8.1): existence probe for the public web-chat agent.
+  // Automation-only; returns a 3-value enum and nothing else, by design.
+  checkCompany: t.field({
+    type: CheckCompanyResultRef,
+    nullable: false,
+    args: {
+      name: t.arg.string({ required: true }),
+      contactEmail: t.arg.string({ required: false }),
+    },
+    resolve: (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return checkCompany(args.name, args.contactEmail ?? undefined);
+    },
   }),
 }));

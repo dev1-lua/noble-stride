@@ -19,6 +19,7 @@ const EMPTY: Record<string, unknown> = {
   // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
   retainerAmount: undefined, retainerInvoicedDate: "", retainerPaidDate: "",
   priority: "", referralQualified: undefined,
+  stage: "", qualificationVerdict: "",
 };
 
 // Tri-state: "" = explicit clear (sent as null — referralQualified is in
@@ -74,6 +75,7 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
         <div className="space-y-4">
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
           <RelationSelect label="Client" required value={v.clientId as string} onChange={(x) => f.setValue("clientId", x)} options={clients} error={f.errors.clientId} placeholder="Select client…" />
+          <SelectField label="Stage" value={v.stage as string} onChange={(x) => f.setValue("stage", x)} options={options("MandateStage")} />
           <RelationSelect label="Lead" value={v.leadId as string} onChange={(x) => f.setValue("leadId", x)} options={users} placeholder="Select lead…" />
           <RelationSelect label="Referred By" value={v.referredById as string} onChange={(x) => f.setValue("referredById", x)} options={partners} placeholder="Select partner…" />
           {Boolean(v.referredById) && (
@@ -108,7 +110,17 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
             <SelectField label="NDA Status" value={v.ndaStatus as string} onChange={(x) => f.setValue("ndaStatus", x)} options={options("DocStatus")} />
             <SelectField label="EA Status" value={v.eaStatus as string} onChange={(x) => f.setValue("eaStatus", x)} options={options("DocStatus")} />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <DateField label="NDA Sent" value={v.ndaSentDate as string} onChange={(x) => f.setValue("ndaSentDate", x)} />
+            <DateField label="NDA Signed" value={v.ndaSignedDate as string} onChange={(x) => f.setValue("ndaSignedDate", x)} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <DateField label="EA Sent" value={v.eaSentDate as string} onChange={(x) => f.setValue("eaSentDate", x)} />
+            <DateField label="EA Signed" value={v.eaSignedDate as string} onChange={(x) => f.setValue("eaSignedDate", x)} />
+          </div>
+          <p className="text-xs text-[var(--text-tertiary)]">Leave a date blank to auto-stamp it from the status; enter one to backdate.</p>
           <TextField label="Next Action" value={v.nextAction as string} onChange={(x) => f.setValue("nextAction", x)} />
+          <TextField label="Qualification Verdict" value={v.qualificationVerdict as string} onChange={(x) => f.setValue("qualificationVerdict", x)} />
           <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Retainer</p>
           <MoneyField label="Retainer Amount" value={v.retainerAmount as number} onChange={(x) => f.setValue("retainerAmount", x)} />
           <div className="grid grid-cols-2 gap-3">

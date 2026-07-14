@@ -7,7 +7,7 @@ import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, LogClientMessageInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor, markInvestorCriteriaVerified } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
@@ -20,15 +20,16 @@ import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
 import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
 import { createSavedView, renameSavedView, deleteSavedView, type SavedViewConfig } from "@/server/services/saved-views";
-import { SavedViewRef, EsignEnvelopeResult } from "./types";
+import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef } from "./types";
 import { markNotificationsRead, markAllNotificationsRead } from "@/server/services/notifications";
 import { getOrgLens } from "@/server/rbac/context";
-import { assertAdmin, assertCan, assertCanDelete, assertCanUpdateOwnScoped } from "@/server/rbac/enforce";
+import { assertAdmin, assertCan, assertCanDelete, assertCanUpdateOwnScoped, assertAutomation } from "@/server/rbac/enforce";
 import { prisma } from "@/lib/db";
 import { sendEsignEnvelope } from "@/server/services/esign";
 import type { ESignKind } from "@/server/integrations/esign/provider";
 import { shareDocumentViaBox } from "@/server/services/docshare";
 import { scheduleMeeting } from "@/server/services/meetings";
+import { submitClientIntake, logInboundClientMessage, type LogClientMessageInput as LogClientMessageInputShape } from "@/server/services/client-intake";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -597,6 +598,34 @@ builder.mutationFields((t) => ({
       const lens = await getOrgLens();
       if (!lens.userId) return 0;
       return markAllNotificationsRead(lens.userId);
+    },
+  }),
+
+  // ── Client Agent (SOW §8.1) — automation-only, minimal acks ──
+  submitClientIntake: t.field({
+    type: AgentAckRef,
+    nullable: false,
+    args: { input: t.arg({ type: ClientIntakeInput, required: true }) },
+    resolve: async (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      const { conversationSummary, qualificationNotes, attachmentUrls, ...intake } =
+        args.input as Record<string, unknown> & {
+          conversationSummary: string;
+          qualificationNotes?: string | null;
+          attachmentUrls?: string[] | null;
+        };
+      // GraphQL optionals arrive as null; intakeSubmitSchema expects absent.
+      const raw = Object.fromEntries(Object.entries(intake).filter(([, v]) => v != null));
+      return submitClientIntake(raw, { conversationSummary, qualificationNotes, attachmentUrls });
+    },
+  }),
+  logInboundClientMessage: t.field({
+    type: ClientMessageAckRef,
+    nullable: false,
+    args: { input: t.arg({ type: LogClientMessageInput, required: true }) },
+    resolve: async (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return logInboundClientMessage(args.input as unknown as LogClientMessageInputShape);
     },
   }),
 }));

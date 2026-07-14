@@ -109,6 +109,8 @@ export async function dashboardStats(): Promise<DashboardStats> {
 export async function pipelineOverview(): Promise<{
   mandatesByStage: { stage: string; label: string; count: number }[];
   transactionsByStage: { stage: string; label: string; count: number }[];
+  mandatesActive: number;
+  transactionsActive: number;
 }> {
   const [mandateCounts, transactionCounts] = await Promise.all([
     prisma.mandate.groupBy({ by: ["stage"], _count: { _all: true } }),
@@ -135,7 +137,17 @@ export async function pipelineOverview(): Promise<{
     count: txnMap.get(stage) ?? 0,
   }));
 
-  return { mandatesByStage, transactionsByStage };
+  // Active subtotals — same stage sets dashboardStats() uses, so the KPI
+  // cards and this breakdown reconcile.
+  const mandatesActive = mandatesByStage
+    .filter((row) => (ACTIVE_MANDATE_STAGES as string[]).includes(row.stage))
+    .reduce((sum, row) => sum + row.count, 0);
+
+  const transactionsActive = transactionsByStage
+    .filter((row) => !(CLOSED_TXN_STAGES as string[]).includes(row.stage))
+    .reduce((sum, row) => sum + row.count, 0);
+
+  return { mandatesByStage, transactionsByStage, mandatesActive, transactionsActive };
 }
 
 /**

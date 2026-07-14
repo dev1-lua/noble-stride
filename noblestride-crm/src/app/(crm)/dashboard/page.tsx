@@ -138,6 +138,8 @@ export default async function DashboardPage() {
           value={s.investorsEngagedQtr.value}
           format="compact"
           delta={s.investorsEngagedQtr.delta}
+          deltaSuffix="active"
+          deltaTitle="Investors with activity in the last 30 days"
           sub="this quarter"
           icon={<Users className="h-4 w-4" />}
         />
@@ -147,6 +149,7 @@ export default async function DashboardPage() {
           format="money"
           delta={s.capitalRaisedYtd.delta}
           deltaFormat="money"
+          deltaTitle="Capital raised in the last 30 days"
           sub="closed transactions"
           icon={<DollarSign className="h-4 w-4" />}
         />
@@ -176,6 +179,8 @@ export default async function DashboardPage() {
               <PipelineOverviewChart
                 mandatesByStage={pipeline.mandatesByStage}
                 transactionsByStage={pipeline.transactionsByStage}
+                mandatesActive={pipeline.mandatesActive}
+                transactionsActive={pipeline.transactionsActive}
               />
             </CardBody>
           </Card>
