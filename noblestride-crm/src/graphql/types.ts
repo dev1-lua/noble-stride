@@ -748,3 +748,56 @@ export const AgentWriteResultRef = builder.objectRef<AgentWriteResultData>("Agen
     href: t.exposeString("href", { nullable: true }),
   }),
 });
+
+// ─── Investor Agent (spec 2026-07-14) — minimal agent-facing payloads ────────
+
+export interface InvestorIdentityData { matched: boolean; investorId?: string | null; investorName?: string | null; contactName?: string | null }
+export const InvestorIdentityRef = builder.objectRef<InvestorIdentityData>("InvestorIdentity").implement({
+  fields: (t) => ({
+    matched: t.exposeBoolean("matched"),
+    investorId: t.exposeString("investorId", { nullable: true }),
+    investorName: t.exposeString("investorName", { nullable: true }),
+    contactName: t.exposeString("contactName", { nullable: true }),
+  }),
+});
+
+// Named "AgentInvestorMatch" (not "InvestorMatch") to avoid colliding with the
+// unrelated InvestorMatch objectRef already defined locally in queries.ts for
+// aiMatchInvestors (different shape: id/score/reasons/warnings/criteriaStale).
+export interface InvestorMatchData { investorId: string; name: string; personId: string | null; contactName: string | null; contactEmail: string | null; matchReasons: string[]; hasExistingEngagement: boolean }
+export const AgentInvestorMatchRef = builder.objectRef<InvestorMatchData>("AgentInvestorMatch").implement({
+  fields: (t) => ({
+    investorId: t.exposeString("investorId"),
+    name: t.exposeString("name"),
+    personId: t.exposeString("personId", { nullable: true }),
+    contactName: t.exposeString("contactName", { nullable: true }),
+    contactEmail: t.exposeString("contactEmail", { nullable: true }),
+    matchReasons: t.exposeStringList("matchReasons"),
+    hasExistingEngagement: t.exposeBoolean("hasExistingEngagement"),
+  }),
+});
+
+export interface TeaserContextData { codename: string; sectors: string[]; geographies: string[]; dealType: string | null; instruments: string[]; targetRaiseBand: string | null; revenueBand: string | null; revenueForecastBand: string | null; description: string | null; contact: string }
+export const TeaserContextRef = builder.objectRef<TeaserContextData>("TeaserContext").implement({
+  fields: (t) => ({
+    codename: t.exposeString("codename"),
+    sectors: t.exposeStringList("sectors"),
+    geographies: t.exposeStringList("geographies"),
+    dealType: t.exposeString("dealType", { nullable: true }),
+    instruments: t.exposeStringList("instruments"),
+    targetRaiseBand: t.exposeString("targetRaiseBand", { nullable: true }),
+    revenueBand: t.exposeString("revenueBand", { nullable: true }),
+    revenueForecastBand: t.exposeString("revenueForecastBand", { nullable: true }),
+    description: t.exposeString("description", { nullable: true }),
+    contact: t.exposeString("contact"),
+  }),
+});
+
+export interface DraftsAckData { ok: boolean; created: number; skipped: number }
+export const DraftsAckRef = builder.objectRef<DraftsAckData>("DraftsAck").implement({
+  fields: (t) => ({
+    ok: t.exposeBoolean("ok"),
+    created: t.exposeInt("created"),
+    skipped: t.exposeInt("skipped"),
+  }),
+});

@@ -7,7 +7,7 @@ import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, LogClientMessageInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, LogClientMessageInput, InvestorUpdateSubmitInput, InvestorCommunicationInput, OutreachDraftsInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor, markInvestorCriteriaVerified } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
@@ -20,11 +20,12 @@ import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
 import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
 import { createSavedView, renameSavedView, deleteSavedView, type SavedViewConfig } from "@/server/services/saved-views";
-import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef, ClientOtpVerifyRef, AgentWritePreviewRef, AgentWriteResultRef } from "./types";
+import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef, ClientOtpVerifyRef, AgentWritePreviewRef, AgentWriteResultRef, DraftsAckRef } from "./types";
 import { markNotificationsRead, markAllNotificationsRead } from "@/server/services/notifications";
 import { getOrgLens } from "@/server/rbac/context";
 import { assertAdmin, assertCan, assertCanDelete, assertCanUpdateOwnScoped, assertAutomation } from "@/server/rbac/enforce";
 import { prisma } from "@/lib/db";
+import { CrudError } from "@/server/services/crud";
 import { sendEsignEnvelope } from "@/server/services/esign";
 import type { ESignKind } from "@/server/integrations/esign/provider";
 import { shareDocumentViaBox } from "@/server/services/docshare";
@@ -32,6 +33,9 @@ import { scheduleMeeting } from "@/server/services/meetings";
 import { submitClientIntake, logInboundClientMessage, type LogClientMessageInput as LogClientMessageInputShape } from "@/server/services/client-intake";
 import { requestClientStatusOtp, verifyClientStatusOtp } from "@/server/services/client-status";
 import { prepareAgentWrite, commitAgentWrite, cancelAgentWrite } from "@/server/services/agent-write";
+import { submitInvestorUpdate, logInvestorCommunication } from "@/server/services/investor-agent";
+import { saveOutreachDrafts } from "@/server/services/outreach";
+import { InteractionType } from "@prisma/client";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -703,6 +707,73 @@ builder.mutationFields((t) => ({
     resolve: async (_root, args, ctx) => {
       assertAutomation(ctx.actor);
       return cancelAgentWrite(args.writeToken, args.actorEmail);
+    },
+  }),
+
+  // ── Investor Agent (spec 2026-07-14) — automation-only, minimal acks ──
+  submitInvestorUpdate: t.field({
+    type: AgentAckRef,
+    nullable: false,
+    args: { input: t.arg({ type: InvestorUpdateSubmitInput, required: true }) },
+    resolve: async (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      let proposedFields: Record<string, unknown>;
+      try {
+        proposedFields = JSON.parse(args.input.proposedFieldsJson) as Record<string, unknown>;
+      } catch {
+        throw new Error("proposedFieldsJson is not valid JSON");
+      }
+      return submitInvestorUpdate({
+        investorId: args.input.investorId,
+        personId: args.input.personId ?? null,
+        proposedFields,
+        summary: args.input.summary,
+        sourceEmail: args.input.sourceEmail,
+      });
+    },
+  }),
+  logInvestorCommunication: t.field({
+    type: AgentAckRef,
+    nullable: false,
+    args: { input: t.arg({ type: InvestorCommunicationInput, required: true }) },
+    resolve: async (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      if (args.input.direction !== "Inbound" && args.input.direction !== "Outbound")
+        throw new CrudError("direction must be Inbound or Outbound");
+      // interactionType arrives as a raw GraphQL string; the service force-casts
+      // it to the Prisma InteractionType enum, so validate it here first — a
+      // clear error beats a dishonest cast blowing up as an opaque DB error
+      // downstream (and getting masked to "Unexpected error." at that).
+      if (!Object.values(InteractionType).includes(args.input.interactionType as InteractionType)) {
+        throw new CrudError(
+          `interactionType must be one of: ${Object.values(InteractionType).join(", ")}`,
+        );
+      }
+      return logInvestorCommunication({
+        investorId: args.input.investorId,
+        direction: args.input.direction,
+        interactionType: args.input.interactionType,
+        subject: args.input.subject ?? null,
+        summary: args.input.summary,
+      });
+    },
+  }),
+  saveOutreachDrafts: t.field({
+    type: DraftsAckRef,
+    nullable: false,
+    args: { input: t.arg({ type: OutreachDraftsInput, required: true }) },
+    resolve: async (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return saveOutreachDrafts(
+        args.input.transactionId,
+        args.input.drafts.map((d) => ({
+          investorId: d.investorId,
+          personId: d.personId ?? null,
+          subject: d.subject,
+          body: d.body,
+          matchRationale: d.matchRationale,
+        })),
+      );
     },
   }),
 }));

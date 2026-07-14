@@ -31,7 +31,7 @@ async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 describe("graphql schema", () => {
-  it("builds without errors and exposes a query type with 33 queries and 60 mutations", async () => {
+  it("builds without errors and exposes a query type with 36 queries and 63 mutations", async () => {
     // Dynamic import so the module graph is resolved lazily — errors surface here.
     const { schema } = await import("@/graphql/schema");
     expect(schema).toBeTruthy();
@@ -39,12 +39,12 @@ describe("graphql schema", () => {
     const queryType = schema.getQueryType();
     expect(queryType).toBeTruthy();
     const queryFields = Object.keys(queryType?.getFields() ?? {});
-    expect(queryFields).toHaveLength(33);
+    expect(queryFields).toHaveLength(36);
 
     const mutationType = schema.getMutationType();
     expect(mutationType).toBeTruthy();
     const mutationFields = Object.keys(mutationType?.getFields() ?? {});
-    expect(mutationFields).toHaveLength(60);
+    expect(mutationFields).toHaveLength(63);
 
     // Spot-check that key query fields exist
     expect(queryFields).toContain("dashboardStats");
@@ -60,6 +60,9 @@ describe("graphql schema", () => {
     expect(queryFields).toContain("checkCompany");
     expect(queryFields).toContain("resolveStaffUser");
     expect(queryFields).toContain("clientStatus");
+    expect(queryFields).toContain("investorByEmail");
+    expect(queryFields).toContain("matchInvestorsForTransaction");
+    expect(queryFields).toContain("transactionTeaserContext");
 
     // Spot-check mutation fields
     expect(mutationFields).toContain("updateMandateStage");
@@ -107,6 +110,9 @@ describe("graphql schema", () => {
     expect(mutationFields).toContain("agentCancelWrite");
     expect(mutationFields).toContain("requestClientStatusOtp");
     expect(mutationFields).toContain("verifyClientStatusOtp");
+    expect(mutationFields).toContain("submitInvestorUpdate");
+    expect(mutationFields).toContain("logInvestorCommunication");
+    expect(mutationFields).toContain("saveOutreachDrafts");
     // No delete-shaped operation is ever exposed on the agent write surface
     // (spec: the agent may create/update, never delete) — guard against a
     // future registry entry accidentally growing a matching mutation.

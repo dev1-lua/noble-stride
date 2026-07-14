@@ -1,0 +1,18 @@
+agent:
+  agentId: baseAgent_agent_1784027151836_i3pfzhycr
+  orgId: 1e5359cc-c465-44cb-b040-44e338433411
+skills:
+  - name: investor-correspondence
+    skillId: cf322ac2-8cfe-406b-8df9-f6aa88a2a448
+    version: 1.0.0
+webhooks:
+  - name: draft-outreach
+    version: 1.0.0
+    webhookId: 485920f4-84bb-4b1a-ab8f-197cdcfa653a
+jobs: []
+preprocessors:
+  - name: auto-reply-guard
+    preprocessorId: preprocessor_0c6e0dd5-f44d-48bc-abfc-768faa71862c
+    version: 1.0.0
+postprocessors: []
+mcpServers: []

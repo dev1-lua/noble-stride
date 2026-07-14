@@ -16,6 +16,8 @@ import {
   FileText,
   ListChecks,
   UserCog,
+  Send,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { SidebarProfile } from "./sidebar-profile";
@@ -27,7 +29,9 @@ const MAIN_NAV = [
   { href: "/deals", label: "Deals", Icon: Briefcase, iconColor: "text-[var(--t-tag-text-amber)]" },
   { href: "/clients", label: "Clients", Icon: Building, iconColor: "text-[var(--t-tag-text-blue)]" },
   { href: "/investors", label: "Investors", Icon: Users, iconColor: "text-[var(--t-tag-text-sky)]" },
+  { href: "/investors/proposed-changes", label: "Investor Updates", Icon: UserCheck, iconColor: "text-[var(--t-tag-text-emerald)]" },
   { href: "/engagement", label: "Engagements", Icon: MessageSquare, iconColor: "text-[var(--t-tag-text-violet)]" },
+  { href: "/outreach", label: "Outreach", Icon: Send, iconColor: "text-[var(--t-tag-text-rose)]" },
   { href: "/documents", label: "Documents", Icon: FileText, iconColor: "text-[var(--t-tag-text-orange)]" },
   { href: "/tasks", label: "Tasks", Icon: ListChecks, iconColor: "text-[var(--t-tag-text-blue)]" },
   { href: "/partners", label: "Partners", Icon: Building2, iconColor: "text-[var(--t-tag-text-violet)]" },

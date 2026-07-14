@@ -231,6 +231,21 @@ enum ActorSource {
   SYSTEM
 }
 
+// Investor Agent (spec 2026-07-14): outreach draft lifecycle + investor-sourced change review
+enum OutreachDraftStatus {
+  Draft
+  Approved
+  Sent
+  Rejected
+  Failed
+}
+
+enum ProposedChangeStatus {
+  Pending
+  Confirmed
+  Rejected
+}
+
 enum EngagementStage {
   Shared
   TeaserSent
@@ -505,6 +520,8 @@ model User {
   savedViews   SavedView[] @relation("SavedViewCreatedBy")
   notifications Notification[]
   authAccount AuthAccount?
+  reviewedOutreachDrafts  OutreachDraft[]           @relation("OutreachDraftReviewer")
+  reviewedProposedChanges InvestorProposedChange[]  @relation("ProposedChangeReviewer")
 }
 
 model Person {
@@ -531,6 +548,8 @@ model Person {
   ssaForInvestors Investor[] @relation("InvestorSsaContact")
   authAccount AuthAccount?
   clientOtpChallenges ClientOtpChallenge[]
+  outreachDrafts  OutreachDraft[]
+  proposedChanges InvestorProposedChange[]
 
   @@index([investorId])
   @@index([clientId])
@@ -608,6 +627,8 @@ model Investor {
   eSignEnvelopes ESignEnvelope[]
   meetings       Meeting[]
   emailMessages  EmailMessage[]
+  outreachDrafts  OutreachDraft[]
+  proposedChanges InvestorProposedChange[]
 
   @@index([investorType])
   @@index([status])
@@ -817,6 +838,7 @@ model Transaction {
   eSignEnvelopes   ESignEnvelope[]
   meetings         Meeting[]
   emailMessages    EmailMessage[]
+  outreachDrafts   OutreachDraft[]
 
   @@index([stage])
   @@index([clientId])
@@ -1435,4 +1457,62 @@ model DocumentShareEvent {
   at          DateTime @default(now())
 
   @@index([documentId])
+}
+
+// ── Investor Agent (spec 2026-07-14) ────────────────────────────────────────
+
+model OutreachDraft {
+  id             String              @id @default(cuid())
+  subject        String
+  body           String
+  matchRationale String
+  status         OutreachDraftStatus @default(Draft)
+  reviewedAt     DateTime?
+  sentAt         DateTime?
+  error          String?
+  createdSource  ActorSource         @default(AGENT)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  investorId    String
+  investor      Investor    @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  personId      String?
+  person        Person?     @relation(fields: [personId], references: [id], onDelete: SetNull)
+  reviewedById  String?
+  reviewedBy    User?       @relation("OutreachDraftReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  // NOTE: there is also a hand-written raw partial unique index,
+  // "OutreachDraft_active_pair_key", on (transactionId, investorId) WHERE
+  // status IN ('Draft','Approved','Sent','Failed') — see migration
+  // 20260714165154_outreach_active_dedup_index/migration.sql. Prisma's schema
+  // language can't express a partial/filtered unique index, so it isn't
+  // declared here as an @@unique/@@index; it exists only in raw SQL and is
+  // the DB-level backstop for the app-level dedup guard in
+  // ACTIVE_DRAFT_STATUSES (src/server/services/outreach.ts).
+  @@index([status])
+  @@index([transactionId])
+  @@index([investorId])
+}
+
+model InvestorProposedChange {
+  id             String               @id @default(cuid())
+  proposedFields Json
+  summary        String
+  sourceEmail    String
+  status         ProposedChangeStatus @default(Pending)
+  reviewedAt     DateTime?
+  createdSource  ActorSource          @default(AGENT)
+  createdAt      DateTime             @default(now())
+
+  investorId   String
+  investor     Investor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  personId     String?
+  person       Person?  @relation(fields: [personId], references: [id], onDelete: SetNull)
+  reviewedById String?
+  reviewedBy   User?    @relation("ProposedChangeReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([investorId])
 }
