@@ -1,0 +1,126 @@
+{
+  "lastHash": "24453c85da42220f1b1fec9c7a3c76fdff53a20c64e5aa30cb5122b12cb4ed04",
+  "lastPushedAt": "2026-07-14T22:53:05.402Z",
+  "files": [
+    {
+      "relativePath": "env.example",
+      "hash": "e547c5ffc1b06037"
+    },
+    {
+      "relativePath": "lua.skill.yaml",
+      "hash": "b60a7bbefc7a0b24"
+    },
+    {
+      "relativePath": "package.json",
+      "hash": "79f6a88c5d5bd81b"
+    },
+    {
+      "relativePath": "PLAN.md",
+      "hash": "0e82fa9c08282ce5"
+    },
+    {
+      "relativePath": "QUICKSTART.md",
+      "hash": "31e631fd64512cd1"
+    },
+    {
+      "relativePath": "README.md",
+      "hash": "2ca2d2b3168e75e5"
+    },
+    {
+      "relativePath": "scripts/smoke.ts",
+      "hash": "bf25022edd1c35c5"
+    },
+    {
+      "relativePath": "src/index.ts",
+      "hash": "1ab77f970feccb2b"
+    },
+    {
+      "relativePath": "src/jobs/stage-watch.job.ts",
+      "hash": "3fb5375f86232162"
+    },
+    {
+      "relativePath": "src/lib/crm-client.ts",
+      "hash": "41e7668a481a1d79"
+    },
+    {
+      "relativePath": "src/lib/format.ts",
+      "hash": "96445a9f884ed0e4"
+    },
+    {
+      "relativePath": "src/lib/guards.ts",
+      "hash": "be9f86ea478e6032"
+    },
+    {
+      "relativePath": "src/lib/queries.ts",
+      "hash": "ab8ce567ca497dd8"
+    },
+    {
+      "relativePath": "src/lib/record-lookup.ts",
+      "hash": "62d596b6278b7a15"
+    },
+    {
+      "relativePath": "src/lib/referral-scan.ts",
+      "hash": "a8f104d890601fe3"
+    },
+    {
+      "relativePath": "src/lib/resolve.ts",
+      "hash": "7c4de58fe4e23751"
+    },
+    {
+      "relativePath": "src/processors/passphrase-gate.ts",
+      "hash": "844d18ddb159915a"
+    },
+    {
+      "relativePath": "src/skills/referral.skill.ts",
+      "hash": "68a142dc9a71a6c5"
+    },
+    {
+      "relativePath": "src/skills/tools/CreateReferredMandateTool.ts",
+      "hash": "512fd2b90070f67f"
+    },
+    {
+      "relativePath": "src/skills/tools/GetPartnerProfileTool.ts",
+      "hash": "a44711a0f4fae043"
+    },
+    {
+      "relativePath": "src/skills/tools/GetReferralStatusTool.ts",
+      "hash": "8374ff19c870b28c"
+    },
+    {
+      "relativePath": "src/skills/tools/LinkPartnerToDealTool.ts",
+      "hash": "dfd00b7583f55059"
+    },
+    {
+      "relativePath": "src/skills/tools/PartnerPerformanceTool.ts",
+      "hash": "62166f64253bd51e"
+    },
+    {
+      "relativePath": "src/skills/tools/RecordIntroductionTool.ts",
+      "hash": "a0655bfc2c44e718"
+    },
+    {
+      "relativePath": "src/skills/tools/ReferralPipelineDigestTool.ts",
+      "hash": "38e3a99bbd33fbea"
+    },
+    {
+      "relativePath": "src/skills/tools/SummarizeRecordTool.ts",
+      "hash": "34ccd1db6698ce26"
+    },
+    {
+      "relativePath": "src/skills/tools/UpdateFeeStatusTool.ts",
+      "hash": "8537a0da70775903"
+    },
+    {
+      "relativePath": "src/skills/tools/UpdatePartnerTool.ts",
+      "hash": "2be0c8da762d62b5"
+    },
+    {
+      "relativePath": "tsconfig.json",
+      "hash": "748d6fffca1cc9ce"
+    },
+    {
+      "relativePath": "vitest.config.ts",
+      "hash": "eeae3902657c50d1"
+    }
+  ]
+}
