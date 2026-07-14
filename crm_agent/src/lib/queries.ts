@@ -1,5 +1,11 @@
 import type { RecordType } from "./resolve";
 
+export const RESOLVE_STAFF_USER = /* GraphQL */ `
+  query AgentResolveStaffUser($email: String!) {
+    resolveStaffUser(email: $email) { ok firstName }
+  }
+`;
+
 export const GLOBAL_SEARCH = /* GraphQL */ `
   query AgentGlobalSearch($query: String!, $limit: Int) {
     globalSearch(query: $query, limit: $limit) { id type title subtitle href }
@@ -138,3 +144,36 @@ export const DOCUMENT_ARG: Partial<Record<RecordType, string>> = {
   mandate: "mandateId",
   transaction: "transactionId",
 };
+
+// ─── crmAgent write surface (Task 9/10) ─────────────────────────────────────
+// Two-phase prepare/confirm write mutations. Never expose raw record fields
+// back to the model beyond the operator-facing preview/summary text.
+
+export const AGENT_PREPARE_WRITE = /* GraphQL */ `
+  mutation AgentPrepareWrite($operation: String!, $targetId: String, $payloadJson: String!, $actorEmail: String!) {
+    agentPrepareWrite(operation: $operation, targetId: $targetId, payloadJson: $payloadJson, actorEmail: $actorEmail) {
+      writeToken
+      preview
+      warnings
+    }
+  }
+`;
+
+export const AGENT_COMMIT_WRITE = /* GraphQL */ `
+  mutation AgentCommitWrite($writeToken: String!, $actorEmail: String!) {
+    agentCommitWrite(writeToken: $writeToken, actorEmail: $actorEmail) {
+      ok
+      summary
+      recordId
+      href
+    }
+  }
+`;
+
+export const AGENT_CANCEL_WRITE = /* GraphQL */ `
+  mutation AgentCancelWrite($writeToken: String!, $actorEmail: String!) {
+    agentCancelWrite(writeToken: $writeToken, actorEmail: $actorEmail) {
+      ok
+    }
+  }
+`;
