@@ -26,3 +26,40 @@ export const LOG_CLIENT_MESSAGE = /* GraphQL */ `
     }
   }
 `;
+
+// Client status flow (spec 2026-07-14). CLIENT_STATUS selects EXACTLY the 10
+// whitelisted fields on ClientStatusPayload — never add a field here without
+// a matching change to the CRM's ClientStatusPayloadRef.
+export const REQUEST_STATUS_OTP = /* GraphQL */ `
+  mutation AgentRequestStatusOtp($companyName: String!, $contactEmail: String!) {
+    requestClientStatusOtp(companyName: $companyName, contactEmail: $contactEmail) {
+      ok
+    }
+  }
+`;
+
+export const VERIFY_STATUS_OTP = /* GraphQL */ `
+  mutation AgentVerifyStatusOtp($companyName: String!, $contactEmail: String!, $code: String!) {
+    verifyClientStatusOtp(companyName: $companyName, contactEmail: $contactEmail, code: $code) {
+      status
+      token
+    }
+  }
+`;
+
+export const CLIENT_STATUS = /* GraphQL */ `
+  query AgentClientStatus($token: String!) {
+    clientStatus(token: $token) {
+      companyName
+      applicationState
+      coarseStage
+      stageMessage
+      ndaStatus
+      engagementAgreementStatus
+      preparedDocuments
+      submittedRaise
+      nextStep
+      lastUpdated
+    }
+  }
+`;

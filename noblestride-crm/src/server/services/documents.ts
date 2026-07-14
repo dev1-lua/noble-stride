@@ -37,7 +37,10 @@ export async function createDocument(raw: unknown, actor: Actor) {
   return prisma.document.create({ data: { ...input, createdSource: actorSource(actor) } as never });
 }
 
-export async function updateDocument(id: string, raw: unknown) {
+// `actor` is accepted for registry uniformity (Task 5) but currently unused —
+// Document.updatedSource does not exist in the schema, so there is nothing new
+// to stamp here; this is parity only.
+export async function updateDocument(id: string, raw: unknown, _actor?: Actor) {
   const input = documentUpdateSchema.parse(raw);
   return prisma.document.update({ where: { id }, data: input as never });
 }

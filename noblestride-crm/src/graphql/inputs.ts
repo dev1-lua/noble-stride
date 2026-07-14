@@ -428,3 +428,44 @@ export const LogClientMessageInput = builder.inputType("LogClientMessageInput", 
     requestType: t.string({ required: true }),
   }),
 });
+
+// ─── Investor Agent (spec 2026-07-14) ────────────────────────────────────────
+// proposedFieldsJson / draftsJson are JSON strings (precedent: scheduleMeeting.attendeesJson);
+// zod/whitelists inside the services remain the source of validation truth.
+
+export const InvestorUpdateSubmitInput = builder.inputType("InvestorUpdateSubmitInput", {
+  fields: (t) => ({
+    investorId: t.string({ required: true }),
+    personId: t.string({ required: false }),
+    proposedFieldsJson: t.string({ required: true }),
+    summary: t.string({ required: true }),
+    sourceEmail: t.string({ required: true }),
+  }),
+});
+
+export const InvestorCommunicationInput = builder.inputType("InvestorCommunicationInput", {
+  fields: (t) => ({
+    investorId: t.string({ required: true }),
+    direction: t.string({ required: true }), // "Inbound" | "Outbound" — validated in service via zod
+    interactionType: t.string({ required: true }),
+    subject: t.string({ required: false }),
+    summary: t.string({ required: true }),
+  }),
+});
+
+export const OutreachDraftItemInput = builder.inputType("OutreachDraftItemInput", {
+  fields: (t) => ({
+    investorId: t.string({ required: true }),
+    personId: t.string({ required: false }),
+    subject: t.string({ required: true }),
+    body: t.string({ required: true }),
+    matchRationale: t.string({ required: true }),
+  }),
+});
+
+export const OutreachDraftsInput = builder.inputType("OutreachDraftsInput", {
+  fields: (t) => ({
+    transactionId: t.string({ required: true }),
+    drafts: t.field({ type: [OutreachDraftItemInput], required: true }),
+  }),
+});

@@ -30,6 +30,10 @@ export interface Actor {
    * client-supplied id.
    */
   investorId?: string;
+  /** True when an automation credential (x-agent-key) acts on behalf of a resolved
+   *  staff user. RBAC treats the actor as that user (no automation bypass);
+   *  provenance still stamps AGENT via actorSource(). */
+  delegated?: boolean;
 }
 
 export interface GraphQLContext {

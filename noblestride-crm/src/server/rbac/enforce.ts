@@ -11,7 +11,7 @@ export function forbidden(message = "Not authorized"): GraphQLError {
 }
 
 function isAutomation(actor: Actor): boolean {
-  return actor.authenticated === true && (actor.type === "API" || actor.type === "AGENT");
+  return actor.authenticated === true && (actor.type === "API" || actor.type === "AGENT") && actor.delegated !== true;
 }
 
 function internalRole(actor: Actor) {

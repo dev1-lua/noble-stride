@@ -27,6 +27,7 @@ import type { ActivityTimelineItem } from "@/components/crm/activity-timeline";
 import { StageHistory } from "@/components/crm/stage-history";
 import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { MatchInvestorsButton } from "@/components/crm/match-investors-button";
+import { GenerateOutreachButton } from "@/components/crm/generate-outreach-button";
 import { PrepMilestones } from "@/components/crm/prep-milestones";
 import { visiblePrepMilestones } from "@/lib/milestones";
 import { TransactionFormDrawer } from "@/components/crm/transaction-form-drawer";
@@ -216,6 +217,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         </div>
         <div className="flex shrink-0 gap-2">
           <MatchInvestorsButton transactionId={txn.id} />
+          {mayEdit && <GenerateOutreachButton transactionId={txn.id} />}
           <Button variant="secondary" size="sm" disabled>
             Export
           </Button>

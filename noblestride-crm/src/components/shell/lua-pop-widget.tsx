@@ -67,7 +67,7 @@ export function LuaPopWidget({ agentId, channelId }: { agentId: string; channelI
         // domains, which is why installDevChannelShim() exists.
         ...(channelId ? { channelIdentifier: channelId } : {}),
         position: "bottom-right",
-        chatTitle: "NobleStride Assistant",
+        chatTitle: "NobleStride CRM Assistant",
       });
     };
 

@@ -4,13 +4,13 @@ agent:
 skills:
   - name: client-intake
     skillId: a1afe403-99dc-41fa-9824-b207294e0d58
-    version: 1.0.1
+    version: 1.0.2
 webhooks: []
 jobs: []
 preprocessors: []
 postprocessors: []
 mcpServers: []
 backup:
-  activeVersion: 1
-  lastHash: 23397dc1f04594e7cc99f14f126034398cf6fec27524bfa16c1b9e68cab3e51a
-  lastPushedAt: '2026-07-14T01:14:11.560Z'
+  activeVersion: 2
+  lastHash: e36a25127b0170d59396d55eaa398230dd8aeda4c353177849a9d8b43dfef5c7
+  lastPushedAt: '2026-07-14T18:25:09.028Z'
