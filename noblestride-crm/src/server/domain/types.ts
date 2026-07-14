@@ -104,4 +104,12 @@ export interface PartnerReferralInput {
       targetRaise: number;
     }>;
   }>;
+  /**
+   * Transactions referred directly by the partner (Transaction.referredById)
+   * that are NOT already counted via one of `mandates` — caller dedupes.
+   */
+  directTransactions?: Array<{
+    stage: TransactionStage;
+    targetRaise: number;
+  }>;
 }

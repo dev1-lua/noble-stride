@@ -1,5 +1,5 @@
 /* eslint-disable */
-import type { Prisma, User, Person, Investor, BlockedRegistration, Client, Mandate, Transaction, Engagement, EngagementMilestone, DueDiligenceTrack, Partner, Activity, Task, ServiceProvider, Document, DocumentAccessLog, StageChange, SavedView, Notification, AuthAccount, AuthSession, AuthToken, AuthOtpChallenge, ESignEnvelope, Meeting, EmailMessage, GraphSubscription, DocumentShareEvent } from "D:\\LuaWork\\NobleStride\\noble-stride\\noblestride-crm\\node_modules\\.pnpm\\@prisma+client@6.19.3_prism_1d040ab5215f59f0e27ddee7f0cf082e\\node_modules\\@prisma\\client/index.js";
+import type { Prisma, User, Person, Investor, BlockedRegistration, Client, Mandate, Transaction, Engagement, EngagementMilestone, DueDiligenceTrack, Partner, Activity, Task, ServiceProvider, Document, DocumentAccessLog, StageChange, SavedView, Notification, AuthAccount, AuthSession, AuthToken, AuthOtpChallenge, ESignEnvelope, Meeting, EmailMessage, GraphSubscription, DocumentShareEvent } from "/Users/devashishthapliyal/Documents/work/Lua/NOBLESTRIDE/noblestride-crm/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/index.js";
 import type { PothosPrismaDatamodel } from "@pothos/plugin-prisma";
 export default interface PrismaTypes {
     User: {

@@ -284,6 +284,7 @@ export const MandateRef = builder.prismaObject("Mandate", {
     referredBy: t.relation("referredBy", { nullable: true }),
     transactions: t.relation("transactions"),
     activities: t.relation("activities"),
+    stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
   }),
 });
 
@@ -346,6 +347,7 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     activities: t.relation("activities"),
     serviceProviders: t.relation("serviceProviders"),
     ddTracks: t.relation("ddTracks"),
+    stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
     // Derived counts
     investorsContacted: t.relationCount("engagements"),
     activeConversations: t.int({
@@ -428,6 +430,9 @@ export const PartnerRef = builder.prismaObject("Partner", {
     contacts: t.relation("contacts"),
     referredMandates: t.relation("referredMandates"),
     referredMandateCount: t.relationCount("referredMandates"),
+    referredTransactions: t.relation("referredTransactions"),
+    referredTransactionCount: t.relationCount("referredTransactions"),
+    stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
   }),
 });
 
@@ -596,6 +601,31 @@ export const DueDiligenceTrackRef = builder.prismaObject("DueDiligenceTrack", {
     transaction: t.relation("transaction"),
     owner: t.relation("owner", { nullable: true }),
     serviceProvider: t.relation("serviceProvider", { nullable: true }),
+  }),
+});
+
+// ─── StageChange ─────────────────────────────────────────────────────────────
+// Read-only audit trail of stage/status transitions (recorded by the service
+// layer via recordStageChange). `field` is a plain String on the Prisma model.
+
+export const StageChangeRef = builder.prismaObject("StageChange", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    field: t.exposeString("field"),
+    fromValue: t.exposeString("fromValue", { nullable: true }),
+    toValue: t.exposeString("toValue"),
+    changedAt: t.field({ type: "DateTime", resolve: (s) => s.changedAt }),
+    createdSource: t.field({ type: ActorSourceEnum, resolve: (s) => s.createdSource }),
+    // FK scalars
+    changedById: t.exposeString("changedById", { nullable: true }),
+    mandateId: t.exposeString("mandateId", { nullable: true }),
+    transactionId: t.exposeString("transactionId", { nullable: true }),
+    engagementId: t.exposeString("engagementId", { nullable: true }),
+    clientId: t.exposeString("clientId", { nullable: true }),
+    investorId: t.exposeString("investorId", { nullable: true }),
+    partnerId: t.exposeString("partnerId", { nullable: true }),
+    // Relations
+    changedBy: t.relation("changedBy", { nullable: true }),
   }),
 });
 

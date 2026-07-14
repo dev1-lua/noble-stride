@@ -26,6 +26,7 @@ export interface PartnerReferralStats {
   /** 0–1 ratio; multiply by 100 for a percentage display. */
   conversionRate: number;
   byPartner: {
+    id: string;
     name: string;
     referred: number;
     active: number;
@@ -81,6 +82,10 @@ export async function getPartner(id: string) {
  * - `closedRevenue`: Σ revenue (ClosedWon targetRaise) across all partners.
  * - `conversionRate`: (Σ closed) / dealsReferred as a 0–1 ratio (0 if none referred).
  * - `byPartner`: per-partner rollup rows.
+ *
+ * Directly-referred transactions (Transaction.referredById) count as referrals
+ * too; a transaction whose parent mandate was referred by the same partner is
+ * only counted once (via the mandate).
  */
 export async function partnerReferralStats(): Promise<PartnerReferralStats> {
   const partners = await prisma.partner.findMany({
@@ -88,6 +93,7 @@ export async function partnerReferralStats(): Promise<PartnerReferralStats> {
       referredMandates: {
         include: { transactions: true },
       },
+      referredTransactions: true,
     },
     orderBy: { name: "asc" },
   });
@@ -97,6 +103,7 @@ export async function partnerReferralStats(): Promise<PartnerReferralStats> {
   let totalRevenue = 0;
 
   const byPartner = partners.map((partner) => {
+    const referredMandateIds = new Set(partner.referredMandates.map((m) => m.id));
     const rollupInput: PartnerReferralInput = {
       mandates: partner.referredMandates.map((m) => ({
         transactions: m.transactions.map((t) => ({
@@ -104,6 +111,12 @@ export async function partnerReferralStats(): Promise<PartnerReferralStats> {
           targetRaise: Number(t.targetRaise ?? 0),
         })),
       })),
+      directTransactions: partner.referredTransactions
+        .filter((t) => t.mandateId == null || !referredMandateIds.has(t.mandateId))
+        .map((t) => ({
+          stage: t.stage,
+          targetRaise: Number(t.targetRaise ?? 0),
+        })),
     };
 
     const rollup = partnerReferralRollup(rollupInput);
@@ -113,6 +126,7 @@ export async function partnerReferralStats(): Promise<PartnerReferralStats> {
     totalRevenue += rollup.revenue;
 
     return {
+      id: partner.id,
       name: partner.name,
       referred: rollup.referred,
       active: rollup.active,

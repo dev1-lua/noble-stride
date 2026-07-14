@@ -39,4 +39,16 @@ describe("metrics", () => {
       ],
     })).toEqual({ referred: 3, active: 1, closed: 1, revenue: 5_000_000 });
   });
+  it("partner rollup counts direct transaction referrals", () => {
+    expect(partnerReferralRollup({
+      mandates: [
+        { transactions: [{ stage: "ClosedWon", targetRaise: 5_000_000 }] },
+      ],
+      directTransactions: [
+        { stage: "ClosedWon", targetRaise: 3_000_000 },
+        { stage: "DueDiligence", targetRaise: 1_000_000 },
+        { stage: "ClosedLost", targetRaise: 9_000_000 },
+      ],
+    })).toEqual({ referred: 4, active: 1, closed: 2, revenue: 8_000_000 });
+  });
 });

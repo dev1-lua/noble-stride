@@ -68,10 +68,14 @@ export function isActiveInvestorThisQuarter(
 /**
  * Summarises a partner's referral contribution.
  *
- * - referred: total mandates referred
- * - active:   mandates with ≥1 transaction whose stage is NOT in CLOSED_TXN_STAGES
- * - closed:   total count of ClosedWon transactions across all mandates
+ * - referred: mandates referred + directly-referred transactions
+ * - active:   mandates with ≥1 transaction whose stage is NOT in CLOSED_TXN_STAGES,
+ *             plus direct transactions whose own stage is not closed
+ * - closed:   total count of ClosedWon transactions (mandate children + direct)
  * - revenue:  Σ targetRaise of ClosedWon transactions
+ *
+ * `directTransactions` must already exclude transactions that belong to one of
+ * `mandates` (the caller dedupes) or they'd be double-counted.
  */
 export function partnerReferralRollup(
   input: PartnerReferralInput
@@ -94,5 +98,14 @@ export function partnerReferralRollup(
     }
   }
 
-  return { referred: input.mandates.length, active, closed, revenue };
+  const direct = input.directTransactions ?? [];
+  for (const txn of direct) {
+    if (!(CLOSED_TXN_STAGES as string[]).includes(txn.stage)) active++;
+    if (txn.stage === "ClosedWon") {
+      closed++;
+      revenue += txn.targetRaise;
+    }
+  }
+
+  return { referred: input.mandates.length + direct.length, active, closed, revenue };
 }

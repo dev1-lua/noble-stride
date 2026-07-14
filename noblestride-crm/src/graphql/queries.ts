@@ -186,6 +186,7 @@ const EngagementsByDealRef = builder.objectRef<EngagementsByDealItem>("Engagemen
 type PartnerReferralRow = PartnerReferralStats["byPartner"][number];
 const PartnerReferralRowRef = builder.objectRef<PartnerReferralRow>("PartnerReferralRow").implement({
   fields: (t) => ({
+    id: t.exposeString("id"),
     name: t.exposeString("name"),
     referred: t.exposeInt("referred"),
     active: t.exposeInt("active"),
