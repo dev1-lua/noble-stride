@@ -1,5 +1,6 @@
 data/
 decrypted/
+mailsetup/
 my-twenty-app/
 twenty-main/
 .playwright-mcp/
@@ -7,3 +8,16 @@ twenty-main/
 .superpowers/
 .DS_Store
 node_modules/
+
+# QA artifacts — living local log + stray screenshots (untracked 2026-07-15)
+playwright assessment/
+/sucafina-*.png
+
+# Internal SDD planning + deploy notes (untracked 2026-07-15; kept local)
+docs/superpowers/plans/2026-07-14-client-agent-status.md
+docs/superpowers/plans/2026-07-14-crm-agent-data-in.md
+docs/superpowers/plans/2026-07-14-investor-agent.md
+docs/superpowers/specs/2026-07-14-client-agent-status-design.md
+docs/superpowers/specs/2026-07-14-crm-agent-data-in-design.md
+docs/superpowers/specs/2026-07-14-investor-agent-design.md
+docs/VERCEL-AGENT-DEPLOYMENT-2026-07-14.md

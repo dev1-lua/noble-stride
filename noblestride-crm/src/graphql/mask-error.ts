@@ -46,16 +46,54 @@ function userFacingMessage(error: unknown): string | null {
 }
 
 /**
+ * Duck-typed rather than `instanceof GraphQLError`: this schema's execution
+ * path (@graphql-tools/executor, under graphql-yoga) can hand back a
+ * GraphQLError constructed against a different loaded copy of the "graphql"
+ * package than the one this file imports, so `instanceof` silently returns
+ * false for a real GraphQLError (see the "another module or realm" note in
+ * esign-mutation.smoke.test.ts). Checking for the shape (an object with an
+ * `originalError` property — GraphQLError always defines one) is realm-proof.
+ */
+function hasOriginalError(value: unknown): value is { originalError: unknown } {
+  return typeof value === "object" && value !== null && "originalError" in value;
+}
+
+/**
+ * Unwrap nested `originalError` chains down to the real thrown value.
+ * graphql-js's `locatedError` wraps a resolver throw in a GraphQLError with
+ * `originalError` set to the raw error — but this schema's execution path
+ * (Pothos resolvers under @graphql-tools/executor) locates the error TWICE,
+ * once inside Pothos's own field wrapping and once in the top-level executor,
+ * producing GraphQLError -> GraphQLError -> <real error>. A single-level
+ * unwrap only reaches the intermediate GraphQLError (whose `instanceof
+ * CrudError` etc. checks always fail), so this recurses until it hits
+ * something that isn't itself GraphQLError-shaped with an originalError.
+ */
+function unwrapOriginalError(error: unknown): unknown {
+  let current = error;
+  const seen = new Set<unknown>();
+  while (
+    hasOriginalError(current) &&
+    current.originalError != null &&
+    current.originalError !== current &&
+    !seen.has(current)
+  ) {
+    seen.add(current);
+    current = current.originalError;
+  }
+  return current;
+}
+
+/**
  * Drop-in for Yoga's `maskedErrors.maskError`. graphql-js wraps resolver
  * throws in a GraphQLError with `originalError` set, so unwrap first.
  */
 export function maskDomainError(error: unknown, message: string, isDev?: boolean): Error {
   // Intentional GraphQLError (no wrapped resolver throw) — surface as-is.
-  // Checked here with OUR graphql instance: yoga's own check can miss it
-  // when two graphql copies are loaded (then it would over-mask).
-  if (error instanceof GraphQLError && !error.originalError) return error;
-  const original =
-    error instanceof GraphQLError && error.originalError ? error.originalError : error;
+  // Duck-typed (see hasOriginalError above) rather than `instanceof
+  // GraphQLError`, for the same realm-safety reason.
+  if (hasOriginalError(error) && error.originalError == null) return error as unknown as Error;
+  const original = unwrapOriginalError(error);
   const userMessage = userFacingMessage(original);
   if (userMessage !== null) return new GraphQLError(userMessage);
   return yogaMaskError(error, message, isDev);

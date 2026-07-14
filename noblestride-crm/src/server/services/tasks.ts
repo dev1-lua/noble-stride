@@ -1,11 +1,14 @@
 // Task service — single source of truth over Prisma for the lightweight
 // task/action-point tracker (spec §3.8/§3.10). No GraphQL, no React.
 //
-// Note: unlike most other entities, Task has no `createdSource` field in the
-// schema, so create/update take no `Actor` argument.
+// `actor` is optional on both create/update — omitted calls keep the prior
+// behavior (createdSource defaults to HUMAN). updateTask accepts the param
+// for registry uniformity (Task 5) but must never overwrite createdSource.
 
 import { prisma } from "@/lib/db";
 import type { TaskStatus } from "@prisma/client";
+import type { Actor } from "@/graphql/context";
+import { actorSource } from "./crud";
 import { taskCreateSchema, taskUpdateSchema, type TaskCreateInput, type TaskUpdateInput } from "@/lib/schemas/task";
 import { notify } from "./notifications";
 
@@ -14,9 +17,9 @@ const OPEN_STATUSES: TaskStatus[] = ["NotStarted", "Pending", "Ongoing"];
 
 // ─── CRUD operations ──────────────────────────────────────────────────────────
 
-export async function createTask(input: TaskCreateInput) {
+export async function createTask(input: TaskCreateInput, actor?: Actor) {
   const data = taskCreateSchema.parse(input);
-  return prisma.task.create({ data });
+  return prisma.task.create({ data: { ...data, createdSource: actorSource(actor ?? { type: "HUMAN" }) } });
 }
 
 /**
@@ -28,7 +31,7 @@ export async function createTask(input: TaskCreateInput) {
  * `flagOverdueTasks()` sweep. A task that leaves an open status, or whose
  * dueAt is cleared/moved to the future, is un-flagged in the same update.
  */
-export async function updateTask(id: string, input: TaskUpdateInput) {
+export async function updateTask(id: string, input: TaskUpdateInput, _actor?: Actor) {
   const data = taskUpdateSchema.parse(input);
 
   let escalated: boolean | undefined;

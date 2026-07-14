@@ -36,7 +36,7 @@ export async function signPending(p: PendingPayload): Promise<string> {
 export async function verifyPending(jwt: string | undefined): Promise<PendingPayload | null> {
   if (!jwt) return null;
   try {
-    const { payload } = await jwtVerify(jwt, secret());
+    const { payload } = await jwtVerify(jwt, secret(), { algorithms: ["HS256"] });
     if (typeof payload.aid !== "string" || typeof payload.cid !== "string" || typeof payload.mask !== "string") {
       return null;
     }
@@ -58,7 +58,7 @@ export async function signTrust(accountId: string): Promise<string> {
 export async function verifyTrust(jwt: string | undefined, accountId: string): Promise<boolean> {
   if (!jwt) return false;
   try {
-    const { payload } = await jwtVerify(jwt, secret());
+    const { payload } = await jwtVerify(jwt, secret(), { algorithms: ["HS256"] });
     return payload.sub === accountId;
   } catch {
     return false;
