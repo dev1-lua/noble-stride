@@ -121,7 +121,7 @@ export function TalkToUsChat({ agentId, channelId = "" }: { agentId: string; cha
   }
 
   return (
-    <div className="flex flex-1 flex-col space-y-2">
+    <div className="flex min-h-0 flex-1 flex-col space-y-2">
       <div className="flex justify-end">
         <button
           type="button"
@@ -131,7 +131,7 @@ export function TalkToUsChat({ agentId, channelId = "" }: { agentId: string; cha
           + New chat
         </button>
       </div>
-      <div className="min-h-[560px] flex-1 overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+      <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
         {sessionId && (
           <iframe
             key={sessionId}

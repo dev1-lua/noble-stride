@@ -59,3 +59,7 @@ Branch: `integration/all-features`, all work UNCOMMITTED (user rule). SDD: 11 bu
 
 01 talk-to-us page + widget · 02 client record · 03 mandate Intake Review (verdict + human gate) · 04 tasks queue (review + unverified-claim) · 05 notification bell · 06 Lua dashboard (agent config) · 07 webchat credits blocker
 (all `2026-07-14-client-agent-0N-*.png` in this folder)
+
+## Addendum (2026-07-14, post-commit): /talk-to-us full-height layout fix
+
+User feedback: the page scrolled while the chat box didn't reach the bottom (fixed `min-h-[560px]` box inside a `min-h-screen` page). Fixed by making the page an exact-viewport flex column: `h-dvh overflow-hidden` on the page wrapper (`page.tsx`), `min-h-0` on the flex chain, and the chat box `min-h-0 flex-1` (`talk-to-us-chat.tsx`). Verified in the browser at localhost:3000/talk-to-us: `document.scrollHeight === window.innerHeight` (889px, no page scrollbar), iframe fills the remaining height, LuaPop pins starters + input to the bottom. Uncommitted (sits on top of 1b5730c).
