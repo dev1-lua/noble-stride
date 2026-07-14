@@ -7,3 +7,7 @@ twenty-main/
 .superpowers/
 .DS_Store
 node_modules/
+
+# QA artifacts — living local log + stray screenshots (untracked 2026-07-15)
+playwright assessment/
+/sucafina-*.png
