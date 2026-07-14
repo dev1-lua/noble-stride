@@ -1,18 +1,22 @@
 {
-  "lastHash": "613ab3ef00441ee823256e3eb1bb7f08240fcf1618ea46ef06ce1ff4f9490a57",
-  "lastPushedAt": "2026-07-14T14:03:15.360Z",
+  "lastHash": "82df0f32987bb4f7d10d57d0e66c4aea1a7207ed6400fbb93788e0a1815e2692",
+  "lastPushedAt": "2026-07-14T14:23:47.376Z",
   "files": [
     {
       "relativePath": "AGENT-BUILD-2026-07-14.md",
-      "hash": "05dcacf6f9a713b8"
+      "hash": "4d2bc4f9628d7b49"
     },
     {
       "relativePath": "env.example",
       "hash": "9f76d1b2788a7478"
     },
     {
+      "relativePath": "HANDOVER-TESTING.md",
+      "hash": "e0264c5b68e9f2e8"
+    },
+    {
       "relativePath": "lua.skill.yaml",
-      "hash": "a5055f76b2a4325b"
+      "hash": "a94976facb0e7559"
     },
     {
       "relativePath": "package.json",
@@ -84,7 +88,7 @@
     },
     {
       "relativePath": "src/skills/tools/CreateFollowupTaskTool.ts",
-      "hash": "a04dd0946cd86693"
+      "hash": "e86111544fb4c6ce"
     },
     {
       "relativePath": "src/skills/tools/FindFitInvestorsTool.ts",
@@ -100,7 +104,7 @@
     },
     {
       "relativePath": "src/skills/tools/RecordMilestoneTool.ts",
-      "hash": "2827a680a2204b69"
+      "hash": "9229a2e9d5c38c46"
     },
     {
       "relativePath": "src/skills/tools/ScanStalledEngagementsTool.ts",
@@ -112,11 +116,11 @@
     },
     {
       "relativePath": "src/skills/tools/UpdateDDStatusTool.ts",
-      "hash": "e7b2ba5b6ea5c929"
+      "hash": "f5ec49a2855f65d0"
     },
     {
       "relativePath": "src/skills/tools/UpdateEngagementTool.ts",
-      "hash": "dfe2017328a07434"
+      "hash": "0574d5e674a302a7"
     },
     {
       "relativePath": "src/skills/tracker.skill.ts",
