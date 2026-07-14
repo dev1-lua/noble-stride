@@ -209,6 +209,10 @@ export async function sendOutreachDraft(
 
   const agentId = process.env.LUA_AGENT_ID;
   const apiKey = process.env.LUA_API_KEY;
+  // Full channel identifier address (the "Identifier" from `lua channels list`),
+  // e.g. "noblestride-investor-relations@heymail.ai". Passed verbatim as
+  // options.channelIdentifier — do NOT reconstruct the domain here: generated
+  // inboxes issue on heymail.ai, older SES channels on mail.heylua.ai.
   const channelId = process.env.LUA_EMAIL_CHANNEL_ID;
   const baseUrl = process.env.LUA_API_BASE_URL ?? "https://api.heylua.ai";
   if (!agentId || !apiKey) {
@@ -244,7 +248,7 @@ export async function sendOutreachDraft(
         to: { email: recipient },
         subject: draft.subject,
         text: draft.body,
-        options: { channelIdentifier: `${channelId}@mail.heylua.ai` },
+        options: { channelIdentifier: channelId },
       }),
     });
     if (!res.ok) {

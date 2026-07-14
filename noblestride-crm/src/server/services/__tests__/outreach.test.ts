@@ -274,7 +274,7 @@ describe("sendOutreachDraft", () => {
     if (!dbUp) return;
     process.env.LUA_AGENT_ID = "agent_test";
     process.env.LUA_API_KEY = "key_test";
-    process.env.LUA_EMAIL_CHANNEL_ID = "chan-uuid";
+    process.env.LUA_EMAIL_CHANNEL_ID = "noblestride-investor-relations@heymail.ai";
     const draft = await prisma.outreachDraft.findFirst({ where: { transactionId: txnId, status: "Draft" } });
     const r = await sendOutreachDraft(
       draft!.id,
@@ -289,7 +289,7 @@ describe("sendOutreachDraft", () => {
     expect(String(call[0])).toContain("/developer/agents/agent_test/channels/email/send");
     const body = JSON.parse((call[1] as RequestInit).body as string);
     expect(body.to.email).toBeTruthy();
-    expect(body.options.channelIdentifier).toBe("chan-uuid@mail.heylua.ai");
+    expect(body.options.channelIdentifier).toBe("noblestride-investor-relations@heymail.ai");
     const eng = await prisma.engagement.findUnique({
       where: { transactionId_investorId: { transactionId: txnId, investorId } },
     });
