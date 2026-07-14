@@ -54,6 +54,7 @@ import {
 } from "./builder";
 import { daysInStage } from "@/server/domain/metrics";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
+import type { ClientStatusPayload } from "@/server/services/client-status";
 
 // ─── User ────────────────────────────────────────────────────────────────────
 
@@ -677,4 +678,73 @@ export const ClientMessageAckRef = builder.objectRef<ClientMessageAckData>("Clie
 export interface CheckCompanyResultData { status: string }
 export const CheckCompanyResultRef = builder.objectRef<CheckCompanyResultData>("CheckCompanyResult").implement({
   fields: (t) => ({ status: t.exposeString("status") }),
+});
+
+export interface StaffResolveResultData { ok: boolean; firstName: string | null }
+export const StaffResolveResultRef = builder.objectRef<StaffResolveResultData>("StaffResolveResult").implement({
+  fields: (t) => ({ ok: t.exposeBoolean("ok"), firstName: t.exposeString("firstName", { nullable: true }) }),
+});
+
+// ─── Client status flow (spec 2026-07-14) ───────────────────────────────────
+// verifyClientStatusOtp result: {status:"ok", token} | {status:"failed"} —
+// every failure path collapses to the same shape (anti-enumeration invariant
+// lives in the service; this ref just mirrors the union-as-nullable-token).
+
+export interface ClientOtpVerifyData { status: string; token?: string | null }
+export const ClientOtpVerifyRef = builder.objectRef<ClientOtpVerifyData>("ClientOtpVerify").implement({
+  fields: (t) => ({
+    status: t.exposeString("status", { nullable: false }),
+    token: t.field({ type: "String", nullable: true, resolve: (p) => p.token ?? null }),
+  }),
+});
+
+// clientStatus payload: this field list IS the security boundary — it must
+// mirror ClientStatusPayload in src/server/services/client-status.ts exactly
+// (10 fields, nothing else). schema.smoke.test.ts locks the exact list; adding
+// a field here is a spec violation regardless of how "harmless" it looks.
+
+export const ClientStatusPayloadRef = builder.objectRef<ClientStatusPayload>("ClientStatusPayload").implement({
+  fields: (t) => ({
+    companyName: t.exposeString("companyName", { nullable: false }),
+    applicationState: t.exposeString("applicationState", { nullable: false }),
+    // coarseStage/ndaStatus/engagementAgreementStatus are nullable string-literal
+    // unions on ClientStatusPayload; Pothos's exposeString can't narrow those to
+    // GraphQL's "String" the way it can a plain (non-nullable) string field, so
+    // these use t.field with a manual resolve instead — don't "simplify" them
+    // back to exposeString, it won't typecheck.
+    coarseStage: t.field({ type: "String", nullable: true, resolve: (p) => p.coarseStage }),
+    stageMessage: t.exposeString("stageMessage", { nullable: false }),
+    ndaStatus: t.field({ type: "String", nullable: true, resolve: (p) => p.ndaStatus }),
+    engagementAgreementStatus: t.field({ type: "String", nullable: true, resolve: (p) => p.engagementAgreementStatus }),
+    preparedDocuments: t.exposeStringList("preparedDocuments", { nullable: false }),
+    submittedRaise: t.exposeString("submittedRaise", { nullable: true }),
+    nextStep: t.exposeString("nextStep", { nullable: false }),
+    lastUpdated: t.exposeString("lastUpdated", { nullable: false }),
+  }),
+});
+
+// ─── crmAgent write surface (spec 2026-07-14) ───────────────────────────────
+// Two-phase prepare/confirm write payloads. Unlike the client-agent acks
+// above, these carry an operator-facing preview/summary (this surface is
+// for the in-org crmAgent, delegated to a real CRM user — not the public
+// web-chat), but still no raw record fields, only the fields the operator
+// needs to confirm or follow up on.
+
+export interface AgentWritePreviewData { writeToken: string; preview: string; warnings: string[] }
+export const AgentWritePreviewRef = builder.objectRef<AgentWritePreviewData>("AgentWritePreview").implement({
+  fields: (t) => ({
+    writeToken: t.exposeString("writeToken"),
+    preview: t.exposeString("preview"),
+    warnings: t.exposeStringList("warnings"),
+  }),
+});
+
+export interface AgentWriteResultData { ok: boolean; summary: string; recordId: string; href: string | null }
+export const AgentWriteResultRef = builder.objectRef<AgentWriteResultData>("AgentWriteResult").implement({
+  fields: (t) => ({
+    ok: t.exposeBoolean("ok"),
+    summary: t.exposeString("summary"),
+    recordId: t.exposeString("recordId"),
+    href: t.exposeString("href", { nullable: true }),
+  }),
 });

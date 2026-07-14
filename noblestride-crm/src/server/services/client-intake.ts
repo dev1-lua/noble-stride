@@ -10,7 +10,7 @@ import { notify, adminUserIds } from "@/server/services/notifications";
 
 export type CheckCompanyStatus = "new" | "known_verified" | "known_unverified";
 
-function matchClients(companyName: string) {
+export function matchClients(companyName: string) {
   return prisma.client.findMany({
     where: { name: { contains: companyName.trim(), mode: "insensitive" } },
     select: { id: true, name: true },
@@ -18,7 +18,7 @@ function matchClients(companyName: string) {
   });
 }
 
-function emailMatchesContact(clientIds: string[], contactEmail: string) {
+export function emailMatchesContact(clientIds: string[], contactEmail: string) {
   if (clientIds.length === 0) return Promise.resolve(null);
   return prisma.person.findFirst({
     where: {

@@ -20,7 +20,7 @@ import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
 import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
 import { createSavedView, renameSavedView, deleteSavedView, type SavedViewConfig } from "@/server/services/saved-views";
-import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef } from "./types";
+import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef, ClientOtpVerifyRef, AgentWritePreviewRef, AgentWriteResultRef } from "./types";
 import { markNotificationsRead, markAllNotificationsRead } from "@/server/services/notifications";
 import { getOrgLens } from "@/server/rbac/context";
 import { assertAdmin, assertCan, assertCanDelete, assertCanUpdateOwnScoped, assertAutomation } from "@/server/rbac/enforce";
@@ -30,6 +30,8 @@ import type { ESignKind } from "@/server/integrations/esign/provider";
 import { shareDocumentViaBox } from "@/server/services/docshare";
 import { scheduleMeeting } from "@/server/services/meetings";
 import { submitClientIntake, logInboundClientMessage, type LogClientMessageInput as LogClientMessageInputShape } from "@/server/services/client-intake";
+import { requestClientStatusOtp, verifyClientStatusOtp } from "@/server/services/client-status";
+import { prepareAgentWrite, commitAgentWrite, cancelAgentWrite } from "@/server/services/agent-write";
 
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
@@ -626,6 +628,81 @@ builder.mutationFields((t) => ({
     resolve: async (_root, args, ctx) => {
       assertAutomation(ctx.actor);
       return logInboundClientMessage(args.input as unknown as LogClientMessageInputShape);
+    },
+  }),
+
+  // ── Client status OTP flow (spec 2026-07-14) — automation-only ──
+  // requestClientStatusOtp always acks {ok:true} — the anti-enumeration
+  // invariant (no branch may leak whether a company/contact exists) lives
+  // entirely in the service; the resolver must not differentiate outcomes.
+  requestClientStatusOtp: t.field({
+    type: AgentAckRef,
+    nullable: false,
+    args: {
+      companyName: t.arg.string({ required: true }),
+      contactEmail: t.arg.string({ required: true }),
+    },
+    resolve: (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return requestClientStatusOtp(args.companyName, args.contactEmail);
+    },
+  }),
+  verifyClientStatusOtp: t.field({
+    type: ClientOtpVerifyRef,
+    nullable: false,
+    args: {
+      companyName: t.arg.string({ required: true }),
+      contactEmail: t.arg.string({ required: true }),
+      code: t.arg.string({ required: true }),
+    },
+    resolve: (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return verifyClientStatusOtp(args.companyName, args.contactEmail, args.code);
+    },
+  }),
+
+  // ── crmAgent write surface (spec 2026-07-14) — automation transport + delegated RBAC ──
+  agentPrepareWrite: t.field({
+    type: AgentWritePreviewRef,
+    nullable: false,
+    args: {
+      operation: t.arg.string({ required: true }),
+      targetId: t.arg.string({ required: false }),
+      payloadJson: t.arg.string({ required: true }),
+      actorEmail: t.arg.string({ required: true }),
+    },
+    resolve: async (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return prepareAgentWrite({
+        operation: args.operation,
+        targetId: args.targetId ?? undefined,
+        payloadJson: args.payloadJson,
+        actorEmail: args.actorEmail,
+      });
+    },
+  }),
+  agentCommitWrite: t.field({
+    type: AgentWriteResultRef,
+    nullable: false,
+    args: {
+      writeToken: t.arg.string({ required: true }),
+      actorEmail: t.arg.string({ required: true }),
+    },
+    resolve: async (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return commitAgentWrite(args.writeToken, args.actorEmail);
+    },
+  }),
+  agentCancelWrite: t.field({
+    type: AgentAckRef,
+    nullable: false,
+    args: {
+      writeToken: t.arg.string({ required: true }),
+      actorEmail: t.arg.string({ required: true }),
+    },
+    resolve: async (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return cancelAgentWrite(args.writeToken, args.actorEmail);
     },
   }),
 }));

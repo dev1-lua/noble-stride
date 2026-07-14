@@ -24,6 +24,8 @@ import {
   DocumentRef,
   SavedViewRef,
   CheckCompanyResultRef,
+  StaffResolveResultRef,
+  ClientStatusPayloadRef,
 } from "./types";
 import type { StatValue, DashboardStats, InvestorSegments, Insight } from "@/server/domain/types";
 import type { InvestorMatch } from "@/server/domain/ranking";
@@ -56,6 +58,8 @@ import { getOrgLens } from "@/server/rbac/context";
 import { globalSearch, type SearchResult } from "@/server/search/global-search";
 import { assertAutomation } from "@/server/rbac/enforce";
 import { checkCompany } from "@/server/services/client-intake";
+import { getClientStatus } from "@/server/services/client-status";
+import { resolveStaffUserSummary } from "@/server/services/agent-delegation";
 
 // ── Input types ───────────────────────────────────────────────────────────────
 
@@ -593,6 +597,36 @@ builder.queryFields((t) => ({
     resolve: (_root, args, ctx) => {
       assertAutomation(ctx.actor);
       return checkCompany(args.name, args.contactEmail ?? undefined);
+    },
+  }),
+
+  // Lua front-desk gate (crmAgent data-in): verifies a staff email before the
+  // agent hands off a conversation. Automation-only; no enumeration in the result.
+  resolveStaffUser: t.field({
+    type: StaffResolveResultRef,
+    nullable: false,
+    args: {
+      email: t.arg.string({ required: true }),
+    },
+    resolve: (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return resolveStaffUserSummary(args.email);
+    },
+  }),
+
+  // Client status flow (spec 2026-07-14): trades a short-lived status token
+  // (minted by verifyClientStatusOtp) for the hard-whitelisted status payload.
+  // Automation-only; CrudError("Verification expired…") on a bad/expired token
+  // passes through mask-error like every other resolver.
+  clientStatus: t.field({
+    type: ClientStatusPayloadRef,
+    nullable: false,
+    args: {
+      token: t.arg.string({ required: true }),
+    },
+    resolve: (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return getClientStatus(args.token);
     },
   }),
 }));

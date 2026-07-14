@@ -530,6 +530,7 @@ model Person {
 
   ssaForInvestors Investor[] @relation("InvestorSsaContact")
   authAccount AuthAccount?
+  clientOtpChallenges ClientOtpChallenge[]
 
   @@index([investorId])
   @@index([clientId])
@@ -694,6 +695,7 @@ model Client {
   documents    Document[]
   activities   Activity[]
   stageChanges StageChange[]
+  otpChallenges ClientOtpChallenge[]
 
   @@index([status])
 }
@@ -1003,6 +1005,8 @@ model Task {
   // Spec-gap: source of the task + escalation flag (spec §3.10/§4.12)
   source    TaskSource?
   escalated Boolean     @default(false)
+  /// Provenance for agent-created tasks (spec §5.4).
+  createdSource ActorSource @default(HUMAN)
 
   assigneeId    String?
   assignee      User?        @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
@@ -1280,6 +1284,54 @@ model AuthOtpChallenge {
   createdAt   DateTime       @default(now())
 
   @@index([accountId, purpose])
+}
+
+/// Public web-chat status OTP (spec 2026-07-14). Mirrors AuthOtpChallenge but keyed to a matched Person, not an AuthAccount.
+model ClientOtpChallenge {
+  id          String    @id @default(cuid())
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  personId    String
+  person      Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
+  codeHash    String // sha256 hex of the 6-digit code; raw code never stored
+  destination String // email the code was actually sent to (audit)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([personId])
+  @@index([destination, createdAt])
+}
+
+enum AgentWriteStatus {
+  Pending
+  Committing
+  Committed
+  Failed
+  Cancelled
+}
+
+/// Two-phase agent write: pending op + preview + audit ledger (spec §5.2).
+/// Rows are never deleted — this table IS the agent-write audit trail.
+model AgentPendingWrite {
+  id          String           @id @default(cuid())
+  operation   String
+  targetId    String?
+  payload     Json
+  actorEmail  String
+  actorUserId String
+  preview     String
+  status      AgentWriteStatus @default(Pending)
+  error       String?
+  resultId    String?
+  createdAt   DateTime         @default(now())
+  expiresAt   DateTime
+  committedAt DateTime?
+
+  @@index([status, expiresAt])
+  @@index([actorUserId, createdAt])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -147,9 +147,10 @@ export interface LogEngagementInput {
  *      with createdSource "HUMAN".
  *   5. Returns the created Activity (with engagement, investor, transaction).
  *
- * Provenance: this is a human-initiated action; both records get `HUMAN`.
- * The Lua-AI seam (Task 7) is what sets `AGENT`. `createdById` is still
- * populated from the acting user when present, independent of that source.
+ * Provenance: both the Engagement and Activity rows are stamped via
+ * `actorSource(actor)` (HUMAN/AGENT/API), following the acting caller.
+ * `createdById` is still populated from the acting user when present,
+ * independent of that source.
  */
 export async function logEngagement(input: LogEngagementInput, actor: Actor) {
   const { transactionId, investorId, type, subject, body, channel, direction } = input;
@@ -172,7 +173,7 @@ export async function logEngagement(input: LogEngagementInput, actor: Actor) {
           name: `${investor.name} – ${transaction.name}`,
           status: "Contacted",
           lastContact: new Date(),
-          createdSource: "HUMAN",
+          createdSource: actorSource(actor),
           transactionId,
           investorId,
         },
@@ -193,7 +194,7 @@ export async function logEngagement(input: LogEngagementInput, actor: Actor) {
         body,
         channel,
         direction,
-        createdSource: "HUMAN",
+        createdSource: actorSource(actor),
         createdById: actor.userId,
         engagementId: engagement.id,
         transactionId,
