@@ -659,3 +659,22 @@ export const EsignEnvelopeResult = builder.objectRef<EsignEnvelopeResultData>("E
     status: t.exposeString("status"),
   }),
 });
+
+// ─── Client Agent acks (SOW §8.1) ────────────────────────────────────────────
+// Deliberately minimal objectRefs: these are the ONLY payloads the public
+// web-chat agent ever sees, so they carry no ids and no record fields.
+
+export interface AgentAckData { ok: boolean }
+export const AgentAckRef = builder.objectRef<AgentAckData>("AgentAck").implement({
+  fields: (t) => ({ ok: t.exposeBoolean("ok") }),
+});
+
+export interface ClientMessageAckData { ok: boolean; verified: boolean }
+export const ClientMessageAckRef = builder.objectRef<ClientMessageAckData>("ClientMessageAck").implement({
+  fields: (t) => ({ ok: t.exposeBoolean("ok"), verified: t.exposeBoolean("verified") }),
+});
+
+export interface CheckCompanyResultData { status: string }
+export const CheckCompanyResultRef = builder.objectRef<CheckCompanyResultData>("CheckCompanyResult").implement({
+  fields: (t) => ({ status: t.exposeString("status") }),
+});

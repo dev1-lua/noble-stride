@@ -383,3 +383,48 @@ export const DueDiligenceTrackInput = builder.inputType("DueDiligenceTrackInput"
     notes: t.string({ required: false }),
   }),
 });
+
+// Client Agent intake (SOW §8.1) — mirrors src/lib/schemas/intake.ts; zod
+// (intakeSubmitSchema) remains the source of validation truth inside the
+// service, so keep these loose (strings for the small unions).
+export const ClientIntakeInput = builder.inputType("ClientIntakeInput", {
+  fields: (t) => ({
+    legalName: t.string({ required: true }),
+    registrationNo: t.string({ required: true }),
+    country: t.field({ type: GeographyEnum, required: true }),
+    sectors: t.field({ type: [SectorEnum], required: true }),
+    yearFounded: t.int({ required: true }),
+    website: t.string({ required: false }),
+    pitchDeckUrl: t.string({ required: false }),
+    contactName: t.string({ required: true }),
+    role: t.string({ required: true }),
+    email: t.string({ required: true }),
+    phone: t.string({ required: true }),
+    revenueUsd: t.float({ required: true }),
+    ebitdaUsd: t.float({ required: true }),
+    netProfitUsd: t.float({ required: true }),
+    totalAssetsUsd: t.float({ required: true }),
+    auditedYears: t.string({ required: true }),
+    loanBookUsd: t.float({ required: false }),
+    raiseUsd: t.float({ required: true }),
+    instrument: t.string({ required: true }),
+    useOfFunds: t.string({ required: true }),
+    proposedTimeline: t.string({ required: true }),
+    ownershipSummary: t.string({ required: true }),
+    pepExposure: t.string({ required: true }),
+    governmentOwned: t.string({ required: true }),
+    existingDebtUsd: t.float({ required: false }),
+    conversationSummary: t.string({ required: true }),
+    qualificationNotes: t.string({ required: false }),
+    attachmentUrls: t.stringList({ required: false }),
+  }),
+});
+
+export const LogClientMessageInput = builder.inputType("LogClientMessageInput", {
+  fields: (t) => ({
+    companyName: t.string({ required: true }),
+    contactEmail: t.string({ required: true }),
+    messageSummary: t.string({ required: true }),
+    requestType: t.string({ required: true }),
+  }),
+});

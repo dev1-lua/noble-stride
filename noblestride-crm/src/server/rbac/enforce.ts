@@ -49,3 +49,13 @@ export function assertAdmin(actor: Actor): void {
   if (isAutomation(actor)) return;
   if (internalRole(actor) !== "Admin") throw forbidden();
 }
+
+/**
+ * Automation-only surface (client agent, SOW §8.1): only authenticated
+ * AGENT/API actors pass — humans are rejected regardless of role, because
+ * these operations return anonymized acks designed for an LLM loop, not
+ * for the UI, and must never become a human-callable side door.
+ */
+export function assertAutomation(actor: Actor): void {
+  if (actor.authenticated !== true || (actor.type !== "AGENT" && actor.type !== "API")) throw forbidden();
+}
