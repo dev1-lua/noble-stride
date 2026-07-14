@@ -1,1 +1,14 @@
+# Dependencies
+node_modules/
+
+# Secrets / local env — never commit
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
 dist-v2/
+
+# Lua build cache / manifests
+.lua/
