@@ -13,8 +13,8 @@ export default function TalkToUsPage() {
   const agentId = process.env.NEXT_PUBLIC_LUA_CLIENT_AGENT_ID ?? "";
   const channelId = process.env.NEXT_PUBLIC_LUA_CLIENT_CHANNEL_ID ?? "";
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--bg-secondary)] px-4 py-8">
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col space-y-4">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--bg-secondary)] px-4 py-6">
+      <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col space-y-4">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">Talk to NobleStride</h1>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
