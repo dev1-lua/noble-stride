@@ -69,6 +69,17 @@ Plus:
 | Lua sandbox env | all three | set (`TEAM_PASSPHRASE=tracker-sandbox-pass`) |
 | Local `.env` | all three | present, gitignored (sandbox `lua chat`/`lua test` reads this) |
 
+## Post-deploy testing (2026-07-14 evening)
+
+Deployed by Devashish (`lua deploy all --force`, `lua version promote v1`). Sandbox testing findings:
+
+1. **Sandbox tools work against production data.** `lua test skill --name scan_stalled_engagements --input '{}'` returns real flags (e.g. Vantage Capital × City Health Hospital, 21d idle at Shared); `get_engagement_status` resolves by names and returns the full picture with `isStale: true` and prod deep links. `lua test`/`lua chat` load env from the local `.env` (gitignored) — the `lua env sandbox` store alone was not enough.
+2. **Sandbox `lua chat` is blocked by the passphrase gate saying "not fully configured"** — the *deployed* preprocessor (v1.0.1) predates the env vars. A fresh `passphrase-gate` v1.0.3 is **pushed/staged but NOT deployed** (deploy is the human step). After the next `lua deploy`, chat should challenge for `tracker-sandbox-pass` (sandbox) / the prod passphrase.
+3. **INCIDENT + FIX — `lua test` bypasses zod schemas.** `lua test` calls `execute()` directly without validating against `inputSchema`, so a test call with `confirmed: false` **actually wrote to production**: engagement `cmqqcri8600bf42ctcev2aox3` (Vantage Capital × City Health Hospital) got `probability: 50` (was almost certainly null) plus an audit Note "test". 
+   - **Fix (in working tree, NOT yet pushed):** all four write tools now re-validate with `inputSchema.safeParse()` inside `execute()` and return `rejected` without any CRM call (`confirmed-gate.test.ts`, 104 tests pass).
+   - **Pending data revert (needs human-reviewed prod write):** set that engagement's probability back to null — `updateEngagement(id: "cmqqcri8600bf42ctcev2aox3", input: { transactionId: <its own>, investorId: <its own>, probability: null })`, or clear it in the CRM UI at `/engagement/cmqqcri8600bf42ctcev2aox3`; optionally delete the "test" audit Note.
+4. Production `TEAM_PASSPHRASE` remains unset (agent-chosen secret was denied in auto mode — set it yourself: `npx lua env production -k TEAM_PASSPHRASE -v <phrase>`).
+
 ## Still open
 
 - **Production `TEAM_PASSPHRASE`** (above).

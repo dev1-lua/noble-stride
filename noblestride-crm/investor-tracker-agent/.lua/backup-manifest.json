@@ -1,14 +1,18 @@
 {
-  "lastHash": "e892881eeb2b07bc9ba64e1183b73110310a368242f1a3c17cd05bc0de80a978",
-  "lastPushedAt": "2026-07-14T13:24:48.843Z",
+  "lastHash": "613ab3ef00441ee823256e3eb1bb7f08240fcf1618ea46ef06ce1ff4f9490a57",
+  "lastPushedAt": "2026-07-14T14:03:15.360Z",
   "files": [
+    {
+      "relativePath": "AGENT-BUILD-2026-07-14.md",
+      "hash": "05dcacf6f9a713b8"
+    },
     {
       "relativePath": "env.example",
       "hash": "9f76d1b2788a7478"
     },
     {
       "relativePath": "lua.skill.yaml",
-      "hash": "37148e0fb7bd8ff9"
+      "hash": "a5055f76b2a4325b"
     },
     {
       "relativePath": "package.json",

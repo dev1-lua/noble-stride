@@ -44,6 +44,12 @@ export class UpdateEngagementTool implements LuaTool {
   constructor(private deps?: { crm: CrmClient }) {}
 
   async execute(input: z.infer<typeof inputSchema>) {
+    // Re-validate inside execute: direct invocations (e.g. `lua test`) bypass
+    // the platform's schema check, and the confirmed gate must hold everywhere.
+    const parsed = inputSchema.safeParse(input);
+    if (!parsed.success) {
+      return { status: "rejected" as const, message: `Invalid input: ${parsed.error.issues[0]?.message ?? "schema mismatch"}. Writes require confirmed: true after explicit user approval.` };
+    }
     const crm = this.deps?.crm ?? crmClientFromEnv();
 
     const detail = await crm.query<{

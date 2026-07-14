@@ -13,10 +13,10 @@ jobs:
 preprocessors:
   - name: passphrase-gate
     preprocessorId: preprocessor_546b0350-5517-413a-ae28-7e317c33e688
-    version: 1.0.1-sandbox
+    version: 1.0.1
 postprocessors: []
 mcpServers: []
 backup:
-  activeVersion: 1
-  lastHash: e892881eeb2b07bc9ba64e1183b73110310a368242f1a3c17cd05bc0de80a978
-  lastPushedAt: '2026-07-14T13:24:48.842Z'
+  activeVersion: 3
+  lastHash: 613ab3ef00441ee823256e3eb1bb7f08240fcf1618ea46ef06ce1ff4f9490a57
+  lastPushedAt: '2026-07-14T14:03:15.359Z'
