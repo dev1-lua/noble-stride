@@ -27,7 +27,18 @@ export default async function IntakePage({ searchParams }: PageProps) {
           </div>
         )}
 
-        {step === "form" && <IntakeWizard />}
+        {step === "form" && (
+          <>
+            <IntakeWizard />
+            <p className="text-center text-sm text-[var(--text-secondary)]">
+              Prefer to talk it through?{" "}
+              <Link href="/talk-to-us" className="font-medium text-[var(--accent)] hover:underline">
+                Chat with us
+              </Link>
+              .
+            </p>
+          </>
+        )}
 
         {step === "done" && (
           <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-8 text-center">
