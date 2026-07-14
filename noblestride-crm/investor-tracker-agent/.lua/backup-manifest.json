@@ -1,0 +1,130 @@
+{
+  "lastHash": "e892881eeb2b07bc9ba64e1183b73110310a368242f1a3c17cd05bc0de80a978",
+  "lastPushedAt": "2026-07-14T13:24:48.843Z",
+  "files": [
+    {
+      "relativePath": "env.example",
+      "hash": "9f76d1b2788a7478"
+    },
+    {
+      "relativePath": "lua.skill.yaml",
+      "hash": "37148e0fb7bd8ff9"
+    },
+    {
+      "relativePath": "package.json",
+      "hash": "79f6a88c5d5bd81b"
+    },
+    {
+      "relativePath": "QUICKSTART.md",
+      "hash": "31e631fd64512cd1"
+    },
+    {
+      "relativePath": "README.md",
+      "hash": "2ca2d2b3168e75e5"
+    },
+    {
+      "relativePath": "scripts/smoke.ts",
+      "hash": "ada6f98014da3541"
+    },
+    {
+      "relativePath": "src/index.ts",
+      "hash": "b8cfeb4323ebeee6"
+    },
+    {
+      "relativePath": "src/jobs/followup-check.job.ts",
+      "hash": "4aa3d7c653f8a923"
+    },
+    {
+      "relativePath": "src/lib/crm-client.ts",
+      "hash": "41e7668a481a1d79"
+    },
+    {
+      "relativePath": "src/lib/digest-runner.ts",
+      "hash": "b2f7816d188c12ba"
+    },
+    {
+      "relativePath": "src/lib/engagement-resolve.ts",
+      "hash": "68868f27fd6baeea"
+    },
+    {
+      "relativePath": "src/lib/format.ts",
+      "hash": "368ebb31b16dbd13"
+    },
+    {
+      "relativePath": "src/lib/guards.ts",
+      "hash": "9a7a004fe293cde5"
+    },
+    {
+      "relativePath": "src/lib/queries.ts",
+      "hash": "72bf4464c7e658aa"
+    },
+    {
+      "relativePath": "src/lib/record-lookup.ts",
+      "hash": "1257475ba177e71b"
+    },
+    {
+      "relativePath": "src/lib/resolve.ts",
+      "hash": "7c4de58fe4e23751"
+    },
+    {
+      "relativePath": "src/lib/staleness.ts",
+      "hash": "a899db5454b4e38b"
+    },
+    {
+      "relativePath": "src/lib/tracker-runner.ts",
+      "hash": "015aee23c92c17e9"
+    },
+    {
+      "relativePath": "src/processors/passphrase-gate.ts",
+      "hash": "da8dbd09ce59523c"
+    },
+    {
+      "relativePath": "src/skills/tools/CreateFollowupTaskTool.ts",
+      "hash": "a04dd0946cd86693"
+    },
+    {
+      "relativePath": "src/skills/tools/FindFitInvestorsTool.ts",
+      "hash": "1b4be618a5c73fd0"
+    },
+    {
+      "relativePath": "src/skills/tools/GetEngagementStatusTool.ts",
+      "hash": "906ef97d88722526"
+    },
+    {
+      "relativePath": "src/skills/tools/PipelineDigestTool.ts",
+      "hash": "e41bd994dc0e1524"
+    },
+    {
+      "relativePath": "src/skills/tools/RecordMilestoneTool.ts",
+      "hash": "2827a680a2204b69"
+    },
+    {
+      "relativePath": "src/skills/tools/ScanStalledEngagementsTool.ts",
+      "hash": "27b43271eeea3093"
+    },
+    {
+      "relativePath": "src/skills/tools/SummarizeRecordTool.ts",
+      "hash": "34ccd1db6698ce26"
+    },
+    {
+      "relativePath": "src/skills/tools/UpdateDDStatusTool.ts",
+      "hash": "e7b2ba5b6ea5c929"
+    },
+    {
+      "relativePath": "src/skills/tools/UpdateEngagementTool.ts",
+      "hash": "dfe2017328a07434"
+    },
+    {
+      "relativePath": "src/skills/tracker.skill.ts",
+      "hash": "8093023436186fd0"
+    },
+    {
+      "relativePath": "tsconfig.json",
+      "hash": "748d6fffca1cc9ce"
+    },
+    {
+      "relativePath": "vitest.config.ts",
+      "hash": "eeae3902657c50d1"
+    }
+  ]
+}

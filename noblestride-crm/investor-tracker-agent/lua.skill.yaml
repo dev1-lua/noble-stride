@@ -1,0 +1,22 @@
+agent:
+  agentId: baseAgent_agent_1784032867846_7j9q1ht9n
+  orgId: 1e5359cc-c465-44cb-b040-44e338433411
+skills:
+  - name: investor-tracker
+    skillId: 796495cb-ade7-4692-b221-3be62eb2332e
+    version: 1.0.1
+webhooks: []
+jobs:
+  - jobId: 3d6f7311-b09b-4a2e-bc3a-4c53acdcc7f0
+    name: followup-check
+    version: 1.0.1
+preprocessors:
+  - name: passphrase-gate
+    preprocessorId: preprocessor_546b0350-5517-413a-ae28-7e317c33e688
+    version: 1.0.1-sandbox
+postprocessors: []
+mcpServers: []
+backup:
+  activeVersion: 1
+  lastHash: e892881eeb2b07bc9ba64e1183b73110310a368242f1a3c17cd05bc0de80a978
+  lastPushedAt: '2026-07-14T13:24:48.842Z'
