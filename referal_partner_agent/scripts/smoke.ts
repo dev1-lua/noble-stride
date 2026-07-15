@@ -78,7 +78,7 @@ async function main() {
   console.log(
     "partner_performance:",
     perf.status,
-    perf.status === "ok" && "totals" in perf ? `${perf.totals.dealsReferred} referred, conversion ${(perf.totals.conversionRate * 100).toFixed(0)}%` : perf,
+    perf.status === "ok" && perf.totals ? `${perf.totals.dealsReferred} referred, conversion ${(perf.totals.conversionRate * 100).toFixed(0)}%` : perf,
   );
 
   const single = await new PartnerPerformanceTool({ crm }).execute({ partner: partner.id });

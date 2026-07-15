@@ -1,0 +1,20 @@
+node_modules
+.next
+.git
+.storage
+coverage
+dist-v2
+investor_agent
+crm_agent
+client_agent
+investor-tracker-agent
+referal_partner_agent
+data
+decrypted
+mailsetup
+my-twenty-app
+twenty-main
+analysis
+context-screens
+memory
+walkthrough CRM
