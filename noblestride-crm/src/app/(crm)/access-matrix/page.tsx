@@ -7,7 +7,7 @@ export default function AccessMatrixPage() {
       <div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">Access Matrix</h1>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-          Who sees what inside NobleStride — Admin, Deal Lead and Team Member lenses
+          Who sees what inside Noblestride — Admin, Deal Lead and Team Member lenses
         </p>
       </div>
       <AccessMatrix />

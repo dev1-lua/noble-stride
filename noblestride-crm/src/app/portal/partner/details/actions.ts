@@ -2,7 +2,7 @@
 // actions.ts — server action for a partner updating their OWN contact details.
 // Partner id comes from the viewpoint cookie server-side. The editable surface
 // is deliberately limited to email / phone / organization — agreement status
-// and fee-sharing terms are set by NobleStride, never by the partner.
+// and fee-sharing terms are set by Noblestride, never by the partner.
 
 import { redirect } from "next/navigation";
 import { getViewpoint } from "@/server/viewpoint";

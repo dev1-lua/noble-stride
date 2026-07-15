@@ -52,7 +52,7 @@ const ROUTE_META: Record<string, PageMeta> = {
   },
   "/access-matrix": {
     title: "Access Matrix",
-    subtitle: "Who sees what inside NobleStride",
+    subtitle: "Who sees what inside Noblestride",
   },
   "/tasks": {
     title: "Tasks",
@@ -75,7 +75,7 @@ function derivePageMeta(pathname: string): PageMeta {
   // Fallback: derive title from first segment
   const segment = pathname.split("/").filter(Boolean)[0] ?? "";
   const title = segment.charAt(0).toUpperCase() + segment.slice(1);
-  return { title: title || "NobleStride", subtitle: "" };
+  return { title: title || "Noblestride", subtitle: "" };
 }
 
 // ─── Topbar ──────────────────────────────────────────────────────────────────

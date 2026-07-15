@@ -1,4 +1,4 @@
-// journey.ts — pure deal-journey derivation for the NobleStride CRM. No I/O,
+// journey.ts — pure deal-journey derivation for the Noblestride CRM. No I/O,
 // no Prisma, no Date.now() — everything the engine needs is passed in on
 // `JourneyInput`, so it stays fully deterministic and unit-testable without a
 // database (see src/server/domain/__tests__/journey.test.ts).

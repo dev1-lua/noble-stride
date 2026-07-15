@@ -56,7 +56,7 @@ export default async function PartnerPortalPage() {
       <div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">Partner Overview</h1>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-          Your referrals and fee-sharing status with NobleStride Capital
+          Your referrals and fee-sharing status with Noblestride Capital
         </p>
       </div>
 
@@ -162,7 +162,7 @@ export default async function PartnerPortalPage() {
               {funnel.signed} signed referral{funnel.signed === 1 ? "" : "s"}
             </span>
             {profile.feeSharingTerms ? <> — {profile.feeSharingTerms}</> : null}. Fee-sharing is
-            settled by NobleStride on conversion of each referred mandate.
+            settled by Noblestride on conversion of each referred mandate.
           </p>
         </section>
       )}

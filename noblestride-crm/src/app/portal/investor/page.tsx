@@ -53,7 +53,7 @@ export default async function InvestorPortalPage({
             <p className="mt-1 text-sm text-[var(--text-tertiary)]">
               {filtering
                 ? "Try widening or clearing the filters above."
-                : "Please contact your NobleStride advisor for more information."}
+                : "Please contact your Noblestride advisor for more information."}
             </p>
           </CardBody>
         </Card>

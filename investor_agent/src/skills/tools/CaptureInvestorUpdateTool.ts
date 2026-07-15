@@ -30,7 +30,7 @@ const changesSchema = z
 export default class CaptureInvestorUpdateTool implements LuaTool {
   name = "capture_investor_update";
   description =
-    "Record changes an investor communicated to their criteria, status, or contact details. Creates a PENDING change the NobleStride team must confirm — nothing is written to the record immediately. Tell the investor their update was noted and will be reflected after review.";
+    "Record changes an investor communicated to their criteria, status, or contact details. Creates a PENDING change the Noblestride team must confirm — nothing is written to the record immediately. Tell the investor their update was noted and will be reflected after review.";
 
   inputSchema = z.object({
     investorId: z.string().describe("Investor id from identify_investor"),
@@ -55,6 +55,6 @@ export default class CaptureInvestorUpdateTool implements LuaTool {
         sourceEmail: input.senderEmail,
       },
     });
-    return { ok: data.submitInvestorUpdate.ok === true, note: "Queued for NobleStride team review — not yet applied." };
+    return { ok: data.submitInvestorUpdate.ok === true, note: "Queued for Noblestride team review — not yet applied." };
   }
 }

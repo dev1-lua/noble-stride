@@ -44,10 +44,10 @@ export function gateDecision(
 }
 
 const CHALLENGE =
-  "This assistant is for NobleStride staff only. Please reply with the team passphrase to continue.";
+  "This assistant is for Noblestride staff only. Please reply with the team passphrase to continue.";
 const WELCOME =
   "✅ You're verified. Ask me to summarize any client, investor, mandate, transaction, engagement, or partner — or ask \"what moved this week?\" for a pipeline digest.";
-const UNCONFIGURED = "The assistant isn't fully configured yet (missing team passphrase). Please contact the NobleStride admin.";
+const UNCONFIGURED = "The assistant isn't fully configured yet (missing team passphrase). Please contact the Noblestride admin.";
 const ASK_EMAIL =
   "✅ Passphrase accepted. To act on your behalf in the CRM I need your CRM email — what is it?";
 const IDENTIFY_FAIL =

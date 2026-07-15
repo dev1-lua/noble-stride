@@ -18,8 +18,8 @@ const emailSchema = z.string().trim().email("Enter a valid email address.");
 const MESSAGES: Record<string, string> = {
   invalid: "Incorrect email or password.",
   locked: "Too many failed attempts. Try again in about 15 minutes.",
-  pending: "Your account is awaiting review by the NobleStride team.",
-  suspended: "This account is suspended. Contact NobleStride if you believe this is an error.",
+  pending: "Your account is awaiting review by the Noblestride team.",
+  suspended: "This account is suspended. Contact Noblestride if you believe this is an error.",
   otp_unavailable: "We couldn't send your verification code. Please try again in a moment.",
 };
 

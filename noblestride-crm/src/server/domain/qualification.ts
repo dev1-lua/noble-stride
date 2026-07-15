@@ -1,5 +1,5 @@
 // qualification.ts — pure client-intake qualification engine for the
-// NobleStride CRM. No I/O, no Prisma, no Date.now() — the caller passes
+// Noblestride CRM. No I/O, no Prisma, no Date.now() — the caller passes
 // `currentYear` so the engine stays fully deterministic and unit-testable
 // without a database (see src/server/domain/__tests__/qualification.test.ts).
 

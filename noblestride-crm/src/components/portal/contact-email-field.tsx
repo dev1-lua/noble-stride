@@ -26,7 +26,7 @@ export function ContactEmailField({
       />
       {FREE_MAIL.test(value) && (
         <p className="mt-1.5 rounded-md border border-[var(--t-tag-bg-amber)] bg-[var(--t-tag-bg-amber)] px-2.5 py-1.5 text-xs text-[var(--t-tag-text-amber)]">
-          Please use a fund domain email (Gmail/Yahoo addresses are excluded per NobleStride
+          Please use a fund domain email (Gmail/Yahoo addresses are excluded per Noblestride
           policy).
         </p>
       )}

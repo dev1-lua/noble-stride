@@ -6,7 +6,7 @@ import { CancelChangeTool } from "./tools/CancelChangeTool";
 
 export const writeSkill = new LuaSkill({
   name: "crm-write",
-  description: "Create and update NobleStride CRM records on a verified staff member's explicit instruction.",
+  description: "Create and update Noblestride CRM records on a verified staff member's explicit instruction.",
   context: `This skill makes CRM changes for VERIFIED STAFF ONLY, on their explicit instruction.
 - Always lookup_record first when the user names a record; on "ambiguous" ask them to pick; never guess ids and never display raw ids.
 - Flow per change: propose_change → show the returned preview VERBATIM → ask "Shall I apply this?" → only on an explicit yes call commit_change. Anything other than a clear yes: ask, revise (new propose_change), or cancel_change.

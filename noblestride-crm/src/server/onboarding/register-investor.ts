@@ -3,7 +3,7 @@
 // wrappers that parse FormData and delegate here (same split as
 // portal/partner/refer/submit-referral.ts).
 //
-// Registration lands in PendingReview: a NobleStride team member must approve
+// Registration lands in PendingReview: a Noblestride team member must approve
 // every investor before any deal visibility (anti-broker guardrail, SOW §06).
 
 import type { Investor } from "@prisma/client";
@@ -46,7 +46,7 @@ export async function registerInvestorWithAccount(raw: unknown): Promise<Investo
 
   if (await isRegistrationBlocked(input.email)) {
     throw new RegistrationError(
-      "This email domain is not eligible to register. Contact NobleStride if you believe this is an error.",
+      "This email domain is not eligible to register. Contact Noblestride if you believe this is an error.",
     );
   }
 
@@ -54,12 +54,12 @@ export async function registerInvestorWithAccount(raw: unknown): Promise<Investo
     where: { email: { equals: input.email, mode: "insensitive" }, investorId: { not: null } },
   });
   if (existing) {
-    throw new RegistrationError("A registration with this contact email already exists. Contact NobleStride if you need access.");
+    throw new RegistrationError("A registration with this contact email already exists. Contact Noblestride if you need access.");
   }
 
   const existingAccount = await prisma.authAccount.findUnique({ where: { email }, select: { id: true } });
   if (existingAccount) {
-    throw new RegistrationError("A registration with this contact email already exists. Contact NobleStride if you need access.");
+    throw new RegistrationError("A registration with this contact email already exists. Contact Noblestride if you need access.");
   }
 
   const band = ticketBand(input.dealSizeBand);

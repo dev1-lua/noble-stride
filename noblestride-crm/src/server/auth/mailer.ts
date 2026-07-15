@@ -37,7 +37,7 @@ export async function sendMail(msg: MailMessage): Promise<void> {
     }
     return;
   }
-  const from = process.env.RESEND_FROM ?? "NobleStride <onboarding@resend.dev>";
+  const from = process.env.RESEND_FROM ?? "Noblestride <onboarding@resend.dev>";
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {

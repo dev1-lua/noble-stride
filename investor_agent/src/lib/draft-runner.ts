@@ -43,7 +43,7 @@ export function buildIntroPrompt(ctx: TeaserCtx, match: Match): string {
     `- Reference why it fits their mandate (use the match reasons).`,
     `- Use ONLY the facts above. No company names, no promises, no valuation talk, no attachments.`,
     `- Close by inviting them to reply to receive the teaser, and sign off exactly:`,
-    `  "NobleStride Advisory"`,
+    `  "Noblestride Advisory"`,
     `Return ONLY the email body.`,
   ].filter(Boolean).join("\n");
 }
@@ -56,7 +56,7 @@ export function fallbackIntro(ctx: TeaserCtx, match: Match): { subject: string; 
     body: [
       greeting,
       ``,
-      `NobleStride Capital is advising ${ctx.codename}, a ${ctx.sectors.join("/") || "growth"} opportunity in ${
+      `Noblestride Capital is advising ${ctx.codename}, a ${ctx.sectors.join("/") || "growth"} opportunity in ${
         ctx.geographies.join(", ") || "Africa"
       } raising ${ctx.targetRaiseBand ?? "growth capital"}${
         ctx.instruments.length ? ` (${ctx.instruments.join("/")})` : ""
@@ -66,7 +66,7 @@ export function fallbackIntro(ctx: TeaserCtx, match: Match): { subject: string; 
       ``,
       `If you would like the teaser, simply reply to this email and our team will share it along with next steps.`,
       ``,
-      `NobleStride Advisory`,
+      `Noblestride Advisory`,
     ].join("\n"),
   };
 }

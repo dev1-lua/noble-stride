@@ -12,7 +12,7 @@ export default function PartnerPortalLayout({ children }: { children: React.Reac
       <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] px-6 py-4">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div>
-            <div className="text-lg font-bold tracking-tight text-emerald-950">NobleStride Capital</div>
+            <div className="text-lg font-bold tracking-tight text-emerald-950">Noblestride Capital</div>
             <div className="text-xs text-[var(--text-tertiary)]">
               Create. Value. Investing. Sub-Saharan Africa
             </div>
@@ -29,7 +29,7 @@ export default function PartnerPortalLayout({ children }: { children: React.Reac
         </div>
       </main>
       <footer className="mx-auto max-w-5xl px-6 pb-8 text-xs text-[var(--text-tertiary)]">
-        Confidential — shared under the terms of your NDA with NobleStride Capital.
+        Confidential — shared under the terms of your NDA with Noblestride Capital.
       </footer>
     </div>
   );

@@ -22,16 +22,16 @@ function buildSrcdoc(agentId: string, sessionId: string, channelId: string, webs
       targetContainerId: "lua-chat-embedded-root",
       useContainerHeight: true,
       conversationStarters: [
-        "We're raising capital and want NobleStride's help",
+        "We're raising capital and want Noblestride's help",
         "I'd like to tell you about our company",
         "We're an existing client with an update",
       ],
     },
     attachmentsEnabled: true,
-    chatTitle: "NobleStride",
+    chatTitle: "Noblestride",
     chatInputPlaceholder: "Tell us about your company…",
     welcomeMessage:
-      "Welcome to NobleStride Capital — we help established African companies raise growth capital. Tell me a little about your company and what you're looking to raise, and I'll make sure the right person on our team follows up.",
+      "Welcome to Noblestride Capital — we help established African companies raise growth capital. Tell me a little about your company and what you're looking to raise, and I'll make sure the right person on our team follows up.",
   };
   return `<!doctype html>
 <html>
@@ -136,7 +136,7 @@ export function TalkToUsChat({ agentId, channelId = "" }: { agentId: string; cha
           <iframe
             key={sessionId}
             srcDoc={buildSrcdoc(agentId, sessionId, channelId, typeof window !== "undefined" ? window.location.hostname : "")}
-            title="Chat with NobleStride"
+            title="Chat with Noblestride"
             className="h-full w-full border-0"
             allow="microphone; clipboard-write"
             // ACCEPTED RISK (2026-07-14 review): no sandbox attribute, so this

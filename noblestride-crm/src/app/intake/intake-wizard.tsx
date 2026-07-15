@@ -669,7 +669,7 @@ function Review({
         ))}
       </dl>
       <p className="text-xs text-[var(--text-tertiary)]">
-        After you submit, a NobleStride team member reviews your application. No verdict or deal
+        After you submit, a Noblestride team member reviews your application. No verdict or deal
         information is shared before that review is complete.
       </p>
     </div>

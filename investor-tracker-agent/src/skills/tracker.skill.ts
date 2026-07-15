@@ -12,8 +12,8 @@ import { PipelineDigestTool } from "./tools/PipelineDigestTool";
 export const trackerSkill = new LuaSkill({
   name: "investor-tracker",
   description:
-    "Tracks every investor's journey through every NobleStride deal — stages, milestones, term sheets, due diligence, disbursement — plus record summaries and pipeline digests.",
-  context: `This skill tracks investor-deal engagements in NobleStride's CRM and answers questions about its records. All data is internal.
+    "Tracks every investor's journey through every Noblestride deal — stages, milestones, term sheets, due diligence, disbursement — plus record summaries and pipeline digests.",
+  context: `This skill tracks investor-deal engagements in Noblestride's CRM and answers questions about its records. All data is internal.
 
 Routing:
 - get_engagement_status when the user asks where one investor stands on one deal ("where is Vantage on the Busoga deal?"). Pass names exactly as said, or engagementId from a previous result.

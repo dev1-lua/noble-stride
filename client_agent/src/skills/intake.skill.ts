@@ -8,8 +8,8 @@ import { GetClientStatusTool } from "./tools/GetClientStatusTool";
 
 export const intakeSkill = new LuaSkill({
   name: "client-intake",
-  description: "Conversational intake and inbound-message logging for prospects and clients of NobleStride Capital.",
-  context: `This skill handles NobleStride's public web chat. The visitor is an EXTERNAL prospect or client — never staff.
+  description: "Conversational intake and inbound-message logging for prospects and clients of Noblestride Capital.",
+  context: `This skill handles Noblestride's public web chat. The visitor is an EXTERNAL prospect or client — never staff.
 
 Routing:
 - Classify the conversation early: NEW fundraising inquiry, EXISTING relationship, or OTHER.

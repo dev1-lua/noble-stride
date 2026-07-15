@@ -1,4 +1,4 @@
-// GraphQL object types for the NobleStride Capital CRM.
+// GraphQL object types for the Noblestride Capital CRM.
 // One `builder.prismaObject` per Prisma model.
 
 import { builder } from "./builder";

@@ -13,8 +13,8 @@ import { UpdateFeeStatusTool } from "./tools/UpdateFeeStatusTool";
 export const referralSkill = new LuaSkill({
   name: "referral-partner-tracker",
   description:
-    "Tracks referral partners and the deals they introduce to NobleStride — introductions, partner relationships, conversion, and fee sharing.",
-  context: `This skill tracks referral partners and their introduced deals in NobleStride's CRM. All data is internal; partner identities are confidential.
+    "Tracks referral partners and the deals they introduce to Noblestride — introductions, partner relationships, conversion, and fee sharing.",
+  context: `This skill tracks referral partners and their introduced deals in Noblestride's CRM. All data is internal; partner identities are confidential.
 
 Routing:
 - get_partner_profile when the user asks about one partner ("what has Jane referred?", "does Acme Advisory have a fee agreement?"). Pass names exactly as said, or an id from a previous result.

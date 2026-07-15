@@ -73,7 +73,7 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         {view === "email" && (
           <section className="mx-auto w-full max-w-md rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
             <p className="mb-4 text-sm text-[var(--text-tertiary)]">
-              NobleStride staff and investors both start here — enter your work email to continue.
+              Noblestride staff and investors both start here — enter your work email to continue.
             </p>
             <form action={routeEmailAction} className="space-y-4">
               <div>
@@ -116,7 +116,7 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         {view === "pending" && (
           <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-8 text-center">
             <p className="text-sm text-[var(--text-secondary)]">
-              Thanks — your account request is in. The NobleStride team reviews every account; you&apos;ll
+              Thanks — your account request is in. The Noblestride team reviews every account; you&apos;ll
               be able to sign in once approved.
             </p>
             <div className="mt-6 flex items-center justify-center gap-4 text-sm font-medium">

@@ -74,8 +74,8 @@ export function maskEmail(email: string): string {
 
 function renderOtpEmail(code: string): { subject: string; text: string } {
   return {
-    subject: "Your NobleStride sign-in code",
-    text: `Your NobleStride verification code is ${code}. It expires in 10 minutes. If you didn't try to sign in, you can ignore this email.`,
+    subject: "Your Noblestride sign-in code",
+    text: `Your Noblestride verification code is ${code}. It expires in 10 minutes. If you didn't try to sign in, you can ignore this email.`,
   };
 }
 

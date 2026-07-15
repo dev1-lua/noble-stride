@@ -126,7 +126,7 @@ describe("transactionTeaserContext", () => {
     expect(JSON.stringify(ctx)).not.toContain("ZZTest Outreach Deal");
     expect(JSON.stringify(ctx)).not.toContain("OutreachCo");
     expect(ctx.sectors).toContain("Healthcare");
-    expect(ctx.contact).toContain("NobleStride Advisory");
+    expect(ctx.contact).toContain("Noblestride Advisory");
   });
 });
 

@@ -51,7 +51,7 @@ export default async function InvestorPortalLayout({
             <CardBody className="p-8 text-center">
               <h1 className="text-xl font-semibold text-[var(--text-primary)]">Portal access restricted</h1>
               <p className="mt-3 text-sm text-[var(--text-tertiary)]">
-                Your portal access is currently restricted. Contact NobleStride Capital if you believe
+                Your portal access is currently restricted. Contact Noblestride Capital if you believe
                 this is an error.
               </p>
               <p className="mt-6 text-xs text-[var(--text-tertiary)]">
@@ -76,8 +76,8 @@ export default async function InvestorPortalLayout({
               </h1>
               <p className="mt-3 text-sm text-[var(--text-tertiary)]">
                 {pending
-                  ? `Thank you for registering ${investor.name}. The NobleStride team reviews every investor before granting deal visibility. You will be contacted at your corporate email once approved.`
-                  : "This registration was not approved. Contact NobleStride Capital if you believe this is an error."}
+                  ? `Thank you for registering ${investor.name}. The Noblestride team reviews every investor before granting deal visibility. You will be contacted at your corporate email once approved.`
+                  : "This registration was not approved. Contact Noblestride Capital if you believe this is an error."}
               </p>
               <p className="mt-6 text-xs text-[var(--text-tertiary)]">
                 No opportunity information is visible before approval.
@@ -99,7 +99,7 @@ export default async function InvestorPortalLayout({
             {children}
             <p className="pt-8 text-xs text-[var(--text-tertiary)]">
               {investor && investor.ndaStatus !== "None"
-                ? "Confidential — shared under the terms of your NDA with NobleStride Capital."
+                ? "Confidential — shared under the terms of your NDA with Noblestride Capital."
                 : "Confidential — for your review only. Please do not distribute."}
             </p>
           </main>

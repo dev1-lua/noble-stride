@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "NobleStride Capital CRM",
-  description: "Fundraising and advisory relationship management for NobleStride Capital.",
+  title: "Noblestride Capital CRM",
+  description: "Fundraising and advisory relationship management for Noblestride Capital.",
 };
 
 export default function RootLayout({

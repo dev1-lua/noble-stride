@@ -1,5 +1,5 @@
 // glossary.ts — Wave 1 teaching layer: plain-language definitions for the
-// NobleStride vocabulary. Pure data + lookup, no React/UI here (see
+// Noblestride vocabulary. Pure data + lookup, no React/UI here (see
 // components/ui/help-hint.tsx for the popover that renders these).
 
 export interface GlossaryEntry {
@@ -13,7 +13,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   {
     term: "Mandate",
     definition:
-      "The assignment a client hires NobleStride for — one fundraising or advisory engagement, opened when the engagement contract is signed.",
+      "The assignment a client hires Noblestride for — one fundraising or advisory engagement, opened when the engagement contract is signed.",
   },
   {
     term: "Transaction",
@@ -127,7 +127,7 @@ export const JOURNEY_STEP_HELP: JourneyStepHelp[] = [
   },
   {
     title: "Internal review & approval",
-    description: "NobleStride reviews the opportunity internally before committing to a pitch or proposal.",
+    description: "Noblestride reviews the opportunity internally before committing to a pitch or proposal.",
   },
   {
     title: "Engagement contract & retainer",
@@ -171,7 +171,7 @@ export const JOURNEY_STEP_HELP: JourneyStepHelp[] = [
   },
   {
     title: "Success fee & closure",
-    description: "NobleStride's success fee is invoiced and paid, closing out the transaction.",
+    description: "Noblestride's success fee is invoiced and paid, closing out the transaction.",
   },
   {
     title: "Post-transaction monitoring",

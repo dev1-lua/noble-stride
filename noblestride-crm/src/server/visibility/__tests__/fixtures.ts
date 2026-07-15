@@ -10,7 +10,7 @@ export const INVESTOR_FEEDBACK = "FEEDBACK-offer-was-too-low";
 export const ENGAGEMENT_CONTRACT_DOC = "Engagement Contract v3 SECRET";
 export const INTERNAL_DOC = "Internal Valuation Memo SECRET";
 export const CLIENT_SHARED_DOC = "Client Board Pack SECRET";
-export const TEAM_MEMBER_NAME = "Alice NobleStride";
+export const TEAM_MEMBER_NAME = "Alice Noblestride";
 export const INTERNAL_MESSAGE = "internal-team-thread-about-pricing";
 export const DD_TRACK_NOTE = "DD-TRACK-NOTE-financial-red-flag";
 /** Structured-field sentinel: no projected key may even mention CAK/COMESA. */

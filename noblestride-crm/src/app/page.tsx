@@ -1,5 +1,5 @@
 // page.tsx — public landing page.
-// Internal-first front door: NobleStride's internal team (admins + internal
+// Internal-first front door: Noblestride's internal team (admins + internal
 // members) signs in to the workspace; investors get small secondary
 // "Login as an investor" / "Sign up as an investor" entry points.
 // A signed-in visitor is forwarded to their viewpoint's home.
@@ -21,7 +21,7 @@ export default async function LandingPage() {
       {/* Header */}
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-5">
         <span className="text-sm font-semibold tracking-tight text-emerald-950">
-          NobleStride Capital
+          Noblestride Capital
         </span>
         <nav className="flex items-center gap-4">
           <Link
@@ -40,7 +40,7 @@ export default async function LandingPage() {
             href="/intake"
             className="text-xs font-medium text-[var(--text-tertiary)] hover:text-[var(--accent)]"
           >
-            Raise capital with NobleStride
+            Raise capital with Noblestride
           </Link>
           <Link
             href="/login"
@@ -55,13 +55,13 @@ export default async function LandingPage() {
       <main className="flex flex-1 items-center justify-center px-6">
         <div className="w-full max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">
-            NobleStride Capital · Internal Workspace
+            Noblestride Capital · Internal Workspace
           </p>
           <h1 className="mx-auto mt-4 max-w-2xl text-4xl font-bold tracking-tight text-[var(--text-primary)] sm:text-5xl">
-            NobleStride&apos;s internal deal workspace
+            Noblestride&apos;s internal deal workspace
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-base text-[var(--text-secondary)]">
-            One place for the NobleStride team to run mandates, track NDA-gated
+            One place for the Noblestride team to run mandates, track NDA-gated
             documents, and move every investor relationship from teaser to close.
           </p>
           <div className="mt-8 flex items-center justify-center">
@@ -85,7 +85,7 @@ export default async function LandingPage() {
             </Link>
             <span className="text-[var(--border-strong)]">·</span>
             <Link href="/intake" className="font-medium hover:text-[var(--accent)] hover:underline">
-              Raise capital with NobleStride
+              Raise capital with Noblestride
             </Link>
           </div>
         </div>

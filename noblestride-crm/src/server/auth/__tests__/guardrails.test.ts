@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 
 describe("normalizeEmail", () => {
   it("lowercases and trims", () => {
-    expect(normalizeEmail("  Evans@NobleStride.Capital ")).toBe("evans@noblestride.capital");
+    expect(normalizeEmail("  Evans@Noblestride.Capital ")).toBe("evans@noblestride.capital");
   });
 });
 

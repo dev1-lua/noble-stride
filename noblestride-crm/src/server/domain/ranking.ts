@@ -1,4 +1,4 @@
-// Pure investor-match ranking for the NobleStride CRM.
+// Pure investor-match ranking for the Noblestride CRM.
 // No I/O, no Prisma calls, no side-effects — safe to unit-test without a database.
 
 import { formatMoney } from "@/lib/money";

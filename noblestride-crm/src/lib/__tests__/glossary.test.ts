@@ -15,7 +15,7 @@ describe("glossary", () => {
 
   it("define() hits an exact-match term", () => {
     expect(define("Mandate")).toBe(
-      "The assignment a client hires NobleStride for — one fundraising or advisory engagement, opened when the engagement contract is signed."
+      "The assignment a client hires Noblestride for — one fundraising or advisory engagement, opened when the engagement contract is signed."
     );
   });
 

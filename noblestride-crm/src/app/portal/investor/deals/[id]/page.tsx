@@ -150,7 +150,7 @@ export default async function InvestorDealPage({
             </dl>
             {fin.disclosure === "limited" && (
               <p className="mt-3 rounded-md bg-[var(--bg-secondary)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
-                Detailed financials are shared after an NDA is signed. Contact your NobleStride
+                Detailed financials are shared after an NDA is signed. Contact your Noblestride
                 advisor to proceed.
               </p>
             )}
@@ -261,14 +261,14 @@ export default async function InvestorDealPage({
         </h2>
         {interest && (
           <p className="mt-2 rounded-md bg-[var(--bg-primary)] px-3 py-2 text-sm font-medium text-[var(--t-tag-text-emerald)]">
-            Thank you — your request has been sent to the NobleStride team. They will follow up
+            Thank you — your request has been sent to the Noblestride team. They will follow up
             shortly.
           </p>
         )}
         <p className="mt-2 text-sm text-[var(--t-tag-text-emerald)]">
           {journey
             ? "Need something specific — data room access, a management call, updated financials? Let the deal team know."
-            : "Interested in this opportunity? Register your interest and the NobleStride team will start your process."}
+            : "Interested in this opportunity? Register your interest and the Noblestride team will start your process."}
         </p>
         <form action={expressInterest} className="mt-3 space-y-3">
           <input type="hidden" name="dealId" value={deal.id} />

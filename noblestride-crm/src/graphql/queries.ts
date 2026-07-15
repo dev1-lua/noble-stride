@@ -1,4 +1,4 @@
-// GraphQL queries for the NobleStride Capital CRM.
+// GraphQL queries for the Noblestride Capital CRM.
 // Thin resolvers — each is a one-line call to the matching service.
 // Non-Prisma output types are defined here via builder.objectRef + .implement.
 

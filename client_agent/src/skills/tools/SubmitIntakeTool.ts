@@ -56,7 +56,7 @@ const inputSchema = z.object({
 export class SubmitIntakeTool implements LuaTool {
   name = "submit_intake";
   description =
-    "Submit a completed intake application to NobleStride's CRM. Call ONCE per conversation, only after the required fields are collected. Returns a neutral ack — the visitor must never be told any qualification outcome.";
+    "Submit a completed intake application to Noblestride's CRM. Call ONCE per conversation, only after the required fields are collected. Returns a neutral ack — the visitor must never be told any qualification outcome.";
   inputSchema = inputSchema;
 
   constructor(private deps?: { crm: CrmClient }) {}

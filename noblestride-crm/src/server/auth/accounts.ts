@@ -80,10 +80,10 @@ export async function signupExistingContact(input: {
     throw new AuthFlowError(
       cls.reason === "free-provider"
         ? "Please use your official company email — free providers (Gmail, Yahoo, …) are not accepted."
-        : "This email is not eligible to register. Contact NobleStride if you believe this is an error.",
+        : "This email is not eligible to register. Contact Noblestride if you believe this is an error.",
     );
   }
-  if (cls.kind === "internal") throw new AuthFlowError("NobleStride staff should use the internal sign-up.");
+  if (cls.kind === "internal") throw new AuthFlowError("Noblestride staff should use the internal sign-up.");
   assertPassword(input.password, email);
   await assertNoAccount(email);
 

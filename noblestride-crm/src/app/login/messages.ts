@@ -9,7 +9,7 @@ const NOTICES: Record<string, string> = {
   "code-expired": "Your code expired. Please sign in again to get a new one.",
   "too-many-codes": "Too many incorrect codes. Please sign in again to get a new code.",
   locked: "Too many attempts. Please try again in a little while.",
-  suspended: "This account is suspended. Contact NobleStride if you believe this is an error.",
+  suspended: "This account is suspended. Contact Noblestride if you believe this is an error.",
   "account-created": "Account created — sign in.",
 };
 

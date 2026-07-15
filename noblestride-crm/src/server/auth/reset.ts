@@ -19,7 +19,7 @@ export async function requestPasswordReset(emailRaw: string, baseUrl: string): P
   try {
     await sendMail({
       to: email,
-      subject: "Reset your NobleStride password",
+      subject: "Reset your Noblestride password",
       text: `Reset link (valid 60 minutes): ${baseUrl}/reset-password/${raw}`,
     });
   } catch (err) {

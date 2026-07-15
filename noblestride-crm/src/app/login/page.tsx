@@ -36,13 +36,13 @@ export default async function LoginPage({ searchParams }: PageProps) {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <Link href="/" className="text-sm font-semibold tracking-tight text-emerald-950">
-            NobleStride Capital
+            Noblestride Capital
           </Link>
           <h1 className="mt-3 text-2xl font-bold text-[var(--text-primary)]">
             {isInvestor ? "Investor sign in" : "Sign in"}
           </h1>
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-            {isInvestor ? "Investor & partner portal access" : "NobleStride team workspace"}
+            {isInvestor ? "Investor & partner portal access" : "Noblestride team workspace"}
           </p>
         </div>
         {notice && (

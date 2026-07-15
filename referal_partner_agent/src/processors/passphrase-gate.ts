@@ -16,10 +16,10 @@ export function gateDecision(
 }
 
 const CHALLENGE =
-  "This assistant is for NobleStride staff only. Please reply with the team passphrase to continue.";
+  "This assistant is for Noblestride staff only. Please reply with the team passphrase to continue.";
 const WELCOME =
   "✅ You're verified. Ask me about any referral partner — who introduced which deal, where each referred deal stands, which introductions converted, and what fees are due. I can also record confirmed introductions, partner updates, partner-to-deal links, and fee statuses.";
-const UNCONFIGURED = "The assistant isn't fully configured yet (missing team passphrase). Please contact the NobleStride admin.";
+const UNCONFIGURED = "The assistant isn't fully configured yet (missing team passphrase). Please contact the Noblestride admin.";
 
 export const passphraseGate = new PreProcessor({
   name: "passphrase-gate",

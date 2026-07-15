@@ -1,4 +1,4 @@
-// NobleStride Capital CRM — data model
+// Noblestride Capital CRM — data model
 // Ported from the validated Twenty prototype (NOBLESTRIDE-CRM-SPEC.md §3/§4).
 // 6 core objects + Person (contacts), User (team), Activity (interaction log), Task.
 
@@ -603,7 +603,7 @@ model Investor {
   // "Data collected from potential investors" doc §3–§7 (fund self-service profile)
   notableInvestments   String? // §3 deals closed, exits achieved
   portfolioComposition String? // §3 sector, size, performance
-  caseStudies          String? // §3 deals similar to the NobleStride pipeline
+  caseStudies          String? // §3 deals similar to the Noblestride pipeline
   reinvestmentPolicy   String? // §4
   teamComposition      String? // §6 key personnel for deal evaluation
   collaborationTerms   String? // §6 NDA, exclusivity

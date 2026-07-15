@@ -1,6 +1,6 @@
 "use client";
 
-// internal-form.tsx — NobleStride staff signup (real-auth spec §10). A
+// internal-form.tsx — Noblestride staff signup (real-auth spec §10). A
 // @noblestride.capital email routes here from the email-first fork in
 // page.tsx; internalSignupAction either activates the account immediately
 // (directory match) or files it for admin approval.
@@ -22,7 +22,7 @@ export default function InternalForm({ email }: { email: string }) {
   return (
     <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
       <p className="mb-4 text-sm text-[var(--text-tertiary)]">
-        Request a NobleStride staff account. Requests for emails already in the team directory are
+        Request a Noblestride staff account. Requests for emails already in the team directory are
         activated immediately; others are reviewed by an administrator.
       </p>
 

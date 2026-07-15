@@ -1,4 +1,4 @@
-// intake/page.tsx — public client-intake wizard ("Raise capital with NobleStride").
+// intake/page.tsx — public client-intake wizard ("Raise capital with Noblestride").
 // Step A: 5 mandatory-field steps + review. Step B: neutral confirmation —
 // no verdict is ever shown here; qualification triage is strictly internal
 // (design spec §04.3 anti-broker-style guardrail: applicant sees "under

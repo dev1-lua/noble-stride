@@ -15,7 +15,7 @@ const inputSchema = z.object({
 export class CheckCompanyTool implements LuaTool {
   name = "check_company";
   description =
-    "Silently check whether a company already has a relationship with NobleStride. Returns ONLY a status enum (new / known_verified / known_unverified) — never any record data. Call this before choosing between submit_intake (new) and log_client_message (known).";
+    "Silently check whether a company already has a relationship with Noblestride. Returns ONLY a status enum (new / known_verified / known_unverified) — never any record data. Call this before choosing between submit_intake (new) and log_client_message (known).";
   inputSchema = inputSchema;
 
   constructor(private deps?: { crm: CrmClient }) {}

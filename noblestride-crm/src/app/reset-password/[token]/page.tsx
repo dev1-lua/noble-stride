@@ -33,7 +33,7 @@ export default async function ResetPasswordPage({ params, searchParams }: PagePr
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <Link href="/" className="text-sm font-semibold tracking-tight text-emerald-950">
-            NobleStride Capital
+            Noblestride Capital
           </Link>
           <h1 className="mt-3 text-2xl font-bold text-[var(--text-primary)]">Set a new password</h1>
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">Choose a new password for your account.</p>

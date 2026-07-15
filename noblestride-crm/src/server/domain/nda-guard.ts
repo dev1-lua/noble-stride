@@ -1,8 +1,8 @@
 // nda-guard.ts — pure NDA gating rules (design spec §4, SOW §06 guardrail:
 // "No VDR access without internal approval AND the correct signed NDA").
 //
-// Open NDA (investor ↔ NobleStride): satisfies the NDA requirement on EVERY
-// deal. Closed NDA (investor ↔ NobleStride ↔ one client): satisfies it only
+// Open NDA (investor ↔ Noblestride): satisfies the NDA requirement on EVERY
+// deal. Closed NDA (investor ↔ Noblestride ↔ one client): satisfies it only
 // for the engagement that carries it. An engagement-level ndaType of "Open"
 // also counts (it records that the investor's open NDA covers this deal).
 

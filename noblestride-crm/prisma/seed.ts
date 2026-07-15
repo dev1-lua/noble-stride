@@ -145,7 +145,7 @@ function advisorTypeFor(idx: number): AdvisorType {
 // Partners 0 and 2 referred ClosedWon deals → fee-sharing; add 1 and 4 for spread.
 const FEE_SHARING_PARTNER_IDX = new Set([0, 1, 2, 4]);
 const FEE_SHARING_TERMS = [
-  "30% of NobleStride advisory success fee on closed transactions.",
+  "30% of Noblestride advisory success fee on closed transactions.",
   "20% origination fee share, payable on financial close.",
   "25% of advisory fee for referred mandates; capped at USD 250k.",
   "Tiered 15–25% based on deal size; settled within 30 days of close.",
@@ -662,7 +662,7 @@ async function main() {
     await prisma.document.createMany({
       data: [
         {
-          name: "Mutual NDA — NobleStride / Counterparty",
+          name: "Mutual NDA — Noblestride / Counterparty",
           type: "NDA" as DocumentType,
           version: "v1.0",
           accessLevel: "InvestorShared" as DocumentAccessLevel,

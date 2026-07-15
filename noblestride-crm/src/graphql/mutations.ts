@@ -1,4 +1,4 @@
-// GraphQL mutations for the NobleStride Capital CRM.
+// GraphQL mutations for the Noblestride Capital CRM.
 // Thin resolvers — each is a one-line call to the matching service.
 
 import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum, MilestoneKeyEnum, DDTrackEnum } from "./builder";

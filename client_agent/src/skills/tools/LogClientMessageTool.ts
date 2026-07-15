@@ -15,7 +15,7 @@ const inputSchema = z.object({
 export class LogClientMessageTool implements LuaTool {
   name = "log_client_message";
   description =
-    "Log an inbound message from someone claiming an existing NobleStride relationship. The server verifies the claim (email vs registered contacts), files the message for the team, and returns only ok/verified. Never tell the visitor whether the company is in the CRM.";
+    "Log an inbound message from someone claiming an existing Noblestride relationship. The server verifies the claim (email vs registered contacts), files the message for the team, and returns only ok/verified. Never tell the visitor whether the company is in the CRM.";
   inputSchema = inputSchema;
 
   constructor(private deps?: { crm: CrmClient }) {}

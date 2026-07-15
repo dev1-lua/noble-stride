@@ -114,8 +114,8 @@ export default async function FundProfilePage({
       <div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">Fund Profile</h1>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-          These preferences drive which opportunities NobleStride shows your fund. Keep them
-          current — your NobleStride team can also update them on your behalf.
+          These preferences drive which opportunities Noblestride shows your fund. Keep them
+          current — your Noblestride team can also update them on your behalf.
         </p>
       </div>
 
@@ -205,7 +205,7 @@ export default async function FundProfilePage({
           <Field label="Portfolio Composition (sector, size, performance)">
             <Textarea name="portfolioComposition" defaultValue={investor.portfolioComposition} />
           </Field>
-          <Field label="Case Studies (deals similar to the NobleStride pipeline)">
+          <Field label="Case Studies (deals similar to the Noblestride pipeline)">
             <Textarea name="caseStudies" defaultValue={investor.caseStudies} />
           </Field>
         </Section>

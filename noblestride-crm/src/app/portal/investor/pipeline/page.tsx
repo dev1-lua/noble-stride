@@ -33,7 +33,7 @@ export default async function InvestorPipelinePage() {
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">My Pipeline</h1>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
           Your fund&apos;s progress on each opportunity — the {MILESTONE_ORDER.length}-step
-          NobleStride investment cycle from teaser review to completion.
+          Noblestride investment cycle from teaser review to completion.
         </p>
       </div>
 

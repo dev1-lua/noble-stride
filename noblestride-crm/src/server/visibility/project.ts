@@ -201,7 +201,7 @@ export interface ProjectedDeal {
 }
 
 /** The only advisor contact external roles ever see (no User identities). */
-export const GENERIC_CONTACT_LINE = "NobleStride Advisory — deals@noblestride.com";
+export const GENERIC_CONTACT_LINE = "Noblestride Advisory — deals@noblestride.com";
 
 // ─── Document gating ─────────────────────────────────────────────────────────
 

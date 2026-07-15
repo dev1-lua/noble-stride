@@ -1,5 +1,5 @@
 // portal/partner/details/page.tsx — the partner's own record. Agreement and
-// fee-sharing fields are read-only (set by NobleStride); the partner may edit
+// fee-sharing fields are read-only (set by Noblestride); the partner may edit
 // only their own contact details (email / phone / organization).
 import { redirect } from "next/navigation";
 import { getViewpoint } from "@/server/viewpoint";
@@ -31,7 +31,7 @@ export default async function PartnerDetailsPage({ searchParams }: PageProps) {
       <div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">My Details</h1>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-          Your partner record with NobleStride Capital. Keep your contact details current so we
+          Your partner record with Noblestride Capital. Keep your contact details current so we
           can reach you about referral progress and fee payouts.
         </p>
       </div>
@@ -43,7 +43,7 @@ export default async function PartnerDetailsPage({ searchParams }: PageProps) {
         </div>
       )}
 
-      {/* Read-only: agreement + fee-sharing, set by NobleStride */}
+      {/* Read-only: agreement + fee-sharing, set by Noblestride */}
       <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
           Partnership status
@@ -90,7 +90,7 @@ export default async function PartnerDetailsPage({ searchParams }: PageProps) {
           )}
         </dl>
         <p className="mt-4 text-xs text-[var(--text-tertiary)]">
-          Agreement status and fee-sharing terms are maintained by NobleStride. Contact the team
+          Agreement status and fee-sharing terms are maintained by Noblestride. Contact the team
           if anything looks wrong.
         </p>
       </section>

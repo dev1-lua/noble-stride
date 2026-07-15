@@ -456,7 +456,7 @@ function Review({
         ))}
       </dl>
       <p className="text-xs text-[var(--text-tertiary)]">
-        After you submit, we'll verify your email and phone, then a NobleStride team member reviews
+        After you submit, we'll verify your email and phone, then a Noblestride team member reviews
         your request. No deal information is visible before approval.
       </p>
     </div>

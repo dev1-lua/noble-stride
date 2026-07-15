@@ -89,8 +89,8 @@ export async function requestClientStatusOtp(
   try {
     await deps.send({
       to: dest,
-      subject: "Your NobleStride verification code",
-      text: `Your NobleStride verification code is ${code}. It expires in 10 minutes.\n\nIf you did not request this, you can ignore this email.`,
+      subject: "Your Noblestride verification code",
+      text: `Your Noblestride verification code is ${code}. It expires in 10 minutes.\n\nIf you did not request this, you can ignore this email.`,
     });
   } catch (err) {
     console.error("requestClientStatusOtp: send failed", err); // still {ok:true}

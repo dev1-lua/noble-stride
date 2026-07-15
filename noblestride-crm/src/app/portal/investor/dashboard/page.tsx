@@ -41,7 +41,7 @@ export default async function InvestorDashboardPage() {
       <div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">Dashboard</h1>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-          Your engagement summary with NobleStride Capital —{" "}
+          Your engagement summary with Noblestride Capital —{" "}
           <span className="font-medium text-[var(--text-secondary)]">{data.investor.name}</span>
         </p>
       </div>

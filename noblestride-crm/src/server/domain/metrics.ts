@@ -1,4 +1,4 @@
-// Pure metric functions for the NobleStride CRM.
+// Pure metric functions for the Noblestride CRM.
 // No I/O, no Prisma calls, no side-effects — safe to unit-test without a database.
 
 import {

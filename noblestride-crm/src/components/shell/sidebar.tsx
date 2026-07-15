@@ -57,7 +57,7 @@ export function BrandMark() {
         <TrendingUp className="h-5 w-5 text-white" strokeWidth={2.5} />
       </span>
       <div className="flex flex-col leading-tight">
-        <span className="text-sm font-bold text-[var(--text-primary)]">NobleStride</span>
+        <span className="text-sm font-bold text-[var(--text-primary)]">Noblestride</span>
         <span className="text-xs text-[var(--text-tertiary)]">Capital</span>
       </div>
     </div>

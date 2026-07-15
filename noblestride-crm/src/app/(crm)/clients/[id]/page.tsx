@@ -147,7 +147,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
     <div className="space-y-6">
       {restrictedSectors.length > 0 && (
         <div className="rounded-lg border border-[var(--t-tag-bg-rose)] bg-[var(--t-tag-bg-rose)] p-4 text-sm text-[var(--t-tag-text-rose)]">
-          Restricted sector — this company operates in a sector NobleStride does not take to investors ({restrictedSectorNames}).
+          Restricted sector — this company operates in a sector Noblestride does not take to investors ({restrictedSectorNames}).
         </div>
       )}
 

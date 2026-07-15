@@ -1,4 +1,4 @@
-// Pure domain types + constants for the NobleStride CRM.
+// Pure domain types + constants for the Noblestride CRM.
 // NO runtime imports from @prisma/client — type-only imports erase at compile time.
 
 import type {

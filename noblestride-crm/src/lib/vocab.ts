@@ -240,12 +240,12 @@ export const LABELS: Record<string, Record<string, string>> = {
 export const STAGE_HELP: Record<"MandateStage" | "TransactionStage" | "EngagementStage", Record<string, string>> = {
   MandateStage: {
     NewLead: "A prospective client we haven't yet qualified",
-    Qualification: "We're assessing whether this is a fit for NobleStride",
+    Qualification: "We're assessing whether this is a fit for Noblestride",
     PitchPresentation: "We've pitched our services to the prospective client",
     Proposal: "Our engagement proposal is with the client",
     Negotiation: "Terms of the engagement are being negotiated",
     Signed: "The engagement contract is signed — the mandate is live",
-    Lost: "The prospective client did not proceed with NobleStride",
+    Lost: "The prospective client did not proceed with Noblestride",
   },
   TransactionStage: {
     DealPreparation: "Analysis and investor documents are being prepared",

@@ -17,7 +17,7 @@ function trimRecord(record: Record<string, unknown>): Record<string, unknown> {
 export function buildRecordPrompt(recordType: RecordType, record: Record<string, unknown>, focus?: string): string {
   const data = JSON.stringify(trimRecord(record), null, 2);
   return [
-    `You are an internal deal-ops analyst at NobleStride Capital. Write a concise briefing on the ${recordType} below.`,
+    `You are an internal deal-ops analyst at Noblestride Capital. Write a concise briefing on the ${recordType} below.`,
     `Use EXACTLY these markdown sections, each as a "## " heading:`,
     `Headline / Current status / Recent activity / Open items / Risks & stalls / Next steps.`,
     `Rules: use only facts present in the data — never invent numbers, names, or dates. Omit a bullet rather than guess.`,

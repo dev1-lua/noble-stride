@@ -55,7 +55,7 @@ const NEW_TXN_TABLE: {
 ];
 
 const FEE_TERMS = [
-  "20% of NobleStride advisory success fee on closed transactions.",
+  "20% of Noblestride advisory success fee on closed transactions.",
   "25% of success fee on referred deals closing within 18 months.",
   "Flat referral fee: 1% of capital raised on introduced mandates.",
   "15% of advisory fee, payable on disbursement.",

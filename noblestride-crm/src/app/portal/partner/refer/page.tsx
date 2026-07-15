@@ -31,7 +31,7 @@ export default async function SubmitReferralPage({ searchParams }: PageProps) {
       <div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">Submit a Referral</h1>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-          Introduce a company to NobleStride Capital. Referrals enter our mandate pipeline and
+          Introduce a company to Noblestride Capital. Referrals enter our mandate pipeline and
           you can track their progress on your overview.
         </p>
       </div>
@@ -40,7 +40,7 @@ export default async function SubmitReferralPage({ searchParams }: PageProps) {
         <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] p-4">
           <div className="text-sm font-semibold text-[var(--t-tag-text-emerald)]">Referral received</div>
           <p className="mt-1 text-sm text-[var(--t-tag-text-emerald)]">
-            The NobleStride team will review and reach out. Your referral now appears in the
+            The Noblestride team will review and reach out. Your referral now appears in the
             table on your Overview tab.
           </p>
         </div>
@@ -128,7 +128,7 @@ export default async function SubmitReferralPage({ searchParams }: PageProps) {
 
           <div className="flex items-center justify-between gap-4 border-t border-[var(--border-subtle)] pt-4">
             <p className="text-xs text-[var(--text-tertiary)]">
-              Shared with the NobleStride advisory team only — treated under your partner
+              Shared with the Noblestride advisory team only — treated under your partner
               agreement.
             </p>
             <button
