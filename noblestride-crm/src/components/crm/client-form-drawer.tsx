@@ -16,7 +16,7 @@ const UPDATE = `mutation UpdateClient($id: ID!, $input: ClientInput!) { updateCl
 // API stays lenient because imported legacy rows and agent-created records may
 // lack one.
 const clientCreateUiSchema = clientCreateSchema.extend({
-  projectCodename: z.string().trim().min(1, "Project codename is required"),
+  codename: z.string().trim().min(1, "Project codename is required"),
 });
 
 const EMPTY: Record<string, unknown> = {
@@ -68,7 +68,7 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
       >
         <div className="space-y-4">
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
-          <TextField label="Project Codename" required={mode === "create"} value={v.projectCodename as string} onChange={(x) => f.setValue("projectCodename", x)} error={f.errors.projectCodename} />
+          <TextField label="Project Codename" required={mode === "create"} value={v.codename as string} onChange={(x) => f.setValue("codename", x)} error={f.errors.codename} />
           <div className="grid grid-cols-2 gap-3">
             <NumberField label="Year Founded" value={v.yearFounded as number} onChange={(x) => f.setValue("yearFounded", x)} />
             <TextField label="HQ City" value={v.hqCity as string} onChange={(x) => f.setValue("hqCity", x)} />
@@ -85,10 +85,7 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
           <TextAreaField label="Description" value={v.description as string} onChange={(x) => f.setValue("description", x)} />
 
           <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Identity</p>
-          <div className="grid grid-cols-2 gap-3">
-            <TextField label="Codename" value={v.codename as string} onChange={(x) => f.setValue("codename", x)} />
-            <SelectField label="Status" value={v.status as string} onChange={(x) => f.setValue("status", x)} options={options("ClientStatus")} />
-          </div>
+          <SelectField label="Status" value={v.status as string} onChange={(x) => f.setValue("status", x)} options={options("ClientStatus")} />
           <div className="grid grid-cols-2 gap-3">
             <TextField label="Registration No." value={v.registrationNo as string} onChange={(x) => f.setValue("registrationNo", x)} />
             <TextField label="HQ Country" value={v.hqCountry as string} onChange={(x) => f.setValue("hqCountry", x)} />

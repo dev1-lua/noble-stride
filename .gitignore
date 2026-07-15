@@ -16,6 +16,7 @@ agent-info.md
 # QA artifacts — living local log + stray screenshots (untracked 2026-07-15)
 playwright assessment/
 /sucafina-*.png
+/deals-builtin-view-applied.png
 
 # Internal SDD planning + deploy notes (untracked 2026-07-15; kept local)
 docs/superpowers/plans/2026-07-14-client-agent-status.md
