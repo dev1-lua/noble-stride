@@ -26,3 +26,7 @@ docs/superpowers/specs/2026-07-14-client-agent-status-design.md
 docs/superpowers/specs/2026-07-14-crm-agent-data-in-design.md
 docs/superpowers/specs/2026-07-14-investor-agent-design.md
 docs/VERCEL-AGENT-DEPLOYMENT-2026-07-14.md
+
+# Keep all Markdown docs/reports and PNG image assets out of source control (2026-07-16)
+*.md
+*.png
