@@ -816,29 +816,11 @@ async function main() {
     data: { impactFlags: { set: ["WomenLed"] } },
   });
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // §7c  SAVED VIEWS — starter views for the unified deals queue.
-  // Idempotent by (name, entity) since this seed can re-run against a DB
-  // that already has team-created views.
-  // ─────────────────────────────────────────────────────────────────────────
-  const starterViews = [
-    {
-      name: "Active mandates",
-      config: { filters: { type: "mandate" }, sort: "dateOnboarded", dir: "desc", columns: [], groupBy: "stage", view: "list" },
-    },
-    {
-      name: "Live transactions",
-      config: { filters: { type: "transaction" }, sort: "ticket", dir: "desc", columns: [], groupBy: "stage", view: "list" },
-    },
-    {
-      name: "Closing this quarter",
-      config: { filters: { type: "transaction", stage: "Closing" }, sort: "daysInStage", dir: "desc", columns: [], groupBy: "", view: "list" },
-    },
-  ];
-  for (const v of starterViews) {
-    const existing = await prisma.savedView.findFirst({ where: { name: v.name, entity: "deals" } });
-    if (!existing) await prisma.savedView.create({ data: { name: v.name, entity: "deals", config: v.config } });
-  }
+  // §7c  SAVED VIEWS — the starter views ("Active mandates", "Live
+  // transactions", "Closing this quarter") are now defined in code as
+  // STARTER_VIEWS in src/server/services/saved-views.ts, so they appear in
+  // every environment without a seed run. Only user-created views live in the
+  // DB (via the createSavedView mutation).
 
   // ─────────────────────────────────────────────────────────────────────────
   // §8  SUMMARY

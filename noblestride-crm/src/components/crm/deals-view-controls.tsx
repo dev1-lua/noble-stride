@@ -36,6 +36,9 @@ export interface SavedViewOption {
   id: string;
   name: string;
   config: SavedViewConfig;
+  // Built-in presets (defined in code, no DB row). Read-only: applied like any
+  // view, but Rename/Delete are hidden since there's no row to mutate.
+  isDefault?: boolean;
 }
 
 // Params that describe queue *display* state rather than a filter dimension —
@@ -208,7 +211,7 @@ export function DealsViewControls({ views }: { views: SavedViewOption[] }) {
             onChange={(id) => id && applySavedView(id)}
           />
         </div>
-        {selectedView && (
+        {selectedView && !selectedView.isDefault && (
           <>
             <Button variant="secondary" size="sm" disabled={pending} onClick={() => renameView(selectedView)}>
               Rename
