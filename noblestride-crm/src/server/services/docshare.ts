@@ -3,6 +3,7 @@
 // persist the returned Box fields onto the Document row.
 import { prisma } from "@/lib/db";
 import { getDocShareProvider } from "@/server/integrations/docshare/provider";
+import { notifyInvestors } from "./notifications";
 
 export async function shareDocumentViaBox(
   documentId: string,
@@ -19,13 +20,24 @@ export async function shareDocumentViaBox(
     expiresAt: opts.expiresAt,
     allowDownload: opts.allowDownload ?? false,
   });
-  await prisma.document.update({
+  const doc = await prisma.document.update({
     where: { id: documentId },
     data: {
       boxFileId: result.externalFileId,
       boxSharedLinkUrl: result.sharedUrl,
       boxWatermarkApplied: result.watermarkApplied,
     },
+    select: { name: true, investorId: true, transactionId: true },
   });
+  // Portal feed (client feedback 2026-07): only when the document is filed
+  // against a specific investor — a generic deal-level share has no single
+  // portal recipient. Best-effort; the share itself already succeeded.
+  if (doc.investorId) {
+    await notifyInvestors([doc.investorId], {
+      kind: "document_shared",
+      title: `Document shared with you: ${doc.name}`,
+      href: doc.transactionId ? `/portal/investor/deals/${doc.transactionId}` : "/portal/investor",
+    });
+  }
   return { sharedUrl: result.sharedUrl };
 }

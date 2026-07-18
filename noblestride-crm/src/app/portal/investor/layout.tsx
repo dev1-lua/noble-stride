@@ -9,6 +9,7 @@ import { getCurrentAuth } from "@/server/auth/current";
 import { isBlockedClassification } from "@/server/visibility/tiers";
 import { InvestorSidebar } from "@/components/portal/investor-sidebar";
 import { InvestorTopbar } from "@/components/portal/investor-topbar";
+import { unreadForInvestor, unreadCountForInvestor } from "@/server/services/notifications";
 import { Card, CardBody } from "@/components/ui/card";
 
 export default async function InvestorPortalLayout({
@@ -89,12 +90,26 @@ export default async function InvestorPortalLayout({
     );
   }
 
+  // Portal notification feed (client feedback 2026-07): server-rendered per
+  // request, same no-polling contract as the internal bell.
+  const investorId = vp.role === "investor" ? vp.recordId : null;
+  const [unread, unreadCount] = investorId
+    ? await Promise.all([unreadForInvestor(investorId, 15), unreadCountForInvestor(investorId)])
+    : [[], 0];
+  const notifications = unread.map((n) => ({
+    id: n.id,
+    kind: n.kind,
+    title: n.title,
+    href: n.href,
+    createdAt: n.createdAt.toISOString(),
+  }));
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--bg-secondary)]">
       <div className="flex flex-1 overflow-hidden">
         <InvestorSidebar name={sidebarName} email={sidebarEmail} />
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <InvestorTopbar />
+          <InvestorTopbar notifications={notifications} notificationCount={unreadCount} />
           <main className="flex-1 overflow-y-auto p-6">
             {children}
             <p className="pt-8 text-xs text-[var(--text-tertiary)]">

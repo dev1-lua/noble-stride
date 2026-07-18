@@ -6,7 +6,7 @@ import type { Actor } from "@/graphql/context";
 import { amountPending, deriveYearQuarter } from "@/server/domain/disbursement";
 import { engagementCreateSchema, engagementUpdateSchema } from "@/lib/schemas/engagement";
 import { assertStageAllowed, stageRequiresNda } from "@/server/domain/nda-guard";
-import { notify } from "./notifications";
+import { notify, notifyInvestors } from "./notifications";
 
 function derived(input: { totalAmount?: number | null; amountDisbursed?: number | null; dateReceived?: Date | null }) {
   const pending = amountPending(input.totalAmount ?? null, input.amountDisbursed ?? null);
@@ -25,9 +25,20 @@ export async function createEngagement(raw: unknown, actor: Actor) {
     });
     assertStageAllowed(input.engagementStage, investor, { ndaType: input.ndaType ?? null });
   }
-  return prisma.engagement.create({
+  const created = await prisma.engagement.create({
     data: { ...input, name: input.name ?? "Engagement", ...derived(input), createdSource: actorSource(actor) } as never,
+    include: { transaction: { select: { name: true } } },
   });
+  // Portal feed (client feedback 2026-07): an engagement is what shares a
+  // deal with an investor — surface it in their portal. Post-commit and
+  // best-effort (notifyInvestors never throws). The portal deal page itself
+  // stays tier-gated by the visibility engine regardless.
+  await notifyInvestors([created.investorId], {
+    kind: "deal_shared",
+    title: `New opportunity shared: ${created.transaction.name}`,
+    href: `/portal/investor/deals/${created.transactionId}`,
+  });
+  return created;
 }
 
 export async function updateEngagement(id: string, raw: unknown, actor: Actor = { type: "HUMAN" }) {

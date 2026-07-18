@@ -7,6 +7,8 @@ import { z } from "zod";
 import { MilestoneKey } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { actorSource, CrudError } from "./crud";
+import { notifyInvestors } from "./notifications";
+import { label } from "@/lib/vocab";
 import type { Actor } from "@/graphql/context";
 
 const recordMilestoneSchema = z.object({
@@ -18,9 +20,16 @@ const recordMilestoneSchema = z.object({
 
 export async function recordMilestone(raw: unknown, actor: Actor) {
   const input = recordMilestoneSchema.parse(raw);
-  const engagement = await prisma.engagement.findUnique({ where: { id: input.engagementId }, select: { id: true } });
+  const engagement = await prisma.engagement.findUnique({
+    where: { id: input.engagementId },
+    select: { id: true, investorId: true, transaction: { select: { id: true, name: true } } },
+  });
   if (!engagement) throw new CrudError("Engagement not found");
-  return prisma.engagementMilestone.upsert({
+  const existing = await prisma.engagementMilestone.findUnique({
+    where: { engagementId_key: { engagementId: input.engagementId, key: input.key } },
+    select: { id: true },
+  });
+  const milestone = await prisma.engagementMilestone.upsert({
     where: { engagementId_key: { engagementId: input.engagementId, key: input.key } },
     create: {
       engagementId: input.engagementId,
@@ -34,6 +43,16 @@ export async function recordMilestone(raw: unknown, actor: Actor) {
       ...(input.notes !== undefined ? { notes: input.notes } : {}),
     },
   });
+  // Portal feed (client feedback 2026-07): first recording only — re-dating or
+  // annotating an existing milestone is bookkeeping, not investor news.
+  if (!existing) {
+    await notifyInvestors([engagement.investorId], {
+      kind: "milestone_update",
+      title: `Milestone reached on ${engagement.transaction.name}: ${label("MilestoneKey", input.key)}`,
+      href: `/portal/investor/pipeline`,
+    });
+  }
+  return milestone;
 }
 
 export async function unrecordMilestone(engagementId: string, key: MilestoneKey): Promise<boolean> {

@@ -5,11 +5,17 @@
 // no AskBar (agents are internal). The avatar + sign-out live in the sidebar
 // footer (SidebarProfile) instead.
 import { usePathname } from "next/navigation";
-import { Bell } from "lucide-react";
 import { deriveInvestorPageMeta } from "./investor-portal-nav";
 import { CommandPalette } from "@/components/search/command-palette";
+import { InvestorNotificationBell, type PortalNotificationItem } from "./investor-notification-bell";
 
-export function InvestorTopbar() {
+export function InvestorTopbar({
+  notifications = [],
+  notificationCount = 0,
+}: {
+  notifications?: PortalNotificationItem[];
+  notificationCount?: number;
+}) {
   const pathname = usePathname();
   const { title, subtitle } = deriveInvestorPageMeta(pathname);
 
@@ -26,13 +32,7 @@ export function InvestorTopbar() {
         {/* Global search (Task 3/D) — same query, server scopes to this investor */}
         <CommandPalette />
 
-        <button
-          type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)]"
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4" />
-        </button>
+        <InvestorNotificationBell initialItems={notifications} initialCount={notificationCount} />
       </div>
     </header>
   );
