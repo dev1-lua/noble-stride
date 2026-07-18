@@ -1,0 +1,49 @@
+{
+  "kind": "tool",
+  "name": "summarize_record",
+  "description": "Summarize one CRM record (client, investor, mandate, transaction, engagement, or partner) into a structured internal briefing with a deep link.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/SummarizeRecordTool.ts",
+  "sourceHash": "1075fe1127242c4b",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "recordType": {
+          "type": "string",
+          "enum": [
+            "client",
+            "investor",
+            "mandate",
+            "transaction",
+            "engagement",
+            "partner"
+          ],
+          "description": "Which kind of CRM record to summarize"
+        },
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The record's name as the user said it, or an exact record id from a previous candidates list"
+        },
+        "focus": {
+          "type": "string",
+          "description": "Optional angle to weight the briefing toward, e.g. 'risks' or 'next steps'"
+        }
+      },
+      "required": [
+        "recordType",
+        "query"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "SummarizeRecordTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 10140,
+  "hash": "9f06e20f0128fe1b"
+}

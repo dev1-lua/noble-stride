@@ -1,0 +1,857 @@
+{
+  "version": "2.0.0",
+  "compiledAt": "2026-07-15T14:31:40.154Z",
+  "primitives": [
+    {
+      "kind": "agent",
+      "name": "referral_partner_tracker",
+      "description": "# NobleStride Referral Partner Tracker\n\n## Identity & Role\nYou are the NobleStride Referral Partner Tracker — an internal agent that tracks referral partners and every deal they introduce: who introduced what, how the relationship is set up, whether introductions convert, and where fee sharing stands. You keep the record honest; people decide and act.\n\n## Business Context\nNobleStride Capital is a Kenya-based transactions advisory firm running fundraising mandates for African companies. Deals often arrive through referral partners — lawyers, auditors, banks, advisory firms, individual advisors — who introduce companies or opportunities. Mandates track client acquisition; transactions track fundraising execution; Partner records track who referred what and on what fee-sharing terms.\n\n## Audience\nNobleStride staff only — deal leads, analysts, admins — inside the CRM. Never assume you are talking to a client, investor, or partner. Partner identities are confidential internal information.\n\n## Tone\nConcise, matter-of-fact, briefing style. Lead with the headline. Short bullet sections over prose.\n\n## Capabilities\n- Report any partner's full referral picture: introductions, linked deals, conversion, agreement and fee state.\n- Answer who introduced any deal and trace its stage history since introduction.\n- Digest the referred-deal pipeline and rank partner performance; a weekday-morning sweep also notifies staff when referred deals move stage.\n- Record confirmed changes: introductions (partner + review task), partner details and agreements, partner-to-deal attribution, fee status.\n\n## Write protocol (hard rule)\nBefore ANY write, state precisely what will change and wait for an explicit yes in this conversation. Never batch unconfirmed writes. Every write is logged to the CRM activity trail where the CRM allows it.\n\n## Hard boundaries — never do these, no exceptions\n- Never reveal a partner's identity or introduction details to anyone outside NobleStride, and never draft investor- or client-facing material that names a partner or who introduced a deal. If asked, refuse and say why.\n- Never act on fee sharing without a recorded, signed agreement on the partner record. If the fee tool refuses, relay why — the only path is recording the agreement first. Never compute, negotiate, or promise fees.\n- Never create a deal from an introduction. Introductions get a partner record and a review task; a mandate is only created on explicit staff instruction via the dedicated tool.\n- Never share a deal with, or introduce anything to, an external party — advisor-to-NobleStride deal sharing always goes through a human review gate (the review tasks you file).\n- Never contact partners, clients, or investors. You create tasks; staff act on them.\n- Everything you produce is internal. Refuse to draft external-facing material.\n\n## Guidelines\n- Only state facts returned by your tools. Never invent numbers, names, or dates.\n- Never show raw CRM record ids; refer to records by name and share the deep link the tool provides.\n- If a name is ambiguous, present the candidates and ask which one.\n- If a tool reports the CRM is unreachable, say so and suggest trying again shortly — do not answer from memory.\n- No legal, tax, or investment advice — including fee-sharing or agreement terms.",
+      "path": "artifacts/agent/referral_partner_tracker.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/index.ts",
+      "hash": "ecc549c19ca89a71",
+      "persona": "# NobleStride Referral Partner Tracker\n\n## Identity & Role\nYou are the NobleStride Referral Partner Tracker — an internal agent that tracks referral partners and every deal they introduce: who introduced what, how the relationship is set up, whether introductions convert, and where fee sharing stands. You keep the record honest; people decide and act.\n\n## Business Context\nNobleStride Capital is a Kenya-based transactions advisory firm running fundraising mandates for African companies. Deals often arrive through referral partners — lawyers, auditors, banks, advisory firms, individual advisors — who introduce companies or opportunities. Mandates track client acquisition; transactions track fundraising execution; Partner records track who referred what and on what fee-sharing terms.\n\n## Audience\nNobleStride staff only — deal leads, analysts, admins — inside the CRM. Never assume you are talking to a client, investor, or partner. Partner identities are confidential internal information.\n\n## Tone\nConcise, matter-of-fact, briefing style. Lead with the headline. Short bullet sections over prose.\n\n## Capabilities\n- Report any partner's full referral picture: introductions, linked deals, conversion, agreement and fee state.\n- Answer who introduced any deal and trace its stage history since introduction.\n- Digest the referred-deal pipeline and rank partner performance; a weekday-morning sweep also notifies staff when referred deals move stage.\n- Record confirmed changes: introductions (partner + review task), partner details and agreements, partner-to-deal attribution, fee status.\n\n## Write protocol (hard rule)\nBefore ANY write, state precisely what will change and wait for an explicit yes in this conversation. Never batch unconfirmed writes. Every write is logged to the CRM activity trail where the CRM allows it.\n\n## Hard boundaries — never do these, no exceptions\n- Never reveal a partner's identity or introduction details to anyone outside NobleStride, and never draft investor- or client-facing material that names a partner or who introduced a deal. If asked, refuse and say why.\n- Never act on fee sharing without a recorded, signed agreement on the partner record. If the fee tool refuses, relay why — the only path is recording the agreement first. Never compute, negotiate, or promise fees.\n- Never create a deal from an introduction. Introductions get a partner record and a review task; a mandate is only created on explicit staff instruction via the dedicated tool.\n- Never share a deal with, or introduce anything to, an external party — advisor-to-NobleStride deal sharing always goes through a human review gate (the review tasks you file).\n- Never contact partners, clients, or investors. You create tasks; staff act on them.\n- Everything you produce is internal. Refuse to draft external-facing material.\n\n## Guidelines\n- Only state facts returned by your tools. Never invent numbers, names, or dates.\n- Never show raw CRM record ids; refer to records by name and share the deep link the tool provides.\n- If a name is ambiguous, present the candidates and ask which one.\n- If a tool reports the CRM is unreachable, say so and suggest trying again shortly — do not answer from memory.\n- No legal, tax, or investment advice — including fee-sharing or agreement terms.",
+      "model": "anthropic/claude-sonnet-5"
+    },
+    {
+      "kind": "skill",
+      "name": "referral-partner-tracker",
+      "description": "Tracks referral partners and the deals they introduce to NobleStride — introductions, partner relationships, conversion, and fee sharing.",
+      "path": "artifacts/skill/referral-partner-tracker.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/referral.skill.ts",
+      "hash": "d90fa03c35c78ae7",
+      "context": "This skill tracks referral partners and their introduced deals in NobleStride's CRM. All data is internal; partner identities are confidential.\n\nRouting:\n- get_partner_profile when the user asks about one partner (\"what has Jane referred?\", \"does Acme Advisory have a fee agreement?\"). Pass names exactly as said, or an id from a previous result.\n- get_referral_status when they ask who introduced a deal or where a referred deal stands (\"who brought in the Busoga mandate?\").\n- referral_pipeline_digest when they ask what's happening across referred deals — optionally scoped to a partner or a recent window (days).\n- partner_performance for conversion numbers and the partner leaderboard (\"which partner brings the best deals?\").\n- summarize_record for a general briefing on any single client, investor, mandate, transaction, engagement, or partner.\n- record_introduction / create_referred_mandate / link_partner_to_deal / update_partner / update_fee_status for writes — see the write protocol below.\n\nIntroductions (default path — hard rule):\n- When staff report an introduction, the default action is record_introduction: it creates/updates the Partner and files a review task. It NEVER creates a deal.\n- Only call create_referred_mandate when staff explicitly instruct you to create the mandate (\"create the mandate\", \"set up the mandate for this referral\"). An introduction alone is never that instruction.\n- record_introduction requires the confirmation to state whether the partner record is NEW or EXISTING — say which in your confirmation question.\n\nFee sharing (hard rule):\n- update_fee_status returning \"refused\" means the partner has no recorded, signed fee-sharing agreement. Relay the message, do NOT look for workarounds, and do NOT retry with different inputs. The only path forward is recording the signed agreement via update_partner first — offer that.\n- You record fee facts (status, amount) only — never compute what a fee \"should\" be, never negotiate terms, never mark anything paid without the user stating it happened.\n\nPartner identity (hard rule):\n- Partner identities and introduction details are internal-only. Refuse to draft, suggest, or contribute to ANYTHING investor- or client-facing that names a partner or reveals who introduced a deal — emails, teasers, notes, lists. Deal sharing with external parties always goes through a human.\n\nWrite protocol (mandatory):\n1. Before ANY write, state precisely what will change — record, field, old → new value where known — and ask for confirmation.\n2. Only after the user explicitly says yes in this conversation, call the tool with confirmed: true. Never batch unconfirmed writes; confirm each one.\n3. Relay the result including the deep link. \"conflict\" from link_partner_to_deal means a different originator is already recorded — show them and only override if the user explicitly chooses to. \"possible_duplicate\" from record_introduction means similar partners exist — show them and let the user pick existing vs create-new.\n4. If a result says auditLogged: false, mention the change was saved but couldn't be attached to the activity trail (partner-only records have no activity feed).\n\nAmbiguity and errors:\n- status \"ambiguous*\": list the candidates (title + subtitle) and ask the user to pick; call again with the chosen id.\n- status \"not_found\" / \"*_not_found\": say so plainly and ask for a spelling or more context — never guess.\n- status \"client_not_found\" from create_referred_mandate: the client must exist first — onboarding clients is a human workflow.\n- status \"not_referred\": the deal has no originator on record; offer link_partner_to_deal if the user knows who introduced it.\n- If the CRM is unreachable, say so and suggest retrying shortly — never answer from memory.\n\nNever expose raw record ids; refer to records by name and share the deep links tools return.",
+      "tools": [
+        "get_partner_profile",
+        "get_referral_status",
+        "referral_pipeline_digest",
+        "partner_performance",
+        "summarize_record",
+        "record_introduction",
+        "create_referred_mandate",
+        "link_partner_to_deal",
+        "update_partner",
+        "update_fee_status"
+      ]
+    },
+    {
+      "kind": "tool",
+      "name": "get_partner_profile",
+      "description": "Full referral profile of ONE partner: contact details, fee-sharing agreement state, every deal they introduced (mandates and transactions, with stages and conversion), fee statuses, change history, and a deep link. Identify the partner by name or by an exact id from a previous candidates list.",
+      "path": "artifacts/tool/get_partner_profile.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/GetPartnerProfileTool.ts",
+      "hash": "a4047cfeb7178207",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "partner": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Partner name as the user said it, or an exact id from a previous candidates list"
+            }
+          },
+          "required": [
+            "partner"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "get_referral_status",
+      "description": "Referral status of ONE deal (mandate or transaction): who introduced it, the stage timeline since introduction, whether the referral converted, partner fee status, and a deep link. Identify the deal by name or by an exact id from a previous candidates list.",
+      "path": "artifacts/tool/get_referral_status.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/GetReferralStatusTool.ts",
+      "hash": "e5ae78fb91284a83",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "deal": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Deal (mandate or transaction) name as the user said it, or an exact id from a previous candidates list"
+            },
+            "dealType": {
+              "type": "string",
+              "enum": [
+                "mandate",
+                "transaction"
+              ],
+              "description": "Narrow the lookup when the user said which pipeline the deal is in"
+            }
+          },
+          "required": [
+            "deal"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "referral_pipeline_digest",
+      "description": "Digest of every referred deal in the pipeline, grouped by introducing partner: stage, status, conversion, deep links. Optionally scoped to one partner and/or to deals updated in the last N days.",
+      "path": "artifacts/tool/referral_pipeline_digest.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/ReferralPipelineDigestTool.ts",
+      "hash": "5e8708a5ab2d9b9e",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "partner": {
+              "type": "string",
+              "description": "Scope the digest to one partner — name as the user said it, or an exact id"
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365,
+              "description": "Only include deals updated in the last N days; omit for all referred deals"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "partner_performance",
+      "description": "Referral performance rollup: deals referred, still active, closed, revenue and conversion — firm-wide leaderboard across all partners, or one partner's numbers. Read-only.",
+      "path": "artifacts/tool/partner_performance.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/PartnerPerformanceTool.ts",
+      "hash": "01160815f926b747",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "partner": {
+              "type": "string",
+              "description": "Narrow to one partner — name as the user said it, or an exact id; omit for the firm-wide leaderboard"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "summarize_record",
+      "description": "Summarize one CRM record (client, investor, mandate, transaction, engagement, or partner) into a structured internal briefing with a deep link.",
+      "path": "artifacts/tool/summarize_record.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/SummarizeRecordTool.ts",
+      "hash": "a4c9288635a520d8",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "recordType": {
+              "type": "string",
+              "enum": [
+                "client",
+                "investor",
+                "mandate",
+                "transaction",
+                "engagement",
+                "partner"
+              ],
+              "description": "Which kind of CRM record to summarize"
+            },
+            "query": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The record's name as the user said it, or an exact record id from a previous candidates list"
+            },
+            "focus": {
+              "type": "string",
+              "description": "Optional angle to weight the briefing toward, e.g. 'risks' or 'next steps'"
+            }
+          },
+          "required": [
+            "recordType",
+            "query"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "record_introduction",
+      "description": "Record a partner introduction: create or update the Partner record and file a review task for staff (due in 3 business days). Does NOT create a deal — deals are only created by staff after review, or via create_referred_mandate when explicitly instructed. REQUIRES prior user confirmation stating whether the partner record is new or existing.",
+      "path": "artifacts/tool/record_introduction.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/RecordIntroductionTool.ts",
+      "hash": "8df5c6f5857b8e69",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "partner": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The introducing partner — name as the user said it, or an exact id"
+            },
+            "partnerAction": {
+              "type": "string",
+              "enum": [
+                "create_new",
+                "use_existing"
+              ],
+              "description": "Whether this introduction creates a NEW partner record or attaches to an EXISTING one. The confirmation you asked the user must have stated which."
+            },
+            "introduced": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Who/what was introduced — the company or opportunity, as the user described it"
+            },
+            "details": {
+              "type": "string",
+              "description": "Any context the user gave: sector, size, timing, how the introduction happened"
+            },
+            "partnerFields": {
+              "type": "object",
+              "properties": {
+                "partnerType": {
+                  "type": "string",
+                  "enum": [
+                    "LawFirm",
+                    "Auditor",
+                    "Advisor",
+                    "Bank",
+                    "InvestmentBank",
+                    "Consulting",
+                    "Other"
+                  ]
+                },
+                "advisorType": {
+                  "type": "string",
+                  "enum": [
+                    "Lawyer",
+                    "Investor",
+                    "Consultant",
+                    "TransactionAdvisor",
+                    "AdvisoryFirm",
+                    "Other"
+                  ]
+                },
+                "organization": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "location": {
+                  "type": "string"
+                },
+                "profile": {
+                  "type": "string",
+                  "description": "Short description of who the partner is"
+                }
+              },
+              "additionalProperties": false,
+              "description": "Partner contact/profile details to store on the partner record"
+            },
+            "existingDealId": {
+              "type": "string",
+              "description": "Only when the introduction concerns a deal already in the CRM — its exact id from a previous lookup"
+            },
+            "existingDealType": {
+              "type": "string",
+              "enum": [
+                "mandate",
+                "transaction"
+              ],
+              "description": "Required when existingDealId is set"
+            },
+            "createAnyway": {
+              "type": "boolean",
+              "description": "Only after the user has seen the possible duplicates and still wants a new partner record"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "description": "One line explaining the entry — written to the CRM audit trail"
+            },
+            "confirmed": {
+              "type": "boolean",
+              "const": true,
+              "description": "Only pass true after the user has explicitly confirmed this exact introduction — including whether the partner record is new or existing — in this conversation. If you have not asked yet, ask first — do not call this tool."
+            }
+          },
+          "required": [
+            "partner",
+            "partnerAction",
+            "introduced",
+            "reason",
+            "confirmed"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "create_referred_mandate",
+      "description": "Create a new mandate attributed to a referring partner. ONLY on explicit staff instruction to create the mandate — a recorded introduction is NOT enough; the default path for introductions is record_introduction (partner + review task). Requires an existing client. REQUIRES prior user confirmation of the exact details.",
+      "path": "artifacts/tool/create_referred_mandate.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/CreateReferredMandateTool.ts",
+      "hash": "f8ee099b618ad523",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "client": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The EXISTING client the mandate is for — name or exact id. This tool never creates clients."
+            },
+            "partner": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The introducing partner — name or exact id"
+            },
+            "mandateName": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Name for the new mandate, e.g. 'Acme Foods — growth capital raise'"
+            },
+            "dealSize": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "currency": {
+              "type": "string",
+              "description": "ISO currency code, e.g. USD or KES"
+            },
+            "sector": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Agribusiness",
+                  "FinancialServices",
+                  "FMCG",
+                  "Manufacturing",
+                  "RenewableEnergy",
+                  "Technology",
+                  "Healthcare",
+                  "Banking",
+                  "RealEstate",
+                  "Education",
+                  "Infrastructure",
+                  "Aviation",
+                  "Construction",
+                  "Hospitality",
+                  "Leasing",
+                  "MediaEntertainment",
+                  "Services",
+                  "TransportLogistics",
+                  "WaterSanitation",
+                  "Energy",
+                  "OilAndGas",
+                  "Mining",
+                  "Gambling",
+                  "Alcohol",
+                  "Tobacco"
+                ]
+              }
+            },
+            "notes": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "description": "One line explaining the creation — written to the CRM audit trail"
+            },
+            "confirmed": {
+              "type": "boolean",
+              "const": true,
+              "description": "Only pass true after the user has EXPLICITLY instructed you to create this mandate (e.g. 'create the mandate') and confirmed the exact details in this conversation. An introduction alone is NOT an instruction to create a mandate."
+            }
+          },
+          "required": [
+            "client",
+            "partner",
+            "mandateName",
+            "reason",
+            "confirmed"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "link_partner_to_deal",
+      "description": "Attribute an existing deal (mandate or transaction) to a referring partner by setting its referredBy link. Reports a conflict if a different partner is already recorded as originator — replacing them requires the user to explicitly opt in. REQUIRES prior user confirmation of the exact link.",
+      "path": "artifacts/tool/link_partner_to_deal.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/LinkPartnerToDealTool.ts",
+      "hash": "9b08d5b6027ea450",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "partner": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The referring partner — name or exact id"
+            },
+            "deal": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The deal to attribute — name or exact id"
+            },
+            "dealType": {
+              "type": "string",
+              "enum": [
+                "mandate",
+                "transaction"
+              ],
+              "description": "Which pipeline the deal is in"
+            },
+            "overrideExisting": {
+              "type": "boolean",
+              "description": "Only after the user has seen the current originator and explicitly chosen to replace them"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "description": "One line explaining the link — written to the CRM audit trail"
+            },
+            "confirmed": {
+              "type": "boolean",
+              "const": true,
+              "description": "Only pass true after the user has explicitly confirmed this exact partner-to-deal link in this conversation. If you have not asked yet, ask first — do not call this tool."
+            }
+          },
+          "required": [
+            "partner",
+            "deal",
+            "dealType",
+            "reason",
+            "confirmed"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "update_partner",
+      "description": "Update one partner record: contact/profile details, status, fee-sharing agreement and terms, agreement status, internal-only flag, feedback notes. This is also how a signed fee-sharing agreement gets recorded. REQUIRES prior user confirmation of the exact change.",
+      "path": "artifacts/tool/update_partner.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/UpdatePartnerTool.ts",
+      "hash": "9ddfb54c5c14e6e4",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "partnerId": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Exact partner id from a prior get_partner_profile or candidates list"
+            },
+            "set": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "partnerType": {
+                  "type": "string",
+                  "enum": [
+                    "LawFirm",
+                    "Auditor",
+                    "Advisor",
+                    "Bank",
+                    "InvestmentBank",
+                    "Consulting",
+                    "Other"
+                  ]
+                },
+                "advisorType": {
+                  "type": "string",
+                  "enum": [
+                    "Lawyer",
+                    "Investor",
+                    "Consultant",
+                    "TransactionAdvisor",
+                    "AdvisoryFirm",
+                    "Other"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "Active",
+                    "Preferred",
+                    "Inactive"
+                  ]
+                },
+                "location": {
+                  "type": "string"
+                },
+                "organization": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "profile": {
+                  "type": "string"
+                },
+                "feeSharingAgreement": {
+                  "type": "boolean",
+                  "description": "Whether a fee-sharing agreement exists with this partner"
+                },
+                "feeSharingTerms": {
+                  "type": "string",
+                  "description": "The agreed fee-sharing terms, e.g. '2% of closed transaction value'"
+                },
+                "partnerAgreementStatus": {
+                  "type": "string",
+                  "enum": [
+                    "None",
+                    "Sent",
+                    "Signed"
+                  ]
+                },
+                "internalOnly": {
+                  "type": "boolean",
+                  "description": "Partner identity must never reach investors — this marks the record internal-only"
+                },
+                "feedbackNotes": {
+                  "type": "string",
+                  "description": "Internal feedback about working with this partner — never shared externally"
+                },
+                "amount": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "currency": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "description": "Only the fields to change"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "description": "One line explaining the change — written to the CRM audit trail"
+            },
+            "confirmed": {
+              "type": "boolean",
+              "const": true,
+              "description": "Only pass true after the user has explicitly confirmed this exact change in this conversation. If you have not asked yet, ask first — do not call this tool."
+            }
+          },
+          "required": [
+            "partnerId",
+            "set",
+            "reason",
+            "confirmed"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "update_fee_status",
+      "description": "Record the status (NotDue/Due/Invoiced/Paid) and amount of a referring partner's fee on a transaction. REFUSED unless the partner has a recorded, signed fee-sharing agreement — record the agreement first via update_partner. Records facts only: never computes, negotiates, or pays fees. REQUIRES prior user confirmation of the exact change.",
+      "path": "artifacts/tool/update_fee_status.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/UpdateFeeStatusTool.ts",
+      "hash": "3e7017166d18701a",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "transaction": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The transaction the fee is on — name or exact id (partner fees live on transactions)"
+            },
+            "set": {
+              "type": "object",
+              "properties": {
+                "partnerFeeStatus": {
+                  "type": "string",
+                  "enum": [
+                    "NotDue",
+                    "Due",
+                    "Invoiced",
+                    "Paid"
+                  ]
+                },
+                "partnerFeeAmount": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": false,
+              "description": "Only the fields to change"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "description": "One line explaining the change — written to the CRM audit trail"
+            },
+            "confirmed": {
+              "type": "boolean",
+              "const": true,
+              "description": "Only pass true after the user has explicitly confirmed this exact fee change in this conversation. If you have not asked yet, ask first — do not call this tool."
+            }
+          },
+          "required": [
+            "transaction",
+            "set",
+            "reason",
+            "confirmed"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "job",
+      "name": "stage-watch",
+      "description": "Weekday 08:00 Nairobi sweep of referred deals: detects stage/status transitions since the last snapshot and sends registered staff one grouped update, flagging conversions and losses.",
+      "path": "artifacts/job/stage-watch.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/jobs/stage-watch.job.ts",
+      "hash": "c88c5420e933347c",
+      "schedule": {
+        "type": "cron",
+        "expression": "0 8 * * 1-5",
+        "timezone": "Africa/Nairobi"
+      },
+      "timeout": 300,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffSeconds": 120
+      }
+    },
+    {
+      "kind": "preprocessor",
+      "name": "passphrase-gate",
+      "description": "Blocks all messages until the user proves staff membership with the team passphrase.",
+      "path": "artifacts/preprocessor/passphrase-gate.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/processors/passphrase-gate.ts",
+      "hash": "69e324fe7cb8f430",
+      "isAsync": false,
+      "priority": 10
+    }
+  ],
+  "projectFiles": [
+    {
+      "relativePath": "AGENT-BUILD-2026-07-15.md",
+      "hash": "33e5fb536476b701",
+      "size": 5390,
+      "type": "other"
+    },
+    {
+      "relativePath": "env.example",
+      "hash": "de97c617f1db6581",
+      "size": 1155,
+      "type": "other"
+    },
+    {
+      "relativePath": "lua.skill.yaml",
+      "hash": "82d0337736d121ac",
+      "size": 635,
+      "type": "config"
+    },
+    {
+      "relativePath": "package.json",
+      "hash": "eaccd43c3a7a7932",
+      "size": 827,
+      "type": "config"
+    },
+    {
+      "relativePath": "PLAN.md",
+      "hash": "5ab1b057011262e1",
+      "size": 10963,
+      "type": "other"
+    },
+    {
+      "relativePath": "QUICKSTART.md",
+      "hash": "1f6dc757b3084517",
+      "size": 2450,
+      "type": "other"
+    },
+    {
+      "relativePath": "README.md",
+      "hash": "f690bd869269a060",
+      "size": 3571,
+      "type": "other"
+    },
+    {
+      "relativePath": "scripts/smoke.ts",
+      "hash": "878711dad7c8c0dd",
+      "size": 4454,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/index.ts",
+      "hash": "2b25425fa685b5e5",
+      "size": 3830,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/jobs/stage-watch.job.ts",
+      "hash": "06f816361e36ded7",
+      "size": 7254,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/crm-client.ts",
+      "hash": "7b4fe003c1d7661e",
+      "size": 2291,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/format.ts",
+      "hash": "4e534a91cd270c5f",
+      "size": 2992,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/guards.ts",
+      "hash": "5d8f77ba7ce64400",
+      "size": 2565,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/queries.ts",
+      "hash": "b25ef425ba99513d",
+      "size": 10710,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/record-lookup.ts",
+      "hash": "3c1c1397b5ae5597",
+      "size": 2275,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/referral-scan.ts",
+      "hash": "65469fc3d94a8ab5",
+      "size": 2940,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/resolve.ts",
+      "hash": "f234e7e075d9128e",
+      "size": 1389,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/processors/passphrase-gate.ts",
+      "hash": "889812b946c2d1f0",
+      "size": 2302,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/referral.skill.ts",
+      "hash": "ca6a663b4f0f38a3",
+      "size": 5284,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/CreateReferredMandateTool.ts",
+      "hash": "56036458eb6f323e",
+      "size": 6009,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/GetPartnerProfileTool.ts",
+      "hash": "c696a42fc4e43ba0",
+      "size": 6161,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/GetReferralStatusTool.ts",
+      "hash": "c2505ee4125ddc3b",
+      "size": 7954,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/LinkPartnerToDealTool.ts",
+      "hash": "e083c4d6e70bce3e",
+      "size": 7075,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/PartnerPerformanceTool.ts",
+      "hash": "266f538646e71221",
+      "size": 3392,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/RecordIntroductionTool.ts",
+      "hash": "bed586eb60c1a303",
+      "size": 10711,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/ReferralPipelineDigestTool.ts",
+      "hash": "10c95749c541d802",
+      "size": 3622,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/SummarizeRecordTool.ts",
+      "hash": "1075fe1127242c4b",
+      "size": 3734,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/UpdateFeeStatusTool.ts",
+      "hash": "17de123a28fb5dd3",
+      "size": 5588,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/UpdatePartnerTool.ts",
+      "hash": "da7e056593d608cc",
+      "size": 6262,
+      "type": "source"
+    },
+    {
+      "relativePath": "tsconfig.json",
+      "hash": "deef34fa8b853cfe",
+      "size": 431,
+      "type": "config"
+    },
+    {
+      "relativePath": "vitest.config.ts",
+      "hash": "b8bbae1d8eb20581",
+      "size": 150,
+      "type": "source"
+    }
+  ],
+  "config": {
+    "packageJson": "eaccd43c3a7a7932",
+    "tsconfigJson": "deef34fa8b853cfe",
+    "luaSkillYaml": "82d0337736d121ac"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "kind": "tool",
+  "name": "get_referral_status",
+  "description": "Referral status of ONE deal (mandate or transaction): who introduced it, the stage timeline since introduction, whether the referral converted, partner fee status, and a deep link. Identify the deal by name or by an exact id from a previous candidates list.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/GetReferralStatusTool.ts",
+  "sourceHash": "c2505ee4125ddc3b",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "deal": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Deal (mandate or transaction) name as the user said it, or an exact id from a previous candidates list"
+        },
+        "dealType": {
+          "type": "string",
+          "enum": [
+            "mandate",
+            "transaction"
+          ],
+          "description": "Narrow the lookup when the user said which pipeline the deal is in"
+        }
+      },
+      "required": [
+        "deal"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "GetReferralStatusTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 13247,
+  "hash": "e5ae78fb91284a83"
+}

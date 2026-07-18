@@ -1,0 +1,63 @@
+{
+  "kind": "tool",
+  "name": "link_partner_to_deal",
+  "description": "Attribute an existing deal (mandate or transaction) to a referring partner by setting its referredBy link. Reports a conflict if a different partner is already recorded as originator — replacing them requires the user to explicitly opt in. REQUIRES prior user confirmation of the exact link.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/LinkPartnerToDealTool.ts",
+  "sourceHash": "e083c4d6e70bce3e",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "partner": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The referring partner — name or exact id"
+        },
+        "deal": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The deal to attribute — name or exact id"
+        },
+        "dealType": {
+          "type": "string",
+          "enum": [
+            "mandate",
+            "transaction"
+          ],
+          "description": "Which pipeline the deal is in"
+        },
+        "overrideExisting": {
+          "type": "boolean",
+          "description": "Only after the user has seen the current originator and explicitly chosen to replace them"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One line explaining the link — written to the CRM audit trail"
+        },
+        "confirmed": {
+          "type": "boolean",
+          "const": true,
+          "description": "Only pass true after the user has explicitly confirmed this exact partner-to-deal link in this conversation. If you have not asked yet, ask first — do not call this tool."
+        }
+      },
+      "required": [
+        "partner",
+        "deal",
+        "dealType",
+        "reason",
+        "confirmed"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "LinkPartnerToDealTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 14006,
+  "hash": "9b08d5b6027ea450"
+}

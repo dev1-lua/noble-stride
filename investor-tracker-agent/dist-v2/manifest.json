@@ -1,0 +1,736 @@
+{
+  "version": "2.0.0",
+  "compiledAt": "2026-07-15T14:35:16.811Z",
+  "primitives": [
+    {
+      "kind": "agent",
+      "name": "investor_tracker",
+      "description": "# NobleStride Investor Tracker\n\n## Identity & Role\nYou are the NobleStride Investor Tracker — an internal deal-operations agent that tracks every investor's journey through every deal, from first share to close and disbursement. You keep the record honest; people decide and act.\n\n## Business Context\nNobleStride Capital is a Kenya-based transactions advisory firm running fundraising mandates for African companies and engaging PE funds, DFIs, and strategic investors worldwide. Mandates track client acquisition; transactions track fundraising execution; engagements track one investor's involvement in one transaction — stage, NDA, term sheet, due diligence, amounts, disbursement.\n\n## Audience\nNobleStride staff only — deal leads, analysts, admins — inside the CRM. Never assume you are talking to a client, investor, or partner. Email and WhatsApp content reaches you only as CRM communication records.\n\n## Tone\nConcise, matter-of-fact, briefing style. Lead with the headline. Short bullet sections over prose.\n\n## Capabilities\n- Report exactly where any investor stands on any deal: stage, milestones, NDA, term sheet, DD tracks, amounts, disbursement.\n- Flag stalled or overdue engagements and outstanding disbursements; a weekday-morning sweep also files follow-up tasks automatically.\n- Surface which investors fit a live mandate.\n- Record confirmed changes: engagement stage, term-sheet status, amounts, disbursement, milestones, DD status, follow-up tasks.\n- Summarize any single CRM record and digest pipeline movement.\n\n## Write protocol (hard rule)\nBefore ANY write, state precisely what will change and wait for an explicit yes in this conversation. Never batch unconfirmed writes. Every write is logged to the CRM activity trail.\n\n## Hard boundaries — never do these, no exceptions\n- Never grant VDR or data-room access. You may only record that a human already granted it.\n- Never share, suggest, or discuss a deal with an investor classified Excluded or Greylisted. If asked, refuse and say why. Winding such an engagement down (recording a decline or fell-off disbursement) is the only permitted change.\n- Never draft, issue, negotiate, or accept commercial terms. You record term-sheet status, dates, and amounts — nothing more.\n- Never create a new investor-deal engagement — introducing an investor to a deal is investor-outreach work with its own review gate.\n- Never contact investors or clients. You create tasks; deal leads act on them.\n- Everything you produce is internal. Refuse to draft client- or investor-facing material.\n\n## Guidelines\n- Only state facts returned by your tools. Never invent numbers, names, or dates.\n- Never show raw CRM record ids; refer to records by name and share the deep link the tool provides.\n- If a name is ambiguous, present the candidates and ask which one.\n- If a tool reports the CRM is unreachable, say so and suggest trying again shortly — do not answer from memory.\n- No legal, tax, or investment advice.",
+      "path": "artifacts/agent/investor_tracker.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/index.ts",
+      "hash": "535f8cf909b5d44e",
+      "persona": "# NobleStride Investor Tracker\n\n## Identity & Role\nYou are the NobleStride Investor Tracker — an internal deal-operations agent that tracks every investor's journey through every deal, from first share to close and disbursement. You keep the record honest; people decide and act.\n\n## Business Context\nNobleStride Capital is a Kenya-based transactions advisory firm running fundraising mandates for African companies and engaging PE funds, DFIs, and strategic investors worldwide. Mandates track client acquisition; transactions track fundraising execution; engagements track one investor's involvement in one transaction — stage, NDA, term sheet, due diligence, amounts, disbursement.\n\n## Audience\nNobleStride staff only — deal leads, analysts, admins — inside the CRM. Never assume you are talking to a client, investor, or partner. Email and WhatsApp content reaches you only as CRM communication records.\n\n## Tone\nConcise, matter-of-fact, briefing style. Lead with the headline. Short bullet sections over prose.\n\n## Capabilities\n- Report exactly where any investor stands on any deal: stage, milestones, NDA, term sheet, DD tracks, amounts, disbursement.\n- Flag stalled or overdue engagements and outstanding disbursements; a weekday-morning sweep also files follow-up tasks automatically.\n- Surface which investors fit a live mandate.\n- Record confirmed changes: engagement stage, term-sheet status, amounts, disbursement, milestones, DD status, follow-up tasks.\n- Summarize any single CRM record and digest pipeline movement.\n\n## Write protocol (hard rule)\nBefore ANY write, state precisely what will change and wait for an explicit yes in this conversation. Never batch unconfirmed writes. Every write is logged to the CRM activity trail.\n\n## Hard boundaries — never do these, no exceptions\n- Never grant VDR or data-room access. You may only record that a human already granted it.\n- Never share, suggest, or discuss a deal with an investor classified Excluded or Greylisted. If asked, refuse and say why. Winding such an engagement down (recording a decline or fell-off disbursement) is the only permitted change.\n- Never draft, issue, negotiate, or accept commercial terms. You record term-sheet status, dates, and amounts — nothing more.\n- Never create a new investor-deal engagement — introducing an investor to a deal is investor-outreach work with its own review gate.\n- Never contact investors or clients. You create tasks; deal leads act on them.\n- Everything you produce is internal. Refuse to draft client- or investor-facing material.\n\n## Guidelines\n- Only state facts returned by your tools. Never invent numbers, names, or dates.\n- Never show raw CRM record ids; refer to records by name and share the deep link the tool provides.\n- If a name is ambiguous, present the candidates and ask which one.\n- If a tool reports the CRM is unreachable, say so and suggest trying again shortly — do not answer from memory.\n- No legal, tax, or investment advice.",
+      "model": "anthropic/claude-sonnet-5"
+    },
+    {
+      "kind": "skill",
+      "name": "investor-tracker",
+      "description": "Tracks every investor's journey through every NobleStride deal — stages, milestones, term sheets, due diligence, disbursement — plus record summaries and pipeline digests.",
+      "path": "artifacts/skill/investor-tracker.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tracker.skill.ts",
+      "hash": "4c6fe278445b3c90",
+      "context": "This skill tracks investor-deal engagements in NobleStride's CRM and answers questions about its records. All data is internal.\n\nRouting:\n- get_engagement_status when the user asks where one investor stands on one deal (\"where is Vantage on the Busoga deal?\"). Pass names exactly as said, or engagementId from a previous result.\n- scan_stalled_engagements when they ask what's stalled, overdue, idle, or needs chasing — optionally scoped to a deal or investor.\n- find_fit_investors when they ask which investors fit/match a deal or mandate.\n- update_engagement / record_milestone / update_dd_status / create_followup_task for writes — see the write protocol below.\n- summarize_record for a general briefing on any single client, investor, mandate, transaction, engagement, or partner.\n- pipeline_digest when they ask what changed/moved recently across the pipeline. Default days=7.\n\nWrite protocol (mandatory):\n1. Before ANY write, state precisely what will change — record, field, old → new value where known — and ask for confirmation.\n2. Only after the user explicitly says yes in this conversation, call the tool with confirmed: true. Never batch unconfirmed writes; confirm each one.\n3. Relay the result including the deep link. If the tool returns status \"blocked\", explain the CRM's rule (e.g. an NDA must be recorded before advancing past NDA-gated stages). If it returns \"refused\", the investor is excluded/greylisted — do not look for workarounds.\n\nAmbiguity and errors:\n- status \"ambiguous*\": list the candidates (title + subtitle) and ask the user to pick; call again with the chosen id.\n- status \"not_found\" / \"*_not_found\": say so plainly and ask for a spelling or more context — never guess.\n- status \"no_engagement\": the investor has not been introduced to that deal. Starting one is investor-outreach work, not tracking — say so.\n- If the CRM is unreachable, say so and suggest retrying shortly — never answer from memory.\n\nAfter scan_stalled_engagements, offer to create a follow-up task for any flag the user wants actioned — the deal lead acts on flags, you never contact anyone.\nNever expose raw record ids; refer to records by name and share the deep links tools return.",
+      "tools": [
+        "get_engagement_status",
+        "update_engagement",
+        "record_milestone",
+        "update_dd_status",
+        "create_followup_task",
+        "find_fit_investors",
+        "scan_stalled_engagements",
+        "summarize_record",
+        "pipeline_digest"
+      ]
+    },
+    {
+      "kind": "tool",
+      "name": "get_engagement_status",
+      "description": "Full tracking picture of ONE investor's engagement on ONE deal: stage, NDA, term sheet, amounts and disbursement, the milestone checklist, the deal's due-diligence tracks, recent activity, a staleness verdict, and a deep link. Identify the engagement either by engagementId (from a previous call) or by investor + deal names.",
+      "path": "artifacts/tool/get_engagement_status.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/GetEngagementStatusTool.ts",
+      "hash": "bc382ec0b1466b49",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "investor": {
+              "type": "string",
+              "description": "Investor name as the user said it, or an exact id from a previous candidates list"
+            },
+            "deal": {
+              "type": "string",
+              "description": "Transaction/deal name as the user said it, or an exact id from a previous candidates list"
+            },
+            "engagementId": {
+              "type": "string",
+              "description": "Skip name resolution when a previous call already returned the engagement id"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "update_engagement",
+      "description": "Update one investor-deal engagement: stage, interest, NDA type, term-sheet status/date, amounts, disbursement, probability, feedback. REQUIRES prior user confirmation of the exact change. Records facts only — never drafts, issues, or accepts commercial terms, and cannot grant VDR or data-room access. Every update is logged to the CRM activity trail.",
+      "path": "artifacts/tool/update_engagement.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/UpdateEngagementTool.ts",
+      "hash": "9241cfb42fb34877",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "engagementId": {
+              "type": "string",
+              "minLength": 1,
+              "description": "From a prior get_engagement_status or scan call"
+            },
+            "set": {
+              "type": "object",
+              "properties": {
+                "engagementStage": {
+                  "type": "string",
+                  "enum": [
+                    "Shared",
+                    "TeaserSent",
+                    "NDASigned",
+                    "IMShared",
+                    "VDRAccess",
+                    "Meeting",
+                    "InfoRequest",
+                    "DueDiligence",
+                    "TermSheet",
+                    "Offer",
+                    "Invested",
+                    "Declined"
+                  ],
+                  "description": "New engagement stage. Advancing past NDA-gated stages requires an NDA on record — the CRM enforces this."
+                },
+                "interestLevel": {
+                  "type": "string",
+                  "enum": [
+                    "Low",
+                    "Medium",
+                    "High"
+                  ]
+                },
+                "ndaType": {
+                  "type": "string",
+                  "enum": [
+                    "Open",
+                    "Closed"
+                  ],
+                  "description": "Records which NDA covers this engagement"
+                },
+                "termSheetIssued": {
+                  "type": "boolean",
+                  "description": "Whether a term sheet has been issued — status only, never the terms themselves"
+                },
+                "termSheetDate": {
+                  "type": "string",
+                  "description": "ISO date the term sheet was issued/received"
+                },
+                "totalAmount": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Total committed amount"
+                },
+                "amountDisbursed": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Amount disbursed to date"
+                },
+                "disbursementStatus": {
+                  "type": "string",
+                  "enum": [
+                    "Disbursed",
+                    "Ongoing",
+                    "FellOff",
+                    "Dropped"
+                  ]
+                },
+                "dateReceived": {
+                  "type": "string",
+                  "description": "ISO date funds were received"
+                },
+                "probability": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "feedback": {
+                  "type": "string",
+                  "description": "Investor feedback to record"
+                },
+                "notes": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "description": "Only the fields to change"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "description": "One line explaining the change — written to the CRM audit trail"
+            },
+            "confirmed": {
+              "type": "boolean",
+              "const": true,
+              "description": "Only pass true after the user has explicitly confirmed this exact change in this conversation. If you have not asked yet, ask first — do not call this tool."
+            }
+          },
+          "required": [
+            "engagementId",
+            "set",
+            "reason",
+            "confirmed"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "record_milestone",
+      "description": "Record (or unrecord) one of the 15 investor-process milestones on an engagement — teaser review through NDA, IC approvals, term sheet, agreements, competition approval, success fee. REQUIRES prior user confirmation. Recording DataRoomAccess documents that a human already granted access — this agent never grants access itself.",
+      "path": "artifacts/tool/record_milestone.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/RecordMilestoneTool.ts",
+      "hash": "35c9b18c15ba1bbb",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "engagementId": {
+              "type": "string",
+              "minLength": 1,
+              "description": "From a prior get_engagement_status or scan call"
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "record",
+                "unrecord"
+              ],
+              "default": "record",
+              "description": "record marks the milestone complete (upsert, safe to re-run); unrecord removes a mistaken entry"
+            },
+            "key": {
+              "type": "string",
+              "enum": [
+                "TeaserReview",
+                "NdaExecuted",
+                "ExpressionOfInterest",
+                "DataRoomAccess",
+                "PreliminaryDD",
+                "ICPaperPrepared",
+                "FirstICApproval",
+                "NonBindingTermSheet",
+                "TermSheetExecuted",
+                "OnsiteDD",
+                "SecondICApproval",
+                "BindingOffer",
+                "DefinitiveAgreements",
+                "CompetitionApproval",
+                "SuccessFeePaid"
+              ],
+              "description": "Which of the 15 investor-process milestones"
+            },
+            "completedAt": {
+              "type": "string",
+              "description": "ISO datetime the milestone was completed (defaults to now)"
+            },
+            "notes": {
+              "type": "string"
+            },
+            "confirmed": {
+              "type": "boolean",
+              "const": true,
+              "description": "Only pass true after the user has explicitly confirmed this exact change in this conversation. If you have not asked yet, ask first — do not call this tool."
+            }
+          },
+          "required": [
+            "engagementId",
+            "key",
+            "confirmed"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "update_dd_status",
+      "description": "Update the status of one due-diligence workstream (Financial, Tax, Commercial, ESG, Legal) on a deal, then return all five tracks. REQUIRES prior user confirmation. DD tracks are internal-only records.",
+      "path": "artifacts/tool/update_dd_status.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/UpdateDDStatusTool.ts",
+      "hash": "a009c8f05fb395a1",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "deal": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The transaction/deal whose due diligence to update — name or exact id"
+            },
+            "track": {
+              "type": "string",
+              "enum": [
+                "Financial",
+                "Tax",
+                "Commercial",
+                "ESG",
+                "Legal"
+              ],
+              "description": "Which DD workstream"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "NotStarted",
+                "InProgress",
+                "Complete",
+                "Flagged",
+                "NotApplicable"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            },
+            "startedAt": {
+              "type": "string",
+              "description": "ISO datetime the workstream started"
+            },
+            "completedAt": {
+              "type": "string",
+              "description": "ISO datetime the workstream completed"
+            },
+            "confirmed": {
+              "type": "boolean",
+              "const": true,
+              "description": "Only pass true after the user has explicitly confirmed this exact change in this conversation. If you have not asked yet, ask first — do not call this tool."
+            }
+          },
+          "required": [
+            "deal",
+            "track",
+            "status",
+            "confirmed"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "create_followup_task",
+      "description": "Create a follow-up Task for the deal lead, linked to the relevant deal and investor. REQUIRES prior user confirmation. The deal lead acts on it — this agent never contacts anyone itself.",
+      "path": "artifacts/tool/create_followup_task.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/CreateFollowupTaskTool.ts",
+      "hash": "2a12234db7763671",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Short imperative task title, e.g. 'Follow up with Vantage on the term sheet'"
+            },
+            "body": {
+              "type": "string",
+              "description": "Context for whoever picks the task up"
+            },
+            "dueAt": {
+              "type": "string",
+              "description": "ISO datetime the task is due — defaults to 3 business days from now"
+            },
+            "engagementId": {
+              "type": "string",
+              "description": "Preferred — links the task to both the deal and the investor automatically"
+            },
+            "investor": {
+              "type": "string",
+              "description": "Investor name/id, used with deal when engagementId is unknown"
+            },
+            "deal": {
+              "type": "string",
+              "description": "Deal name/id, used with investor when engagementId is unknown"
+            },
+            "confirmed": {
+              "type": "boolean",
+              "const": true,
+              "description": "Only pass true after the user has explicitly confirmed this exact task in this conversation. If you have not asked yet, ask first — do not call this tool."
+            }
+          },
+          "required": [
+            "title",
+            "confirmed"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "find_fit_investors",
+      "description": "Rank which investors fit a live deal (mandate criteria match: sector, geography, ticket size, instrument). Returns up to 8 matches with reasons and warnings, and notes which already have an engagement on this deal. Excluded and greylisted investors are never returned. Read-only — introducing an investor to the deal is a human decision.",
+      "path": "artifacts/tool/find_fit_investors.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/FindFitInvestorsTool.ts",
+      "hash": "d2c515d45ecc8842",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "deal": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The live transaction/deal to match investors against — name as the user said it, or an exact id"
+            }
+          },
+          "required": [
+            "deal"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "scan_stalled_engagements",
+      "description": "Scan investor-deal engagements on live deals for stalled or overdue items: idle beyond the per-stage threshold, disbursements still outstanding, or issued term sheets missing their date. Read-only — offer create_followup_task for any flag the deal lead wants actioned.",
+      "path": "artifacts/tool/scan_stalled_engagements.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/ScanStalledEngagementsTool.ts",
+      "hash": "d792dcd328251ef8",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "deal": {
+              "type": "string",
+              "description": "Limit the scan to one transaction/deal (name or exact id)"
+            },
+            "investor": {
+              "type": "string",
+              "description": "Limit the scan to one investor (name or exact id)"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "summarize_record",
+      "description": "Summarize one CRM record (client, investor, mandate, transaction, engagement, or partner) into a structured internal briefing with a deep link.",
+      "path": "artifacts/tool/summarize_record.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/SummarizeRecordTool.ts",
+      "hash": "9f06e20f0128fe1b",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "recordType": {
+              "type": "string",
+              "enum": [
+                "client",
+                "investor",
+                "mandate",
+                "transaction",
+                "engagement",
+                "partner"
+              ],
+              "description": "Which kind of CRM record to summarize"
+            },
+            "query": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The record's name as the user said it, or an exact record id from a previous candidates list"
+            },
+            "focus": {
+              "type": "string",
+              "description": "Optional angle to weight the briefing toward, e.g. 'risks' or 'next steps'"
+            }
+          },
+          "required": [
+            "recordType",
+            "query"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "tool",
+      "name": "pipeline_digest",
+      "description": "Pipeline movement digest: what moved stage, what's new, what's stalled, and totals by stage — for mandates, transactions, or both.",
+      "path": "artifacts/tool/pipeline_digest.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/PipelineDigestTool.ts",
+      "hash": "7b717bac5e00e239",
+      "hasCondition": false,
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 90,
+              "default": 7,
+              "description": "Lookback window in days"
+            },
+            "pipeline": {
+              "type": "string",
+              "enum": [
+                "mandates",
+                "transactions",
+                "both"
+              ],
+              "default": "both"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "kind": "job",
+      "name": "followup-check",
+      "description": "Weekday 08:00 Nairobi sweep of investor-deal engagements: flags stalled/overdue items, creates deduplicated follow-up tasks for deal leads, and notifies registered staff.",
+      "path": "artifacts/job/followup-check.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/jobs/followup-check.job.ts",
+      "hash": "2ef8f40a97b43412",
+      "schedule": {
+        "type": "cron",
+        "expression": "0 8 * * 1-5",
+        "timezone": "Africa/Nairobi"
+      },
+      "timeout": 300,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffSeconds": 120
+      }
+    },
+    {
+      "kind": "preprocessor",
+      "name": "passphrase-gate",
+      "description": "Blocks all messages until the user proves staff membership with the team passphrase.",
+      "path": "artifacts/preprocessor/passphrase-gate.js",
+      "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/processors/passphrase-gate.ts",
+      "hash": "462d97b7ba7247ec",
+      "isAsync": false,
+      "priority": 10
+    }
+  ],
+  "projectFiles": [
+    {
+      "relativePath": "AGENT-BUILD-2026-07-14.md",
+      "hash": "f331f98836036ddd",
+      "size": 9838,
+      "type": "other"
+    },
+    {
+      "relativePath": "env.example",
+      "hash": "3ded903969b53329",
+      "size": 1286,
+      "type": "other"
+    },
+    {
+      "relativePath": "HANDOVER-TESTING.md",
+      "hash": "af244da16b70187a",
+      "size": 3074,
+      "type": "other"
+    },
+    {
+      "relativePath": "lua.skill.yaml",
+      "hash": "2f0df3bf4053d8ad",
+      "size": 630,
+      "type": "config"
+    },
+    {
+      "relativePath": "package.json",
+      "hash": "eaccd43c3a7a7932",
+      "size": 827,
+      "type": "config"
+    },
+    {
+      "relativePath": "QA-REPORT-2026-07-14.md",
+      "hash": "559cd9a7a3cf2193",
+      "size": 6115,
+      "type": "other"
+    },
+    {
+      "relativePath": "QUICKSTART.md",
+      "hash": "1f6dc757b3084517",
+      "size": 2450,
+      "type": "other"
+    },
+    {
+      "relativePath": "README.md",
+      "hash": "f690bd869269a060",
+      "size": 3571,
+      "type": "other"
+    },
+    {
+      "relativePath": "scripts/smoke.ts",
+      "hash": "d5881d8304f72483",
+      "size": 4402,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/index.ts",
+      "hash": "59a475eb226b8cc6",
+      "size": 3494,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/jobs/followup-check.job.ts",
+      "hash": "d5c073e361b12b53",
+      "size": 4429,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/crm-client.ts",
+      "hash": "7b4fe003c1d7661e",
+      "size": 2291,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/digest-runner.ts",
+      "hash": "887034f89ec89a24",
+      "size": 1660,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/engagement-resolve.ts",
+      "hash": "4421ca7dd965e68c",
+      "size": 2762,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/format.ts",
+      "hash": "a8a9176d5ea79d67",
+      "size": 6574,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/guards.ts",
+      "hash": "5e8f5e923ded8c10",
+      "size": 2036,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/queries.ts",
+      "hash": "4d0cf46590350c55",
+      "size": 9012,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/record-lookup.ts",
+      "hash": "291c46ad10a1dd21",
+      "size": 2079,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/resolve.ts",
+      "hash": "f234e7e075d9128e",
+      "size": 1389,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/staleness.ts",
+      "hash": "2c42158145b56429",
+      "size": 2543,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/lib/tracker-runner.ts",
+      "hash": "48c36437d5006ecc",
+      "size": 4962,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/processors/passphrase-gate.ts",
+      "hash": "211da2552126d6ba",
+      "size": 2275,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/CreateFollowupTaskTool.ts",
+      "hash": "26439e755117e305",
+      "size": 5060,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/FindFitInvestorsTool.ts",
+      "hash": "c5ff10805fe2fd29",
+      "size": 3515,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/GetEngagementStatusTool.ts",
+      "hash": "2576b7907e7ee8ea",
+      "size": 6666,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/PipelineDigestTool.ts",
+      "hash": "2ca006b2805c6d37",
+      "size": 1292,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/RecordMilestoneTool.ts",
+      "hash": "4ef4aa63e354250c",
+      "size": 4586,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/ScanStalledEngagementsTool.ts",
+      "hash": "8ef74df7ba83826d",
+      "size": 2744,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/SummarizeRecordTool.ts",
+      "hash": "1075fe1127242c4b",
+      "size": 3734,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/UpdateDDStatusTool.ts",
+      "hash": "7ef290d9c75f3d9d",
+      "size": 4180,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tools/UpdateEngagementTool.ts",
+      "hash": "ba04e97c1ba4e51c",
+      "size": 5571,
+      "type": "source"
+    },
+    {
+      "relativePath": "src/skills/tracker.skill.ts",
+      "hash": "30482e792a7fe81f",
+      "size": 3503,
+      "type": "source"
+    },
+    {
+      "relativePath": "tsconfig.json",
+      "hash": "deef34fa8b853cfe",
+      "size": 431,
+      "type": "config"
+    },
+    {
+      "relativePath": "vitest.config.ts",
+      "hash": "b8bbae1d8eb20581",
+      "size": 150,
+      "type": "source"
+    }
+  ],
+  "config": {
+    "packageJson": "eaccd43c3a7a7932",
+    "tsconfigJson": "deef34fa8b853cfe",
+    "luaSkillYaml": "2f0df3bf4053d8ad"
+  }
+}

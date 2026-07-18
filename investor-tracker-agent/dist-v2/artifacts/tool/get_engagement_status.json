@@ -1,0 +1,36 @@
+{
+  "kind": "tool",
+  "name": "get_engagement_status",
+  "description": "Full tracking picture of ONE investor's engagement on ONE deal: stage, NDA, term sheet, amounts and disbursement, the milestone checklist, the deal's due-diligence tracks, recent activity, a staleness verdict, and a deep link. Identify the engagement either by engagementId (from a previous call) or by investor + deal names.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/GetEngagementStatusTool.ts",
+  "sourceHash": "2576b7907e7ee8ea",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "investor": {
+          "type": "string",
+          "description": "Investor name as the user said it, or an exact id from a previous candidates list"
+        },
+        "deal": {
+          "type": "string",
+          "description": "Transaction/deal name as the user said it, or an exact id from a previous candidates list"
+        },
+        "engagementId": {
+          "type": "string",
+          "description": "Skip name resolution when a previous call already returned the engagement id"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "GetEngagementStatusTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 12477,
+  "hash": "bc382ec0b1466b49"
+}

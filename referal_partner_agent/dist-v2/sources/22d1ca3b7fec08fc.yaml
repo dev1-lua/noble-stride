@@ -1,0 +1,22 @@
+agent:
+  agentId: baseAgent_agent_1784064430432_jb06nrzm6
+  orgId: 1e5359cc-c465-44cb-b040-44e338433411
+skills:
+  - name: referral-partner-tracker
+    skillId: 6f891030-581a-411d-b2aa-88fc4bd871d3
+    version: 1.0.2
+webhooks: []
+jobs:
+  - jobId: 40cfd53d-8660-44a2-976c-8eb456257190
+    name: stage-watch
+    version: 1.0.2
+preprocessors:
+  - name: passphrase-gate
+    preprocessorId: preprocessor_60a4ac8a-2b0b-4eac-9596-23426b80382d
+    version: 1.0.2
+postprocessors: []
+mcpServers: []
+backup:
+  activeVersion: 2
+  lastHash: 24453c85da42220f1b1fec9c7a3c76fdff53a20c64e5aa30cb5122b12cb4ed04
+  lastPushedAt: '2026-07-14T22:53:05.401Z'

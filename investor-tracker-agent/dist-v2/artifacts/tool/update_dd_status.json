@@ -1,0 +1,72 @@
+{
+  "kind": "tool",
+  "name": "update_dd_status",
+  "description": "Update the status of one due-diligence workstream (Financial, Tax, Commercial, ESG, Legal) on a deal, then return all five tracks. REQUIRES prior user confirmation. DD tracks are internal-only records.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/UpdateDDStatusTool.ts",
+  "sourceHash": "7ef290d9c75f3d9d",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "deal": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The transaction/deal whose due diligence to update — name or exact id"
+        },
+        "track": {
+          "type": "string",
+          "enum": [
+            "Financial",
+            "Tax",
+            "Commercial",
+            "ESG",
+            "Legal"
+          ],
+          "description": "Which DD workstream"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "NotStarted",
+            "InProgress",
+            "Complete",
+            "Flagged",
+            "NotApplicable"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string",
+          "description": "ISO datetime the workstream started"
+        },
+        "completedAt": {
+          "type": "string",
+          "description": "ISO datetime the workstream completed"
+        },
+        "confirmed": {
+          "type": "boolean",
+          "const": true,
+          "description": "Only pass true after the user has explicitly confirmed this exact change in this conversation. If you have not asked yet, ask first — do not call this tool."
+        }
+      },
+      "required": [
+        "deal",
+        "track",
+        "status",
+        "confirmed"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "UpdateDDStatusTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 10459,
+  "hash": "a009c8f05fb395a1"
+}

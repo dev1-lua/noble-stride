@@ -1,0 +1,58 @@
+{
+  "kind": "tool",
+  "name": "create_followup_task",
+  "description": "Create a follow-up Task for the deal lead, linked to the relevant deal and investor. REQUIRES prior user confirmation. The deal lead acts on it — this agent never contacts anyone itself.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/CreateFollowupTaskTool.ts",
+  "sourceHash": "26439e755117e305",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Short imperative task title, e.g. 'Follow up with Vantage on the term sheet'"
+        },
+        "body": {
+          "type": "string",
+          "description": "Context for whoever picks the task up"
+        },
+        "dueAt": {
+          "type": "string",
+          "description": "ISO datetime the task is due — defaults to 3 business days from now"
+        },
+        "engagementId": {
+          "type": "string",
+          "description": "Preferred — links the task to both the deal and the investor automatically"
+        },
+        "investor": {
+          "type": "string",
+          "description": "Investor name/id, used with deal when engagementId is unknown"
+        },
+        "deal": {
+          "type": "string",
+          "description": "Deal name/id, used with investor when engagementId is unknown"
+        },
+        "confirmed": {
+          "type": "boolean",
+          "const": true,
+          "description": "Only pass true after the user has explicitly confirmed this exact task in this conversation. If you have not asked yet, ask first — do not call this tool."
+        }
+      },
+      "required": [
+        "title",
+        "confirmed"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "CreateFollowupTaskTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 11326,
+  "hash": "2a12234db7763671"
+}

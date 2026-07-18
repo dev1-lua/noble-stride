@@ -1,0 +1,28 @@
+{
+  "kind": "tool",
+  "name": "partner_performance",
+  "description": "Referral performance rollup: deals referred, still active, closed, revenue and conversion — firm-wide leaderboard across all partners, or one partner's numbers. Read-only.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/PartnerPerformanceTool.ts",
+  "sourceHash": "266f538646e71221",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "partner": {
+          "type": "string",
+          "description": "Narrow to one partner — name as the user said it, or an exact id; omit for the firm-wide leaderboard"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "PartnerPerformanceTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 11334,
+  "hash": "01160815f926b747"
+}

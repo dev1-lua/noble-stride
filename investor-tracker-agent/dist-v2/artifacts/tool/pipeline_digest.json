@@ -1,0 +1,40 @@
+{
+  "kind": "tool",
+  "name": "pipeline_digest",
+  "description": "Pipeline movement digest: what moved stage, what's new, what's stalled, and totals by stage — for mandates, transactions, or both.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/PipelineDigestTool.ts",
+  "sourceHash": "2ca006b2805c6d37",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 90,
+          "default": 7,
+          "description": "Lookback window in days"
+        },
+        "pipeline": {
+          "type": "string",
+          "enum": [
+            "mandates",
+            "transactions",
+            "both"
+          ],
+          "default": "both"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "PipelineDigestTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 9457,
+  "hash": "7b717bac5e00e239"
+}

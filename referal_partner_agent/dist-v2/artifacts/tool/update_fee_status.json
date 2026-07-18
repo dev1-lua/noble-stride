@@ -1,0 +1,65 @@
+{
+  "kind": "tool",
+  "name": "update_fee_status",
+  "description": "Record the status (NotDue/Due/Invoiced/Paid) and amount of a referring partner's fee on a transaction. REFUSED unless the partner has a recorded, signed fee-sharing agreement — record the agreement first via update_partner. Records facts only: never computes, negotiates, or pays fees. REQUIRES prior user confirmation of the exact change.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/UpdateFeeStatusTool.ts",
+  "sourceHash": "17de123a28fb5dd3",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "transaction": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The transaction the fee is on — name or exact id (partner fees live on transactions)"
+        },
+        "set": {
+          "type": "object",
+          "properties": {
+            "partnerFeeStatus": {
+              "type": "string",
+              "enum": [
+                "NotDue",
+                "Due",
+                "Invoiced",
+                "Paid"
+              ]
+            },
+            "partnerFeeAmount": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false,
+          "description": "Only the fields to change"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One line explaining the change — written to the CRM audit trail"
+        },
+        "confirmed": {
+          "type": "boolean",
+          "const": true,
+          "description": "Only pass true after the user has explicitly confirmed this exact fee change in this conversation. If you have not asked yet, ask first — do not call this tool."
+        }
+      },
+      "required": [
+        "transaction",
+        "set",
+        "reason",
+        "confirmed"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "UpdateFeeStatusTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 14017,
+  "hash": "3e7017166d18701a"
+}

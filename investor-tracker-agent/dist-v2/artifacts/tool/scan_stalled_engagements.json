@@ -1,0 +1,32 @@
+{
+  "kind": "tool",
+  "name": "scan_stalled_engagements",
+  "description": "Scan investor-deal engagements on live deals for stalled or overdue items: idle beyond the per-stage threshold, disbursements still outstanding, or issued term sheets missing their date. Read-only — offer create_followup_task for any flag the deal lead wants actioned.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/ScanStalledEngagementsTool.ts",
+  "sourceHash": "8ef74df7ba83826d",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "deal": {
+          "type": "string",
+          "description": "Limit the scan to one transaction/deal (name or exact id)"
+        },
+        "investor": {
+          "type": "string",
+          "description": "Limit the scan to one investor (name or exact id)"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "ScanStalledEngagementsTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 11897,
+  "hash": "d792dcd328251ef8"
+}

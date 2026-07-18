@@ -1,0 +1,76 @@
+{
+  "kind": "tool",
+  "name": "record_milestone",
+  "description": "Record (or unrecord) one of the 15 investor-process milestones on an engagement — teaser review through NDA, IC approvals, term sheet, agreements, competition approval, success fee. REQUIRES prior user confirmation. Recording DataRoomAccess documents that a human already granted access — this agent never grants access itself.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/RecordMilestoneTool.ts",
+  "sourceHash": "4ef4aa63e354250c",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "engagementId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "From a prior get_engagement_status or scan call"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "record",
+            "unrecord"
+          ],
+          "default": "record",
+          "description": "record marks the milestone complete (upsert, safe to re-run); unrecord removes a mistaken entry"
+        },
+        "key": {
+          "type": "string",
+          "enum": [
+            "TeaserReview",
+            "NdaExecuted",
+            "ExpressionOfInterest",
+            "DataRoomAccess",
+            "PreliminaryDD",
+            "ICPaperPrepared",
+            "FirstICApproval",
+            "NonBindingTermSheet",
+            "TermSheetExecuted",
+            "OnsiteDD",
+            "SecondICApproval",
+            "BindingOffer",
+            "DefinitiveAgreements",
+            "CompetitionApproval",
+            "SuccessFeePaid"
+          ],
+          "description": "Which of the 15 investor-process milestones"
+        },
+        "completedAt": {
+          "type": "string",
+          "description": "ISO datetime the milestone was completed (defaults to now)"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "confirmed": {
+          "type": "boolean",
+          "const": true,
+          "description": "Only pass true after the user has explicitly confirmed this exact change in this conversation. If you have not asked yet, ask first — do not call this tool."
+        }
+      },
+      "required": [
+        "engagementId",
+        "key",
+        "confirmed"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "RecordMilestoneTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 10249,
+  "hash": "35c9b18c15ba1bbb"
+}

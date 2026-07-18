@@ -1,0 +1,100 @@
+{
+  "kind": "tool",
+  "name": "create_referred_mandate",
+  "description": "Create a new mandate attributed to a referring partner. ONLY on explicit staff instruction to create the mandate — a recorded introduction is NOT enough; the default path for introductions is record_introduction (partner + review task). Requires an existing client. REQUIRES prior user confirmation of the exact details.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/CreateReferredMandateTool.ts",
+  "sourceHash": "56036458eb6f323e",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "client": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The EXISTING client the mandate is for — name or exact id. This tool never creates clients."
+        },
+        "partner": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The introducing partner — name or exact id"
+        },
+        "mandateName": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name for the new mandate, e.g. 'Acme Foods — growth capital raise'"
+        },
+        "dealSize": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "description": "ISO currency code, e.g. USD or KES"
+        },
+        "sector": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Agribusiness",
+              "FinancialServices",
+              "FMCG",
+              "Manufacturing",
+              "RenewableEnergy",
+              "Technology",
+              "Healthcare",
+              "Banking",
+              "RealEstate",
+              "Education",
+              "Infrastructure",
+              "Aviation",
+              "Construction",
+              "Hospitality",
+              "Leasing",
+              "MediaEntertainment",
+              "Services",
+              "TransportLogistics",
+              "WaterSanitation",
+              "Energy",
+              "OilAndGas",
+              "Mining",
+              "Gambling",
+              "Alcohol",
+              "Tobacco"
+            ]
+          }
+        },
+        "notes": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One line explaining the creation — written to the CRM audit trail"
+        },
+        "confirmed": {
+          "type": "boolean",
+          "const": true,
+          "description": "Only pass true after the user has EXPLICITLY instructed you to create this mandate (e.g. 'create the mandate') and confirmed the exact details in this conversation. An introduction alone is NOT an instruction to create a mandate."
+        }
+      },
+      "required": [
+        "client",
+        "partner",
+        "mandateName",
+        "reason",
+        "confirmed"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "CreateReferredMandateTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 13814,
+  "hash": "f8ee099b618ad523"
+}

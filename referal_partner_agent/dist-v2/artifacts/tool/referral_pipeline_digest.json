@@ -1,0 +1,34 @@
+{
+  "kind": "tool",
+  "name": "referral_pipeline_digest",
+  "description": "Digest of every referred deal in the pipeline, grouped by introducing partner: stage, status, conversion, deep links. Optionally scoped to one partner and/or to deals updated in the last N days.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/ReferralPipelineDigestTool.ts",
+  "sourceHash": "10c95749c541d802",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "partner": {
+          "type": "string",
+          "description": "Scope the digest to one partner — name as the user said it, or an exact id"
+        },
+        "days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 365,
+          "description": "Only include deals updated in the last N days; omit for all referred deals"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "ReferralPipelineDigestTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 12391,
+  "hash": "5e8708a5ab2d9b9e"
+}

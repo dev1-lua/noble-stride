@@ -1,0 +1,32 @@
+{
+  "kind": "tool",
+  "name": "get_partner_profile",
+  "description": "Full referral profile of ONE partner: contact details, fee-sharing agreement state, every deal they introduced (mandates and transactions, with stages and conversion), fee statuses, change history, and a deep link. Identify the partner by name or by an exact id from a previous candidates list.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/GetPartnerProfileTool.ts",
+  "sourceHash": "c696a42fc4e43ba0",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "partner": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Partner name as the user said it, or an exact id from a previous candidates list"
+        }
+      },
+      "required": [
+        "partner"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "GetPartnerProfileTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 12300,
+  "hash": "a4047cfeb7178207"
+}

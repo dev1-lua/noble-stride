@@ -1,0 +1,32 @@
+{
+  "kind": "tool",
+  "name": "find_fit_investors",
+  "description": "Rank which investors fit a live deal (mandate criteria match: sector, geography, ticket size, instrument). Returns up to 8 matches with reasons and warnings, and notes which already have an engagement on this deal. Excluded and greylisted investors are never returned. Read-only — introducing an investor to the deal is a human decision.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/FindFitInvestorsTool.ts",
+  "sourceHash": "c5ff10805fe2fd29",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "deal": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The live transaction/deal to match investors against — name as the user said it, or an exact id"
+        }
+      },
+      "required": [
+        "deal"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "FindFitInvestorsTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 10062,
+  "hash": "d2c515d45ecc8842"
+}

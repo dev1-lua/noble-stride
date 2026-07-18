@@ -1,0 +1,133 @@
+{
+  "kind": "tool",
+  "name": "update_partner",
+  "description": "Update one partner record: contact/profile details, status, fee-sharing agreement and terms, agreement status, internal-only flag, feedback notes. This is also how a signed fee-sharing agreement gets recorded. REQUIRES prior user confirmation of the exact change.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/UpdatePartnerTool.ts",
+  "sourceHash": "da7e056593d608cc",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "partnerId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Exact partner id from a prior get_partner_profile or candidates list"
+        },
+        "set": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "partnerType": {
+              "type": "string",
+              "enum": [
+                "LawFirm",
+                "Auditor",
+                "Advisor",
+                "Bank",
+                "InvestmentBank",
+                "Consulting",
+                "Other"
+              ]
+            },
+            "advisorType": {
+              "type": "string",
+              "enum": [
+                "Lawyer",
+                "Investor",
+                "Consultant",
+                "TransactionAdvisor",
+                "AdvisoryFirm",
+                "Other"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "Active",
+                "Preferred",
+                "Inactive"
+              ]
+            },
+            "location": {
+              "type": "string"
+            },
+            "organization": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "phone": {
+              "type": "string"
+            },
+            "profile": {
+              "type": "string"
+            },
+            "feeSharingAgreement": {
+              "type": "boolean",
+              "description": "Whether a fee-sharing agreement exists with this partner"
+            },
+            "feeSharingTerms": {
+              "type": "string",
+              "description": "The agreed fee-sharing terms, e.g. '2% of closed transaction value'"
+            },
+            "partnerAgreementStatus": {
+              "type": "string",
+              "enum": [
+                "None",
+                "Sent",
+                "Signed"
+              ]
+            },
+            "internalOnly": {
+              "type": "boolean",
+              "description": "Partner identity must never reach investors — this marks the record internal-only"
+            },
+            "feedbackNotes": {
+              "type": "string",
+              "description": "Internal feedback about working with this partner — never shared externally"
+            },
+            "amount": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currency": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Only the fields to change"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One line explaining the change — written to the CRM audit trail"
+        },
+        "confirmed": {
+          "type": "boolean",
+          "const": true,
+          "description": "Only pass true after the user has explicitly confirmed this exact change in this conversation. If you have not asked yet, ask first — do not call this tool."
+        }
+      },
+      "required": [
+        "partnerId",
+        "set",
+        "reason",
+        "confirmed"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "UpdatePartnerTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 11547,
+  "hash": "9ddfb54c5c14e6e4"
+}

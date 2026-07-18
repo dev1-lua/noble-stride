@@ -1,0 +1,23 @@
+{
+  "kind": "job",
+  "name": "followup-check",
+  "description": "Weekday 08:00 Nairobi sweep of investor-deal engagements: flags stalled/overdue items, creates deduplicated follow-up tasks for deal leads, and notifies registered staff.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/jobs/followup-check.job.ts",
+  "sourceHash": "d5c073e361b12b53",
+  "metadata": {
+    "pattern": "class",
+    "scheduleType": "cron",
+    "scheduleExpression": "0 8 * * 1-5",
+    "scheduleTimezone": "Africa/Nairobi",
+    "hasExecute": true,
+    "hasTimeout": true,
+    "hasRetry": true,
+    "timeoutValue": 300,
+    "retryConfig": {
+      "maxAttempts": 3,
+      "backoffSeconds": 120
+    }
+  },
+  "size": 11500,
+  "hash": "2ef8f40a97b43412"
+}

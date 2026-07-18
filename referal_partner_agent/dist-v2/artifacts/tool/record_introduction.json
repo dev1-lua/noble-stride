@@ -1,0 +1,125 @@
+{
+  "kind": "tool",
+  "name": "record_introduction",
+  "description": "Record a partner introduction: create or update the Partner record and file a review task for staff (due in 3 business days). Does NOT create a deal — deals are only created by staff after review, or via create_referred_mandate when explicitly instructed. REQUIRES prior user confirmation stating whether the partner record is new or existing.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/referal_partner_agent/src/skills/tools/RecordIntroductionTool.ts",
+  "sourceHash": "bed586eb60c1a303",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "partner": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The introducing partner — name as the user said it, or an exact id"
+        },
+        "partnerAction": {
+          "type": "string",
+          "enum": [
+            "create_new",
+            "use_existing"
+          ],
+          "description": "Whether this introduction creates a NEW partner record or attaches to an EXISTING one. The confirmation you asked the user must have stated which."
+        },
+        "introduced": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Who/what was introduced — the company or opportunity, as the user described it"
+        },
+        "details": {
+          "type": "string",
+          "description": "Any context the user gave: sector, size, timing, how the introduction happened"
+        },
+        "partnerFields": {
+          "type": "object",
+          "properties": {
+            "partnerType": {
+              "type": "string",
+              "enum": [
+                "LawFirm",
+                "Auditor",
+                "Advisor",
+                "Bank",
+                "InvestmentBank",
+                "Consulting",
+                "Other"
+              ]
+            },
+            "advisorType": {
+              "type": "string",
+              "enum": [
+                "Lawyer",
+                "Investor",
+                "Consultant",
+                "TransactionAdvisor",
+                "AdvisoryFirm",
+                "Other"
+              ]
+            },
+            "organization": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "phone": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "profile": {
+              "type": "string",
+              "description": "Short description of who the partner is"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Partner contact/profile details to store on the partner record"
+        },
+        "existingDealId": {
+          "type": "string",
+          "description": "Only when the introduction concerns a deal already in the CRM — its exact id from a previous lookup"
+        },
+        "existingDealType": {
+          "type": "string",
+          "enum": [
+            "mandate",
+            "transaction"
+          ],
+          "description": "Required when existingDealId is set"
+        },
+        "createAnyway": {
+          "type": "boolean",
+          "description": "Only after the user has seen the possible duplicates and still wants a new partner record"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One line explaining the entry — written to the CRM audit trail"
+        },
+        "confirmed": {
+          "type": "boolean",
+          "const": true,
+          "description": "Only pass true after the user has explicitly confirmed this exact introduction — including whether the partner record is new or existing — in this conversation. If you have not asked yet, ask first — do not call this tool."
+        }
+      },
+      "required": [
+        "partner",
+        "partnerAction",
+        "introduced",
+        "reason",
+        "confirmed"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "RecordIntroductionTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 14981,
+  "hash": "8df5c6f5857b8e69"
+}

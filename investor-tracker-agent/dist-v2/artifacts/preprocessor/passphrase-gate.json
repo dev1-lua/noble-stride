@@ -1,0 +1,15 @@
+{
+  "kind": "preprocessor",
+  "name": "passphrase-gate",
+  "description": "Blocks all messages until the user proves staff membership with the team passphrase.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/processors/passphrase-gate.ts",
+  "sourceHash": "211da2552126d6ba",
+  "metadata": {
+    "pattern": "class",
+    "hasExecute": true,
+    "isAsync": false,
+    "priority": 10
+  },
+  "size": 1898,
+  "hash": "462d97b7ba7247ec"
+}

@@ -1,0 +1,129 @@
+{
+  "kind": "tool",
+  "name": "update_engagement",
+  "description": "Update one investor-deal engagement: stage, interest, NDA type, term-sheet status/date, amounts, disbursement, probability, feedback. REQUIRES prior user confirmation of the exact change. Records facts only — never drafts, issues, or accepts commercial terms, and cannot grant VDR or data-room access. Every update is logged to the CRM activity trail.",
+  "sourcePath": "D:/LuaWork/NobleStride/noble-stride/investor-tracker-agent/src/skills/tools/UpdateEngagementTool.ts",
+  "sourceHash": "ba04e97c1ba4e51c",
+  "schemas": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "engagementId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "From a prior get_engagement_status or scan call"
+        },
+        "set": {
+          "type": "object",
+          "properties": {
+            "engagementStage": {
+              "type": "string",
+              "enum": [
+                "Shared",
+                "TeaserSent",
+                "NDASigned",
+                "IMShared",
+                "VDRAccess",
+                "Meeting",
+                "InfoRequest",
+                "DueDiligence",
+                "TermSheet",
+                "Offer",
+                "Invested",
+                "Declined"
+              ],
+              "description": "New engagement stage. Advancing past NDA-gated stages requires an NDA on record — the CRM enforces this."
+            },
+            "interestLevel": {
+              "type": "string",
+              "enum": [
+                "Low",
+                "Medium",
+                "High"
+              ]
+            },
+            "ndaType": {
+              "type": "string",
+              "enum": [
+                "Open",
+                "Closed"
+              ],
+              "description": "Records which NDA covers this engagement"
+            },
+            "termSheetIssued": {
+              "type": "boolean",
+              "description": "Whether a term sheet has been issued — status only, never the terms themselves"
+            },
+            "termSheetDate": {
+              "type": "string",
+              "description": "ISO date the term sheet was issued/received"
+            },
+            "totalAmount": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Total committed amount"
+            },
+            "amountDisbursed": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Amount disbursed to date"
+            },
+            "disbursementStatus": {
+              "type": "string",
+              "enum": [
+                "Disbursed",
+                "Ongoing",
+                "FellOff",
+                "Dropped"
+              ]
+            },
+            "dateReceived": {
+              "type": "string",
+              "description": "ISO date funds were received"
+            },
+            "probability": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "feedback": {
+              "type": "string",
+              "description": "Investor feedback to record"
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Only the fields to change"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One line explaining the change — written to the CRM audit trail"
+        },
+        "confirmed": {
+          "type": "boolean",
+          "const": true,
+          "description": "Only pass true after the user has explicitly confirmed this exact change in this conversation. If you have not asked yet, ask first — do not call this tool."
+        }
+      },
+      "required": [
+        "engagementId",
+        "set",
+        "reason",
+        "confirmed"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "metadata": {
+    "pattern": "class-definition",
+    "className": "UpdateEngagementTool",
+    "hasInputSchema": true,
+    "hasCondition": false,
+    "hasExecute": true
+  },
+  "size": 11145,
+  "hash": "9241cfb42fb34877"
+}
