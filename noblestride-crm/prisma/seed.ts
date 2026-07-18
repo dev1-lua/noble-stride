@@ -165,8 +165,12 @@ async function main() {
   // ServiceProvider ↔ Transaction is an implicit M:N; its join rows clear
   // automatically, but remove the providers themselves before transactions.
   await prisma.serviceProvider.deleteMany();
+  // Folders may be entity-anchored (cascade) or free-standing — clear all.
+  await prisma.folder.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.mandate.deleteMany();
+  // AdvisoryEngagement.clientId is onDelete: Restrict — must go before clients.
+  await prisma.advisoryEngagement.deleteMany();
   await prisma.person.deleteMany();
   await prisma.client.deleteMany();
   await prisma.investor.deleteMany();
@@ -370,6 +374,43 @@ async function main() {
       nextAction: m.nextAction ?? null,
     });
   }
+
+  // ADVISORY ENGAGEMENTS — third deal kind (client feedback 2026-07); a small
+  // spread across the AdvisoryStage pipeline reusing seeded clients/users.
+  const advisorySeeds: Array<{
+    name: string; stage: "Scoping" | "Proposal" | "Engaged" | "Delivery" | "Completed";
+    clientIdx: number; leadFirst: string; assistFirsts: string[];
+    feeAmount: number; country: string; nextAction: string | null;
+  }> = [
+    { name: "Project Compass — Debt Restructuring Advisory", stage: "Scoping", clientIdx: 0, leadFirst: "evans", assistFirsts: ["solomon"], feeAmount: 120_000, country: "Kenya", nextAction: "Draft scope of work" },
+    { name: "Project Lighthouse — Valuation & Fairness Opinion", stage: "Proposal", clientIdx: 1, leadFirst: "solomon", assistFirsts: [], feeAmount: 85_000, country: "Uganda", nextAction: "Send fee proposal" },
+    { name: "Project Meridian — Market Entry Strategy", stage: "Engaged", clientIdx: 2, leadFirst: "evans", assistFirsts: ["solomon"], feeAmount: 200_000, country: "Tanzania", nextAction: "Kick-off workshop" },
+    { name: "Project Anchor — Balance Sheet Optimisation", stage: "Delivery", clientIdx: 3, leadFirst: "solomon", assistFirsts: ["evans"], feeAmount: 150_000, country: "Kenya", nextAction: "Deliver interim report" },
+    { name: "Project Summit — Post-Merger Integration", stage: "Completed", clientIdx: 4, leadFirst: "evans", assistFirsts: [], feeAmount: 240_000, country: "Rwanda", nextAction: null },
+  ];
+  for (let i = 0; i < advisorySeeds.length; i++) {
+    const a = advisorySeeds[i];
+    const client = clients[a.clientIdx % clients.length];
+    const leadId = usersByFirst.get(a.leadFirst) ?? null;
+    const assistIds = a.assistFirsts.map((n) => usersByFirst.get(n)).filter((x): x is string => Boolean(x));
+    await prisma.advisoryEngagement.create({
+      data: {
+        name: a.name,
+        stage: a.stage,
+        stageEnteredAt: daysAgo(4 + i * 9),
+        dealStatus: a.stage === "Completed" ? "Closed" : "Open",
+        clientId: client.id,
+        leadId,
+        sector: client.sector,
+        country: a.country,
+        feeAmount: a.feeAmount,
+        dateOpened: daysAgo(30 + i * 15),
+        nextAction: a.nextAction,
+        ...(assistIds.length ? { assists: { connect: assistIds.map((id) => ({ id })) } } : {}),
+      },
+    });
+  }
+  console.log(`Seeded ${advisorySeeds.length} advisory engagements`);
 
   // ─────────────────────────────────────────────────────────────────────────
   // §4  BUILD DEAL MANDATES
@@ -712,6 +753,24 @@ async function main() {
           transactionId: secondTxnId,
         },
       ],
+    });
+
+    // File room (client feedback 2026-07): template folders for the first
+    // deal, with its seeded docs filed into the matching folders.
+    const firstTxn = await prisma.transaction.findUniqueOrThrow({ where: { id: firstTxnId }, select: { name: true } });
+    const room = await prisma.folder.create({ data: { name: firstTxn.name, transactionId: firstTxnId } });
+    const subfolders = new Map<string, string>();
+    for (const name of ["01 Corporate", "02 Financials", "03 Legal", "04 Commercial", "05 Marketing & IM", "06 Data Room"]) {
+      const f = await prisma.folder.create({ data: { name, parentId: room.id } });
+      subfolders.set(name, f.id);
+    }
+    await prisma.document.updateMany({
+      where: { transactionId: firstTxnId, type: { in: ["NDA", "EngagementContract"] } },
+      data: { folderId: subfolders.get("03 Legal") },
+    });
+    await prisma.document.updateMany({
+      where: { transactionId: firstTxnId, type: "Teaser" },
+      data: { folderId: subfolders.get("05 Marketing & IM") },
     });
   }
 

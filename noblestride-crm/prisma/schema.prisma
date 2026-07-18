@@ -135,6 +135,17 @@ enum TransactionStage {
   ClosedLost
 }
 
+// Stage names are the build-team default pending client confirmation
+// (questionnaire Q1) — renaming a value later needs ALTER TYPE ... RENAME VALUE.
+enum AdvisoryStage {
+  Scoping
+  Proposal
+  Engaged
+  Delivery
+  Completed
+  Lost
+}
+
 enum EngagementStatus {
   NotContacted
   Contacted
@@ -507,6 +518,10 @@ model User {
 
   ledMandates       Mandate[]     @relation("MandateLead")
   ownedTransactions Transaction[] @relation("TransactionOwner")
+  ledAdvisory       AdvisoryEngagement[] @relation("AdvisoryLead")
+  assistingMandates     Mandate[]            @relation("MandateAssists")
+  assistingTransactions Transaction[]        @relation("TransactionAssists")
+  assistingAdvisory     AdvisoryEngagement[] @relation("AdvisoryAssists")
   ownedEngagements  Engagement[]  @relation("EngagementOwner")
   ddTracks          DueDiligenceTrack[] @relation("DDTrackOwner")
   activities        Activity[]    @relation("ActivityCreatedBy")
@@ -518,6 +533,7 @@ model User {
   assistantTasks        Task[]        @relation("TaskAssistant")
   stageChanges          StageChange[] @relation("StageChangeActor")
   savedViews   SavedView[] @relation("SavedViewCreatedBy")
+  createdFolders Folder[] @relation("FolderCreatedBy")
   notifications Notification[]
   authAccount AuthAccount?
   reviewedOutreachDrafts  OutreachDraft[]           @relation("OutreachDraftReviewer")
@@ -629,6 +645,8 @@ model Investor {
   emailMessages  EmailMessage[]
   outreachDrafts  OutreachDraft[]
   proposedChanges InvestorProposedChange[]
+  folders         Folder[]
+  notifications   Notification[]
 
   @@index([investorType])
   @@index([status])
@@ -712,8 +730,10 @@ model Client {
   contacts     Person[]
   mandates     Mandate[]
   transactions Transaction[]
+  advisoryEngagements AdvisoryEngagement[]
   tasks        Task[]
   documents    Document[]
+  folders      Folder[]
   activities   Activity[]
   stageChanges StageChange[]
   otpChallenges ClientOtpChallenge[]
@@ -734,6 +754,7 @@ model Mandate {
   dealSize       Decimal?     @db.Decimal(20, 2)
   currency       String       @default("USD")
   sector         Sector[]     @default([])
+  country        String?      // free text; defaulted from Client.hqCountry on create
   source         Source?
   dateOpened     DateTime?
   ndaStatus      DocStatus    @default(NotSent)
@@ -761,6 +782,7 @@ model Mandate {
   client       Client        @relation(fields: [clientId], references: [id], onDelete: Restrict)
   leadId       String?
   lead         User?         @relation("MandateLead", fields: [leadId], references: [id], onDelete: SetNull)
+  assists      User[]        @relation("MandateAssists")
   referredById String?
   referredBy   Partner?      @relation("PartnerReferral", fields: [referredById], references: [id], onDelete: SetNull)
   transactions Transaction[]
@@ -768,6 +790,7 @@ model Mandate {
   tasks        Task[]
   documents    Document[]
   stageChanges StageChange[]
+  folders      Folder[]
 
   @@index([stage])
   @@index([clientId])
@@ -788,6 +811,7 @@ model Transaction {
   targetRaise    Decimal?         @db.Decimal(20, 2)
   currency       String           @default("USD")
   sector         Sector[]         @default([])
+  country        String?          // free text; defaulted from Client.hqCountry on create
   dateOpened     DateTime?
   closedAt       DateTime? // set when stage -> ClosedWon/ClosedLost; drives avg-time-to-close
   // Success fee (workflow doc Stage 4): invoiced on close per the engagement contract
@@ -825,7 +849,9 @@ model Transaction {
   ownerId     String?
   owner       User?        @relation("TransactionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   assistantId String?
+  /// Legacy single assistant — superseded by `assists` (kept until client sign-off; backfilled into the m2m).
   assistant   User?        @relation("TransactionAssistant", fields: [assistantId], references: [id], onDelete: SetNull)
+  assists     User[]       @relation("TransactionAssists")
   referredById String?
   referredBy   Partner?    @relation("PartnerTransactionReferral", fields: [referredById], references: [id], onDelete: SetNull)
   engagements      Engagement[]
@@ -839,10 +865,52 @@ model Transaction {
   meetings         Meeting[]
   emailMessages    EmailMessage[]
   outreachDrafts   OutreachDraft[]
+  folders          Folder[]
 
   @@index([stage])
   @@index([clientId])
   @@index([ownerId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AdvisoryEngagement — advisory-work pipeline (third deal kind alongside
+// Mandate and Transaction; client feedback 2026-07). Same shape conventions
+// as Mandate: hardcoded stage enum, single lead, client-owned.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AdvisoryEngagement {
+  id             String        @id @default(cuid())
+  name           String
+  stage          AdvisoryStage @default(Scoping)
+  stageEnteredAt DateTime      @default(now()) // drives "days in stage"
+  dealStatus     DealStatus    @default(Open)
+  feeAmount      Decimal?      @db.Decimal(20, 2)
+  currency       String        @default("USD")
+  sector         Sector[]      @default([])
+  country        String?       // free text; defaulted from Client.hqCountry on create
+  source         Source?
+  priority       Priority?
+  dateOpened     DateTime?
+  nextAction     String?
+  notes          String?
+  createdSource  ActorSource   @default(HUMAN)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  clientId     String
+  client       Client        @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  leadId       String?
+  lead         User?         @relation("AdvisoryLead", fields: [leadId], references: [id], onDelete: SetNull)
+  assists      User[]        @relation("AdvisoryAssists")
+  activities   Activity[]
+  tasks        Task[]
+  documents    Document[]
+  stageChanges StageChange[]
+  folders      Folder[]
+
+  @@index([stage])
+  @@index([clientId])
+  @@index([leadId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1001,6 +1069,8 @@ model Activity {
   investor      Investor?    @relation(fields: [investorId], references: [id], onDelete: SetNull)
   mandateId     String?
   mandate       Mandate?     @relation(fields: [mandateId], references: [id], onDelete: SetNull)
+  advisoryId    String?
+  advisory      AdvisoryEngagement? @relation(fields: [advisoryId], references: [id], onDelete: SetNull)
   clientId      String?
   client        Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
   createdById   String?
@@ -1040,6 +1110,8 @@ model Task {
   investor      Investor?    @relation(fields: [investorId], references: [id], onDelete: SetNull)
   clientId      String?
   client        Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  advisoryId    String?
+  advisory      AdvisoryEngagement? @relation(fields: [advisoryId], references: [id], onDelete: SetNull)
   assistantId   String?
   assistant     User?        @relation("TaskAssistant", fields: [assistantId], references: [id], onDelete: SetNull)
   activityId    String?
@@ -1120,8 +1192,12 @@ model Document {
   investor      Investor?           @relation(fields: [investorId], references: [id], onDelete: SetNull)
   mandateId     String?
   mandate       Mandate?            @relation(fields: [mandateId], references: [id], onDelete: SetNull)
+  advisoryId    String?
+  advisory      AdvisoryEngagement? @relation(fields: [advisoryId], references: [id], onDelete: SetNull)
   partnerId     String?
   partner       Partner?            @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  folderId      String?
+  folder        Folder?             @relation(fields: [folderId], references: [id], onDelete: SetNull)
   createdSource ActorSource         @default(HUMAN)
   createdAt     DateTime            @default(now())
   shareEvents   DocumentShareEvent[]
@@ -1130,7 +1206,49 @@ model Document {
   @@index([accessLevel])
   @@index([transactionId])
   @@index([mandateId])
+  @@index([folderId])
   @@index([isCurrent])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Folder — hierarchical file room (client feedback 2026-07). Folders organize
+// documents; they NEVER grant access — investor-facing visibility keeps
+// flowing through DocumentAccessLevel + src/server/documents/authz.ts.
+// A root folder is anchored to one entity (deal/client/investor) via the
+// optional FKs; children carry parentId only.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  parentId  String?
+  parent    Folder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[] @relation("FolderTree")
+
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  mandateId     String?
+  mandate       Mandate?     @relation(fields: [mandateId], references: [id], onDelete: Cascade)
+  advisoryId    String?
+  advisory      AdvisoryEngagement? @relation(fields: [advisoryId], references: [id], onDelete: Cascade)
+  clientId      String?
+  client        Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  investorId    String?
+  investor      Investor?    @relation(fields: [investorId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User?    @relation("FolderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  documents Document[]
+
+  @@unique([parentId, name])
+  @@index([transactionId])
+  @@index([mandateId])
+  @@index([advisoryId])
+  @@index([clientId])
+  @@index([investorId])
 }
 
 model DocumentAccessLog {
@@ -1165,6 +1283,8 @@ model StageChange {
   transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   engagementId  String?
   engagement    Engagement?  @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  advisoryId    String?
+  advisory      AdvisoryEngagement? @relation(fields: [advisoryId], references: [id], onDelete: Cascade)
   clientId      String?
   client        Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   investorId    String?
@@ -1175,6 +1295,7 @@ model StageChange {
   @@index([mandateId])
   @@index([transactionId])
   @@index([engagementId])
+  @@index([advisoryId])
   @@index([clientId])
   @@index([investorId])
   @@index([partnerId])
@@ -1201,18 +1322,23 @@ model SavedView {
 // Notification — per-user notification feed (Task 6 gap closure).
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Exactly one of userId (staff) / investorId (portal) is set — enforced in
+// src/server/services/notifications.ts, not by the database.
 model Notification {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kind      String
-  title     String
-  body      String?
-  href      String?
-  readAt    DateTime?
-  createdAt DateTime  @default(now())
+  id         String    @id @default(cuid())
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investorId String?
+  investor   Investor? @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  kind       String
+  title      String
+  body       String?
+  href       String?
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
 
   @@index([userId, readAt])
+  @@index([investorId, readAt])
 }
 
 // Real authentication (design spec 2026-07-08): credentials + DB sessions.
