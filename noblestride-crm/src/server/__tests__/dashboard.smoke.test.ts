@@ -178,7 +178,7 @@ describe("dashboard groupings (smoke, own rows)", () => {
       const before = await pipelineBreakdowns();
       const sectorBefore = before.bySector.find((r) => r.key === "Aviation")?.count ?? 0;
       const financingBefore = before.byFinancingType.find((r) => r.key === "Debt")?.count ?? 0;
-      const bandBefore = before.byTicketBand.find((r) => r.key === "1m-5m")?.count ?? 0;
+      const bandBefore = before.byTicketBand.find((r) => r.key === "1-5m")?.count ?? 0;
 
       const leadA = await prisma.user.create({
         data: { name: `ZZ Lead A ${suffix}`, email: `zz-lead-a-${suffix}@test.local` },
@@ -199,7 +199,7 @@ describe("dashboard groupings (smoke, own rows)", () => {
             stage: "DealPreparation", // active
             sector: ["Aviation"],
             financingType: "Debt",
-            targetRaise: 50_000, // -> "lt100k" band
+            targetRaise: 50_000, // -> "0-1m" band (deals-queue TICKET_BANDS)
           },
         });
         txnB = await prisma.transaction.create({
@@ -210,7 +210,7 @@ describe("dashboard groupings (smoke, own rows)", () => {
             stage: "InvestorOutreach", // active
             sector: ["Aviation"],
             financingType: "Debt",
-            targetRaise: 2_000_000, // -> "1m-5m" band
+            targetRaise: 2_000_000, // -> "1-5m" band (deals-queue TICKET_BANDS)
           },
         });
 
@@ -229,18 +229,18 @@ describe("dashboard groupings (smoke, own rows)", () => {
         });
 
         // bySector/byFinancingType/byTicketBand: assert the delta contributed
-        // by our 2 rows (both Aviation/Debt; one lt100k, one 1m-5m).
+        // by our 2 rows (both Aviation/Debt; one 0-1m, one 1-5m).
         const sectorAfter = after.bySector.find((r) => r.key === "Aviation")?.count ?? 0;
         expect(sectorAfter - sectorBefore).toBe(2);
 
         const financingAfter = after.byFinancingType.find((r) => r.key === "Debt")?.count ?? 0;
         expect(financingAfter - financingBefore).toBe(2);
 
-        const lt100kAfter = after.byTicketBand.find((r) => r.key === "lt100k")?.count ?? 0;
-        const lt100kBefore = before.byTicketBand.find((r) => r.key === "lt100k")?.count ?? 0;
-        expect(lt100kAfter - lt100kBefore).toBe(1);
+        const lowBandAfter = after.byTicketBand.find((r) => r.key === "0-1m")?.count ?? 0;
+        const lowBandBefore = before.byTicketBand.find((r) => r.key === "0-1m")?.count ?? 0;
+        expect(lowBandAfter - lowBandBefore).toBe(1);
 
-        const bandAfter = after.byTicketBand.find((r) => r.key === "1m-5m")?.count ?? 0;
+        const bandAfter = after.byTicketBand.find((r) => r.key === "1-5m")?.count ?? 0;
         expect(bandAfter - bandBefore).toBe(1);
       } finally {
         if (txnA) await prisma.transaction.delete({ where: { id: txnA.id } });

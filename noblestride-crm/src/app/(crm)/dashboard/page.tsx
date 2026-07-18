@@ -40,6 +40,27 @@ import {
   PartnerFunnelTable,
 } from "@/components/crm/deal-analytics-panels";
 import { DisbursementPeriodChart } from "@/components/crm/disbursement-period-chart";
+import { ACTIVE_MANDATE_STAGES, ACTIVE_TXN_STAGES } from "@/server/domain/types";
+import type { BreakdownRow } from "@/components/crm/pipeline-breakdown";
+
+// ── Drilldown link builders ─────────────────────────────────────────────────
+// Every dashboard number links to a /deals (or /investors) view whose filter
+// reproduces the metric's exact definition, so the count on the card equals
+// the row count on the list it opens. "Active" is a STAGE set (not dealStatus)
+// for the top stats and breakdowns — passed explicitly via ?stage=.
+
+const ACTIVE_MANDATES_HREF = `/deals?type=mandate&stage=${ACTIVE_MANDATE_STAGES.join(",")}`;
+const ACTIVE_TXNS_HREF = `/deals?type=transaction&stage=${ACTIVE_TXN_STAGES.join(",")}`;
+
+/** Attach a /deals drilldown to breakdown rows (all scoped to active transactions). */
+function linkBreakdown(rows: BreakdownRow[], param: string, opts?: { byLabel?: boolean; skipKeys?: string[] }): BreakdownRow[] {
+  const skip = new Set(opts?.skipKeys ?? ["none", "unassigned"]);
+  return rows.map((r) =>
+    skip.has(r.key)
+      ? r
+      : { ...r, href: `${ACTIVE_TXNS_HREF}&${param}=${encodeURIComponent(opts?.byLabel ? r.label : r.key)}` },
+  );
+}
 
 export default async function DashboardPage() {
   const [
@@ -115,44 +136,53 @@ export default async function DashboardPage() {
         <OverviewAgentCard insights={insights} />
       </Reveal>
 
-      {/* 4-up StatCard grid (staggered) */}
+      {/* 4-up StatCard grid (staggered) — each card drills into the matching
+          pre-filtered list (same pattern as the Pending Review card below). */}
       <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <AnimatedStatCard
-          label="Active Mandates"
-          value={s.activeMandates.value}
-          format="compact"
-          delta={s.activeMandates.delta}
-          sub="leads in pipeline"
-          icon={<Target className="h-4 w-4" />}
-        />
-        <AnimatedStatCard
-          label="Active Transactions"
-          value={s.activeTransactions.value}
-          format="compact"
-          delta={s.activeTransactions.delta}
-          sub="fundraises in progress"
-          icon={<Briefcase className="h-4 w-4" />}
-        />
-        <AnimatedStatCard
-          label="Investors Engaged"
-          value={s.investorsEngagedQtr.value}
-          format="compact"
-          delta={s.investorsEngagedQtr.delta}
-          deltaSuffix="active"
-          deltaTitle="Investors with activity in the last 30 days"
-          sub="this quarter"
-          icon={<Users className="h-4 w-4" />}
-        />
-        <AnimatedStatCard
-          label="Capital Raised YTD"
-          value={s.capitalRaisedYtd.value}
-          format="money"
-          delta={s.capitalRaisedYtd.delta}
-          deltaFormat="money"
-          deltaTitle="Capital raised in the last 30 days"
-          sub="closed transactions"
-          icon={<DollarSign className="h-4 w-4" />}
-        />
+        <a href={ACTIVE_MANDATES_HREF} className="block">
+          <AnimatedStatCard
+            label="Active Mandates"
+            value={s.activeMandates.value}
+            format="compact"
+            delta={s.activeMandates.delta}
+            sub="leads in pipeline"
+            icon={<Target className="h-4 w-4" />}
+          />
+        </a>
+        <a href={ACTIVE_TXNS_HREF} className="block">
+          <AnimatedStatCard
+            label="Active Transactions"
+            value={s.activeTransactions.value}
+            format="compact"
+            delta={s.activeTransactions.delta}
+            sub="fundraises in progress"
+            icon={<Briefcase className="h-4 w-4" />}
+          />
+        </a>
+        <a href="/investors" className="block">
+          <AnimatedStatCard
+            label="Investors Engaged"
+            value={s.investorsEngagedQtr.value}
+            format="compact"
+            delta={s.investorsEngagedQtr.delta}
+            deltaSuffix="active"
+            deltaTitle="Investors with activity in the last 30 days"
+            sub="this quarter"
+            icon={<Users className="h-4 w-4" />}
+          />
+        </a>
+        <a href="/deals?type=transaction&stage=ClosedWon" className="block">
+          <AnimatedStatCard
+            label="Capital Raised YTD"
+            value={s.capitalRaisedYtd.value}
+            format="money"
+            delta={s.capitalRaisedYtd.delta}
+            deltaFormat="money"
+            deltaTitle="Capital raised in the last 30 days"
+            sub="closed transactions"
+            icon={<DollarSign className="h-4 w-4" />}
+          />
+        </a>
       </Stagger>
 
       {/* 2-up chart cards */}
@@ -177,8 +207,8 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardBody>
               <PipelineOverviewChart
-                mandatesByStage={pipeline.mandatesByStage}
-                transactionsByStage={pipeline.transactionsByStage}
+                mandatesByStage={pipeline.mandatesByStage.map((sc) => ({ ...sc, href: `/deals?type=mandate&stage=${sc.stage}` }))}
+                transactionsByStage={pipeline.transactionsByStage.map((sc) => ({ ...sc, href: `/deals?type=transaction&stage=${sc.stage}` }))}
                 mandatesActive={pipeline.mandatesActive}
                 transactionsActive={pipeline.transactionsActive}
               />
@@ -203,7 +233,8 @@ export default async function DashboardPage() {
             <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">By Deal Lead</h3>
           </CardHeader>
           <CardBody>
-            <BreakdownBarList rows={breakdowns.byLead} />
+            {/* Lead filter matches by user NAME (the row label), not id. */}
+            <BreakdownBarList rows={linkBreakdown(breakdowns.byLead, "lead", { byLabel: true })} />
           </CardBody>
         </Card>
         <Card>
@@ -211,7 +242,7 @@ export default async function DashboardPage() {
             <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">By Sector</h3>
           </CardHeader>
           <CardBody>
-            <BreakdownBarList rows={breakdowns.bySector.slice(0, 8)} />
+            <BreakdownBarList rows={linkBreakdown(breakdowns.bySector.slice(0, 8), "sector")} />
           </CardBody>
         </Card>
         <Card>
@@ -219,7 +250,7 @@ export default async function DashboardPage() {
             <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">By Financing Type</h3>
           </CardHeader>
           <CardBody>
-            <BreakdownBarList rows={breakdowns.byFinancingType} />
+            <BreakdownBarList rows={linkBreakdown(breakdowns.byFinancingType, "financing")} />
           </CardBody>
         </Card>
         <Card>
@@ -227,7 +258,7 @@ export default async function DashboardPage() {
             <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">By Ticket Size</h3>
           </CardHeader>
           <CardBody>
-            <BreakdownBarList rows={breakdowns.byTicketBand} />
+            <BreakdownBarList rows={linkBreakdown(breakdowns.byTicketBand, "ticket")} />
           </CardBody>
         </Card>
       </Stagger>
@@ -241,18 +272,27 @@ export default async function DashboardPage() {
       </Reveal>
 
       <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <AnimatedStatCard
-          label="Active Pipeline"
-          value={activeSplit.mandates.active + activeSplit.transactions.active}
-          format="compact"
-          sub={`${activeSplit.mandates.active} mandates · ${activeSplit.transactions.active} transactions`}
-        />
-        <AnimatedStatCard
-          label="Inactive / On Hold"
-          value={activeSplit.mandates.inactive + activeSplit.transactions.inactive}
-          format="compact"
-          sub={`${activeSplit.mandates.inactive} mandates · ${activeSplit.transactions.inactive} transactions`}
-        />
+        {/* Status params mirror ACTIVE_DEAL_STATUSES and its complement in
+            dashboard.ts pipelineActiveSplit — mandates + transactions only
+            (the split doesn't count advisory), hence the explicit type param. */}
+        <a href="/deals?type=mandate,transaction&status=Open,ClosedReopened" className="block">
+          <AnimatedStatCard
+            label="Active Pipeline"
+            value={activeSplit.mandates.active + activeSplit.transactions.active}
+            format="compact"
+            sub={`${activeSplit.mandates.active} mandates · ${activeSplit.transactions.active} transactions`}
+          />
+        </a>
+        <a href="/deals?type=mandate,transaction&status=OnHold,Closed,ClosedOnHold,Dropped" className="block">
+          <AnimatedStatCard
+            label="Inactive / On Hold"
+            value={activeSplit.mandates.inactive + activeSplit.transactions.inactive}
+            format="compact"
+            sub={`${activeSplit.mandates.inactive} mandates · ${activeSplit.transactions.inactive} transactions`}
+          />
+        </a>
+        {/* Invested/Completed counts ENGAGEMENTS with disbursements — a /deals
+            filter can't reproduce that definition, so this card stays unlinked. */}
         <AnimatedStatCard
           label="Invested / Completed"
           value={invested.count}

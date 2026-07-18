@@ -212,6 +212,9 @@ interface StageCount {
   stage: string;
   label: string;
   count: number;
+  /** Drilldown target (pre-filtered /deals URL), computed server-side —
+   * functions can't cross the RSC boundary into this client component. */
+  href?: string;
 }
 
 function StageGroupChart({
@@ -258,17 +261,24 @@ function StageGroupChart({
               const lastVisible = stages.reduce((acc, s, i) => (s.count > 0 ? i : acc), -1);
               return stages.map((s, i) => {
                 if (s.count === 0) return null;
-                return (
+                const seg = (
                   <div
-                    key={s.stage}
-                    className="box-border"
+                    className="box-border h-full w-full"
                     style={{
-                      width: `${(s.count / total) * 100}%`,
                       backgroundColor: stageColor(s.stage, i),
                       borderRight: i < lastVisible ? "2px solid #fff" : undefined,
                     }}
                     title={`${s.label}: ${s.count}`}
                   />
+                );
+                return s.href ? (
+                  <a key={s.stage} href={s.href} className="h-full" style={{ width: `${(s.count / total) * 100}%` }}>
+                    {seg}
+                  </a>
+                ) : (
+                  <div key={s.stage} className="h-full" style={{ width: `${(s.count / total) * 100}%` }}>
+                    {seg}
+                  </div>
                 );
               });
             })()}
@@ -281,12 +291,8 @@ function StageGroupChart({
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
         {(nonZero.length > 0 ? nonZero : stages.slice(0, 3)).map((s) => {
           const colorIdx = stages.findIndex((orig) => orig.stage === s.stage);
-          return (
-            <div
-              key={s.stage}
-              className="flex min-w-0 items-center gap-1.5 rounded-md bg-[var(--bg-tertiary)] px-2 py-1.5"
-              title={`${s.label}: ${s.count}`}
-            >
+          const tile = (
+            <>
               <span
                 className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
                 style={{ backgroundColor: stageColor(s.stage, colorIdx) }}
@@ -295,6 +301,16 @@ function StageGroupChart({
               <span className="ml-auto flex-shrink-0 border-l border-[var(--border-subtle)] pl-1.5 text-xs font-semibold tabular-nums text-[var(--text-primary)]">
                 {s.count}
               </span>
+            </>
+          );
+          const tileClass = "flex min-w-0 items-center gap-1.5 rounded-md bg-[var(--bg-tertiary)] px-2 py-1.5";
+          return s.href ? (
+            <a key={s.stage} href={s.href} className={`${tileClass} transition-colors hover:bg-[var(--border-subtle)]`} title={`${s.label}: ${s.count}`}>
+              {tile}
+            </a>
+          ) : (
+            <div key={s.stage} className={tileClass} title={`${s.label}: ${s.count}`}>
+              {tile}
             </div>
           );
         })}

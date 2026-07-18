@@ -6,7 +6,10 @@ import { LABELS, label } from "@/lib/vocab";
 import { quarterRange } from "@/server/domain/metrics";
 import { ACTIVE_MANDATE_STAGES, CLOSED_TXN_STAGES } from "@/server/domain/types";
 import type { DashboardStats } from "@/server/domain/types";
-import { TICKET_BANDS, bandForAmount } from "@/lib/ticket-bands";
+// Ticket bands come from the deals-queue registry (not src/lib/ticket-bands,
+// the registration wizard's band set) so the "By Ticket Size" drilldown links
+// land on a /deals?ticket= filter that buckets identically.
+import { TICKET_BANDS as QUEUE_TICKET_BANDS } from "@/server/domain/deals-queue";
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -265,7 +268,7 @@ export async function pipelineBreakdowns(): Promise<{
   const [byOwnerRaw, byFinancingRaw, txnRows] = await Promise.all([
     prisma.transaction.groupBy({ by: ["ownerId"], where: activeWhere, _count: { _all: true } }),
     prisma.transaction.groupBy({ by: ["financingType"], where: activeWhere, _count: { _all: true } }),
-    prisma.transaction.findMany({ where: activeWhere, select: { sector: true, targetRaise: true } }),
+    prisma.transaction.findMany({ where: activeWhere, select: { sector: true, targetRaise: true, client: { select: { sector: true } } } }),
   ]);
 
   const ownerIds = byOwnerRaw.map((r) => r.ownerId).filter((id): id is string => id != null);
@@ -292,16 +295,21 @@ export async function pipelineBreakdowns(): Promise<{
 
   // sector + ticket band: bucketed in-process from the single findMany above.
   const sectorCounts = new Map<string, number>();
-  const bandCounts = new Map<string, number>(TICKET_BANDS.map((b) => [b.key, 0]));
+  const bandCounts = new Map<string, number>(QUEUE_TICKET_BANDS.map((b) => [b.value, 0]));
   let noBand = 0;
 
   for (const txn of txnRows) {
-    for (const sector of txn.sector) {
+    // Own sector first, client's as fallback — the deals queue rows use the
+    // same rule (loadRows), so a sector drilldown count matches the list.
+    const sectors = txn.sector.length ? txn.sector : (txn.client?.sector ?? []);
+    for (const sector of sectors) {
       sectorCounts.set(sector, (sectorCounts.get(sector) ?? 0) + 1);
     }
     const amount = txn.targetRaise == null ? null : Number(txn.targetRaise);
-    const band = bandForAmount(amount);
-    if (band) bandCounts.set(band.key, (bandCounts.get(band.key) ?? 0) + 1);
+    const band = amount == null || !Number.isFinite(amount)
+      ? undefined
+      : QUEUE_TICKET_BANDS.find((b) => amount >= b.min && (b.max === null || amount < b.max));
+    if (band) bandCounts.set(band.value, (bandCounts.get(band.value) ?? 0) + 1);
     else noBand++;
   }
 
@@ -309,10 +317,10 @@ export async function pipelineBreakdowns(): Promise<{
     .map(([sector, count]) => ({ key: sector, label: label("Sector", sector), count }))
     .sort((a, b) => b.count - a.count);
 
-  const byTicketBand: CountBreakdown[] = TICKET_BANDS.map((band) => ({
-    key: band.key,
+  const byTicketBand: CountBreakdown[] = QUEUE_TICKET_BANDS.map((band) => ({
+    key: band.value,
     label: band.label,
-    count: bandCounts.get(band.key) ?? 0,
+    count: bandCounts.get(band.value) ?? 0,
   }));
   if (noBand > 0) byTicketBand.push({ key: "none", label: "Not set", count: noBand });
 

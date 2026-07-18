@@ -28,7 +28,12 @@ export function TeamWorkloadTable({ rows }: { rows: TeamWorkload[] }) {
       <TBody>
         {rows.map((r) => (
           <Tr key={r.userId}>
-            <Td className="font-medium text-[var(--text-primary)]">{r.name}</Td>
+            <Td className="font-medium text-[var(--text-primary)]">
+              {/* Deals-queue lead filter matches by user NAME, not id. */}
+              <Link href={`/deals?lead=${encodeURIComponent(r.name)}`} className="hover:text-accent transition-colors">
+                {r.name}
+              </Link>
+            </Td>
             <Td className="text-right tabular-nums">{r.openMandates}</Td>
             <Td className="text-right tabular-nums">{r.activeTransactions}</Td>
           </Tr>
