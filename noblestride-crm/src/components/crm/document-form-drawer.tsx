@@ -15,10 +15,11 @@ const UPDATE = `mutation UpdateDocument($id: ID!, $input: DocumentInput!) { upda
 const EMPTY: Record<string, unknown> = {
   name: "", type: "", version: "", accessLevel: "", status: "", fileUrl: "",
   uploadedById: "", transactionId: "", clientId: "", investorId: "", mandateId: "", partnerId: "",
+  folderId: "",
   reviewerId: "", reviewedAt: "", approverId: "", approvedAt: "", clientReviewedAt: "",
 };
 
-export function DocumentFormDrawer({ mode, initial, supersedesId, transactions, clients, investors, users, mandates, partners, triggerLabel, triggerVariant }: {
+export function DocumentFormDrawer({ mode, initial, supersedesId, folders, transactions, clients, investors, users, mandates, partners, triggerLabel, triggerVariant }: {
   mode: "create" | "edit";
   initial?: Record<string, unknown> & { id?: string };
   /** When set, a chosen file is uploaded as a new, linked version of this
@@ -26,6 +27,8 @@ export function DocumentFormDrawer({ mode, initial, supersedesId, transactions, 
    *  `values` on purpose — it has no counterpart on the GraphQL `DocumentInput`
    *  type, so it must never flow through the plain (no-file) create/update path. */
   supersedesId?: string;
+  /** File-room folders (indented tree labels); omit to hide the picker. */
+  folders?: SelectOption[];
   transactions: SelectOption[];
   clients: SelectOption[];
   investors: SelectOption[];
@@ -57,7 +60,7 @@ export function DocumentFormDrawer({ mode, initial, supersedesId, transactions, 
     try {
       const fd = new FormData();
       fd.set("file", file);
-      for (const k of ["name", "type", "accessLevel", "status", "version", "transactionId", "clientId", "investorId", "mandateId", "partnerId", "supersedesId"]) {
+      for (const k of ["name", "type", "accessLevel", "status", "version", "transactionId", "clientId", "investorId", "mandateId", "partnerId", "folderId", "supersedesId"]) {
         const val = k === "supersedesId" ? supersedesId : v[k];
         if (typeof val === "string" && val.length > 0) fd.set(k, val);
       }
@@ -147,6 +150,9 @@ export function DocumentFormDrawer({ mode, initial, supersedesId, transactions, 
           </div>
           {v.type === "FeeShareAgreement" && (
             <RelationSelect label="Partner" value={v.partnerId as string} onChange={(x) => f.setValue("partnerId", x)} options={partners} placeholder="Select partner…" />
+          )}
+          {folders && folders.length > 0 && (
+            <RelationSelect label="Folder" value={v.folderId as string} onChange={(x) => f.setValue("folderId", x)} options={folders} placeholder="Unfiled" />
           )}
           <RelationSelect label="Uploaded By" value={v.uploadedById as string} onChange={(x) => f.setValue("uploadedById", x)} options={users} placeholder="Select user…" />
 

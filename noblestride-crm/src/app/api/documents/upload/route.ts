@@ -27,7 +27,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!(file instanceof File)) return Response.json({ error: "Missing file" }, { status: 400 });
 
   const raw: Record<string, string | undefined> = {};
-  for (const k of ["name", "type", "accessLevel", "status", "version", "transactionId", "clientId", "investorId", "mandateId", "partnerId", "supersedesId"]) {
+  for (const k of ["name", "type", "accessLevel", "status", "version", "transactionId", "clientId", "investorId", "mandateId", "partnerId", "folderId", "supersedesId"]) {
     const val = fd.get(k);
     if (typeof val === "string" && val.length > 0) raw[k] = val;
   }
