@@ -24,6 +24,20 @@ import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
 import { prisma } from "@/lib/db";
 import { getCurrentAuth } from "@/server/auth/current";
 import { AccountPanel, type InvestorAccountSummary } from "./account-panel";
+import { getInvestorWorkspaceExtras } from "@/server/services/investor-workspace";
+import { mergeCommTimeline, contactFreshness, type ContactFreshness } from "@/server/domain/comm-timeline";
+import { daysAgoLabel } from "@/lib/format";
+import { label } from "@/lib/vocab";
+import { WorkspaceTabs } from "@/components/crm/workspace-tabs";
+
+// Communication-status chip tone per freshness bucket (thresholds shared with
+// the staff-alert sweep via comm-timeline.ts).
+const FRESHNESS_TONE: Record<ContactFreshness, string> = {
+  fresh: "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]",
+  warn: "bg-amber-100 text-amber-800",
+  stale: "bg-rose-100 text-rose-700",
+  never: "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",
+};
 
 function displayNameForPerson(person: { firstName: string; lastName: string | null } | null): string | null {
   if (!person) return null;
@@ -46,6 +60,16 @@ export default async function InvestorDetailPage({ params }: PageProps) {
   const investor = await getInvestor(id);
 
   if (!investor) notFound();
+
+  // 360° workspace extras: full comms (emails/meetings), docs, open tasks,
+  // agent artifacts — parallel queries, loaded once for all tabs.
+  const extras = await getInvestorWorkspaceExtras(id);
+  const now = new Date();
+  const commItems = mergeCommTimeline(
+    extras.activities,
+    extras.emails.map((e) => ({ ...e, transactionName: e.transaction?.name ?? null })),
+    extras.meetings.map((m) => ({ ...m, transactionName: m.transaction?.name ?? null })),
+  );
 
   // Account access panel (auth-enhancements plan, Task 9): investor login
   // accounts are managed here rather than /settings/users. Re-check the REAL
@@ -275,67 +299,10 @@ export default async function InvestorDetailPage({ params }: PageProps) {
       </CardBody>
     </Card>
   );
+  // ── Workspace tabs (client feedback 2026-07: staff-side 360° investor hub) ──
 
-  return (
+  const overviewTab = (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
-        <Link href="/investors" className="hover:text-[var(--text-secondary)] transition-colors">
-          Investors
-        </Link>
-        <span>/</span>
-        <span className="text-[var(--text-primary)] font-medium">{investor.name}</span>
-      </nav>
-
-      {/* Header: avatar + name + type chip + status */}
-      <div className="flex items-start gap-4">
-        <Avatar name={investor.name} size="lg" />
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold text-[var(--text-primary)] leading-tight">{investor.name}</h1>
-            <Chip value={investor.investorType} group="InvestorType" />
-            {investor.status && (
-              <Chip value={investor.status} group="InvestorStatus" />
-            )}
-            {investor.engagementClassification && (
-              <Chip value={investor.engagementClassification} group="InvestorEngagementClassification" />
-            )}
-            {investor.ndaStatus && investor.ndaStatus !== "None" && (
-              <Chip value={investor.ndaStatus} group="InvestorNdaStatus" />
-            )}
-          </div>
-          {investor.website && (
-            <a
-              href={investor.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 block text-sm text-accent hover:underline truncate"
-            >
-              {investor.website}
-            </a>
-          )}
-        </div>
-        <div className="flex shrink-0 gap-2">
-          {canUpdateRecord(lens.orgRole, "Investors", lens.userId, {}) && (
-            <InvestorFormDrawer
-              mode="edit"
-              initial={initial}
-              contacts={investor.contacts.map((p) => ({ value: p.id, label: [p.firstName, p.lastName].filter(Boolean).join(" ") }))}
-            />
-          )}
-          {canDeleteRecord(lens.orgRole, "Investors") && (
-            <DeleteConfirm mutation={DELETE_INVESTOR} recordId={investor.id} entityLabel="investor" redirectTo="/investors" />
-          )}
-        </div>
-      </div>
-
-      {/* Account access — investor login accounts. Admin-only: never rendered
-          for non-admins, since it exposes login email + last-login (FIX 13). */}
-      {isRealAdmin && <AccountPanel investorId={investor.id} accounts={accountSummaries} />}
-
-      {/* Onboarding panel — first card while a registration awaits/failed review */}
-      {onboardingProminent && onboardingPanel}
-
       {/* Key facts grid */}
       <Card>
         <CardHeader>
@@ -345,7 +312,12 @@ export default async function InvestorDetailPage({ params }: PageProps) {
           <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Ticket Range</dt>
-              <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{ticketRange}</dd>
+              <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                {ticketRange}
+                {ticketRange !== "—" && investor.currency !== "USD" && (
+                  <span className="ml-1 text-xs font-normal text-[var(--text-tertiary)]">{investor.currency}</span>
+                )}
+              </dd>
             </div>
 
             <div>
@@ -457,25 +429,31 @@ export default async function InvestorDetailPage({ params }: PageProps) {
       {/* Onboarding panel — normal card, once the registration is approved */}
       {!onboardingProminent && onboardingPanel}
 
-      {/* NDA panel */}
       {ndaPanel}
+    </div>
+  );
 
-      {/* Engagements */}
-      <Card>
-        <CardHeader>
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-            Investor Engagements
-            {investor.engagements.length > 0 && (
-              <Badge tone="neutral" className="ml-2">{investor.engagements.length}</Badge>
-            )}
-          </h2>
-        </CardHeader>
-        <CardBody>
-          {investor.engagements.length === 0 ? (
-            <p className="text-sm text-[var(--text-tertiary)]">No engagements recorded.</p>
-          ) : (
-            <ul className="divide-y divide-[var(--border-subtle)]">
-              {investor.engagements.map((eng) => (
+  const engagementsTab = (
+    <Card>
+      <CardHeader>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+          Investor Engagements
+          {investor.engagements.length > 0 && (
+            <Badge tone="neutral" className="ml-2">{investor.engagements.length}</Badge>
+          )}
+        </h2>
+        <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+          Per-deal status and communication recency — amber after {'>'}1 week without contact, red after 2
+        </p>
+      </CardHeader>
+      <CardBody>
+        {investor.engagements.length === 0 ? (
+          <p className="text-sm text-[var(--text-tertiary)]">No engagements recorded.</p>
+        ) : (
+          <ul className="divide-y divide-[var(--border-subtle)]">
+            {investor.engagements.map((eng) => {
+              const freshness = contactFreshness(eng.lastContact, now);
+              return (
                 <li key={eng.id} className="py-3 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <Link
@@ -484,31 +462,200 @@ export default async function InvestorDetailPage({ params }: PageProps) {
                     >
                       {eng.transaction.name}
                     </Link>
-                    {eng.notes && (
-                      <p className="mt-0.5 text-xs text-[var(--text-tertiary)] line-clamp-2">{eng.notes}</p>
-                    )}
+                    <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                      {label("EngagementStage", eng.engagementStage)}
+                      {eng.notes ? ` · ${eng.notes}` : ""}
+                    </p>
                   </div>
-                  <Chip value={eng.status} group="EngagementStatus" />
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span
+                      className={`inline-flex items-center whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium ${FRESHNESS_TONE[freshness]}`}
+                      title={eng.lastContact ? `Last contact ${formatDate(eng.lastContact)}` : "Never contacted"}
+                    >
+                      {eng.lastContact ? daysAgoLabel(eng.lastContact) : "no contact yet"}
+                    </span>
+                    <Chip value={eng.status} group="EngagementStatus" />
+                  </div>
                 </li>
-              ))}
-            </ul>
+              );
+            })}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const communicationsTab = (
+    <ActivityTimeline
+      title="Communications"
+      emptyText="No communications recorded — logged activities, synced Outlook email and Teams meetings appear here."
+      activities={commItems.map((c): ActivityTimelineItem => ({
+        id: c.id,
+        type: c.type,
+        subject: c.subject,
+        body: c.body,
+        occurredAt: c.occurredAt,
+        context: c.context,
+        channel: c.channel,
+        direction: c.direction,
+      }))}
+    />
+  );
+
+  const documentsTab = (
+    <Card>
+      <CardHeader>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+          Documents
+          {extras.documents.length > 0 && <Badge tone="neutral" className="ml-2">{extras.documents.length}</Badge>}
+        </h2>
+      </CardHeader>
+      <CardBody>
+        {extras.documents.length === 0 ? (
+          <p className="text-sm text-[var(--text-tertiary)]">No documents linked to this investor.</p>
+        ) : (
+          <ul className="divide-y divide-[var(--border-subtle)]">
+            {extras.documents.map((doc) => (
+              <li key={doc.id} className="py-3 flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  {doc.fileUrl ? (
+                    <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-[var(--text-primary)] hover:text-accent transition-colors truncate block">
+                      {doc.name}
+                    </a>
+                  ) : (
+                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">{doc.name}</p>
+                  )}
+                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                    {doc.version ? `${doc.version} · ` : ""}
+                    Uploaded {formatDate(doc.uploadedAt)}
+                    {doc.uploadedBy?.name ? ` by ${doc.uploadedBy.name}` : ""}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Chip value={doc.type} group="DocumentType" />
+                  <Chip value={doc.accessLevel} group="DocumentAccessLevel" />
+                  {doc.status && <Chip value={doc.status} group="DocumentStatus" />}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const tasksTab = (
+    <Card>
+      <CardHeader>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+          Open Tasks
+          {extras.tasks.length > 0 && <Badge tone="neutral" className="ml-2">{extras.tasks.length}</Badge>}
+        </h2>
+      </CardHeader>
+      <CardBody>
+        {extras.tasks.length === 0 ? (
+          <p className="text-sm text-[var(--text-tertiary)]">No open tasks for this investor.</p>
+        ) : (
+          <ul className="divide-y divide-[var(--border-subtle)]">
+            {extras.tasks.map((t) => {
+              const overdue = t.dueAt != null && t.dueAt < now;
+              return (
+                <li key={t.id} className="py-3 flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{t.title}</p>
+                    <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                      {[t.assignee?.name, t.transaction?.name].filter(Boolean).join(" · ") || "Unassigned"}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {t.dueAt && (
+                      <span className={`text-xs ${overdue ? "font-semibold text-rose-600" : "text-[var(--text-tertiary)]"}`}>
+                        due {formatDate(t.dueAt)}
+                      </span>
+                    )}
+                    <Chip value={t.status} group="TaskStatus" />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const historyTab = <StageHistory title="Change History" items={changeHistoryItems} />;
+
+  return (
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
+        <Link href="/investors" className="hover:text-[var(--text-secondary)] transition-colors">
+          Investors
+        </Link>
+        <span>/</span>
+        <span className="text-[var(--text-primary)] font-medium">{investor.name}</span>
+      </nav>
+
+      {/* Header: avatar + name + type chip + status */}
+      <div className="flex items-start gap-4">
+        <Avatar name={investor.name} size="lg" />
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold text-[var(--text-primary)] leading-tight">{investor.name}</h1>
+            <Chip value={investor.investorType} group="InvestorType" />
+            {investor.status && (
+              <Chip value={investor.status} group="InvestorStatus" />
+            )}
+            {investor.engagementClassification && (
+              <Chip value={investor.engagementClassification} group="InvestorEngagementClassification" />
+            )}
+            {investor.ndaStatus && investor.ndaStatus !== "None" && (
+              <Chip value={investor.ndaStatus} group="InvestorNdaStatus" />
+            )}
+          </div>
+          {investor.website && (
+            <a
+              href={investor.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 block text-sm text-accent hover:underline truncate"
+            >
+              {investor.website}
+            </a>
           )}
-        </CardBody>
-      </Card>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          {canUpdateRecord(lens.orgRole, "Investors", lens.userId, {}) && (
+            <InvestorFormDrawer
+              mode="edit"
+              initial={initial}
+              contacts={investor.contacts.map((p) => ({ value: p.id, label: [p.firstName, p.lastName].filter(Boolean).join(" ") }))}
+            />
+          )}
+          {canDeleteRecord(lens.orgRole, "Investors") && (
+            <DeleteConfirm mutation={DELETE_INVESTOR} recordId={investor.id} entityLabel="investor" redirectTo="/investors" />
+          )}
+        </div>
+      </div>
 
-      <ActivityTimeline
-        activities={investor.activities.map((a): ActivityTimelineItem => ({
-          id: a.id,
-          type: a.type,
-          subject: a.subject,
-          body: a.body,
-          occurredAt: a.occurredAt,
-          channel: a.channel,
-          direction: a.direction,
-        }))}
+      {/* Account access — investor login accounts. Admin-only: never rendered
+          for non-admins, since it exposes login email + last-login (FIX 13). */}
+      {isRealAdmin && <AccountPanel investorId={investor.id} accounts={accountSummaries} />}
+
+      {/* Onboarding panel — first card while a registration awaits/failed review */}
+      {onboardingProminent && onboardingPanel}
+
+      <WorkspaceTabs
+        tabs={[
+          { key: "overview", label: "Overview", content: overviewTab },
+          { key: "engagements", label: "Engagements", count: investor.engagements.length, content: engagementsTab },
+          { key: "communications", label: "Communications", count: commItems.length, content: communicationsTab },
+          { key: "documents", label: "Documents", count: extras.documents.length, content: documentsTab },
+          { key: "tasks", label: "Tasks", count: extras.tasks.length, content: tasksTab },
+          { key: "history", label: "History", count: changeHistoryItems.length, content: historyTab },
+        ]}
       />
-
-      <StageHistory title="Change History" items={changeHistoryItems} />
     </div>
   );
 }
