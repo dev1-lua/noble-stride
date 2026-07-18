@@ -13,7 +13,7 @@ describe.skipIf(!dbUp)("deals-queue service (DB)", () => {
     const { rows, total } = await listDeals(parseDealsQuery({}));
     expect(Array.isArray(rows)).toBe(true);
     expect(total).toBeGreaterThanOrEqual(rows.length);
-    for (const r of rows) expect(r.kind === "mandate" || r.kind === "transaction").toBe(true);
+    for (const r of rows) expect(r.kind === "mandate" || r.kind === "transaction" || r.kind === "advisory").toBe(true);
   });
   it("filters to transactions only when type=transaction", async () => {
     const { rows } = await listDeals(parseDealsQuery({ type: "transaction", page: "1" }));

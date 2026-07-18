@@ -29,3 +29,22 @@ export async function relationOptions(): Promise<RelationOptions> {
     transactions: map(transactions), investors: map(investors), serviceProviders: map(serviceProviders),
   };
 }
+
+/**
+ * Distinct deal countries across all three deal kinds (free-text field
+ * defaulted from Client.hqCountry) — feeds the /deals Country filter.
+ */
+export async function dealCountryOptions(): Promise<RelationOption[]> {
+  const [m, t, a, c] = await Promise.all([
+    prisma.mandate.findMany({ where: { country: { not: null } }, select: { country: true }, distinct: ["country"] }),
+    prisma.transaction.findMany({ where: { country: { not: null } }, select: { country: true }, distinct: ["country"] }),
+    prisma.advisoryEngagement.findMany({ where: { country: { not: null } }, select: { country: true }, distinct: ["country"] }),
+    // Legacy rows without their own country fall back to the client HQ in the
+    // deals queue — include those values so the filter can reach them too.
+    prisma.client.findMany({ where: { hqCountry: { not: null } }, select: { hqCountry: true }, distinct: ["hqCountry"] }),
+  ]);
+  const names = new Set<string>();
+  for (const r of [...m, ...t, ...a]) if (r.country) names.add(r.country);
+  for (const r of c) if (r.hqCountry) names.add(r.hqCountry);
+  return [...names].sort((x, y) => x.localeCompare(y)).map((name) => ({ value: name, label: name }));
+}

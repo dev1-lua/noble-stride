@@ -8,10 +8,11 @@ import { DealsFilterBar } from "@/components/crm/deals-filter-bar";
 import { DealsViewControls } from "@/components/crm/deals-view-controls";
 import { getOrgLens } from "@/server/rbac/context";
 import { can } from "@/server/rbac/matrix";
-import { relationOptions } from "@/server/services/relation-options";
+import { relationOptions, dealCountryOptions } from "@/server/services/relation-options";
 import { listSavedViews } from "@/server/services/saved-views";
 import { mandatesByStage } from "@/server/services/mandates";
 import { transactionsByStage } from "@/server/services/transactions";
+import { advisoryByStage } from "@/server/services/advisory";
 import { daysInStage } from "@/server/domain/metrics";
 import { label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
@@ -20,6 +21,7 @@ import type { KanbanColumnDTO } from "@/components/crm/kanban-board";
 import type { MandateCardDTO, TransactionCardDTO } from "@/components/crm/kanban-card";
 import { MandateFormDrawer } from "@/components/crm/mandate-form-drawer";
 import { TransactionFormDrawer } from "@/components/crm/transaction-form-drawer";
+import { AdvisoryFormDrawer } from "@/components/crm/advisory-form-drawer";
 
 type RawSearchParams = { [k: string]: string | string[] | undefined };
 interface PageProps { searchParams: Promise<RawSearchParams>; }
@@ -92,6 +94,32 @@ function mandateBoardColumns(
   }));
 }
 
+// Advisory cards reuse the mandate card shape (client, sectors, next action,
+// days-in-stage, lead) — see AdvisoryKanbanProps in kanban-board.tsx.
+function advisoryBoardColumns(
+  rawColumns: Awaited<ReturnType<typeof advisoryByStage>>,
+  now: Date
+): KanbanColumnDTO<MandateCardDTO>[] {
+  return rawColumns.map((col) => ({
+    stage: col.stage,
+    label: col.label,
+    items: col.items.map((a) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adv = a as any;
+      return {
+        id: adv.id,
+        clientName: adv.client?.name ?? adv.name,
+        sectors: adv.sector ?? [],
+        nextAction: adv.nextAction ?? null,
+        daysInStage: daysInStage(adv.stageEnteredAt ?? now, now),
+        ownerName: adv.lead?.name ?? null,
+        ownerColor: adv.lead?.avatarColor ?? null,
+        priorityLabel: adv.priority ? label("Priority", adv.priority) : null,
+      } satisfies MandateCardDTO;
+    }),
+  }));
+}
+
 // Transaction owner relation is `owner` (not `lead` — that's the mandate side).
 function transactionBoardColumns(
   rawColumns: Awaited<ReturnType<typeof transactionsByStage>>,
@@ -158,7 +186,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
       <div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">Deals</h1>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-          Mandates and transactions in one queue — {total} deal{total === 1 ? "" : "s"}
+          Mandates, transactions and advisory work in one queue — {total} deal{total === 1 ? "" : "s"}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -182,6 +210,14 @@ export default async function DealsPage({ searchParams }: PageProps) {
             serviceProviders={rel.serviceProviders}
           />
         )}
+        {can(lens.orgRole, "Advisory", "C") && (
+          <AdvisoryFormDrawer
+            mode="create"
+            triggerLabel="+ New Advisory"
+            clients={rel.clients}
+            users={rel.users}
+          />
+        )}
         <a
           href={`/deals/export${exportQuery ? `?${exportQuery}` : ""}`}
           className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-secondary)] active:bg-[var(--bg-tertiary)]"
@@ -199,10 +235,10 @@ export default async function DealsPage({ searchParams }: PageProps) {
   if (spec.view === "board") {
     // Board mode shows one type at a time; defaults to the active type filter
     // when it resolves unambiguously to a single kind, else Transactions.
-    const boardType: "mandate" | "transaction" =
-      spec.type.length === 1 && spec.type[0] === "mandate" ? "mandate" : "transaction";
+    const boardType: "mandate" | "transaction" | "advisory" =
+      spec.type.length === 1 && (spec.type[0] === "mandate" || spec.type[0] === "advisory") ? spec.type[0] : "transaction";
     const now = new Date();
-    const boardTypeHref = (t: "mandate" | "transaction") => withParams(sp, { type: t });
+    const boardTypeHref = (t: "mandate" | "transaction" | "advisory") => withParams(sp, { type: t });
 
     let boardTotal = 0;
     let board: React.ReactNode;
@@ -210,14 +246,26 @@ export default async function DealsPage({ searchParams }: PageProps) {
       const rawColumns = await mandatesByStage();
       boardTotal = rawColumns.reduce((n, c) => n + c.items.length, 0);
       board = (
-        // key on boardType forces a remount when the Mandates/Transactions
-        // sub-toggle switches type via soft navigation — otherwise KanbanBoard's
-        // useState(columns) keeps the previous type's stale columns until reload.
+        // key on boardType forces a remount when the type sub-toggle switches
+        // via soft navigation — otherwise KanbanBoard's useState(columns)
+        // keeps the previous type's stale columns until reload.
         <KanbanBoard
           key={boardType}
           kind="mandate"
           columns={mandateBoardColumns(rawColumns, now)}
           readOnly={!can(lens.orgRole, "Mandates", "U")}
+        />
+      );
+    } else if (boardType === "advisory") {
+      const rawColumns = await advisoryByStage();
+      boardTotal = rawColumns.reduce((n, c) => n + c.items.length, 0);
+      board = (
+        // See mandate branch — key on boardType forces remount on sub-toggle.
+        <KanbanBoard
+          key={boardType}
+          kind="advisory"
+          columns={advisoryBoardColumns(rawColumns, now)}
+          readOnly={!can(lens.orgRole, "Advisory", "U")}
         />
       );
     } else {
@@ -234,23 +282,23 @@ export default async function DealsPage({ searchParams }: PageProps) {
       );
     }
 
+    const boardToggle = (t: "mandate" | "transaction" | "advisory", text: string) => (
+      <Link
+        href={boardTypeHref(t)}
+        className={`rounded px-2.5 py-1 transition-colors ${boardType === t ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"}`}
+      >
+        {text}
+      </Link>
+    );
+
     return (
       <div className="space-y-5">
         {header(boardTotal)}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-0.5 text-xs font-medium">
-            <Link
-              href={boardTypeHref("mandate")}
-              className={`rounded px-2.5 py-1 transition-colors ${boardType === "mandate" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"}`}
-            >
-              Mandates
-            </Link>
-            <Link
-              href={boardTypeHref("transaction")}
-              className={`rounded px-2.5 py-1 transition-colors ${boardType === "transaction" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"}`}
-            >
-              Transactions
-            </Link>
+            {boardToggle("mandate", "Mandates")}
+            {boardToggle("transaction", "Transactions")}
+            {boardToggle("advisory", "Advisory")}
           </div>
           <Suspense>
             <DealsViewControls views={views} />
@@ -273,6 +321,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
   // relationOptions() loaded once up top (also feeds the header create-drawers).
   const leadNames = Array.from(new Set(rel.users.map((u) => u.label))).sort((a, b) => a.localeCompare(b));
   const leads = leadNames.map((name) => ({ value: name, label: name }));
+  const countries = await dealCountryOptions();
 
   const groups = spec.groupBy ? await countsBy(spec, spec.groupBy) : [];
 
@@ -291,7 +340,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
       {header(total)}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Suspense>
-          <DealsFilterBar leads={leads} />
+          <DealsFilterBar leads={leads} countries={countries} />
         </Suspense>
         <Suspense>
           <DealsViewControls views={views} />

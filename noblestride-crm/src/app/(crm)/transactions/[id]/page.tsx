@@ -66,12 +66,15 @@ export default async function TransactionDetailPage({ params }: PageProps) {
     clientId: txn.clientId ?? "",
     mandateId: txn.mandateId ?? "",
     ownerId: txn.ownerId ?? "",
-    assistantId: txn.assistantId ?? "",
+    // Legacy single assistant is folded into assists by the backfill; the
+    // drawer edits the m2m only.
+    assistIds: ((txn.assists ?? []) as { id: string }[]).map((u) => u.id),
     stage: txn.stage ?? "",
     dealType: txn.dealType ?? "",
     instrument: (txn.instrument ?? []) as string[],
     targetRaise: txn.targetRaise == null ? undefined : Number(txn.targetRaise),
     sector: (txn.sector ?? []) as string[],
+    country: txn.country ?? "",
     dateOpened: toDate(txn.dateOpened),
     successFeeAmount: txn.successFeeAmount == null ? undefined : Number(txn.successFeeAmount),
     successFeeInvoicedDate: toDate(txn.successFeeInvoicedDate),

@@ -1,17 +1,18 @@
 // GraphQL mutations for the Noblestride Capital CRM.
 // Thin resolvers — each is a one-line call to the matching service.
 
-import { builder, MandateStageEnum, TransactionStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum, MilestoneKeyEnum, DDTrackEnum } from "./builder";
+import { builder, MandateStageEnum, TransactionStageEnum, AdvisoryStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum, MilestoneKeyEnum, DDTrackEnum } from "./builder";
 import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, LogClientMessageInput, InvestorUpdateSubmitInput, InvestorCommunicationInput, OutreachDraftsInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, AdvisoryInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, LogClientMessageInput, InvestorUpdateSubmitInput, InvestorCommunicationInput, OutreachDraftsInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor, markInvestorCriteriaVerified } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
 import { createMandate, updateMandate, deleteMandate, acceptIntakeMandate, deprioritizeIntakeMandate, rerunQualification } from "@/server/services/mandates";
+import { setAdvisoryStage, createAdvisory, updateAdvisory, deleteAdvisory } from "@/server/services/advisory";
 import { createTransaction, updateTransaction, deleteTransaction } from "@/server/services/transactions";
 import { createPartner, updatePartner, deletePartner } from "@/server/services/partners";
 import { createServiceProvider, updateServiceProvider, deleteServiceProvider } from "@/server/services/service-providers";
@@ -67,6 +68,22 @@ builder.mutationFields((t) => ({
         prisma.transaction.findUnique({ where: { id: String(args.id) }, select: { ownerId: true } }),
       );
       return setTransactionStage(args.id, args.stage, ctx.actor);
+    },
+  }),
+
+  // 2b. updateAdvisoryStage(id: ID!, stage: AdvisoryStage!): AdvisoryEngagement
+  updateAdvisoryStage: t.prismaField({
+    type: "AdvisoryEngagement",
+    nullable: false,
+    args: {
+      id: t.arg.id({ required: true }),
+      stage: t.arg({ type: AdvisoryStageEnum, required: true }),
+    },
+    resolve: async (_query, _root, args, ctx) => {
+      await assertCanUpdateOwnScoped(ctx.actor, "Advisory", () =>
+        prisma.advisoryEngagement.findUnique({ where: { id: String(args.id) }, select: { leadId: true } }),
+      );
+      return setAdvisoryStage(args.id, args.stage, ctx.actor);
     },
   }),
 
@@ -280,6 +297,34 @@ builder.mutationFields((t) => ({
     resolve: (_q, _r, args, ctx) => {
       assertCan(ctx.actor, "Mandates", "U");
       return rerunQualification(args.id);
+    },
+  }),
+
+  // ── Advisory ──
+  createAdvisory: t.prismaField({
+    type: "AdvisoryEngagement", nullable: false,
+    args: { input: t.arg({ type: AdvisoryInput, required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      assertCan(ctx.actor, "Advisory", "C");
+      return createAdvisory(args.input as never, ctx.actor);
+    },
+  }),
+  updateAdvisory: t.prismaField({
+    type: "AdvisoryEngagement", nullable: false,
+    args: { id: t.arg.id({ required: true }), input: t.arg({ type: AdvisoryInput, required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      await assertCanUpdateOwnScoped(ctx.actor, "Advisory", () =>
+        prisma.advisoryEngagement.findUnique({ where: { id: String(args.id) }, select: { leadId: true } }),
+      );
+      return updateAdvisory(args.id, args.input as never, ctx.actor);
+    },
+  }),
+  deleteAdvisory: t.prismaField({
+    type: "AdvisoryEngagement", nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      assertCanDelete(ctx.actor, "Advisory");
+      return deleteAdvisory(args.id);
     },
   }),
 

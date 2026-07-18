@@ -13,9 +13,9 @@ const CREATE = `mutation CreateTransaction($input: TransactionInput!) { createTr
 const UPDATE = `mutation UpdateTransaction($id: ID!, $input: TransactionInput!) { updateTransaction(id: $id, input: $input) { id } }`;
 
 const EMPTY: Record<string, unknown> = {
-  name: "", clientId: "", mandateId: "", ownerId: "", assistantId: "", dealType: "", instrument: [],
+  name: "", clientId: "", mandateId: "", ownerId: "", assistIds: [], dealType: "", instrument: [],
   stage: "",
-  targetRaise: undefined, currency: "", sector: [], dateOpened: "",
+  targetRaise: undefined, currency: "", sector: [], country: "", dateOpened: "",
   successFeeAmount: undefined, successFeeInvoicedDate: "", successFeePaidDate: "",
   // Spec-gap: deal status/milestone/financing fields (spec §4.1/§4.3/§4.5/§4.7)
   dealStatus: "", dealMilestone: "", financingType: "", maxSellingStake: "",
@@ -73,8 +73,8 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
           <RelationSelect label="Client" required value={v.clientId as string} onChange={(x) => f.setValue("clientId", x)} options={clients} error={f.errors.clientId} placeholder="Select client…" />
           <RelationSelect label="Mandate" value={v.mandateId as string} onChange={(x) => f.setValue("mandateId", x)} options={mandates} placeholder="Select mandate…" />
           <SelectField label="Stage" value={v.stage as string} onChange={(x) => f.setValue("stage", x)} options={options("TransactionStage")} />
-          <RelationSelect label="Owner" value={v.ownerId as string} onChange={(x) => f.setValue("ownerId", x)} options={users} placeholder="Select owner…" />
-          <RelationSelect label="Assistant" value={v.assistantId as string} onChange={(x) => f.setValue("assistantId", x)} options={users} placeholder="Select assistant…" />
+          <RelationSelect label="Deal Lead" value={v.ownerId as string} onChange={(x) => f.setValue("ownerId", x)} options={users} placeholder="Select lead…" />
+          <MultiSelectField label="Deal Assists" value={v.assistIds as string[]} onChange={(x) => f.setValue("assistIds", x)} options={users} />
           <RelationSelect label="Referred By (Consultant/Partner)" value={v.referredById as string} onChange={(x) => f.setValue("referredById", x)} options={partners} placeholder="Select partner…" />
           {Boolean(v.referredById) && (
             <div className="grid grid-cols-2 gap-3">
@@ -89,7 +89,10 @@ export function TransactionFormDrawer({ mode, initial, clients, users, mandates,
           </div>
           <MultiSelectField label="Instrument" value={v.instrument as string[]} onChange={(x) => f.setValue("instrument", x)} options={options("Instrument")} />
           <MultiSelectField label="Sector" value={v.sector as string[]} onChange={(x) => f.setValue("sector", x)} options={options("Sector")} />
-          <DateField label="Date Opened" value={v.dateOpened as string} onChange={(x) => f.setValue("dateOpened", x)} disabled={lockDateOpened} />
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label="Country" value={v.country as string} onChange={(x) => f.setValue("country", x)} />
+            <DateField label="Date Opened" value={v.dateOpened as string} onChange={(x) => f.setValue("dateOpened", x)} disabled={lockDateOpened} />
+          </div>
           {lockDateOpened && (
             <p className="text-xs text-[var(--text-tertiary)]">Date opened is locked once set.</p>
           )}

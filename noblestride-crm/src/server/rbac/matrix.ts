@@ -10,6 +10,7 @@ export const RBAC_ENTITIES = [
   "Clients",
   "Mandates",
   "Transactions",
+  "Advisory",
   "Engagements",
   "Partners",
   "Documents",
@@ -30,6 +31,7 @@ export const RBAC_MATRIX: Record<OrgRole, Record<RbacEntity, readonly Perm[]>> =
     Clients: ["C", "R", "U"],
     Mandates: ["C", "R", "U"],
     Transactions: ["C", "R", "U"],
+    Advisory: ["C", "R", "U"],
     Engagements: ["C", "R", "U"],
     Partners: ["R"],
     Documents: ["C", "R", "U"],
@@ -41,6 +43,7 @@ export const RBAC_MATRIX: Record<OrgRole, Record<RbacEntity, readonly Perm[]>> =
     Clients: ["R"],
     Mandates: ["R"],
     Transactions: ["R"],
+    Advisory: ["R"],
     Engagements: ["R", "U"],
     Partners: ["R"],
     Documents: ["R"],
@@ -57,6 +60,7 @@ export function can(role: OrgRole, entity: RbacEntity, perm: Perm): boolean {
 const OWN_SCOPED: Readonly<Partial<Record<RbacEntity, true>>> = {
   Mandates: true,
   Transactions: true,
+  Advisory: true,
   Engagements: true,
   Tasks: true,
 };

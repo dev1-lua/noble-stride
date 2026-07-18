@@ -1,6 +1,6 @@
 // Pure parsing/registry for the unified deals queue. No DB.
 
-export type DealKind = "mandate" | "transaction";
+export type DealKind = "mandate" | "transaction" | "advisory";
 export type DealsSortKey =
   | "name" | "company" | "stage" | "status" | "ticket" | "lead" | "dateOnboarded" | "daysInStage" | "priority";
 export type DealsGroupBy = "" | "stage" | "lead" | "sector" | "type" | "status";
@@ -12,16 +12,19 @@ const GROUP_KEYS: DealsGroupBy[] = ["", "stage", "lead", "sector", "type", "stat
 export interface DealsQuerySpec {
   // Multi-select filter dimensions (OR-matched within a dimension, AND across
   // dimensions); empty array imposes no constraint. `stage` is not exposed as
-  // a filter-bar dropdown (only linked to directly, e.g. intake callouts) so
-  // it stays single-valued.
+  // a filter-bar dropdown — it is only linked to directly (intake callouts,
+  // dashboard drilldowns, which pass stage sets like the "active" stages).
   type: DealKind[];
-  stage?: string;
+  stage: string[];
   status: string[];
   sector: string[];
+  country: string[];
   lead: string[];
+  assist: string[];
   ticketBand: string[];
   priority: string[];
   source: string[];
+  financing: string[];
   search?: string;
   sort: DealsSortKey;
   dir: "asc" | "desc";
@@ -44,7 +47,9 @@ export const DEAL_COLUMNS: { key: string; label: string; default: boolean }[] = 
   { key: "status", label: "Status", default: true },
   { key: "milestone", label: "Milestone", default: true },
   { key: "sector", label: "Sector", default: true },
+  { key: "country", label: "Country", default: false },
   { key: "lead", label: "Lead", default: true },
+  { key: "assist", label: "Assists", default: false },
   { key: "dateOnboarded", label: "Date onboarded", default: true },
   { key: "nextAction", label: "Next action", default: true },
   { key: "daysInStage", label: "Days in stage", default: true },
@@ -78,19 +83,22 @@ function list(v: string | string[] | undefined): string[] {
 }
 
 export function parseDealsQuery(sp: Record<string, string | string[] | undefined>): DealsQuerySpec {
-  const types = list(sp.type).filter((t): t is DealKind => t === "mandate" || t === "transaction");
+  const types = list(sp.type).filter((t): t is DealKind => t === "mandate" || t === "transaction" || t === "advisory");
   const sortRaw = str(sp.sort) as DealsSortKey | undefined;
   const groupRaw = str(sp.group) as DealsGroupBy | undefined;
   const pageNum = Number.parseInt(str(sp.page) ?? "1", 10);
   return {
     type: types,
-    stage: str(sp.stage),
+    stage: list(sp.stage),
     status: list(sp.status),
     sector: list(sp.sector),
+    country: list(sp.country),
     lead: list(sp.lead),
+    assist: list(sp.assist),
     ticketBand: list(sp.ticket),
     priority: list(sp.priority),
     source: list(sp.source),
+    financing: list(sp.financing),
     search: str(sp.q),
     sort: sortRaw && SORT_KEYS.includes(sortRaw) ? sortRaw : "dateOnboarded",
     dir: str(sp.dir) === "asc" ? "asc" : "desc",

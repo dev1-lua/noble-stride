@@ -13,8 +13,8 @@ const CREATE = `mutation CreateMandate($input: MandateInput!) { createMandate(in
 const UPDATE = `mutation UpdateMandate($id: ID!, $input: MandateInput!) { updateMandate(id: $id, input: $input) { id } }`;
 
 const EMPTY: Record<string, unknown> = {
-  name: "", clientId: "", leadId: "", referredById: "", dealStatus: "", dealSize: undefined, currency: "",
-  sector: [], source: "", dateOpened: "", ndaStatus: "", ndaSentDate: "", ndaSignedDate: "",
+  name: "", clientId: "", leadId: "", assistIds: [], referredById: "", dealStatus: "", dealSize: undefined, currency: "",
+  sector: [], country: "", source: "", dateOpened: "", ndaStatus: "", ndaSentDate: "", ndaSignedDate: "",
   eaStatus: "", eaSentDate: "", eaSignedDate: "", nextAction: "", notes: "",
   // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
   retainerAmount: undefined, retainerInvoicedDate: "", retainerPaidDate: "",
@@ -76,7 +76,8 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
           <RelationSelect label="Client" required value={v.clientId as string} onChange={(x) => f.setValue("clientId", x)} options={clients} error={f.errors.clientId} placeholder="Select client…" />
           <SelectField label="Stage" value={v.stage as string} onChange={(x) => f.setValue("stage", x)} options={options("MandateStage")} />
-          <RelationSelect label="Lead" value={v.leadId as string} onChange={(x) => f.setValue("leadId", x)} options={users} placeholder="Select lead…" />
+          <RelationSelect label="Deal Lead" value={v.leadId as string} onChange={(x) => f.setValue("leadId", x)} options={users} placeholder="Select lead…" />
+          <MultiSelectField label="Deal Assists" value={v.assistIds as string[]} onChange={(x) => f.setValue("assistIds", x)} options={users} />
           <RelationSelect label="Referred By" value={v.referredById as string} onChange={(x) => f.setValue("referredById", x)} options={partners} placeholder="Select partner…" />
           {Boolean(v.referredById) && (
             <SelectField
@@ -92,6 +93,7 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
             <MoneyField label="Deal Size" value={v.dealSize as number} onChange={(x) => f.setValue("dealSize", x)} />
             <SelectField label="Source" value={v.source as string} onChange={(x) => f.setValue("source", x)} options={options("Source")} disabled={lockSource} />
           </div>
+          <TextField label="Country" value={v.country as string} onChange={(x) => f.setValue("country", x)} />
           <div className="grid grid-cols-2 gap-3">
             <SelectField label="Deal Status" value={v.dealStatus as string} onChange={(x) => f.setValue("dealStatus", x)} options={options("DealStatus")} />
             <SelectField label="Priority" value={v.priority as string} onChange={(x) => f.setValue("priority", x)} options={options("Priority")} />

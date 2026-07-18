@@ -95,6 +95,14 @@ export const LABELS: Record<string, Record<string, string>> = {
     ClosedWon: "Closed-Won",
     ClosedLost: "Closed-Lost",
   },
+  AdvisoryStage: {
+    Scoping: "Scoping",
+    Proposal: "Proposal",
+    Engaged: "Engaged",
+    Delivery: "Delivery",
+    Completed: "Completed",
+    Lost: "Lost",
+  },
   EngagementStatus: {
     NotContacted: "Not Contacted",
     Contacted: "Contacted",
@@ -237,7 +245,7 @@ export const LABELS: Record<string, Record<string, string>> = {
 // TransactionStage and EngagementStage both define TermSheet and DueDiligence
 // — a flat map would force one enum's tooltip to silently win. Consumers that
 // know their group is a stage enum can do STAGE_HELP[group]?.[value].
-export const STAGE_HELP: Record<"MandateStage" | "TransactionStage" | "EngagementStage", Record<string, string>> = {
+export const STAGE_HELP: Record<"MandateStage" | "TransactionStage" | "AdvisoryStage" | "EngagementStage", Record<string, string>> = {
   MandateStage: {
     NewLead: "A prospective client we haven't yet qualified",
     Qualification: "We're assessing whether this is a fit for Noblestride",
@@ -255,6 +263,14 @@ export const STAGE_HELP: Record<"MandateStage" | "TransactionStage" | "Engagemen
     Closing: "Final agreements and closing conditions are being completed",
     ClosedWon: "The transaction closed successfully",
     ClosedLost: "The transaction did not close",
+  },
+  AdvisoryStage: {
+    Scoping: "We're defining the scope of the advisory engagement with the client",
+    Proposal: "Our advisory proposal and fee terms are with the client",
+    Engaged: "The advisory engagement is signed and about to start",
+    Delivery: "Advisory work is underway and being delivered",
+    Completed: "The advisory engagement has been delivered and closed out",
+    Lost: "The client did not proceed with the advisory engagement",
   },
   EngagementStage: {
     Shared: "The deal has been shared with this investor",

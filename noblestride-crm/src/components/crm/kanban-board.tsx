@@ -30,6 +30,12 @@ const UPDATE_TRANSACTION_STAGE = `
   }
 `;
 
+const UPDATE_ADVISORY_STAGE = `
+  mutation UpdateAdvisoryStage($id: ID!, $stage: AdvisoryStage!) {
+    updateAdvisoryStage(id: $id, stage: $stage) { id stage }
+  }
+`;
+
 // ─── Column DTO ───────────────────────────────────────────────────────────────
 
 export interface KanbanColumnDTO<T> {
@@ -54,7 +60,22 @@ type TransactionKanbanProps = {
   readOnly?: boolean;
 };
 
-type KanbanBoardProps = MandateKanbanProps | TransactionKanbanProps;
+// Advisory cards carry the same fields as mandate cards (client, sectors,
+// next action, days-in-stage, lead) so the board reuses MandateCardDTO/-Card.
+type AdvisoryKanbanProps = {
+  kind: "advisory";
+  columns: KanbanColumnDTO<MandateCardDTO>[];
+  /** §7.2 lens: disables drag restaging when the active org-role lacks Update. */
+  readOnly?: boolean;
+};
+
+type KanbanBoardProps = MandateKanbanProps | TransactionKanbanProps | AdvisoryKanbanProps;
+
+const STAGE_HELP_KEY = {
+  mandate: "MandateStage",
+  transaction: "TransactionStage",
+  advisory: "AdvisoryStage",
+} as const;
 
 // ─── Color accent per stage column index ─────────────────────────────────────
 
@@ -86,6 +107,7 @@ export function KanbanBoard(props: KanbanBoardProps) {
   // urql mutations
   const [, executeMandateMutation] = useMutation(UPDATE_MANDATE_STAGE);
   const [, executeTransactionMutation] = useMutation(UPDATE_TRANSACTION_STAGE);
+  const [, executeAdvisoryMutation] = useMutation(UPDATE_ADVISORY_STAGE);
 
   const onDragEnd = useCallback(
     async (result: DropResult) => {
@@ -128,6 +150,9 @@ export function KanbanBoard(props: KanbanBoardProps) {
       if (props.kind === "mandate") {
         const result = await executeMandateMutation({ id: draggableId, stage: newStage });
         if (result.error) error = result.error;
+      } else if (props.kind === "advisory") {
+        const result = await executeAdvisoryMutation({ id: draggableId, stage: newStage });
+        if (result.error) error = result.error;
       } else {
         const result = await executeTransactionMutation({ id: draggableId, stage: newStage });
         if (result.error) error = result.error;
@@ -143,7 +168,7 @@ export function KanbanBoard(props: KanbanBoardProps) {
       // Success: refresh RSC so authoritative state + daysInStage recalculate
       router.refresh();
     },
-    [columns, props.kind, props.readOnly, executeMandateMutation, executeTransactionMutation, router]
+    [columns, props.kind, props.readOnly, executeMandateMutation, executeTransactionMutation, executeAdvisoryMutation, router]
   );
 
   return (
@@ -157,7 +182,7 @@ export function KanbanBoard(props: KanbanBoardProps) {
           >
             {/* Column header */}
             <div
-              title={STAGE_HELP[props.kind === "mandate" ? "MandateStage" : "TransactionStage"][col.stage]}
+              title={STAGE_HELP[STAGE_HELP_KEY[props.kind]][col.stage]}
               className={`mb-2 px-2.5 py-1.5 rounded-md bg-[var(--bg-primary)] border border-[var(--border-subtle)] border-l-4 ${
                 COLUMN_HEADER_COLORS[colIdx % COLUMN_HEADER_COLORS.length]
               }`}
@@ -194,15 +219,15 @@ export function KanbanBoard(props: KanbanBoardProps) {
                           style={provided.draggableProps.style}
                           className={snapshot.isDragging ? "opacity-90 rotate-1 shadow-md" : ""}
                         >
-                          {props.kind === "mandate" ? (
-                            <MandateKanbanCard
-                              card={item as MandateCardDTO}
-                              href={`/mandates/${item.id}`}
-                            />
-                          ) : (
+                          {props.kind === "transaction" ? (
                             <TransactionKanbanCard
                               card={item as TransactionCardDTO}
                               href={`/transactions/${item.id}`}
+                            />
+                          ) : (
+                            <MandateKanbanCard
+                              card={item as MandateCardDTO}
+                              href={props.kind === "advisory" ? `/advisory/${item.id}` : `/mandates/${item.id}`}
                             />
                           )}
                         </div>

@@ -25,10 +25,16 @@ const UPDATE_TRANSACTION_STAGE = `
   }
 `;
 
+const UPDATE_ADVISORY_STAGE = `
+  mutation UpdateAdvisoryStage($id: ID!, $stage: AdvisoryStage!) {
+    updateAdvisoryStage(id: $id, stage: $stage) { id stage }
+  }
+`;
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface RestageSelectProps {
-  kind: "mandate" | "transaction";
+  kind: "mandate" | "transaction" | "advisory";
   id: string;
   currentStage: string;
   stageOptions: SelectOption[];
@@ -47,6 +53,7 @@ export function RestageSelect({ kind, id, currentStage, stageOptions }: RestageS
 
   const [, executeMandateMutation] = useMutation(UPDATE_MANDATE_STAGE);
   const [, executeTransactionMutation] = useMutation(UPDATE_TRANSACTION_STAGE);
+  const [, executeAdvisoryMutation] = useMutation(UPDATE_ADVISORY_STAGE);
 
   async function handleChange(newStage: string) {
     if (newStage === stage || pending) return;
@@ -59,6 +66,9 @@ export function RestageSelect({ kind, id, currentStage, stageOptions }: RestageS
 
     if (kind === "mandate") {
       const result = await executeMandateMutation({ id, stage: newStage });
+      if (result.error) err = result.error;
+    } else if (kind === "advisory") {
+      const result = await executeAdvisoryMutation({ id, stage: newStage });
       if (result.error) err = result.error;
     } else {
       const result = await executeTransactionMutation({ id, stage: newStage });

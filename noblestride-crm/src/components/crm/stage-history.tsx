@@ -47,8 +47,8 @@ export function StageHistory({
   title = "Stage History",
 }: {
   items: StageHistoryItem[];
-  /** Vocab group for the entity's own "stage" field — "MandateStage" or "TransactionStage". */
-  stageGroup?: "MandateStage" | "TransactionStage" | "EngagementStage";
+  /** Vocab group for the entity's own "stage" field — e.g. "MandateStage". */
+  stageGroup?: "MandateStage" | "TransactionStage" | "AdvisoryStage" | "EngagementStage";
   title?: string;
 }) {
   return (

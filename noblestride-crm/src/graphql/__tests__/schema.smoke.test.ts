@@ -31,7 +31,7 @@ async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 describe("graphql schema", () => {
-  it("builds without errors and exposes a query type with 36 queries and 63 mutations", async () => {
+  it("builds without errors and exposes a query type with 39 queries and 67 mutations", async () => {
     // Dynamic import so the module graph is resolved lazily — errors surface here.
     const { schema } = await import("@/graphql/schema");
     expect(schema).toBeTruthy();
@@ -39,17 +39,20 @@ describe("graphql schema", () => {
     const queryType = schema.getQueryType();
     expect(queryType).toBeTruthy();
     const queryFields = Object.keys(queryType?.getFields() ?? {});
-    expect(queryFields).toHaveLength(36);
+    expect(queryFields).toHaveLength(39);
 
     const mutationType = schema.getMutationType();
     expect(mutationType).toBeTruthy();
     const mutationFields = Object.keys(mutationType?.getFields() ?? {});
-    expect(mutationFields).toHaveLength(63);
+    expect(mutationFields).toHaveLength(67);
 
     // Spot-check that key query fields exist
     expect(queryFields).toContain("dashboardStats");
     expect(queryFields).toContain("investors");
     expect(queryFields).toContain("mandatesByStage");
+    expect(queryFields).toContain("advisoryEngagements");
+    expect(queryFields).toContain("advisoryByStage");
+    expect(queryFields).toContain("advisoryEngagement");
     expect(queryFields).toContain("aiAsk");
     expect(queryFields).toContain("documents");
     expect(queryFields).toContain("document");
@@ -67,6 +70,10 @@ describe("graphql schema", () => {
     // Spot-check mutation fields
     expect(mutationFields).toContain("updateMandateStage");
     expect(mutationFields).toContain("updateTransactionStage");
+    expect(mutationFields).toContain("updateAdvisoryStage");
+    expect(mutationFields).toContain("createAdvisory");
+    expect(mutationFields).toContain("updateAdvisory");
+    expect(mutationFields).toContain("deleteAdvisory");
     expect(mutationFields).toContain("logEngagement");
     expect(mutationFields).toContain("logActivity");
     expect(mutationFields).toContain("createEngagement");

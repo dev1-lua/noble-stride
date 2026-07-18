@@ -6,6 +6,7 @@ import {
   builder,
   MandateStageEnum,
   TransactionStageEnum,
+  AdvisoryStageEnum,
   InvestorTypeEnum,
   SectorEnum,
   GeographyEnum,
@@ -18,6 +19,7 @@ import {
   ClientRef,
   MandateRef,
   TransactionRef,
+  AdvisoryEngagementRef,
   EngagementRef,
   PartnerRef,
   ActivityRef,
@@ -50,6 +52,11 @@ import {
   transactionsByStage,
   getTransaction,
 } from "@/server/services/transactions";
+import {
+  listAdvisory,
+  advisoryByStage,
+  getAdvisory,
+} from "@/server/services/advisory";
 import { engagementsByDeal, getEngagement } from "@/server/services/engagements";
 import { listDocuments, getDocument } from "@/server/services/documents";
 import { listPartners, getPartner, partnerReferralStats } from "@/server/services/partners";
@@ -93,6 +100,13 @@ const MandateFilterInput = builder.inputType("MandateFilter", {
 const TransactionFilterInput = builder.inputType("TransactionFilter", {
   fields: (t) => ({
     stage: t.field({ type: TransactionStageEnum, required: false }),
+    clientId: t.id({ required: false }),
+  }),
+});
+
+const AdvisoryFilterInput = builder.inputType("AdvisoryFilter", {
+  fields: (t) => ({
+    stage: t.field({ type: AdvisoryStageEnum, required: false }),
     clientId: t.id({ required: false }),
   }),
 });
@@ -182,6 +196,16 @@ const TransactionStageColumnRef = builder.objectRef<TransactionStageColumn>("Tra
     stage: t.exposeString("stage"),
     label: t.exposeString("label"),
     items: t.field({ type: [TransactionRef], resolve: (c) => c.items }),
+  }),
+});
+
+// AdvisoryStageColumn
+type AdvisoryStageColumn = Awaited<ReturnType<typeof advisoryByStage>>[number];
+const AdvisoryStageColumnRef = builder.objectRef<AdvisoryStageColumn>("AdvisoryStageColumn").implement({
+  fields: (t) => ({
+    stage: t.exposeString("stage"),
+    label: t.exposeString("label"),
+    items: t.field({ type: [AdvisoryEngagementRef], resolve: (c) => c.items }),
   }),
 });
 
@@ -387,6 +411,33 @@ builder.queryFields((t) => ({
       id: t.arg.id({ required: true }),
     },
     resolve: (_query, _root, args) => getMandate(args.id),
+  }),
+
+  // 9b. advisory pipeline queries
+  advisoryEngagements: t.prismaField({
+    type: ["AdvisoryEngagement"],
+    nullable: false,
+    args: {
+      filter: t.arg({ type: AdvisoryFilterInput, required: false }),
+    },
+    resolve: (_query, _root, args) =>
+      listAdvisory(
+        args.filter != null
+          ? { stage: args.filter.stage ?? undefined, clientId: args.filter.clientId ?? undefined }
+          : undefined
+      ),
+  }),
+  advisoryByStage: t.field({
+    type: [AdvisoryStageColumnRef],
+    resolve: () => advisoryByStage(),
+  }),
+  advisoryEngagement: t.prismaField({
+    type: "AdvisoryEngagement",
+    nullable: true,
+    args: {
+      id: t.arg.id({ required: true }),
+    },
+    resolve: (_query, _root, args) => getAdvisory(args.id),
   }),
 
   // 10. transactions(filter): [Transaction]

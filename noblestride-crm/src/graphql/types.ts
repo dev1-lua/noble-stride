@@ -11,6 +11,7 @@ import {
   GeographyEnum,
   MandateStageEnum,
   TransactionStageEnum,
+  AdvisoryStageEnum,
   EngagementStatusEnum,
   EngagementStageEnum,
   InterestLevelEnum,
@@ -252,6 +253,7 @@ export const MandateRef = builder.prismaObject("Mandate", {
     currency: t.exposeString("currency"),
     // Enum arrays
     sector: t.field({ type: [SectorEnum], resolve: (m) => m.sector }),
+    country: t.exposeString("country", { nullable: true }),
     source: t.field({ type: SourceEnum, nullable: true, resolve: (m) => m.source }),
     dateOpened: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.dateOpened }),
     ndaStatus: t.field({ type: DocStatusEnum, resolve: (m) => m.ndaStatus }),
@@ -282,6 +284,7 @@ export const MandateRef = builder.prismaObject("Mandate", {
     // Relations — tasks excluded per brief
     client: t.relation("client"),
     lead: t.relation("lead", { nullable: true }),
+    assists: t.relation("assists"),
     referredBy: t.relation("referredBy", { nullable: true }),
     transactions: t.relation("transactions"),
     activities: t.relation("activities"),
@@ -304,6 +307,7 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     targetRaise: t.float({ nullable: true, resolve: (tx) => (tx.targetRaise == null ? null : Number(tx.targetRaise)) }),
     currency: t.exposeString("currency"),
     sector: t.field({ type: [SectorEnum], resolve: (tx) => tx.sector }),
+    country: t.exposeString("country", { nullable: true }),
     dateOpened: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.dateOpened }),
     closedAt: t.field({ type: "DateTime", nullable: true, resolve: (tx) => tx.closedAt }),
     successFeeAmount: t.float({ nullable: true, resolve: (tx) => (tx.successFeeAmount == null ? null : Number(tx.successFeeAmount)) }),
@@ -343,6 +347,7 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     mandate: t.relation("mandate", { nullable: true }),
     owner: t.relation("owner", { nullable: true }),
     assistant: t.relation("assistant", { nullable: true }),
+    assists: t.relation("assists"),
     referredBy: t.relation("referredBy", { nullable: true }),
     engagements: t.relation("engagements"),
     activities: t.relation("activities"),
@@ -357,6 +362,40 @@ export const TransactionRef = builder.prismaObject("Transaction", {
           where: { transactionId: txn.id, status: { in: ACTIVE_CONVERSATION_STATUSES } },
         }),
     }),
+  }),
+});
+
+// ─── AdvisoryEngagement ──────────────────────────────────────────────────────
+
+export const AdvisoryEngagementRef = builder.prismaObject("AdvisoryEngagement", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    name: t.exposeString("name"),
+    stage: t.field({ type: AdvisoryStageEnum, resolve: (a) => a.stage }),
+    stageEnteredAt: t.field({ type: "DateTime", resolve: (a) => a.stageEnteredAt }),
+    dealStatus: t.field({ type: DealStatusEnum, resolve: (a) => a.dealStatus }),
+    daysInStage: t.int({ resolve: (a) => daysInStage(a.stageEnteredAt) }),
+    feeAmount: t.float({ nullable: true, resolve: (a) => (a.feeAmount == null ? null : Number(a.feeAmount)) }),
+    currency: t.exposeString("currency"),
+    sector: t.field({ type: [SectorEnum], resolve: (a) => a.sector }),
+    country: t.exposeString("country", { nullable: true }),
+    source: t.field({ type: SourceEnum, nullable: true, resolve: (a) => a.source }),
+    priority: t.field({ type: PriorityEnum, nullable: true, resolve: (a) => a.priority }),
+    dateOpened: t.field({ type: "DateTime", nullable: true, resolve: (a) => a.dateOpened }),
+    nextAction: t.exposeString("nextAction", { nullable: true }),
+    notes: t.exposeString("notes", { nullable: true }),
+    createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
+    createdAt: t.field({ type: "DateTime", resolve: (a) => a.createdAt }),
+    updatedAt: t.field({ type: "DateTime", resolve: (a) => a.updatedAt }),
+    // FK scalars
+    clientId: t.exposeString("clientId"),
+    leadId: t.exposeString("leadId", { nullable: true }),
+    // Relations
+    client: t.relation("client"),
+    lead: t.relation("lead", { nullable: true }),
+    assists: t.relation("assists"),
+    activities: t.relation("activities"),
+    stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
   }),
 });
 

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import {
   ActorSource,
   AdvisorType,
+  AdvisoryStage,
   ClientStatus,
   CommChannel,
   CommDirection,
@@ -83,6 +84,7 @@ export const InvestmentStageEnum = builder.enumType(InvestmentStage, { name: "In
 export const GeographyEnum = builder.enumType(Geography, { name: "Geography" });
 export const MandateStageEnum = builder.enumType(MandateStage, { name: "MandateStage" });
 export const TransactionStageEnum = builder.enumType(TransactionStage, { name: "TransactionStage" });
+export const AdvisoryStageEnum = builder.enumType(AdvisoryStage, { name: "AdvisoryStage" });
 export const EngagementStatusEnum = builder.enumType(EngagementStatus, { name: "EngagementStatus" });
 export const SourceEnum = builder.enumType(Source, { name: "Source" });
 export const DocStatusEnum = builder.enumType(DocStatus, { name: "DocStatus" });

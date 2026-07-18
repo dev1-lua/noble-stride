@@ -19,7 +19,7 @@ import {
   InteractionTypeEnum, CommChannelEnum, CommDirectionEnum,
   RegulatoryStatusEnum, DDTrackEnum, DDStatusEnum,
   PriorityEnum, PartnerFeeStatusEnum,
-  MandateStageEnum, TransactionStageEnum,
+  MandateStageEnum, TransactionStageEnum, AdvisoryStageEnum,
 } from "./builder";
 
 export const InvestorInput = builder.inputType("InvestorInput", {
@@ -130,8 +130,10 @@ export const MandateInput = builder.inputType("MandateInput", {
     dealSize: t.float({ required: false }),
     currency: t.string({ required: false }),
     sector: t.field({ type: [SectorEnum], required: false }),
+    country: t.string({ required: false }),
     source: t.field({ type: SourceEnum, required: false }),
     stage: t.field({ type: MandateStageEnum, required: false }),
+    assistIds: t.field({ type: ["ID"], required: false }),
     qualificationVerdict: t.string({ required: false }),
     dateOpened: t.field({ type: "DateTime", required: false }),
     ndaStatus: t.field({ type: DocStatusEnum, required: false }),
@@ -163,8 +165,10 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     targetRaise: t.float({ required: false }),
     currency: t.string({ required: false }),
     sector: t.field({ type: [SectorEnum], required: false }),
+    country: t.string({ required: false }),
     dateOpened: t.field({ type: "DateTime", required: false }),
     stage: t.field({ type: TransactionStageEnum, required: false }),
+    assistIds: t.field({ type: ["ID"], required: false }),
     successFeeAmount: t.float({ required: false }),
     successFeeInvoicedDate: t.field({ type: "DateTime", required: false }),
     successFeePaidDate: t.field({ type: "DateTime", required: false }),
@@ -190,6 +194,26 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     priority: t.field({ type: PriorityEnum, required: false }),
     partnerFeeStatus: t.field({ type: PartnerFeeStatusEnum, required: false }),
     partnerFeeAmount: t.float({ required: false }),
+  }),
+});
+
+export const AdvisoryInput = builder.inputType("AdvisoryInput", {
+  fields: (t) => ({
+    name: t.string({ required: true }),
+    clientId: t.id({ required: true }),
+    leadId: t.id({ required: false }),
+    assistIds: t.field({ type: ["ID"], required: false }),
+    stage: t.field({ type: AdvisoryStageEnum, required: false }),
+    dealStatus: t.field({ type: DealStatusEnum, required: false }),
+    feeAmount: t.float({ required: false }),
+    currency: t.string({ required: false }),
+    sector: t.field({ type: [SectorEnum], required: false }),
+    country: t.string({ required: false }),
+    source: t.field({ type: SourceEnum, required: false }),
+    dateOpened: t.field({ type: "DateTime", required: false }),
+    nextAction: t.string({ required: false }),
+    notes: t.string({ required: false }),
+    priority: t.field({ type: PriorityEnum, required: false }),
   }),
 });
 
@@ -249,6 +273,7 @@ export const DocumentInput = builder.inputType("DocumentInput", {
     investorId: t.id({ required: false }),
     mandateId: t.id({ required: false }),
     partnerId: t.id({ required: false }),
+    folderId: t.id({ required: false }),
   }),
 });
 

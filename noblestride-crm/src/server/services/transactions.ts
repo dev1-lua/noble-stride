@@ -105,6 +105,7 @@ export async function getTransaction(id: string) {
       mandate: true,
       owner: true,
       assistant: true,
+      assists: true,
       referredBy: true,
       engagements: { include: { investor: true } },
       activities: { orderBy: { occurredAt: "desc" }, include: { tasks: { select: { id: true, title: true, status: true } } } },
@@ -156,20 +157,24 @@ function transactionStageNotification(id: string, name: string, fromStage: Trans
 }
 
 export async function createTransaction(input: TransactionCreateInput, actor: Actor) {
-  const { serviceProviderIds, ...data } = transactionCreateSchema.parse(input);
+  const { serviceProviderIds, assistIds, ...data } = transactionCreateSchema.parse(input);
   const now = new Date();
+  // Deal country defaults from the client's HQ country when not provided.
+  const country = data.country ?? (await prisma.client.findUnique({ where: { id: data.clientId }, select: { hqCountry: true } }))?.hqCountry ?? undefined;
   return prisma.transaction.create({
     data: {
       ...data,
+      country,
       createdSource: actorSource(actor),
       ...(data.stage && CLOSED_TXN_STAGES.includes(data.stage) ? { closedAt: now } : {}),
       ...(serviceProviderIds ? { serviceProviders: { connect: serviceProviderIds.map((id) => ({ id })) } } : {}),
+      ...(assistIds ? { assists: { connect: assistIds.map((id) => ({ id })) } } : {}),
     },
   });
 }
 
 export async function updateTransaction(id: string, input: TransactionUpdateInput, actor: Actor = { type: "HUMAN" }) {
-  const { serviceProviderIds, stage, ...data } = transactionUpdateSchema.parse(input);
+  const { serviceProviderIds, assistIds, stage, ...data } = transactionUpdateSchema.parse(input);
   const now = new Date();
 
   const result = await prisma.$transaction(async (tx) => {
@@ -192,6 +197,7 @@ export async function updateTransaction(id: string, input: TransactionUpdateInpu
       data: {
         ...data,
         ...(serviceProviderIds ? { serviceProviders: { set: serviceProviderIds.map((spId) => ({ id: spId })) } } : {}),
+        ...(assistIds ? { assists: { set: assistIds.map((userId) => ({ id: userId })) } } : {}),
         ...(stageChanging ? { stage, stageEnteredAt: now, closedAt } : {}),
       },
     });

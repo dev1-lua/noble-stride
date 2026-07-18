@@ -31,17 +31,16 @@ function isSortKey(key: string): key is DealsSortKey {
 // Rather than add one, render an inline badge mirroring Chip's "category" tone
 // styling directly.
 function TypeBadge({ kind }: { kind: DealRow["kind"] }) {
-  const isMandate = kind === "mandate";
+  const tone =
+    kind === "mandate"
+      ? "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
+      : kind === "advisory"
+        ? "bg-[var(--t-tag-bg-violet,#f5f3ff)] text-[var(--t-tag-text-violet,#6d28d9)]"
+        : "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]";
+  const text = kind === "mandate" ? "Mandate" : kind === "advisory" ? "Advisory" : "Transaction";
   return (
-    <span
-      className={
-        "inline-flex items-center whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium " +
-        (isMandate
-          ? "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
-          : "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]")
-      }
-    >
-      {isMandate ? "Mandate" : "Transaction"}
+    <span className={"inline-flex items-center whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium " + tone}>
+      {text}
     </span>
   );
 }
@@ -57,7 +56,9 @@ function cell(r: DealRow, key: string): React.ReactNode {
     case "dealType": return r.dealTypeLabel || "—";
     case "ticket": return r.ticket != null ? `$${r.ticket.toLocaleString()}` : "—";
     case "sector": return r.sectors.length ? r.sectors.join(", ") : "—";
+    case "country": return r.country ?? "—";
     case "lead": return r.leadName ?? "—";
+    case "assist": return r.assistNames.length ? r.assistNames.join(", ") : "—";
     case "dateOnboarded": return r.dateOnboarded ? r.dateOnboarded.slice(0, 10) : "—";
     case "nextAction": return r.nextAction ?? "—";
     case "daysInStage": return String(r.daysInStage);

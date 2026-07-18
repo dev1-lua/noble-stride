@@ -73,6 +73,7 @@ export async function getMandate(id: string) {
     include: {
       client: true,
       lead: true,
+      assists: true,
       referredBy: true,
       transactions: true,
       activities: { orderBy: { occurredAt: "desc" } },
@@ -121,7 +122,7 @@ function mandateStageNotification(id: string, name: string, fromStage: MandateSt
 }
 
 export async function createMandate(input: MandateCreateInput, actor: Actor) {
-  const data = mandateCreateSchema.parse(input);
+  const { assistIds, ...data } = mandateCreateSchema.parse(input);
   const now = new Date();
   const docDates = reconcileMandateDocDates(data, {
     ndaStatus: data.ndaStatus ?? "NotSent",
@@ -131,11 +132,21 @@ export async function createMandate(input: MandateCreateInput, actor: Actor) {
     eaSentDate: data.eaSentDate ?? null,
     eaSignedDate: data.eaSignedDate ?? null,
   }, now);
-  return prisma.mandate.create({ data: { ...data, ...docDates, createdSource: actorSource(actor) } });
+  // Deal country defaults from the client's HQ country when not provided.
+  const country = data.country ?? (await prisma.client.findUnique({ where: { id: data.clientId }, select: { hqCountry: true } }))?.hqCountry ?? undefined;
+  return prisma.mandate.create({
+    data: {
+      ...data,
+      country,
+      ...docDates,
+      createdSource: actorSource(actor),
+      ...(assistIds ? { assists: { connect: assistIds.map((id) => ({ id })) } } : {}),
+    },
+  });
 }
 
 export async function updateMandate(id: string, input: MandateUpdateInput, actor: Actor = { type: "HUMAN" }) {
-  const { stage, ...rest } = mandateUpdateSchema.parse(input);
+  const { stage, assistIds, ...rest } = mandateUpdateSchema.parse(input);
   const now = new Date();
 
   const result = await prisma.$transaction(async (tx) => {
@@ -162,7 +173,12 @@ export async function updateMandate(id: string, input: MandateUpdateInput, actor
 
     const updated = await tx.mandate.update({
       where: { id },
-      data: { ...rest, ...docDates, ...(stageChanging ? { stage, stageEnteredAt: now } : {}) },
+      data: {
+        ...rest,
+        ...docDates,
+        ...(assistIds ? { assists: { set: assistIds.map((userId) => ({ id: userId })) } } : {}),
+        ...(stageChanging ? { stage, stageEnteredAt: now } : {}),
+      },
     });
 
     if (rest.dealStatus !== undefined) {

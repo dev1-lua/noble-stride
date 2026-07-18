@@ -37,6 +37,20 @@ describe("parseDealsQuery", () => {
     expect(parseDealsQuery({ type: "haxx" }).type).toEqual([]);
     expect(parseDealsQuery({ type: "mandate,haxx" }).type).toEqual(["mandate"]);
   });
+  it("accepts type=advisory (third deal kind)", () => {
+    expect(parseDealsQuery({ type: "advisory" }).type).toEqual(["advisory"]);
+    expect(parseDealsQuery({ type: "mandate,advisory" }).type).toEqual(["mandate", "advisory"]);
+  });
+  it("reads the country, assist, and financing filter params through", () => {
+    const s = parseDealsQuery({ country: "Kenya,Uganda", assist: "Jane Doe", financing: "Equity" });
+    expect(s.country).toEqual(["Kenya", "Uganda"]);
+    expect(s.assist).toEqual(["Jane Doe"]);
+    expect(s.financing).toEqual(["Equity"]);
+    const empty = parseDealsQuery({});
+    expect(empty.country).toEqual([]);
+    expect(empty.assist).toEqual([]);
+    expect(empty.financing).toEqual([]);
+  });
   it("rejects an unknown sort key back to the default", () => {
     expect(parseDealsQuery({ sort: "haxx" }).sort).toBe("dateOnboarded");
   });

@@ -8,6 +8,7 @@ import type {
   Geography,
   MandateStage,
   TransactionStage,
+  AdvisoryStage,
   EngagementStatus,
   OnboardingStatus,
 } from "@prisma/client";
@@ -20,6 +21,7 @@ export type {
   Geography,
   MandateStage,
   TransactionStage,
+  AdvisoryStage,
   EngagementStatus,
   OnboardingStatus,
 };
@@ -37,6 +39,16 @@ export const ACTIVE_MANDATE_STAGES: MandateStage[] = [
 
 /** Transaction stages that represent a closed outcome (won or lost). */
 export const CLOSED_TXN_STAGES: TransactionStage[] = ["ClosedWon", "ClosedLost"];
+
+/** Complement of CLOSED_TXN_STAGES — used by dashboard→deals drilldown links,
+ * which express the "active transactions" definition as an explicit stage set. */
+export const ACTIVE_TXN_STAGES: TransactionStage[] = [
+  "DealPreparation",
+  "InvestorOutreach",
+  "DueDiligence",
+  "TermSheet",
+  "Closing",
+];
 
 /** Engagement statuses indicating active two-way conversation. */
 export const ACTIVE_CONVERSATION_STATUSES: EngagementStatus[] = [

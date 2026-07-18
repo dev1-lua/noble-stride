@@ -16,10 +16,14 @@ export interface DealRow {
   statusLabel: string;
   milestoneLabel: string;
   dealTypeLabel: string;
+  // Raw DealFinancingType value (transactions only) — filterable, unlike the label.
+  financingValue: string | null;
   ticket: number | null;
   sectors: string[];
+  country: string | null;
   leadName: string | null;
   leadColor: string | null;
+  assistNames: string[];
   dateOnboarded: string | null;
   nextAction: string | null;
   daysInStage: number;
@@ -37,13 +41,14 @@ const PRIORITY_RANK: Record<string, number> = { High: 3, Medium: 2, Low: 1 };
 
 async function loadRows(): Promise<DealRow[]> {
   const now = new Date();
-  const [mandates, transactions] = await Promise.all([
+  const [mandates, transactions, advisory] = await Promise.all([
     prisma.mandate.findMany({
-      include: { client: true, lead: true, transactions: { select: { id: true }, take: 1 } },
+      include: { client: true, lead: true, assists: { select: { name: true } }, transactions: { select: { id: true }, take: 1 } },
     }),
     // Deviation (STEP 0): Transaction has no `lead` relation — it has `owner`
     // (User? via the "TransactionOwner" relation). Used here as the row's lead.
-    prisma.transaction.findMany({ include: { client: true, owner: true } }),
+    prisma.transaction.findMany({ include: { client: true, owner: true, assists: { select: { name: true } } } }),
+    prisma.advisoryEngagement.findMany({ include: { client: true, lead: true, assists: { select: { name: true } } } }),
   ]);
 
   const mRows: DealRow[] = mandates.map((m) => ({
@@ -57,10 +62,13 @@ async function loadRows(): Promise<DealRow[]> {
     statusLabel: label("DealStatus", m.dealStatus),
     milestoneLabel: "",
     dealTypeLabel: "",
+    financingValue: null,
     ticket: m.dealSize != null ? Number(m.dealSize) : null,
     sectors: m.sector ?? [],
+    country: m.country ?? m.client?.hqCountry ?? null,
     leadName: m.lead?.name ?? null,
     leadColor: m.lead?.avatarColor ?? null,
+    assistNames: m.assists.map((a) => a.name),
     dateOnboarded: m.dateOpened ? m.dateOpened.toISOString() : null,
     nextAction: m.nextAction ?? null,
     daysInStage: daysInStage(m.stageEnteredAt ?? now, now),
@@ -82,10 +90,16 @@ async function loadRows(): Promise<DealRow[]> {
     statusLabel: t.dealStatus ? label("DealStatus", t.dealStatus) : "",
     milestoneLabel: t.dealMilestone ? label("DealMilestone", t.dealMilestone) : "",
     dealTypeLabel: t.financingType ? label("DealFinancingType", t.financingType) : "",
+    financingValue: t.financingType ?? null,
     ticket: t.targetRaise != null ? Number(t.targetRaise) : null,
-    sectors: t.client?.sector ?? [],
+    // Own sector first; legacy rows without one fall back to the client's
+    // (the dashboard's By Sector breakdown buckets with the same rule so
+    // drilldown counts agree — see pipelineBreakdowns).
+    sectors: t.sector?.length ? t.sector : (t.client?.sector ?? []),
+    country: t.country ?? t.client?.hqCountry ?? null,
     leadName: t.owner?.name ?? null,
     leadColor: t.owner?.avatarColor ?? null,
+    assistNames: t.assists.map((a) => a.name),
     dateOnboarded: t.dateOpened ? t.dateOpened.toISOString() : null,
     nextAction: null,
     daysInStage: daysInStage(t.stageEnteredAt ?? now, now),
@@ -97,17 +111,48 @@ async function loadRows(): Promise<DealRow[]> {
     sourceValue: null,
   }));
 
-  return [...mRows, ...tRows];
+  const aRows: DealRow[] = advisory.map((a) => ({
+    id: a.id,
+    kind: "advisory",
+    name: a.name,
+    company: a.client?.name ?? a.name,
+    stageValue: a.stage,
+    stageLabel: label("AdvisoryStage", a.stage),
+    statusValue: a.dealStatus,
+    statusLabel: label("DealStatus", a.dealStatus),
+    milestoneLabel: "",
+    dealTypeLabel: "",
+    financingValue: null,
+    ticket: a.feeAmount != null ? Number(a.feeAmount) : null,
+    sectors: a.sector ?? [],
+    country: a.country ?? a.client?.hqCountry ?? null,
+    leadName: a.lead?.name ?? null,
+    leadColor: a.lead?.avatarColor ?? null,
+    assistNames: a.assists.map((u) => u.name),
+    dateOnboarded: a.dateOpened ? a.dateOpened.toISOString() : null,
+    nextAction: a.nextAction ?? null,
+    daysInStage: daysInStage(a.stageEnteredAt ?? now, now),
+    linkedCounterpartId: null,
+    href: `/advisory/${a.id}`,
+    priorityValue: a.priority ?? null,
+    priorityLabel: a.priority ? label("Priority", a.priority) : "",
+    sourceValue: a.source ?? null,
+  }));
+
+  return [...mRows, ...tRows, ...aRows];
 }
 
 function matches(r: DealRow, spec: DealsQuerySpec): boolean {
   if (spec.type.length > 0 && !spec.type.includes(r.kind)) return false;
-  if (spec.stage && r.stageValue !== spec.stage) return false;
+  if (spec.stage.length > 0 && !spec.stage.includes(r.stageValue)) return false;
   if (spec.status.length > 0 && (r.statusValue == null || !spec.status.includes(r.statusValue))) return false;
   if (spec.sector.length > 0 && !r.sectors.some((s) => spec.sector.includes(s))) return false;
+  if (spec.country.length > 0 && (r.country == null || !spec.country.includes(r.country))) return false;
   if (spec.lead.length > 0 && (r.leadName == null || !spec.lead.includes(r.leadName))) return false;
+  if (spec.assist.length > 0 && !r.assistNames.some((n) => spec.assist.includes(n))) return false;
   if (spec.priority.length > 0 && (r.priorityValue == null || !spec.priority.includes(r.priorityValue))) return false;
   if (spec.source.length > 0 && (r.sourceValue == null || !spec.source.includes(r.sourceValue))) return false;
+  if (spec.financing.length > 0 && (r.financingValue == null || !spec.financing.includes(r.financingValue))) return false;
   if (spec.ticketBand.length > 0) {
     const bands = TICKET_BANDS.filter((b) => spec.ticketBand.includes(b.value));
     if (bands.length > 0) {
@@ -171,7 +216,7 @@ function groupKey(r: DealRow, dim: DealsGroupBy): { key: string; label: string }
     case "stage": return { key: r.stageValue, label: r.stageLabel };
     case "lead": return { key: r.leadName ?? "—", label: r.leadName ?? "Unassigned" };
     case "sector": return { key: r.sectors[0] ?? "—", label: r.sectors[0] ? label("Sector", r.sectors[0]) : "No sector" };
-    case "type": return { key: r.kind, label: r.kind === "mandate" ? "Mandate" : "Transaction" };
+    case "type": return { key: r.kind, label: r.kind === "mandate" ? "Mandate" : r.kind === "advisory" ? "Advisory" : "Transaction" };
     case "status": return { key: r.statusValue ?? "—", label: r.statusLabel || "No status" };
     default: return { key: "all", label: "All" };
   }
@@ -189,14 +234,14 @@ export async function countsBy(spec: DealsQuerySpec, dimension: DealsGroupBy) {
   return [...map.values()].sort((a, b) => b.count - a.count);
 }
 
-const CSV_HEADERS = ["Project", "Company", "Type", "Stage", "Status", "Milestone", "Deal type", "Ticket (USD)", "Sector", "Lead", "Date onboarded", "Days in stage", "Priority"];
+const CSV_HEADERS = ["Project", "Company", "Type", "Stage", "Status", "Milestone", "Deal type", "Ticket (USD)", "Sector", "Country", "Lead", "Assists", "Date onboarded", "Days in stage", "Priority"];
 
 export async function dealsCsvRows(spec: DealsQuerySpec): Promise<string[][]> {
   const all = applySort((await loadRows()).filter((r) => matches(r, spec)), spec);
   const body = all.map((r) => [
     r.name, r.company, r.kind, r.stageLabel, r.statusLabel, r.milestoneLabel,
     r.dealTypeLabel, r.ticket != null ? String(r.ticket) : "", r.sectors.map((s) => label("Sector", s)).join("; "),
-    r.leadName ?? "", r.dateOnboarded ? r.dateOnboarded.slice(0, 10) : "", String(r.daysInStage),
+    r.country ?? "", r.leadName ?? "", r.assistNames.join("; "), r.dateOnboarded ? r.dateOnboarded.slice(0, 10) : "", String(r.daysInStage),
     r.priorityLabel,
   ]);
   return [CSV_HEADERS, ...body];

@@ -18,7 +18,13 @@ function parseList(v: string | null): string[] {
   return v ? v.split(",").filter(Boolean) : [];
 }
 
-export function DealsFilterBar({ leads }: { leads: { value: string; label: string }[] }) {
+export function DealsFilterBar({
+  leads,
+  countries,
+}: {
+  leads: { value: string; label: string }[];
+  countries: { value: string; label: string }[];
+}) {
   const router = useRouter();
   const sp = useSearchParams();
   const pathname = usePathname();
@@ -42,12 +48,14 @@ export function DealsFilterBar({ leads }: { leads: { value: string; label: strin
   const typeOpts = [
     { value: "mandate", label: "Mandate" },
     { value: "transaction", label: "Transaction" },
+    { value: "advisory", label: "Advisory" },
   ];
   const statusOpts = options("DealStatus");
   const sectorOpts = options("Sector");
   const ticketOpts = TICKET_BANDS.map((b) => ({ value: b.value, label: b.label }));
   const priorityOpts = options("Priority");
   const sourceOpts = options("Source");
+  const financingOpts = options("DealFinancingType");
   const groupOpts = [{ value: "", label: "No grouping" }, ...options("DealQueueGroupBy")];
 
   return (
@@ -73,8 +81,16 @@ export function DealsFilterBar({ leads }: { leads: { value: string; label: strin
       <div className="w-40">
         <MultiSelect options={ticketOpts} selected={parseList(sp.get("ticket"))} onChange={(v) => updateMulti("ticket", v)} placeholder="Ticket" />
       </div>
+      {countries.length > 0 && (
+        <div className="w-44">
+          <MultiSelect options={countries} selected={parseList(sp.get("country"))} onChange={(v) => updateMulti("country", v)} placeholder="Country" />
+        </div>
+      )}
       <div className="w-44">
         <MultiSelect options={leads} selected={parseList(sp.get("lead"))} onChange={(v) => updateMulti("lead", v)} placeholder="Lead" />
+      </div>
+      <div className="w-44">
+        <MultiSelect options={financingOpts} selected={parseList(sp.get("financing"))} onChange={(v) => updateMulti("financing", v)} placeholder="Financing" />
       </div>
       <div className="w-40">
         <MultiSelect options={priorityOpts} selected={parseList(sp.get("priority"))} onChange={(v) => updateMulti("priority", v)} placeholder="Priority" />

@@ -14,6 +14,7 @@ export type StageChangeField =
 interface StageChangeTargets {
   mandateId?: string;
   transactionId?: string;
+  advisoryId?: string;
   engagementId?: string;
   clientId?: string;
   investorId?: string;
