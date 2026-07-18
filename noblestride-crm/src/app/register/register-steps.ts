@@ -1,7 +1,7 @@
 // Pure wizard config + per-step validation for /register.
-// Validation reuses registrationSchema so client checks are identical to the
-// server's (including the corporate-email refinement). No React here.
-import { registrationSchema } from "@/lib/schemas/registration";
+// Validation reuses the registration schema so client checks are identical to
+// the server's (including the corporate-email refinement). No React here.
+import { registrationFieldsSchema } from "@/lib/schemas/registration";
 
 export interface WizardValues {
   fundName: string;
@@ -10,8 +10,12 @@ export interface WizardValues {
   phone: string;
   investorType: string;
   sectorPreference: string[];
-  dealType: string;
-  dealSizeBand: string;
+  geographicFocus: string[];
+  dealTypes: string[];
+  // Kept as strings in form state; the schema's z.coerce turns them numeric.
+  ticketMin: string;
+  ticketMax: string;
+  currency: string;
 }
 
 export const EMPTY_WIZARD_VALUES: WizardValues = {
@@ -21,17 +25,20 @@ export const EMPTY_WIZARD_VALUES: WizardValues = {
   phone: "",
   investorType: "",
   sectorPreference: [],
-  dealType: "",
-  dealSizeBand: "",
+  geographicFocus: [],
+  dealTypes: [],
+  ticketMin: "",
+  ticketMax: "",
+  currency: "USD",
 };
 
-/** Fields shown on each input step (light grouping). Review = index 5, no entry. */
+/** Fields shown on each input step (light grouping). Review = last index, no entry. */
 export const STEP_FIELDS = [
   ["fundName"],
   ["contactPerson", "email", "phone"],
   ["investorType"],
-  ["sectorPreference"],
-  ["dealType", "dealSizeBand"],
+  ["sectorPreference", "geographicFocus"],
+  ["dealTypes", "ticketMin", "ticketMax", "currency"],
 ] as const satisfies readonly (readonly (keyof WizardValues)[])[];
 
 /** 5 input steps + 1 review step. */
@@ -46,16 +53,27 @@ export function validateStep(stepIndex: number, values: WizardValues): StepValid
   if (!fields) return { ok: true }; // review step
 
   const pickShape = Object.fromEntries(fields.map((f) => [f, true]));
-  const schema = registrationSchema.pick(pickShape as Parameters<typeof registrationSchema.pick>[0]);
+  const schema = registrationFieldsSchema.pick(pickShape as Parameters<typeof registrationFieldsSchema.pick>[0]);
   const subset = Object.fromEntries(fields.map((f) => [f, values[f]]));
 
   const res = schema.safeParse(subset);
-  if (res.success) return { ok: true };
-
   const errors: Partial<Record<keyof WizardValues, string>> = {};
-  for (const issue of res.error.issues) {
-    const key = issue.path[0] as keyof WizardValues | undefined;
-    if (key && !errors[key]) errors[key] = issue.message;
+  if (!res.success) {
+    for (const issue of res.error.issues) {
+      const key = issue.path[0] as keyof WizardValues | undefined;
+      if (key && !errors[key]) errors[key] = issue.message;
+    }
   }
-  return { ok: false, errors };
+
+  // Cross-field rule (schema-level refine can't survive .pick): max ≥ min,
+  // only once both fields individually parse.
+  if (
+    (fields as readonly string[]).includes("ticketMax") &&
+    !errors.ticketMin && !errors.ticketMax &&
+    Number(values.ticketMax) < Number(values.ticketMin)
+  ) {
+    errors.ticketMax = "Maximum ticket must be at least the minimum";
+  }
+
+  return Object.keys(errors).length ? { ok: false, errors } : { ok: true };
 }

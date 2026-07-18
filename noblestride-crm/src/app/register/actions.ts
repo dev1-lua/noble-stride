@@ -120,8 +120,11 @@ export async function registerWizardAction(_prev: WizardActionState, formData: F
     phone: String(formData.get("phone") ?? "").trim(),
     investorType: String(formData.get("investorType") ?? "").trim(),
     sectorPreference: formData.getAll("sectorPreference").map(String),
-    dealType: String(formData.get("dealType") ?? "").trim(),
-    dealSizeBand: String(formData.get("dealSizeBand") ?? "").trim(),
+    geographicFocus: formData.getAll("geographicFocus").map(String),
+    dealTypes: formData.getAll("dealTypes").map(String),
+    ticketMin: String(formData.get("ticketMin") ?? "").trim(),
+    ticketMax: String(formData.get("ticketMax") ?? "").trim(),
+    currency: String(formData.get("currency") ?? "").trim(),
     password: String(formData.get("password") ?? ""),
     confirmPassword: String(formData.get("confirmPassword") ?? ""),
   };

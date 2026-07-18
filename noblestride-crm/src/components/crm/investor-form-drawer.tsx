@@ -8,6 +8,7 @@ import { TextField, TextAreaField, NumberField, MoneyField, SelectField, MultiSe
 import { useEntityForm } from "@/components/ui/use-entity-form";
 import { investorCreateSchema, investorUpdateSchema } from "@/lib/schemas/investor";
 import { options } from "@/lib/vocab";
+import { CURRENCY_OPTIONS } from "@/lib/currencies";
 
 const CREATE = `mutation CreateInvestor($input: InvestorInput!) { createInvestor(input: $input) { id } }`;
 const UPDATE = `mutation UpdateInvestor($id: ID!, $input: InvestorInput!) { updateInvestor(id: $id, input: $input) { id } }`;
@@ -76,6 +77,8 @@ export function InvestorFormDrawer({ mode, initial, triggerLabel, contacts = [] 
             <MoneyField label="Ticket Min" value={v.ticketMin as number} onChange={(x) => f.setValue("ticketMin", x)} />
             <MoneyField label="Ticket Max" value={v.ticketMax as number} onChange={(x) => f.setValue("ticketMax", x)} />
           </div>
+          {/* Zod schema always accepted currency — this was the missing input (defaulted USD). */}
+          <SelectField label="Currency" value={v.currency as string} onChange={(x) => f.setValue("currency", x)} options={CURRENCY_OPTIONS} />
           <TextField label="Website" value={v.website as string} onChange={(x) => f.setValue("website", x)} />
           <TextField label="Country Restrictions" value={v.countryRestrictions as string} onChange={(x) => f.setValue("countryRestrictions", x)} />
           <TextField label="ESG Focus" value={v.esgFocus as string} onChange={(x) => f.setValue("esgFocus", x)} />

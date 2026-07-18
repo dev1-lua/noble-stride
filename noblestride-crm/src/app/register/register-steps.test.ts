@@ -1,15 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { validateStep, EMPTY_WIZARD_VALUES, STEP_FIELDS, STEP_COUNT } from "./register-steps";
+import { validateStep, EMPTY_WIZARD_VALUES, STEP_FIELDS, STEP_COUNT, type WizardValues } from "./register-steps";
 
-const filled = {
+const filled: WizardValues = {
   fundName: "Savannah Growth Partners",
   contactPerson: "Ada Obi",
   email: "ada@savannah.com",
   phone: "+254700111222",
   investorType: "PrivateEquity",
   sectorPreference: ["Technology"],
-  dealType: "Equity",
-  dealSizeBand: "1m-5m",
+  geographicFocus: ["EastAfrica"],
+  dealTypes: ["Equity"],
+  ticketMin: "500000",
+  ticketMax: "5000000",
+  currency: "USD",
 };
 
 describe("wizard step config", () => {
@@ -35,14 +38,28 @@ describe("validateStep", () => {
     expect(validateStep(1, filled).ok).toBe(true);
   });
 
-  it("step 3 (sectors) requires at least one sector", () => {
+  it("step 3 (sectors + geographies) requires at least one of each", () => {
     expect(validateStep(3, { ...filled, sectorPreference: [] }).ok).toBe(false);
+    expect(validateStep(3, { ...filled, geographicFocus: [] }).ok).toBe(false);
     expect(validateStep(3, filled).ok).toBe(true);
   });
 
-  it("step 4 (deal prefs) validates type + band together", () => {
-    expect(validateStep(4, { ...filled, dealSizeBand: "" }).ok).toBe(false);
+  it("step 4 (deal prefs) requires deal types, tickets and currency together", () => {
+    expect(validateStep(4, { ...filled, dealTypes: [] }).ok).toBe(false);
+    expect(validateStep(4, { ...filled, ticketMin: "" }).ok).toBe(false);
+    expect(validateStep(4, { ...filled, currency: "" }).ok).toBe(false);
     expect(validateStep(4, filled).ok).toBe(true);
+  });
+
+  it("step 4 rejects manual ticket entry where max < min", () => {
+    const res = validateStep(4, { ...filled, ticketMin: "5000000", ticketMax: "1000000" });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.errors.ticketMax).toMatch(/at least the minimum/i);
+  });
+
+  it("step 4 rejects non-positive ticket amounts", () => {
+    expect(validateStep(4, { ...filled, ticketMin: "0" }).ok).toBe(false);
+    expect(validateStep(4, { ...filled, ticketMax: "-5" }).ok).toBe(false);
   });
 
   it("review step (index 5) has nothing to validate", () => {

@@ -8,8 +8,11 @@ const valid = {
   phone: "+254700000000",
   investorType: "PrivateEquity",
   sectorPreference: ["Agribusiness"],
-  dealType: "Equity",
-  dealSizeBand: "1m-5m",
+  geographicFocus: ["EastAfrica"],
+  dealTypes: ["Equity"],
+  ticketMin: "1000000",
+  ticketMax: "5000000",
+  currency: "USD",
 };
 
 describe("registrationSchema", () => {
@@ -31,12 +34,21 @@ describe("registrationSchema", () => {
     }
   });
 
-  it("requires at least one sector", () => {
+  it("requires at least one sector, geography and deal type", () => {
     expect(registrationSchema.safeParse({ ...valid, sectorPreference: [] }).success).toBe(false);
+    expect(registrationSchema.safeParse({ ...valid, geographicFocus: [] }).success).toBe(false);
+    expect(registrationSchema.safeParse({ ...valid, dealTypes: [] }).success).toBe(false);
   });
 
-  it("rejects an unknown deal-size band", () => {
-    expect(registrationSchema.safeParse({ ...valid, dealSizeBand: "gt50m" }).success).toBe(false);
+  it("coerces manual ticket entry and rejects max < min", () => {
+    const parsed = registrationSchema.parse(valid);
+    expect(parsed.ticketMin).toBe(1_000_000);
+    expect(parsed.ticketMax).toBe(5_000_000);
+    expect(registrationSchema.safeParse({ ...valid, ticketMin: "5000000", ticketMax: "1000000" }).success).toBe(false);
+  });
+
+  it("rejects an unknown currency", () => {
+    expect(registrationSchema.safeParse({ ...valid, currency: "XYZ" }).success).toBe(false);
   });
 });
 

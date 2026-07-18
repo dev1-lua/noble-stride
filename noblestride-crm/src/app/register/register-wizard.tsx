@@ -5,7 +5,7 @@ import type { ReactElement } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { PasswordInput } from "@/components/ui";
 import { options, label } from "@/lib/vocab";
-import { TICKET_BANDS } from "@/lib/ticket-bands";
+import { CURRENCY_OPTIONS } from "@/lib/currencies";
 import { EASE } from "@/components/ui/motion";
 import { registerWizardAction, type WizardActionState } from "./actions";
 import {
@@ -26,7 +26,7 @@ const STEP_TITLES = [
   "What's your fund or entity called?",
   "How do we reach you?",
   "What kind of investor are you?",
-  "Which sectors interest you?",
+  "Which sectors and geographies interest you?",
   "What deals are you looking for?",
   "Review your details",
 ];
@@ -189,69 +189,80 @@ export default function RegisterWizard({ initialEmail = "" }: { initialEmail?: s
               )}
 
               {step === 3 && (
-                <Field
-                  label="Sector preference"
-                  error={errors.sectorPreference}
-                  hint="Select all that apply"
-                  asGroup
-                >
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {options("Sector").map((o) => {
-                      const active = values.sectorPreference.includes(o.value);
-                      return (
-                        <button
-                          type="button"
-                          key={o.value}
-                          onClick={() =>
-                            set(
-                              "sectorPreference",
-                              active
-                                ? values.sectorPreference.filter((s) => s !== o.value)
-                                : [...values.sectorPreference, o.value],
-                            )
-                          }
-                          aria-pressed={active}
-                          className={
-                            "rounded-md border px-2 py-1.5 text-left text-sm transition " +
-                            (active
-                              ? "border-[var(--accent)] bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
-                              : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]")
-                          }
-                        >
-                          {o.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </Field>
+                <>
+                  <Field
+                    label="Sector preference"
+                    error={errors.sectorPreference}
+                    hint="Select all that apply"
+                    asGroup
+                  >
+                    <ToggleChipGrid
+                      opts={options("Sector")}
+                      selected={values.sectorPreference}
+                      onChange={(v) => set("sectorPreference", v)}
+                    />
+                  </Field>
+                  <Field
+                    label="Geographic focus"
+                    error={errors.geographicFocus}
+                    hint="Select all that apply"
+                    asGroup
+                  >
+                    <ToggleChipGrid
+                      opts={options("Geography")}
+                      selected={values.geographicFocus}
+                      onChange={(v) => set("geographicFocus", v)}
+                    />
+                  </Field>
+                </>
               )}
 
               {step === 4 && (
                 <>
-                  <Field label="Deal type" error={errors.dealType}>
+                  <Field label="Deal types" error={errors.dealTypes} hint="Select all that apply" asGroup>
+                    <ToggleChipGrid
+                      opts={options("Instrument")}
+                      selected={values.dealTypes}
+                      onChange={(v) => set("dealTypes", v)}
+                    />
+                  </Field>
+                  <Field label="Currency" error={errors.currency}>
                     <select
                       className={inputClass}
-                      value={values.dealType}
-                      onChange={(e) => set("dealType", e.target.value)}
+                      value={values.currency}
+                      onChange={(e) => set("currency", e.target.value)}
                     >
-                      <option value="" disabled>— Select deal type —</option>
-                      {options("Instrument").map((o) => (
+                      {CURRENCY_OPTIONS.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
                   </Field>
-                  <Field label="Deal size" error={errors.dealSizeBand}>
-                    <select
-                      className={inputClass}
-                      value={values.dealSizeBand}
-                      onChange={(e) => set("dealSizeBand", e.target.value)}
-                    >
-                      <option value="" disabled>— Select deal size —</option>
-                      {TICKET_BANDS.map((b) => (
-                        <option key={b.key} value={b.key}>{b.label}</option>
-                      ))}
-                    </select>
-                  </Field>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label={`Minimum ticket (${values.currency})`} error={errors.ticketMin}>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        inputMode="numeric"
+                        className={inputClass}
+                        placeholder="e.g. 500000"
+                        value={values.ticketMin}
+                        onChange={(e) => set("ticketMin", e.target.value)}
+                      />
+                    </Field>
+                    <Field label={`Maximum ticket (${values.currency})`} error={errors.ticketMax}>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        inputMode="numeric"
+                        className={inputClass}
+                        placeholder="e.g. 5000000"
+                        value={values.ticketMax}
+                        onChange={(e) => set("ticketMax", e.target.value)}
+                      />
+                    </Field>
+                  </div>
                 </>
               )}
 
@@ -311,8 +322,15 @@ export default function RegisterWizard({ initialEmail = "" }: { initialEmail?: s
                   {values.sectorPreference.map((s) => (
                     <input key={s} type="hidden" name="sectorPreference" value={s} />
                   ))}
-                  <input type="hidden" name="dealType" value={values.dealType} />
-                  <input type="hidden" name="dealSizeBand" value={values.dealSizeBand} />
+                  {values.geographicFocus.map((g) => (
+                    <input key={g} type="hidden" name="geographicFocus" value={g} />
+                  ))}
+                  {values.dealTypes.map((d) => (
+                    <input key={d} type="hidden" name="dealTypes" value={d} />
+                  ))}
+                  <input type="hidden" name="ticketMin" value={values.ticketMin} />
+                  <input type="hidden" name="ticketMax" value={values.ticketMax} />
+                  <input type="hidden" name="currency" value={values.currency} />
                   <button
                     type="submit"
                     disabled={isPending}
@@ -373,6 +391,41 @@ function Field({
   );
 }
 
+/** Multi-select toggle chips (sectors / geographies / deal types). */
+function ToggleChipGrid({
+  opts,
+  selected,
+  onChange,
+}: {
+  opts: { value: string; label: string }[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      {opts.map((o) => {
+        const active = selected.includes(o.value);
+        return (
+          <button
+            type="button"
+            key={o.value}
+            onClick={() => onChange(active ? selected.filter((s) => s !== o.value) : [...selected, o.value])}
+            aria-pressed={active}
+            className={
+              "rounded-md border px-2 py-1.5 text-left text-sm transition " +
+              (active
+                ? "border-[var(--accent)] bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
+                : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]")
+            }
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function RadioCard({
   name,
   checked,
@@ -414,6 +467,7 @@ function Review({
   onEdit: (step: number) => void;
   serverError?: string;
 }) {
+  const fmtNum = (v: string) => (v && Number.isFinite(Number(v)) ? Number(v).toLocaleString() : v || "—");
   const rows: { label: string; value: string; step: number }[] = [
     { label: "Fund / entity", value: values.fundName, step: 0 },
     { label: "Contact", value: `${values.contactPerson} · ${values.email} · ${values.phone}`, step: 1 },
@@ -424,10 +478,13 @@ function Review({
       step: 3,
     },
     {
+      label: "Geographies",
+      value: values.geographicFocus.map((g) => label("Geography", g)).join(", "),
+      step: 3,
+    },
+    {
       label: "Deal preference",
-      value: `${label("Instrument", values.dealType)} · ${
-        TICKET_BANDS.find((b) => b.key === values.dealSizeBand)?.label ?? ""
-      }`,
+      value: `${values.dealTypes.map((d) => label("Instrument", d)).join(", ")} · ${fmtNum(values.ticketMin)}–${fmtNum(values.ticketMax)} ${values.currency}`,
       step: 4,
     },
   ];

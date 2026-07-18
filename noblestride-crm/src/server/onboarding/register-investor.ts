@@ -9,7 +9,6 @@
 import type { Investor } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { registrationAccountSchema } from "@/lib/schemas/registration";
-import { ticketBand } from "@/lib/ticket-bands";
 import { emailDomain } from "@/lib/corporate-email";
 import { notify, adminUserIds } from "@/server/services/notifications";
 import { hashPassword } from "@/server/auth/password";
@@ -62,7 +61,6 @@ export async function registerInvestorWithAccount(raw: unknown): Promise<Investo
     throw new RegistrationError("A registration with this contact email already exists. Contact Noblestride if you need access.");
   }
 
-  const band = ticketBand(input.dealSizeBand);
   const [firstName, ...restName] = input.contactPerson.split(/\s+/);
   const passwordHash = await hashPassword(input.password);
 
@@ -72,9 +70,11 @@ export async function registerInvestorWithAccount(raw: unknown): Promise<Investo
         name: input.fundName,
         investorType: input.investorType,
         sectorFocus: input.sectorPreference,
-        instruments: [input.dealType],
-        ticketMin: band?.min,
-        ticketMax: band?.max ?? undefined,
+        geographicFocus: input.geographicFocus,
+        instruments: input.dealTypes,
+        ticketMin: input.ticketMin,
+        ticketMax: input.ticketMax,
+        currency: input.currency,
         onboardingStatus: "PendingReview",
         registeredAt: new Date(),
         createdSource: "API",

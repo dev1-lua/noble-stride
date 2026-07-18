@@ -22,8 +22,11 @@ const input = {
   phone: "+254711111111",
   investorType: "PrivateEquity",
   sectorPreference: ["Technology"],
-  dealType: "Equity",
-  dealSizeBand: "1m-5m",
+  geographicFocus: ["EastAfrica"],
+  dealTypes: ["Equity"],
+  ticketMin: "1000000",
+  ticketMax: "5000000",
+  currency: "USD",
   password: "long-enough-pass-1",
   confirmPassword: "long-enough-pass-1",
 };
