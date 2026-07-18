@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
-import { LuaPopWidget } from "@/components/shell/lua-pop-widget";
+import { LuaPopWidget, type LuaAgentChoice } from "@/components/shell/lua-pop-widget";
 import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
 import { getCurrentAuth } from "@/server/auth/current";
@@ -12,7 +12,34 @@ import { unreadFor, unreadCountFor } from "@/server/services/notifications";
 // Set on the layout so it cascades to every (crm)/* route.
 export const dynamic = "force-dynamic";
 
+// Staff-facing Lua webchat agents. The summarizer is the default assistant;
+// the investor tracker appears as a second switcher option once its env pair
+// is set (internal testing rollout — see agent-info.md for the runbook).
+function configuredLuaAgents(): LuaAgentChoice[] {
+  const agents: LuaAgentChoice[] = [];
+  if (process.env.NEXT_PUBLIC_LUA_AGENT_ID) {
+    agents.push({
+      key: "assistant",
+      label: "Assistant",
+      chatTitle: "Noblestride CRM Assistant",
+      agentId: process.env.NEXT_PUBLIC_LUA_AGENT_ID,
+      channelId: process.env.NEXT_PUBLIC_LUA_CHANNEL_ID,
+    });
+  }
+  if (process.env.NEXT_PUBLIC_LUA_TRACKER_AGENT_ID) {
+    agents.push({
+      key: "tracker",
+      label: "Investor Tracker",
+      chatTitle: "Noblestride Investor Tracker",
+      agentId: process.env.NEXT_PUBLIC_LUA_TRACKER_AGENT_ID,
+      channelId: process.env.NEXT_PUBLIC_LUA_TRACKER_CHANNEL_ID,
+    });
+  }
+  return agents;
+}
+
 export default async function CRMLayout({ children }: { children: React.ReactNode }) {
+  const luaAgents = configuredLuaAgents();
   // External viewpoints never see the internal shell (spec §6) — they land on
   // their portal. The visibility engine gates everything they read there.
   const vp = await getViewpoint();
@@ -63,9 +90,7 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-y-auto bg-[var(--bg-secondary)] p-6">{children}</main>
       </div>
 
-      {process.env.NEXT_PUBLIC_LUA_AGENT_ID ? (
-        <LuaPopWidget agentId={process.env.NEXT_PUBLIC_LUA_AGENT_ID} />
-      ) : null}
+      {luaAgents.length > 0 ? <LuaPopWidget agents={luaAgents} /> : null}
     </div>
   );
 }
