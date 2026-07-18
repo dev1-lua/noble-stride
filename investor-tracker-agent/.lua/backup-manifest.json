@@ -1,34 +1,18 @@
 {
-  "lastHash": "82df0f32987bb4f7d10d57d0e66c4aea1a7207ed6400fbb93788e0a1815e2692",
-  "lastPushedAt": "2026-07-14T14:23:47.376Z",
+  "lastHash": "307037b62d3652d9cf148932661f371866f79745904d4e2092e381bdb26586dd",
+  "lastPushedAt": "2026-07-17T13:09:57.433Z",
   "files": [
     {
-      "relativePath": "AGENT-BUILD-2026-07-14.md",
-      "hash": "4d2bc4f9628d7b49"
-    },
-    {
       "relativePath": "env.example",
-      "hash": "9f76d1b2788a7478"
-    },
-    {
-      "relativePath": "HANDOVER-TESTING.md",
-      "hash": "e0264c5b68e9f2e8"
+      "hash": "35792030d7fd9951"
     },
     {
       "relativePath": "lua.skill.yaml",
-      "hash": "a94976facb0e7559"
+      "hash": "e6e71cca241b4d4a"
     },
     {
       "relativePath": "package.json",
       "hash": "79f6a88c5d5bd81b"
-    },
-    {
-      "relativePath": "QUICKSTART.md",
-      "hash": "31e631fd64512cd1"
-    },
-    {
-      "relativePath": "README.md",
-      "hash": "2ca2d2b3168e75e5"
     },
     {
       "relativePath": "scripts/smoke.ts",
@@ -36,11 +20,11 @@
     },
     {
       "relativePath": "src/index.ts",
-      "hash": "b8cfeb4323ebeee6"
+      "hash": "ad0f0b8c87063079"
     },
     {
       "relativePath": "src/jobs/followup-check.job.ts",
-      "hash": "4aa3d7c653f8a923"
+      "hash": "0020599679fb94c9"
     },
     {
       "relativePath": "src/lib/crm-client.ts",
@@ -56,7 +40,7 @@
     },
     {
       "relativePath": "src/lib/format.ts",
-      "hash": "368ebb31b16dbd13"
+      "hash": "ff6a858232cf32fc"
     },
     {
       "relativePath": "src/lib/guards.ts",
@@ -84,7 +68,7 @@
     },
     {
       "relativePath": "src/processors/passphrase-gate.ts",
-      "hash": "da8dbd09ce59523c"
+      "hash": "2b3e7d0778e359ee"
     },
     {
       "relativePath": "src/skills/tools/CreateFollowupTaskTool.ts",
@@ -124,7 +108,7 @@
     },
     {
       "relativePath": "src/skills/tracker.skill.ts",
-      "hash": "8093023436186fd0"
+      "hash": "7912a7b749edcee0"
     },
     {
       "relativePath": "tsconfig.json",

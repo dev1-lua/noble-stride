@@ -23,9 +23,10 @@ function deal(overrides: Partial<ReferredDeal> = {}): ReferredDeal {
 }
 
 interface Store {
-  snapshots: Array<{ id: string; data: Record<string, unknown> }>;
+  // Entries may carry record fields nested under `data` or top-level (both real Data.get shapes).
+  snapshots: Array<{ id: string; data: Record<string, unknown>; stage?: string; dealStatus?: string }>;
   notices: Array<{ id: string; data: Record<string, unknown> }>;
-  staff: Array<{ id: string; data: { userId: string } }>;
+  staff: Array<{ id: string; userId?: string; data?: { userId?: string } }>;
 }
 
 function makeDeps(opts: {
@@ -175,6 +176,27 @@ describe("runStageWatch", () => {
     const result = await runStageWatch(deps);
     expect(result).toMatchObject({ notified: 1, notifyFailed: 1 });
     expect(store.snapshots[0].data.stage).toBe("Signed");
+  });
+
+  it("notifies staff whose roster entries store userId top-level (passphrase-gate shape)", async () => {
+    const { deps } = makeDeps({
+      deals: [deal({ stage: "Signed" })],
+      store: {
+        snapshots: [{ id: "snap1", data: { dealKey: "mandate:m1", stage: "Proposal", dealStatus: "Open" } }],
+        staff: [{ id: "s1", userId: "u-top" }, { id: "s2", data: { userId: "u-nested" } }, { id: "s3", userId: "u-top" }],
+      },
+    });
+    const result = await runStageWatch(deps);
+    expect(result).toMatchObject({ transitions: 1, notified: 2, notifyFailed: 0 });
+  });
+
+  it("reads snapshot stage/status from top-level fields when not nested under data", async () => {
+    const { deps } = makeDeps({
+      deals: [deal()], // unchanged vs the top-level snapshot below
+      store: { snapshots: [{ id: "snap1", data: { dealKey: "mandate:m1" }, stage: "Proposal", dealStatus: "Open" }] },
+    });
+    const result = await runStageWatch(deps);
+    expect(result).toMatchObject({ unchanged: 1, transitions: 0, notified: 0 });
   });
 
   it("mixes seeds and transitions in one run", async () => {

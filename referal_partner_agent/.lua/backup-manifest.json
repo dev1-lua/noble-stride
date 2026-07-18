@@ -1,42 +1,30 @@
 {
-  "lastHash": "24453c85da42220f1b1fec9c7a3c76fdff53a20c64e5aa30cb5122b12cb4ed04",
-  "lastPushedAt": "2026-07-14T22:53:05.402Z",
+  "lastHash": "bab64fa392231b5b9b5f2f8c5ba94a441c824405c40d357aaf529eb552304604",
+  "lastPushedAt": "2026-07-17T13:10:16.006Z",
   "files": [
     {
       "relativePath": "env.example",
-      "hash": "e547c5ffc1b06037"
+      "hash": "d693d94115a80a08"
     },
     {
       "relativePath": "lua.skill.yaml",
-      "hash": "b60a7bbefc7a0b24"
+      "hash": "5bba5c80215e859b"
     },
     {
       "relativePath": "package.json",
       "hash": "79f6a88c5d5bd81b"
     },
     {
-      "relativePath": "PLAN.md",
-      "hash": "0e82fa9c08282ce5"
-    },
-    {
-      "relativePath": "QUICKSTART.md",
-      "hash": "31e631fd64512cd1"
-    },
-    {
-      "relativePath": "README.md",
-      "hash": "2ca2d2b3168e75e5"
-    },
-    {
       "relativePath": "scripts/smoke.ts",
-      "hash": "bf25022edd1c35c5"
+      "hash": "521312472b3a37c7"
     },
     {
       "relativePath": "src/index.ts",
-      "hash": "1ab77f970feccb2b"
+      "hash": "794dc79ca3cebe6d"
     },
     {
       "relativePath": "src/jobs/stage-watch.job.ts",
-      "hash": "3fb5375f86232162"
+      "hash": "409b755e5ca65720"
     },
     {
       "relativePath": "src/lib/crm-client.ts",
@@ -44,7 +32,7 @@
     },
     {
       "relativePath": "src/lib/format.ts",
-      "hash": "96445a9f884ed0e4"
+      "hash": "342a183571c164bc"
     },
     {
       "relativePath": "src/lib/guards.ts",
@@ -68,11 +56,11 @@
     },
     {
       "relativePath": "src/processors/passphrase-gate.ts",
-      "hash": "844d18ddb159915a"
+      "hash": "430b3006ed47ddbe"
     },
     {
       "relativePath": "src/skills/referral.skill.ts",
-      "hash": "68a142dc9a71a6c5"
+      "hash": "75e4d75d93ab7f88"
     },
     {
       "relativePath": "src/skills/tools/CreateReferredMandateTool.ts",

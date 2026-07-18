@@ -21,6 +21,7 @@ function makeDeps(opts: {
   flags?: StalledFlag[];
   existingKeys?: string[];
   staff?: string[];
+  staffEntries?: unknown[]; // raw roster entries, overrides `staff`
   failCreateTask?: boolean;
   failSendFor?: string[];
 }) {
@@ -45,7 +46,7 @@ function makeDeps(opts: {
         if (filter.flagKey?.$eq !== undefined) {
           return { data: existing.has(filter.flagKey.$eq) ? [{ data: { flagKey: filter.flagKey.$eq } }] : [] } as never;
         }
-        return { data: (opts.staff ?? []).map((userId) => ({ data: { userId } })) } as never;
+        return { data: opts.staffEntries ?? (opts.staff ?? []).map((userId) => ({ data: { userId } })) } as never;
       }) as unknown as FollowupCheckDeps["data"]["get"],
     },
     send: async (userId, text) => {
@@ -116,6 +117,16 @@ describe("runFollowupCheck", () => {
     const out = await runFollowupCheck(deps);
     expect(out).toMatchObject({ flagged: 2, deduped: 1, tasksCreated: 1 });
     expect(String(created[0].body)).toContain("no date");
+  });
+
+  it("notifies staff whether roster entries store userId top-level (passphrase-gate shape) or nested under data", async () => {
+    const { deps, sent } = makeDeps({
+      flags: [flag()],
+      staffEntries: [{ userId: "u-top" }, { data: { userId: "u-nested" } }, { userId: "u-top" }, { note: "no id" }],
+    });
+    const out = await runFollowupCheck(deps);
+    expect(out).toMatchObject({ notified: 2, notifyFailed: 0 });
+    expect(sent.map((s) => s.userId)).toEqual(["u-top", "u-nested"]);
   });
 
   it("labels never-touched engagements instead of printing Infinity", async () => {

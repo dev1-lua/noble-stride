@@ -9,6 +9,17 @@ import { TASK_ATTRIBUTION, addBusinessDays } from "../skills/tools/CreateFollowu
 
 export const TRACKER_FLAGS_COLLECTION = "tracker_flags";
 
+/**
+ * Data.get entries have carried record fields either top-level or nested under
+ * `.data` depending on platform version; passphrase-gate writes `{ userId }`
+ * top-level, so accept both (QA 2026-07-15 X1: nested-only read notified 0 staff).
+ */
+export function rosterUserId(entry: unknown): string | undefined {
+  const e = entry as { userId?: unknown; data?: { userId?: unknown } };
+  const raw = e?.userId ?? e?.data?.userId;
+  return typeof raw === "string" && raw.length > 0 ? raw : undefined;
+}
+
 /** One reminder per engagement+reason per ISO week. */
 export function flagKey(flag: Pick<StalledFlag, "engagementId" | "reason">, now: Date): string {
   return `${flag.engagementId}:${flag.reason}:${weekOf(now)}`;
@@ -70,7 +81,7 @@ export async function runFollowupCheck(
     const staff = await deps.data.get(STAFF_COLLECTION, {}, 1, 100);
     const seen = new Set<string>();
     for (const entry of staff.data) {
-      const userId = (entry as { data?: { userId?: string } }).data?.userId;
+      const userId = rosterUserId(entry);
       if (!userId || seen.has(userId)) continue;
       seen.add(userId);
       try {

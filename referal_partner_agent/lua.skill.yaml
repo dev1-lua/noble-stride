@@ -9,7 +9,7 @@ webhooks: []
 jobs:
   - jobId: 40cfd53d-8660-44a2-976c-8eb456257190
     name: stage-watch
-    version: 1.0.2
+    version: 1.0.3
 preprocessors:
   - name: passphrase-gate
     preprocessorId: preprocessor_60a4ac8a-2b0b-4eac-9596-23426b80382d
@@ -17,6 +17,6 @@ preprocessors:
 postprocessors: []
 mcpServers: []
 backup:
-  activeVersion: 2
-  lastHash: 24453c85da42220f1b1fec9c7a3c76fdff53a20c64e5aa30cb5122b12cb4ed04
-  lastPushedAt: '2026-07-14T22:53:05.401Z'
+  activeVersion: 4
+  lastHash: bab64fa392231b5b9b5f2f8c5ba94a441c824405c40d357aaf529eb552304604
+  lastPushedAt: '2026-07-17T13:10:16.006Z'

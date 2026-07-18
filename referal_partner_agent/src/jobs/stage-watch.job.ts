@@ -21,6 +21,10 @@ export interface StageTransition {
 interface SnapshotEntry {
   id?: string;
   _id?: string;
+  // Data.get entries have carried record fields either top-level or nested
+  // under `.data` depending on platform version (QA 2026-07-15 X1) — read both.
+  stage?: string;
+  dealStatus?: string;
   // Shared with the staff roster lookup, so arbitrary keys are allowed.
   data?: {
     dealKey?: string;
@@ -31,6 +35,14 @@ interface SnapshotEntry {
     dealStatus?: string;
     [key: string]: unknown;
   };
+  [key: string]: unknown;
+}
+
+/** Roster entries are written `{ userId }` top-level by passphrase-gate — accept both shapes. */
+export function rosterUserId(entry: unknown): string | undefined {
+  const e = entry as { userId?: unknown; data?: { userId?: unknown } };
+  const raw = e?.userId ?? e?.data?.userId;
+  return typeof raw === "string" && raw.length > 0 ? raw : undefined;
 }
 
 export interface StageWatchDeps {
@@ -93,8 +105,8 @@ export async function runStageWatch(deps: StageWatchDeps): Promise<StageWatchRes
     const entryId = snapshot.id ?? snapshot._id;
     if (entryId) snapshotIds.set(deal.dealKey, entryId);
 
-    const prevStage = snapshot.data?.stage;
-    const prevStatus = snapshot.data?.dealStatus;
+    const prevStage = snapshot.data?.stage ?? snapshot.stage;
+    const prevStatus = snapshot.data?.dealStatus ?? snapshot.dealStatus;
     if (prevStage === deal.stage && prevStatus === deal.dealStatus) {
       result.unchanged += 1;
       continue;
@@ -154,7 +166,7 @@ export async function runStageWatch(deps: StageWatchDeps): Promise<StageWatchRes
   const staff = await deps.data.get(STAFF_COLLECTION, {}, 1, 100);
   const seen = new Set<string>();
   for (const entry of staff.data) {
-    const userId = (entry as { data?: { userId?: string } }).data?.userId;
+    const userId = rosterUserId(entry);
     if (!userId || seen.has(userId)) continue;
     seen.add(userId);
     try {
