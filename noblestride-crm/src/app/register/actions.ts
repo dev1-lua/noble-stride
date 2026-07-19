@@ -110,6 +110,16 @@ export async function contactSignupAction(_prev: WizardActionState, formData: Fo
   redirect("/register?step=pending");
 }
 
+/** Client-serialized team rows; malformed JSON degrades to "no members". */
+function safeParseMembers(json: string): unknown {
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 /** New-fund wizard submit (replaces the old registerWizardAction). */
 export async function registerWizardAction(_prev: WizardActionState, formData: FormData): Promise<WizardActionState> {
   if (!(await checkRate("signup"))) return { error: "Too many attempts — try again later." };
@@ -127,6 +137,7 @@ export async function registerWizardAction(_prev: WizardActionState, formData: F
     currency: String(formData.get("currency") ?? "").trim(),
     password: String(formData.get("password") ?? ""),
     confirmPassword: String(formData.get("confirmPassword") ?? ""),
+    members: safeParseMembers(String(formData.get("membersJson") ?? "[]")),
   };
   try {
     await registerInvestorWithAccount(raw);

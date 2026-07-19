@@ -12,6 +12,8 @@ import { registrationAccountSchema } from "@/lib/schemas/registration";
 import { emailDomain } from "@/lib/corporate-email";
 import { notify, adminUserIds } from "@/server/services/notifications";
 import { hashPassword } from "@/server/auth/password";
+import { unusablePasswordHash } from "@/server/auth/team-invites";
+import { isUniqueViolation } from "@/server/auth/accounts";
 
 export class RegistrationError extends Error {}
 
@@ -64,8 +66,25 @@ export async function registerInvestorWithAccount(raw: unknown): Promise<Investo
   const [firstName, ...restName] = input.contactPerson.split(/\s+/);
   const passwordHash = await hashPassword(input.password);
 
-  const investor = await prisma.$transaction(async (tx) => {
-    const investor = await tx.investor.create({
+  const memberInputs: { name: string; email: string; phone: string; passwordHash: string }[] = [];
+  const skippedMembers: string[] = [];
+  for (const m of input.members) {
+    const memberEmail = m.email.toLowerCase();
+    const [personHit, accountHit] = await Promise.all([
+      prisma.person.findFirst({ where: { email: { equals: memberEmail, mode: "insensitive" } }, select: { id: true } }),
+      prisma.authAccount.findUnique({ where: { email: memberEmail }, select: { id: true } }),
+    ]);
+    if (personHit || accountHit || (await isRegistrationBlocked(memberEmail))) {
+      skippedMembers.push(memberEmail);
+      continue;
+    }
+    memberInputs.push({ ...m, email: memberEmail, passwordHash: await unusablePasswordHash() });
+  }
+
+  let investor: Investor;
+  try {
+    investor = await prisma.$transaction(async (tx) => {
+      const investor = await tx.investor.create({
       data: {
         name: input.fundName,
         investorType: input.investorType,
@@ -99,6 +118,45 @@ export async function registerInvestorWithAccount(raw: unknown): Promise<Investo
         personId: person.id,
       },
     });
+    for (const m of memberInputs) {
+      const [mFirst, ...mRest] = m.name.trim().split(/\s+/);
+      const memberPerson = await tx.person.create({
+        data: {
+          firstName: mFirst ?? "Member",
+          lastName: mRest.join(" ") || null,
+          email: m.email,
+          phone: m.phone || null,
+          investorId: investor.id,
+        },
+      });
+      await tx.authAccount.create({
+        data: {
+          email: m.email,
+          passwordHash: m.passwordHash,
+          kind: "INVESTOR",
+          status: "PENDING",
+          personId: memberPerson.id,
+        },
+      });
+    }
+    if (memberInputs.length > 0 || skippedMembers.length > 0) {
+      const subject = memberInputs.length > 0
+        ? `Team members added at registration: ${memberInputs.map((m) => m.email).join(", ")}`
+        : "Team members added at registration: none";
+      let body = "Seats are pending review; share links are generated from the portal Team page after approval.";
+      if (skippedMembers.length > 0) {
+        body += `\nSkipped (email unavailable): ${skippedMembers.join(", ")}`;
+      }
+      await tx.activity.create({
+        data: {
+          type: "Note",
+          subject,
+          body,
+          investorId: investor.id,
+          createdSource: "API",
+        },
+      });
+    }
     await tx.activity.create({
       data: {
         type: "Note",
@@ -109,7 +167,15 @@ export async function registerInvestorWithAccount(raw: unknown): Promise<Investo
       },
     });
     return investor;
-  });
+    });
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      throw new RegistrationError(
+        "A registration with this contact email already exists. Contact Noblestride if you need access.",
+      );
+    }
+    throw err;
+  }
 
   // Best-effort, post-commit: alert every Admin that a registration is
   // awaiting review. External self-registration has no internal actor to

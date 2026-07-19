@@ -34,11 +34,25 @@ export const registrationSchema = registrationFieldsSchema.refine(ticketRange.ch
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
 
+/** One optional team member collected on the wizard's team step (spec 2026-07-19 §5.2). */
+export const teamMemberSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  email: z
+    .string()
+    .trim()
+    .email("Enter a valid email address")
+    .refine(isCorporateEmail, "Use their corporate email — free providers (Gmail, Yahoo, …) are not accepted"),
+  phone: z.string().trim().optional().default(""),
+});
+
+export type TeamMemberInput = z.infer<typeof teamMemberSchema>;
+
 /** registration fields + account credentials — used by the new-fund wizard's final step. */
 export const registrationAccountSchema = registrationFieldsSchema
   .extend({
     password: z.string(),
     confirmPassword: z.string(),
+    members: z.array(teamMemberSchema).max(10, "You can add up to 10 team members").default([]),
   })
   .superRefine((data, ctx) => {
     if (!ticketRange.check(data)) ctx.addIssue({ code: "custom", ...ticketRange.opts });
@@ -46,6 +60,13 @@ export const registrationAccountSchema = registrationFieldsSchema
     if (err) ctx.addIssue({ code: "custom", message: err, path: ["password"] });
     if (data.password !== data.confirmPassword) {
       ctx.addIssue({ code: "custom", message: "Passwords do not match.", path: ["confirmPassword"] });
+    }
+    const memberEmails = data.members.map((m) => m.email.trim().toLowerCase());
+    if (new Set(memberEmails).size !== memberEmails.length) {
+      ctx.addIssue({ code: "custom", message: "Each team member needs a different email.", path: ["members"] });
+    }
+    if (memberEmails.includes(data.email.trim().toLowerCase())) {
+      ctx.addIssue({ code: "custom", message: "A team member can't reuse the primary contact's email.", path: ["members"] });
     }
   });
 

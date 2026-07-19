@@ -11,7 +11,7 @@ import { registerWizardAction, type WizardActionState } from "./actions";
 import {
   EMPTY_WIZARD_VALUES,
   STEP_COUNT,
-  STEP_FIELDS,
+  TEAM_STEP_INDEX,
   validateStep,
   type WizardValues,
 } from "./register-steps";
@@ -28,6 +28,7 @@ const STEP_TITLES = [
   "What kind of investor are you?",
   "Which sectors and geographies interest you?",
   "What deals are you looking for?",
+  "Who else is on your team? (optional)",
   "Review your details",
 ];
 
@@ -42,7 +43,8 @@ export default function RegisterWizard({ initialEmail = "" }: { initialEmail?: s
   const headingRef = useRef<HTMLHeadingElement>(null);
   const stepRef = useRef<HTMLDivElement>(null);
 
-  const isReview = step === STEP_FIELDS.length; // index 5
+  const isReview = step === STEP_COUNT - 1;
+  const isTeamStep = step === TEAM_STEP_INDEX;
   const set = <K extends keyof WizardValues>(key: K, value: WizardValues[K]) => {
     setValues((v) => ({ ...v, [key]: value }));
     setErrors((e) => ({ ...e, [key]: undefined }));
@@ -266,6 +268,14 @@ export default function RegisterWizard({ initialEmail = "" }: { initialEmail?: s
                 </>
               )}
 
+              {isTeamStep && (
+                <TeamMembersEditor
+                  members={values.members}
+                  error={errors.members}
+                  onChange={(members) => set("members", members)}
+                />
+              )}
+
               {isReview && (
                 <>
                   <Review values={values} onEdit={goTo} serverError={serverState.error} />
@@ -331,6 +341,7 @@ export default function RegisterWizard({ initialEmail = "" }: { initialEmail?: s
                   <input type="hidden" name="ticketMin" value={values.ticketMin} />
                   <input type="hidden" name="ticketMax" value={values.ticketMax} />
                   <input type="hidden" name="currency" value={values.currency} />
+                  <input type="hidden" name="membersJson" value={JSON.stringify(values.members)} />
                   <button
                     type="submit"
                     disabled={isPending}
@@ -487,6 +498,13 @@ function Review({
       value: `${values.dealTypes.map((d) => label("Instrument", d)).join(", ")} · ${fmtNum(values.ticketMin)}–${fmtNum(values.ticketMax)} ${values.currency}`,
       step: 4,
     },
+    ...(values.members.length
+      ? [{
+          label: "Team members",
+          value: values.members.map((m) => `${m.name} <${m.email}>`).join(", "),
+          step: TEAM_STEP_INDEX,
+        }]
+      : []),
   ];
   return (
     <div className="space-y-3">
@@ -516,6 +534,72 @@ function Review({
         After you submit, we'll verify your email and phone, then a Noblestride team member reviews
         your request. No deal information is visible before approval.
       </p>
+    </div>
+  );
+}
+
+/** Optional team-member rows for the wizard's team step (spec 2026-07-19 §5.2). */
+function TeamMembersEditor({
+  members,
+  error,
+  onChange,
+}: {
+  members: { name: string; email: string; phone: string }[];
+  error?: string;
+  onChange: (next: { name: string; email: string; phone: string }[]) => void;
+}) {
+  const update = (i: number, key: "name" | "email" | "phone", value: string) =>
+    onChange(members.map((m, idx) => (idx === i ? { ...m, [key]: value } : m)));
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-[var(--text-tertiary)]">
+        Colleagues you add can get their own sign-in and see everything your fund sees — deals,
+        teasers, and engagement progress. You can also do this later from your portal&apos;s Team
+        page, or skip this step.
+      </p>
+      {members.map((m, i) => (
+        <div key={i} className="rounded-lg border border-[var(--border-subtle)] p-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <input
+              className={inputClass}
+              placeholder="Full name"
+              value={m.name}
+              onChange={(e) => update(i, "name", e.target.value)}
+            />
+            <input
+              type="email"
+              className={inputClass}
+              placeholder="name@yourfund.com"
+              value={m.email}
+              onChange={(e) => update(i, "email", e.target.value)}
+            />
+            <input
+              type="tel"
+              className={inputClass}
+              placeholder="Phone (optional)"
+              value={m.phone}
+              onChange={(e) => update(i, "phone", e.target.value)}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => onChange(members.filter((_, idx) => idx !== i))}
+            className="mt-2 text-xs font-medium text-rose-600 hover:underline"
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+      {members.length < 10 && (
+        <button
+          type="button"
+          onClick={() => onChange([...members, { name: "", email: "", phone: "" }])}
+          className="rounded border border-[var(--border-subtle)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+        >
+          + Add a team member
+        </button>
+      )}
+      {error && <p className={errorClass}>{error}</p>}
     </div>
   );
 }
