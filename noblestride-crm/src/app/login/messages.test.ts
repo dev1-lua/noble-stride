@@ -13,4 +13,7 @@ describe("loginNotice", () => {
   it("returns null when no slug is present", () => {
     expect(loginNotice(undefined)).toBeNull();
   });
+  it("maps the invite-complete slug", () => {
+    expect(loginNotice("invite-complete")).toMatch(/access is set up/i);
+  });
 });

@@ -35,4 +35,8 @@ describe("deriveInvestorPageMeta", () => {
   it("falls back for unknown routes", () => {
     expect(deriveInvestorPageMeta("/portal/investor/unknown").title).toBe("Investor Portal");
   });
+
+  it("maps the Team route", () => {
+    expect(deriveInvestorPageMeta("/portal/investor/team").title).toBe("Team");
+  });
 });

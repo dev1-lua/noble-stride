@@ -7,7 +7,7 @@
 // h-full instead of h-screen: the demo-lens banner sits above it in the
 // investor layout's flex column.
 import { usePathname } from "next/navigation";
-import { LayoutGrid, TrendingUp, BarChart3, Building2 } from "lucide-react";
+import { LayoutGrid, TrendingUp, BarChart3, Building2, Users } from "lucide-react";
 import { BrandMark, NavItem } from "@/components/shell/sidebar";
 import { SidebarProfile } from "@/components/shell/sidebar-profile";
 import { INVESTOR_NAV, isInvestorNavActive } from "./investor-portal-nav";
@@ -17,6 +17,7 @@ const NAV_ICONS = {
   "/portal/investor/pipeline": TrendingUp,
   "/portal/investor/dashboard": BarChart3,
   "/portal/investor/profile": Building2,
+  "/portal/investor/team": Users,
 } as const;
 
 const NAV_ICON_COLORS = {
@@ -24,6 +25,7 @@ const NAV_ICON_COLORS = {
   "/portal/investor/pipeline": "text-[var(--t-tag-text-amber)]",
   "/portal/investor/dashboard": "text-[var(--t-tag-text-sky)]",
   "/portal/investor/profile": "text-[var(--t-tag-text-violet)]",
+  "/portal/investor/team": "text-[var(--t-tag-text-rose)]",
 } as const;
 
 export function InvestorSidebar({ name, email }: { name: string; email: string }) {
