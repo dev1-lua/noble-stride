@@ -20,11 +20,16 @@ const DATE_FMT = new Intl.DateTimeFormat("en-GB", {
   year: "numeric",
 });
 
-export default async function InvestorPipelinePage() {
+export default async function InvestorPipelinePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ declined?: string }>;
+}) {
   const vp = await getViewpoint();
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
+  const { declined: justDeclined } = await searchParams;
   const items = await loadInvestorPipeline(prisma, vp.recordId);
 
   return (
@@ -36,6 +41,13 @@ export default async function InvestorPipelinePage() {
           Noblestride investment cycle from teaser review to completion.
         </p>
       </div>
+
+      {justDeclined && (
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-gray)] px-4 py-3 text-sm text-[var(--t-tag-text-gray)]">
+          You&apos;ve withdrawn from the deal. It stays in your history below; the Noblestride team
+          has been notified.
+        </div>
+      )}
 
       {items.length === 0 ? (
         <Card>
@@ -108,6 +120,11 @@ export default async function InvestorPipelinePage() {
                     <span className="font-medium text-[var(--accent-hover)]">
                       Term sheet issued
                       {own.termSheetDate ? ` · ${DATE_FMT.format(own.termSheetDate)}` : ""}
+                    </span>
+                  )}
+                  {!declined && (
+                    <span className="ml-auto font-medium text-[var(--accent-hover)]">
+                      Act on this deal →
                     </span>
                   )}
                 </div>
