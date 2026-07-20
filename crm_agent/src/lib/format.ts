@@ -58,6 +58,7 @@ export interface PipelineItem {
   currency?: string | null;
   dealSize?: number | null;
   targetRaise?: number | null;
+  sector?: string[] | null;
 }
 
 export interface StageColumn { stage: string; label: string; items: PipelineItem[] }
@@ -141,4 +142,49 @@ export function fallbackDigestMarkdown(digest: DigestData, pipeline: "mandates" 
     lines.push(`**Totals:** ${s.totalsByStage.map((t) => `${t.label}: ${t.count}`).join(", ")}`);
   }
   return lines.join("\n");
+}
+
+// ── Analysis prompts (deal-health, pipeline) ───────────────────────────────
+import type { HealthFinding, DepthDimension, PipelineAnalysis } from "./analysis";
+
+export function renderDepthDimensions(depth: DepthDimension[]): string {
+  if (depth.length === 0) return "";
+  return depth.map((d) => `- ${d.label} (key: ${d.dimension})`).join("\n");
+}
+
+const DEPTH_RULES = (depth: DepthDimension[]): string =>
+  depth.length === 0
+    ? `There is no deeper data available beyond this. Do NOT add any "want more / go deeper" offer or generic closing question.`
+    : `Deeper data IS available on these dimensions:\n${renderDepthDimensions(depth)}\nEnd with ONE short, natural sentence inviting the reader to go deeper into 1–3 of these by name, referencing this specific record. VARY the wording — never reuse a fixed template, never a generic "let me know if you need anything else."`;
+
+export function buildDealHealthPrompt(
+  recordType: RecordType,
+  recordName: string,
+  findings: HealthFinding[],
+  depth: DepthDimension[],
+  focus?: string,
+): string {
+  const data = JSON.stringify(findings, null, 2);
+  return [
+    `You are an internal deal-ops analyst at Noblestride Capital reviewing the ${recordType} "${recordName}".`,
+    `Below are health-check findings computed from CRM data. Write a tight review:`,
+    `1) Lead with the headline state (healthy / needs attention / at risk).`,
+    `2) Give the key findings as short bullets.`,
+    `3) Add a one- or two-line INSIGHT: what the findings mean together — the main risk, gap, or next move. Label anything you infer as a signal, not a stated fact.`,
+    `Rules: use ONLY the findings provided — never invent numbers, names, or dates. No raw record IDs. Under 180 words.`,
+    focus ? `Weight the review toward: ${focus}.` : "",
+    DEPTH_RULES(depth),
+    `FINDINGS:\n${data}`,
+  ].filter(Boolean).join("\n\n");
+}
+
+export function buildPipelinePrompt(analysis: PipelineAnalysis, pipeline: "mandates" | "transactions" | "both"): string {
+  const data = JSON.stringify({ metrics: analysis.metrics, aging: analysis.aging.slice(0, 10), concentration: analysis.concentration }, null, 2);
+  return [
+    `You are an internal deal-ops analyst at Noblestride Capital. Analyse the ${pipeline} pipeline from the metrics below.`,
+    `Write: 1) a headline (health of the pipeline), 2) totals by stage, 3) the notable stalls, 4) a one- or two-line INSIGHT (where attention is most needed and why). Label inference as inference.`,
+    `Rules: use ONLY the data provided — never invent. No raw record IDs. Under 220 words.`,
+    DEPTH_RULES(analysis.depth),
+    `DATA:\n${data}`,
+  ].join("\n\n");
 }
