@@ -445,6 +445,64 @@ export const ClientIntakeInput = builder.inputType("ClientIntakeInput", {
   }),
 });
 
+// Website Intake & Qualification Agent (SOW §10) — mirrors
+// src/lib/schemas/website-intake.ts; zod (websiteIntakeSchema) remains the
+// source of validation truth inside the service, so the small unions
+// (instruments, profitability, auditedYears, yes/no flags) stay loose strings.
+// Requiredness here mirrors the §10.1 field table exactly.
+export const WebsiteIntakeInput = builder.inputType("WebsiteIntakeInput", {
+  fields: (t) => ({
+    // Required (§10.1 "Y")
+    legalName: t.string({ required: true }),
+    yearFounded: t.int({ required: true }),
+    hqCity: t.string({ required: true }),
+    countries: t.field({ type: [GeographyEnum], required: true }),
+    sectors: t.field({ type: [SectorEnum], required: true }),
+    coreProduct: t.string({ required: true }),
+    description: t.string({ required: true }),
+    founderGenders: t.field({ type: [FounderGenderEnum], required: true }),
+    foundersNationality: t.string({ required: true }),
+    targetClients: t.string({ required: true }),
+    contactName: t.string({ required: true }),
+    role: t.string({ required: true }),
+    email: t.string({ required: true }),
+    ndaAccepted: t.boolean({ required: true }),
+    raiseUsd: t.float({ required: true }),
+    instruments: t.stringList({ required: true }),
+    // Optional (§10.1 "N")
+    postMoneyValuationUsd: t.float({ required: false }),
+    raisedToDateRoundUsd: t.float({ required: false }),
+    raisedToDateTotalUsd: t.float({ required: false }),
+    existingInvestors: t.string({ required: false }),
+    revenueUsd: t.float({ required: false }),
+    revenueForecastUsd: t.float({ required: false }),
+    profitability: t.string({ required: false }),
+    pitchDeckUrl: t.string({ required: false }),
+    website: t.string({ required: false }),
+    originationSource: t.string({ required: false }),
+    applicantNotes: t.string({ required: false }),
+    // Not in §10.1 — optional extras that speed up review
+    registrationNo: t.string({ required: false }),
+    phone: t.string({ required: false }),
+    hqCountry: t.string({ required: false }),
+    ebitdaUsd: t.float({ required: false }),
+    netProfitUsd: t.float({ required: false }),
+    totalAssetsUsd: t.float({ required: false }),
+    auditedYears: t.string({ required: false }),
+    loanBookUsd: t.float({ required: false }),
+    existingDebtUsd: t.float({ required: false }),
+    useOfFunds: t.string({ required: false }),
+    proposedTimeline: t.string({ required: false }),
+    ownershipSummary: t.string({ required: false }),
+    pepExposure: t.string({ required: false }),
+    governmentOwned: t.string({ required: false }),
+    // Agent extras (not persisted on Client/Mandate fields)
+    conversationSummary: t.string({ required: true }),
+    qualificationNotes: t.string({ required: false }),
+    attachmentUrls: t.stringList({ required: false }),
+  }),
+});
+
 export const LogClientMessageInput = builder.inputType("LogClientMessageInput", {
   fields: (t) => ({
     companyName: t.string({ required: true }),

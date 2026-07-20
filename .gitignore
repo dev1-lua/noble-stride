@@ -30,3 +30,5 @@ docs/VERCEL-AGENT-DEPLOYMENT-2026-07-14.md
 # Keep all Markdown docs/reports and PNG image assets out of source control (2026-07-16)
 *.md
 *.png
+# Exception: the intake-wizard warning must stay visible in the repo (2026-07-20)
+!TODO-UPDATE-INTAKE-WIZARD.md

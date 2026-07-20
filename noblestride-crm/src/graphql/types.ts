@@ -212,6 +212,7 @@ export const ClientRef = builder.prismaObject("Client", {
     existingDebt: t.float({ nullable: true, resolve: (c) => (c.existingDebt == null ? null : Number(c.existingDebt)) }),
     loanBook: t.float({ nullable: true, resolve: (c) => (c.loanBook == null ? null : Number(c.loanBook)) }),
     totalAssets: t.float({ nullable: true, resolve: (c) => (c.totalAssets == null ? null : Number(c.totalAssets)) }),
+    raisedToDateTotal: t.float({ nullable: true, resolve: (c) => (c.raisedToDateTotal == null ? null : Number(c.raisedToDateTotal)) }),
     impactFlags: t.field({ type: [ImpactFlagEnum], resolve: (c) => c.impactFlags }),
     status: t.field({ type: ClientStatusEnum, resolve: (c) => c.status }),
     // Task 7: compliance & operations fields (Task 6 migration)
@@ -274,6 +275,12 @@ export const MandateRef = builder.prismaObject("Mandate", {
     qualificationVerdict: t.exposeString("qualificationVerdict", { nullable: true }),
     qualificationReasons: t.exposeStringList("qualificationReasons"),
     qualifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.qualifiedAt }),
+    // Website intake agent (SOW §10): round-level facts + chat NDA click-wrap
+    instrument: t.field({ type: [InstrumentEnum], resolve: (m) => m.instrument }),
+    postMoneyValuation: t.float({ nullable: true, resolve: (m) => (m.postMoneyValuation == null ? null : Number(m.postMoneyValuation)) }),
+    raisedToDateRound: t.float({ nullable: true, resolve: (m) => (m.raisedToDateRound == null ? null : Number(m.raisedToDateRound)) }),
+    intakeNdaAccepted: t.exposeBoolean("intakeNdaAccepted"),
+    intakeNdaAcceptedAt: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.intakeNdaAcceptedAt }),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (m) => m.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (m) => m.updatedAt }),

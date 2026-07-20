@@ -6,6 +6,7 @@
 
 import { prisma } from "@/lib/db";
 import { submitIntake } from "@/server/onboarding/submit-intake";
+import { submitWebsiteIntake } from "@/server/onboarding/submit-website-intake";
 import { notify, adminUserIds } from "@/server/services/notifications";
 
 export type CheckCompanyStatus = "new" | "known_verified" | "known_unverified";
@@ -57,22 +58,42 @@ export interface ClientIntakeExtras {
  * caller is an anonymous prospect's LLM loop and must never see the verdict.
  */
 export async function submitClientIntake(raw: unknown, extras: ClientIntakeExtras): Promise<{ ok: true }> {
-  const probe = raw as { legalName?: string; email?: string };
-  if (probe?.legalName && probe?.email) {
-    const dup = await prisma.mandate.findFirst({
-      where: {
-        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-        client: {
-          name: { equals: probe.legalName.trim(), mode: "insensitive" },
-          contacts: { some: { email: { equals: probe.email.trim(), mode: "insensitive" } } },
-        },
-      },
-      select: { id: true },
-    });
-    if (dup) return { ok: true };
-  }
+  if (await isRecentDuplicateIntake(raw)) return { ok: true };
   await submitIntake(raw, {
     via: "webchat",
+    conversationSummary: extras.conversationSummary,
+    qualificationNotes: extras.qualificationNotes ?? undefined,
+    attachmentUrls: extras.attachmentUrls ?? undefined,
+  });
+  return { ok: true };
+}
+
+/** Same company + contact email already produced a mandate within 24h — double
+ * tool-calls / retried conversations must not create twins. */
+async function isRecentDuplicateIntake(raw: unknown): Promise<boolean> {
+  const probe = raw as { legalName?: string; email?: string };
+  if (!probe?.legalName || !probe?.email) return false;
+  const dup = await prisma.mandate.findFirst({
+    where: {
+      createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      client: {
+        name: { equals: probe.legalName.trim(), mode: "insensitive" },
+        contacts: { some: { email: { equals: probe.email.trim(), mode: "insensitive" } } },
+      },
+    },
+    select: { id: true },
+  });
+  return dup !== null;
+}
+
+/**
+ * Website Intake & Qualification Agent (SOW §10): same soft-dedupe, then the
+ * §10.1 pipeline (submit-website-intake.ts). Returns a bare ack — the caller
+ * is an anonymous prospect's LLM loop and must never see the verdict.
+ */
+export async function submitWebsiteClientIntake(raw: unknown, extras: ClientIntakeExtras): Promise<{ ok: true }> {
+  if (await isRecentDuplicateIntake(raw)) return { ok: true };
+  await submitWebsiteIntake(raw, {
     conversationSummary: extras.conversationSummary,
     qualificationNotes: extras.qualificationNotes ?? undefined,
     attachmentUrls: extras.attachmentUrls ?? undefined,

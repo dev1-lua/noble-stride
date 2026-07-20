@@ -709,6 +709,7 @@ model Client {
   existingDebt         Decimal?     @db.Decimal(20, 2)
   loanBook             Decimal?     @db.Decimal(20, 2)
   totalAssets          Decimal?     @db.Decimal(20, 2)
+  raisedToDateTotal    Decimal?     @db.Decimal(20, 2) // raised since inception (SOW §10.1)
   impactFlags          ImpactFlag[] @default([])
   status               ClientStatus @default(Prospect)
   // Task 6: qualification/scoping gap fields
@@ -774,6 +775,14 @@ model Mandate {
   qualificationVerdict String?
   qualificationReasons String[]
   qualifiedAt          DateTime?
+  // Website intake & qualification agent (SOW §10) — round-level facts.
+  // intakeNda* is the chat click-wrap acceptance, distinct from the e-sign
+  // ndaStatus flow above.
+  instrument           Instrument[] @default([])
+  postMoneyValuation   Decimal?  @db.Decimal(20, 2)
+  raisedToDateRound    Decimal?  @db.Decimal(20, 2)
+  intakeNdaAccepted    Boolean   @default(false)
+  intakeNdaAcceptedAt  DateTime?
   createdSource  ActorSource  @default(HUMAN)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
