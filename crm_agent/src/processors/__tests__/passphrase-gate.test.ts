@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { gateDecision, runGate, STAFF_COLLECTION, type GateDeps } from "../passphrase-gate";
+import { gateDecision, runGate, extractCredentials, STAFF_COLLECTION, type GateDeps } from "../passphrase-gate";
+
+const PASS = "secret";
+const unverifiedState = { verified: false };
 
 describe("gateDecision", () => {
   it("fully identified users (verified + staffEmail) always proceed", () => {
@@ -98,7 +101,7 @@ describe("runGate", () => {
     expect(result.action).toBe("block");
     if (result.action === "block") {
       expect(result.response).toBe(
-        "✅ Passphrase accepted. To act on your behalf in the CRM I need your CRM email — what is it?",
+        "✅ Passphrase accepted. To act on your behalf in the CRM I also need your CRM email — what is it?",
       );
     }
     expect(deps.resolveStaff).not.toHaveBeenCalled();
@@ -127,5 +130,66 @@ describe("runGate", () => {
     expect(deps.updateUser).not.toHaveBeenCalled();
     expect(result.action).toBe("block");
     if (result.action === "block") expect(result.response).toMatch(/can't verify your email right now/i);
+  });
+
+  it("verify_and_identify: resolveStaff success verifies, stores staffEmail/staffName, and welcomes in one message", async () => {
+    const deps = fakeDeps({ resolveStaff: vi.fn(async () => ({ ok: true, firstName: "Jane" })) });
+    const result = await runGate(deps, { verified: false }, `${PASS} jane@noblestride.capital`, "u1");
+    expect(deps.updateUser).toHaveBeenCalledWith({ verified: true });
+    expect(deps.data.create).toHaveBeenCalledWith(STAFF_COLLECTION, { userId: "u1" });
+    expect(deps.resolveStaff).toHaveBeenCalledWith("jane@noblestride.capital");
+    expect(deps.updateUser).toHaveBeenCalledWith({ staffEmail: "jane@noblestride.capital", staffName: "Jane" });
+    expect(result.action).toBe("block");
+    if (result.action === "block") {
+      expect(result.response).toMatch(/verified/i);
+      expect(result.response).toContain("Jane");
+    }
+  });
+
+  it("verify_and_identify: resolveStaff ok:false still verifies but blocks with IDENTIFY_FAIL", async () => {
+    const deps = fakeDeps({ resolveStaff: vi.fn(async () => ({ ok: false, firstName: null })) });
+    const result = await runGate(deps, { verified: false }, `${PASS} unknown@noblestride.capital`, "u1");
+    expect(deps.updateUser).toHaveBeenCalledWith({ verified: true });
+    expect(deps.updateUser).not.toHaveBeenCalledWith(expect.objectContaining({ staffEmail: expect.anything() }));
+    expect(result.action).toBe("block");
+    if (result.action === "block") expect(result.response).toMatch(/doesn't match an active CRM user/i);
+  });
+
+  it("verify_and_identify: CRM transport failure still verifies but blocks with IDENTIFY_ERROR", async () => {
+    const deps = fakeDeps({ resolveStaff: vi.fn(async () => { throw new Error("network down"); }) });
+    const result = await runGate(deps, { verified: false }, `${PASS} jane@noblestride.capital`, "u1");
+    expect(deps.updateUser).toHaveBeenCalledWith({ verified: true });
+    expect(result.action).toBe("block");
+    if (result.action === "block") expect(result.response).toMatch(/can't verify your email right now/i);
+  });
+});
+
+describe("combined passphrase + email", () => {
+  it("verifies and identifies from a single 'passphrase email' message", () => {
+    expect(gateDecision(unverifiedState, `${PASS} jane@noblestride.capital`, PASS)).toBe("verify_and_identify");
+  });
+  it("accepts 'email passphrase' order too", () => {
+    expect(gateDecision(unverifiedState, `jane@noblestride.capital ${PASS}`, PASS)).toBe("verify_and_identify");
+  });
+  it("still verifies passphrase-only reply and then asks for email", () => {
+    expect(gateDecision(unverifiedState, PASS, PASS)).toBe("verify");
+  });
+  it("rejects email-only reply (no passphrase)", () => {
+    expect(gateDecision(unverifiedState, "jane@noblestride.capital", PASS)).toBe("challenge");
+  });
+  it("rejects wrong passphrase even with a valid email", () => {
+    expect(gateDecision(unverifiedState, "nope jane@noblestride.capital", PASS)).toBe("challenge");
+  });
+});
+
+describe("extractCredentials", () => {
+  it("pulls the first email token and returns the rest", () => {
+    expect(extractCredentials("open sesame jane@x.co")).toEqual({ email: "jane@x.co", rest: "open sesame" });
+  });
+  it("strips trailing punctuation from the email", () => {
+    expect(extractCredentials(`${"secret"} jane@x.co.`).email).toBe("jane@x.co");
+  });
+  it("returns null email when none present", () => {
+    expect(extractCredentials("just words")).toEqual({ email: null, rest: "just words" });
   });
 });
