@@ -163,10 +163,11 @@ export const InvestorRef = builder.prismaObject("Investor", {
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (i) => i.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (i) => i.updatedAt }),
-    // Relations — tasks excluded per brief
+    // Relations
     contacts: t.relation("contacts"),
     engagements: t.relation("engagements"),
     activities: t.relation("activities"),
+    tasks: t.relation("tasks"),
     // Counts
     engagementCount: t.relationCount("engagements"),
   }),
@@ -230,11 +231,12 @@ export const ClientRef = builder.prismaObject("Client", {
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (c) => c.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (c) => c.updatedAt }),
-    // Relations — tasks excluded per brief
+    // Relations
     contacts: t.relation("contacts"),
     mandates: t.relation("mandates"),
     transactions: t.relation("transactions"),
     activities: t.relation("activities"),
+    tasks: t.relation("tasks"),
   }),
 });
 
@@ -288,7 +290,7 @@ export const MandateRef = builder.prismaObject("Mandate", {
     clientId: t.exposeString("clientId"),
     leadId: t.exposeString("leadId", { nullable: true }),
     referredById: t.exposeString("referredById", { nullable: true }),
-    // Relations — tasks excluded per brief
+    // Relations
     client: t.relation("client"),
     lead: t.relation("lead", { nullable: true }),
     assists: t.relation("assists"),
@@ -296,6 +298,7 @@ export const MandateRef = builder.prismaObject("Mandate", {
     transactions: t.relation("transactions"),
     activities: t.relation("activities"),
     stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
+    tasks: t.relation("tasks"),
   }),
 });
 
@@ -349,7 +352,7 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     ownerId: t.exposeString("ownerId", { nullable: true }),
     assistantId: t.exposeString("assistantId", { nullable: true }),
     referredById: t.exposeString("referredById", { nullable: true }),
-    // Relations — tasks excluded per brief
+    // Relations
     client: t.relation("client"),
     mandate: t.relation("mandate", { nullable: true }),
     owner: t.relation("owner", { nullable: true }),
@@ -361,6 +364,7 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     serviceProviders: t.relation("serviceProviders"),
     ddTracks: t.relation("ddTracks"),
     stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
+    tasks: t.relation("tasks"),
     // Derived counts
     investorsContacted: t.relationCount("engagements"),
     activeConversations: t.int({
@@ -443,6 +447,7 @@ export const EngagementRef = builder.prismaObject("Engagement", {
     owner: t.relation("owner", { nullable: true }),
     activities: t.relation("activities"),
     milestones: t.relation("milestones"),
+    stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
   }),
 });
 
