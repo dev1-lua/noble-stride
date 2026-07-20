@@ -1,10 +1,11 @@
 import { z } from "zod";
+import { optionalPhone } from "@/lib/schemas/phone";
 
 export const personCreateSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required"),
   lastName: z.string().trim().optional(),
   email: z.string().trim().optional(),
-  phone: z.string().trim().optional(),
+  phone: optionalPhone,
   jobTitle: z.string().trim().optional(),
   linkedinUrl: z.string().trim().optional(),
   isPrimaryContact: z.boolean().optional(),

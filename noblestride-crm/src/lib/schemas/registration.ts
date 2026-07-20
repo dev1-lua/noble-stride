@@ -3,6 +3,7 @@ import { Sector, Geography, Instrument, InvestorType } from "@prisma/client";
 import { isCorporateEmail } from "@/lib/corporate-email";
 import { CURRENCY_CODES } from "@/lib/currencies";
 import { validatePassword } from "@/server/auth/policy";
+import { optionalPhoneWithDefault, requiredPhone } from "@/lib/schemas/phone";
 
 /** Cross-field rule shared by every variant: max ≥ min. */
 const ticketRange = { check: (d: { ticketMin: number; ticketMax: number }) => d.ticketMax >= d.ticketMin, opts: { message: "Maximum ticket must be at least the minimum", path: ["ticketMax"] as ["ticketMax"] } };
@@ -20,7 +21,7 @@ export const registrationFieldsSchema = z.object({
     .trim()
     .email("Enter a valid email address")
     .refine(isCorporateEmail, "Please use your corporate email address — free providers (Gmail, Yahoo, …) are not accepted"),
-  phone: z.string().trim().min(7, "Telephone number is required (used for OTP verification)"),
+  phone: requiredPhone("Telephone number is required (used for OTP verification)"),
   investorType: z.nativeEnum(InvestorType),
   sectorPreference: z.array(z.nativeEnum(Sector)).min(1, "Select at least one sector"),
   geographicFocus: z.array(z.nativeEnum(Geography)).min(1, "Select at least one geography"),
@@ -42,7 +43,7 @@ export const teamMemberSchema = z.object({
     .trim()
     .email("Enter a valid email address")
     .refine(isCorporateEmail, "Use their corporate email — free providers (Gmail, Yahoo, …) are not accepted"),
-  phone: z.string().trim().optional().default(""),
+  phone: optionalPhoneWithDefault,
 });
 
 export type TeamMemberInput = z.infer<typeof teamMemberSchema>;

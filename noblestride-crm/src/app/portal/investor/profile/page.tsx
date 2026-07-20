@@ -8,6 +8,7 @@ import { getViewpoint } from "@/server/viewpoint";
 import { options } from "@/lib/vocab";
 import { ContactEmailField } from "@/components/portal/contact-email-field";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
+import { PHONE_MESSAGE } from "@/lib/schemas/phone";
 import { saveFundProfile } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -89,13 +90,13 @@ function Textarea({
 export default async function FundProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
   const vp = await getViewpoint();
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
-  const { saved } = await searchParams;
+  const { saved, error } = await searchParams;
   const investor = await prisma.investor.findUniqueOrThrow({
     where: { id: vp.recordId },
     include: {
@@ -122,6 +123,12 @@ export default async function FundProfilePage({
       {saved && (
         <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] px-5 py-3 text-sm font-medium text-[var(--t-tag-text-emerald)]">
           Profile saved. Your deal matching preferences are now up to date.
+        </div>
+      )}
+
+      {error === "phone" && (
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-red)] px-5 py-3 text-sm font-medium text-[var(--t-tag-text-red)]">
+          {PHONE_MESSAGE}
         </div>
       )}
 

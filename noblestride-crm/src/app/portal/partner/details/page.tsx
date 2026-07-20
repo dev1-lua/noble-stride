@@ -5,12 +5,13 @@ import { redirect } from "next/navigation";
 import { getViewpoint } from "@/server/viewpoint";
 import { getOwnPartnerDetails } from "@/server/partner-portal";
 import { label } from "@/lib/vocab";
+import { PHONE_MESSAGE } from "@/lib/schemas/phone";
 import { updateOwnDetailsAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string }>;
 }
 
 const inputClass =
@@ -24,7 +25,7 @@ export default async function PartnerDetailsPage({ searchParams }: PageProps) {
   if (!vp) redirect("/login");
   if (vp.role !== "partner" || !vp.recordId) redirect("/dashboard");
 
-  const [{ saved }, partner] = await Promise.all([searchParams, getOwnPartnerDetails(vp.recordId)]);
+  const [{ saved, error }, partner] = await Promise.all([searchParams, getOwnPartnerDetails(vp.recordId)]);
 
   return (
     <div className="space-y-6">
@@ -40,6 +41,12 @@ export default async function PartnerDetailsPage({ searchParams }: PageProps) {
         <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] p-4 text-sm text-[var(--t-tag-text-emerald)]">
           <span className="font-semibold text-[var(--t-tag-text-emerald)]">Saved</span> — your contact details
           have been updated.
+        </div>
+      )}
+
+      {error === "phone" && (
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-red)] p-4 text-sm font-medium text-[var(--t-tag-text-red)]">
+          {PHONE_MESSAGE}
         </div>
       )}
 

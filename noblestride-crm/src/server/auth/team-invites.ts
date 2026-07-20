@@ -7,6 +7,7 @@
 
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
+import { PHONE_MESSAGE, PHONE_PATTERN } from "@/lib/schemas/phone";
 import { classifyEmailForSignup, normalizeEmail } from "./guardrails";
 import { hashPassword } from "./password";
 import { validatePassword } from "./policy";
@@ -66,6 +67,10 @@ export async function createTeamInvite(input: {
   jobTitle?: string;
   invitedByLabel: string;
 }): Promise<{ personId: string; rawToken: string }> {
+  if (input.phone && !PHONE_PATTERN.test(input.phone)) {
+    throw new TeamInviteError(PHONE_MESSAGE);
+  }
+
   const email = normalizeEmail(input.email);
   await assertEmailInvitable(email, { investorId: input.investorId });
 
