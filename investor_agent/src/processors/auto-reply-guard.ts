@@ -133,6 +133,54 @@ export async function checkAutoReplyRateLimit(sender: string, deps: RateLimiterD
   }
 }
 
+export interface AutoReplyDecisionDeps {
+  checkRateLimit?: (sender: string) => Promise<boolean>;
+  classifyProbe?: typeof classifyInboundProbe;
+  recordFlag?: typeof recordFlagEvent;
+}
+
+/**
+ * Injectable decision core for the whole preprocessor (mirrors `enforceOutbound` in
+ * outbound-leak-guard.ts: a pure-ish, I/O-injectable function the PreProcessor's
+ * `execute` calls with real deps, so the composition can be integration-tested
+ * without a live `Lua.request`/Data backend). Composes, in order (spec §4.5):
+ *   1. machine-mail gate (RFC-3834 headers, bad senders, OOO subjects) — wins first;
+ *   2. rate-limit backstop (spec §7);
+ *   3. probe-flag backstop — never blocks; flags a probing sender for humans while
+ *      the sender still gets a warm, safe reply. `recordFlag` (fail-open internally,
+ *      see flagging.ts) is additionally wrapped here so a thrown Data error can
+ *      never turn a "proceed" into a block, even if a caller injects a raw `recordFlag`
+ *      that skips its own fail-open handling.
+ */
+export async function decideAutoReply(
+  meta: InboundEmailMeta,
+  probeText: string,
+  deps: AutoReplyDecisionDeps = {},
+): Promise<{ action: "block" | "proceed" }> {
+  const decision = gateDecision(meta);
+  if (decision.block) return { action: "block" };
+  // Backstop (spec §7): only meaningful once we have a sender to key on.
+  const sender = (meta.from ?? "").trim();
+  if (sender) {
+    const checkRateLimit = deps.checkRateLimit ?? checkAutoReplyRateLimit;
+    const overLimit = await checkRateLimit(sender);
+    if (overLimit) return { action: "block" };
+    // spec §4.5 — deterministic probe flag backstop. A probe is NOT blocked:
+    // the sender still gets a warm, safe reply. recordFlagEvent is fail-open.
+    const classifyProbe = deps.classifyProbe ?? classifyInboundProbe;
+    const recordFlag = deps.recordFlag ?? recordFlagEvent;
+    const probe = classifyProbe(probeText);
+    if (probe.isProbe) {
+      try {
+        await recordFlag(sender, probe.reasons);
+      } catch {
+        /* fail-open on flag I/O only — the decision above is unconditional */
+      }
+    }
+  }
+  return { action: "proceed" };
+}
+
 export const autoReplyGuard = new PreProcessor({
   name: "auto-reply-guard",
   description: "Blocks auto-replies, bounces and machine mail so the agent never loops with a robot.",
@@ -140,19 +188,8 @@ export const autoReplyGuard = new PreProcessor({
   execute: async (_user, messages, channel) => {
     if (channel !== "email") return { action: "proceed" as const };
     const meta = metaFromRequest();
-    const decision = gateDecision(meta);
-    if (decision.block) return { action: "block" as const, response: "" };
-    // Backstop (spec §7): only meaningful once we have a sender to key on.
-    const sender = (meta.from ?? "").trim();
-    if (sender) {
-      const overLimit = await checkAutoReplyRateLimit(sender);
-      if (overLimit) return { action: "block" as const, response: "" };
-      // spec §4.5 — deterministic probe flag backstop. A probe is NOT blocked:
-      // the sender still gets a warm, safe reply. recordFlagEvent is fail-open.
-      const probeText = [meta.subject, textFromMessages(messages)].filter(Boolean).join("\n");
-      const probe = classifyInboundProbe(probeText);
-      if (probe.isProbe) await recordFlagEvent(sender, probe.reasons);
-    }
-    return { action: "proceed" as const };
+    const probeText = [meta.subject, textFromMessages(messages)].filter(Boolean).join("\n");
+    const { action } = await decideAutoReply(meta, probeText);
+    return action === "block" ? { action: "block" as const, response: "" } : { action: "proceed" as const };
   },
 });

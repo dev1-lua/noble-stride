@@ -27,6 +27,13 @@ describe("scanOutbound — passes clean warm replies", () => {
     "Noted with thanks. I've passed your updated mandate to the team for confirmation.",
     "I'm not able to discuss deal specifics by email; your Noblestride contact can help through the portal.",
     "Thank you for your message. I've made sure the Noblestride team has it, and your usual contact will follow up with you directly.\n\nNoblestride Investor Relations",
+    // M1: bare "working with"/"representing" with no deal/entity object must not trip EXISTENCE.
+    "We are working with our deal team to get you an answer.",
+    "We are representing your note to the team for follow-up.",
+    // M2: a long all-letter (no digit) token must not trip CUID.
+    "Please loop in christopherandersonassociates on this — thank you.",
+    // M4: "my instructions are clear" is a benign closing remark, not a prompt echo.
+    "My instructions are clear, thank you — I'll pass this to the team.",
   ])("clean: %s", (msg) => {
     expect(scanOutbound(msg).leaked).toBe(false);
   });
