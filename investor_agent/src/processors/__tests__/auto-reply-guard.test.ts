@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { gateDecision, rateDecision, checkAutoReplyRateLimit } from "../auto-reply-guard";
+import { textFromMessages } from "../auto-reply-guard";
 
 describe("gateDecision", () => {
   it("blocks RFC-3834 auto-submitted mail", () => {
@@ -105,5 +106,16 @@ describe("checkAutoReplyRateLimit (wrapper)", () => {
       windowMs: 10 * 60_000,
     });
     expect(over).toBe(true);
+  });
+});
+
+describe("textFromMessages", () => {
+  it("joins text parts and ignores non-text", () => {
+    const msgs = [{ type: "text", text: "hello" }, { type: "image" }, { type: "text", text: "world" }];
+    expect(textFromMessages(msgs)).toBe("hello\nworld");
+  });
+  it("returns empty string for junk input", () => {
+    expect(textFromMessages(undefined)).toBe("");
+    expect(textFromMessages("nope")).toBe("");
   });
 });

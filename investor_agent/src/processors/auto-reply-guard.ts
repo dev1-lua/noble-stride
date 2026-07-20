@@ -1,4 +1,6 @@
 import { PreProcessor, Lua, Data, env } from "lua-cli";
+import { classifyInboundProbe } from "../lib/guardrails/inbound-probe";
+import { recordFlagEvent } from "../lib/flagging";
 
 export interface InboundEmailMeta {
   from?: string;
@@ -42,6 +44,16 @@ function metaFromRequest(): InboundEmailMeta {
     precedence: s(payload["precedence"]),
     autoResponseSuppress: s(payload["xAutoResponseSuppress"]) ?? s(payload["x_auto_response_suppress"]),
   };
+}
+
+/** Best-effort extraction of the inbound text body from a preprocessor `messages` array. */
+export function textFromMessages(messages: unknown): string {
+  if (!Array.isArray(messages)) return "";
+  return messages
+    .filter((m): m is { type: string; text: string } =>
+      !!m && typeof m === "object" && (m as { type?: unknown }).type === "text" && typeof (m as { text?: unknown }).text === "string")
+    .map((m) => m.text)
+    .join("\n");
 }
 
 // --- spec §7: auto-reply rate-limit backstop ------------------------------
@@ -125,7 +137,7 @@ export const autoReplyGuard = new PreProcessor({
   name: "auto-reply-guard",
   description: "Blocks auto-replies, bounces and machine mail so the agent never loops with a robot.",
   priority: 5,
-  execute: async (_user, _messages, channel) => {
+  execute: async (_user, messages, channel) => {
     if (channel !== "email") return { action: "proceed" as const };
     const meta = metaFromRequest();
     const decision = gateDecision(meta);
@@ -135,6 +147,11 @@ export const autoReplyGuard = new PreProcessor({
     if (sender) {
       const overLimit = await checkAutoReplyRateLimit(sender);
       if (overLimit) return { action: "block" as const, response: "" };
+      // spec §4.5 — deterministic probe flag backstop. A probe is NOT blocked:
+      // the sender still gets a warm, safe reply. recordFlagEvent is fail-open.
+      const probeText = [meta.subject, textFromMessages(messages)].filter(Boolean).join("\n");
+      const probe = classifyInboundProbe(probeText);
+      if (probe.isProbe) await recordFlagEvent(sender, probe.reasons);
     }
     return { action: "proceed" as const };
   },
