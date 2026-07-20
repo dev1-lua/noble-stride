@@ -1,0 +1,194 @@
+"use client";
+
+// Hosts the staff Lua agents (summarizer assistant + optional investor
+// tracker) inside an isolated iframe (srcdoc) — the same embed the public
+// talk-to-us page uses. Replaces the old floating LuaPop bubble widget,
+// which kept a body-injected script alive on every CRM page. A fresh
+// sessionId is generated per mount; "New chat" regenerates it (remounting
+// the iframe), and switching agents does the same.
+
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
+import { LUA_CHAT_FORCE_LIGHT_SCRIPT, LUA_CHAT_THEME_SCRIPT } from "@/lib/lua-chat-theme";
+
+const LUA_POP_SRC = "https://lua-ai-global.github.io/lua-pop/lua-pop.umd.js";
+
+export interface StaffAgentChoice {
+  key: string;
+  label: string;
+  chatTitle: string;
+  agentId: string;
+  channelId?: string;
+}
+
+function newSessionId(): string {
+  return `web-${crypto.randomUUID()}`;
+}
+
+function buildSrcdoc(agent: StaffAgentChoice, sessionId: string, websiteHost: string): string {
+  const config = {
+    agentId: agent.agentId,
+    sessionId,
+    environment: "production",
+    displayMode: "embedded",
+    embeddedDisplayConfig: {
+      targetContainerId: "lua-chat-embedded-root",
+      useContainerHeight: true,
+    },
+    attachmentsEnabled: true,
+    chatTitle: agent.chatTitle,
+    chatInputPlaceholder: "Ask about your pipeline, deals, or tasks…",
+  };
+  return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="color-scheme" content="light" />
+<style>
+  html, body { height: 100%; margin: 0; }
+  body { background: transparent; }
+  #lua-chat-embedded-root { height: 100%; width: 100%; }
+</style>
+</head>
+<body>
+<div id="lua-chat-embedded-root"></div>
+<script>
+  // Inside an iframe-srcdoc, window.location.hostname is "" — so LuaPop's
+  // webchat/config call goes out with an empty website param and 400s, no
+  // webchat auth is established, and every chat call after it 401s. The
+  // fix: patch XHR (LuaPop uses axios/XHR) to (a) fill the empty website
+  // param with the parent page's hostname and (b) attach the webchat channel
+  // identifier.
+  (function () {
+    var channelId = ${JSON.stringify(agent.channelId ?? "")};
+    var websiteHost = ${JSON.stringify(websiteHost)};
+    var LUA_URL = /api\\.(heylua\\.ai|lua\\.dev)\\/(webchat\\/config|chat\\/)/;
+    function rewrite(url) {
+      try {
+        if (typeof url === "string" && LUA_URL.test(url)) {
+          var u = new URL(url);
+          if (websiteHost && u.searchParams.has("website") && !u.searchParams.get("website")) {
+            u.searchParams.set("website", websiteHost);
+          }
+          if (channelId && !u.searchParams.has("channelIdentifier")) {
+            u.searchParams.set("channelIdentifier", channelId);
+          }
+          return u.toString();
+        }
+      } catch (e) {}
+      return url;
+    }
+    var originalOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function (method, url) {
+      var args = Array.prototype.slice.call(arguments);
+      args[1] = rewrite(url);
+      return originalOpen.apply(this, args);
+    };
+    // LuaPop streams chat responses via fetch(), not XHR — patch both.
+    var originalFetch = window.fetch;
+    window.fetch = function (input, init) {
+      try {
+        if (typeof input === "string") {
+          input = rewrite(input);
+        } else if (input && typeof input.url === "string") {
+          var rewritten = rewrite(input.url);
+          if (rewritten !== input.url) input = new Request(rewritten, input);
+        }
+      } catch (e) {}
+      return originalFetch.call(this, input, init);
+    };
+  })();
+${LUA_CHAT_FORCE_LIGHT_SCRIPT}
+  window.__LUA_BOOT = function () {
+    try { window.LuaPop && window.LuaPop.init(${JSON.stringify(config)}); }
+    catch (e) { console.error("LuaPop init failed", e); }
+${LUA_CHAT_THEME_SCRIPT}
+  };
+</script>
+<script src="${LUA_POP_SRC}" onload="window.__LUA_BOOT()"></script>
+</body>
+</html>`;
+}
+
+export function AssistantChat({
+  agents,
+  initialAgentKey,
+}: {
+  agents: StaffAgentChoice[];
+  initialAgentKey?: string;
+}) {
+  const [activeKey, setActiveKey] = useState(
+    agents.find((a) => a.key === initialAgentKey)?.key ?? agents[0]?.key ?? ""
+  );
+  // Generated client-side only: crypto.randomUUID() during SSR would produce
+  // a different srcdoc on the server than on the client (hydration mismatch).
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  useEffect(() => setSessionId(newSessionId()), []);
+
+  const active = agents.find((a) => a.key === activeKey) ?? agents[0];
+
+  if (!active) {
+    return (
+      <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-8 text-center text-sm text-[var(--text-secondary)]">
+        The assistant is not configured. Set NEXT_PUBLIC_LUA_AGENT_ID to enable it.
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col space-y-2">
+      <div className="flex items-center justify-between">
+        {agents.length >= 2 ? (
+          <div className="flex gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-1">
+            {agents.map((a) => (
+              <button
+                key={a.key}
+                type="button"
+                onClick={() => {
+                  setActiveKey(a.key);
+                  setSessionId(newSessionId());
+                }}
+                className={cn(
+                  "rounded px-3 py-1 text-xs font-medium transition-colors",
+                  a.key === active.key
+                    ? "bg-[var(--accent)] text-white"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div />
+        )}
+        <button
+          type="button"
+          onClick={() => setSessionId(newSessionId())}
+          className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+        >
+          + New chat
+        </button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+        {sessionId && (
+          <iframe
+            key={`${active.key}:${sessionId}`}
+            srcDoc={buildSrcdoc(active, sessionId, typeof window !== "undefined" ? window.location.hostname : "")}
+            title={active.chatTitle}
+            className="h-full w-full border-0"
+            allow="microphone; clipboard-write"
+            // ACCEPTED RISK (2026-07-14 review): no sandbox attribute, so this
+            // srcdoc iframe shares the CRM origin with the third-party LuaPop
+            // UMD bundle (supply-chain XSS exposure). sandbox without
+            // allow-same-origin was tried and breaks the widget (it requires
+            // localStorage and derives its `website` param from the origin),
+            // and sandbox WITH allow-same-origin is a no-op. Mitigation plan:
+            // host this embed on a separate origin (e.g. chat.noblestride.com)
+            // before production launch.
+          />
+        )}
+      </div>
+    </div>
+  );
+}
