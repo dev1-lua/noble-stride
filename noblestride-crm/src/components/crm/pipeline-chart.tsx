@@ -3,6 +3,7 @@
 // pipeline-chart.tsx — animated, premium SVG/CSS charts for the Dashboard.
 // Motion-driven draw-in. Retoned to the Twenty tag-palette series set.
 
+import { useState } from "react";
 import { motion } from "motion/react";
 import { EASE } from "@/components/ui/motion";
 
@@ -87,6 +88,37 @@ export function DealPipelineTrendChart({ data }: { data: TrendPoint[] }) {
 
   const yTicks = [0, Math.round(maxVal / 2), maxVal];
 
+  // ─── Hover tooltip ──────────────────────────────────────────────────────
+  // `hover` holds the nearest-month index plus the SVG's live rendered
+  // width, so viewBox x can be converted back to CSS px for the HTML
+  // overlay (the SVG itself is responsive-width / fixed-height).
+  const [hover, setHover] = useState<{ i: number; rectWidth: number } | null>(null);
+
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const scaleY = H / rect.height;
+    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseY = (e.clientY - rect.top) * scaleY;
+
+    if (mouseY < PAD_TOP || mouseY > PAD_TOP + plotH || mouseX < PAD_LEFT - 5 || mouseX > W - PAD_RIGHT + 5) {
+      setHover(null);
+      return;
+    }
+
+    const frac = (mouseX - PAD_LEFT) / Math.max(plotW, 1);
+    const i = Math.min(n - 1, Math.max(0, Math.round(frac * (n - 1))));
+    setHover({ i, rectWidth: rect.width });
+  };
+
+  const hoveredPoint = hover ? data[hover.i] : null;
+  const guideX = hover ? xPos(hover.i) : 0;
+  const flip = hover ? (guideX - PAD_LEFT) / Math.max(plotW, 1) > 0.65 : false;
+  const cssGuideX = hover ? (guideX * hover.rectWidth) / W : 0;
+  const tooltipTop = hoveredPoint
+    ? Math.max(4, Math.min(yPos(hoveredPoint.active) - 10, H - 62))
+    : 0;
+
   return (
     <div className="w-full">
       {/* Legend */}
@@ -95,104 +127,157 @@ export function DealPipelineTrendChart({ data }: { data: TrendPoint[] }) {
         <LegendDot color={CLOSED_COLOR} label="Closed" />
       </div>
 
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="w-full"
-        style={{ height: 200 }}
-        aria-label="Deal pipeline trend chart"
-      >
-        <defs>
-          <linearGradient id="ns-active-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={ACTIVE_COLOR} stopOpacity="0.22" />
-            <stop offset="100%" stopColor={ACTIVE_COLOR} stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="ns-closed-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={CLOSED_COLOR} stopOpacity="0.16" />
-            <stop offset="100%" stopColor={CLOSED_COLOR} stopOpacity="0" />
-          </linearGradient>
-        </defs>
+      <div className="relative">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="w-full"
+          style={{ height: 200 }}
+          aria-label="Deal pipeline trend chart"
+          onPointerMove={handlePointerMove}
+          onPointerLeave={() => setHover(null)}
+        >
+          <defs>
+            <linearGradient id="ns-active-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={ACTIVE_COLOR} stopOpacity="0.22" />
+              <stop offset="100%" stopColor={ACTIVE_COLOR} stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="ns-closed-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={CLOSED_COLOR} stopOpacity="0.16" />
+              <stop offset="100%" stopColor={CLOSED_COLOR} stopOpacity="0" />
+            </linearGradient>
+          </defs>
 
-        {/* Grid lines */}
-        {yTicks.map((tick) => {
-          const y = yPos(tick);
-          return (
-            <g key={tick}>
+          {/* Grid lines */}
+          {yTicks.map((tick) => {
+            const y = yPos(tick);
+            return (
+              <g key={tick}>
+                <line
+                  x1={PAD_LEFT}
+                  y1={y}
+                  x2={W - PAD_RIGHT}
+                  y2={y}
+                  stroke="#e9ecef"
+                  strokeWidth="1"
+                />
+                <text x={PAD_LEFT - 6} y={y + 3.5} textAnchor="end" fontSize="9.5" fill="#868e96">
+                  {tick}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Areas (fade in) */}
+          <motion.path
+            d={areaFrom(closedPts)}
+            fill="url(#ns-closed-fill)"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.5, ease: EASE }}
+          />
+          <motion.path
+            d={areaFrom(activePts)}
+            fill="url(#ns-active-fill)"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.55, ease: EASE }}
+          />
+
+          {/* Lines (draw in) */}
+          <motion.path
+            d={smoothPath(closedPts)}
+            fill="none"
+            stroke={CLOSED_COLOR}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 1.1, ease: EASE }}
+          />
+          <motion.path
+            d={smoothPath(activePts)}
+            fill="none"
+            stroke={ACTIVE_COLOR}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 1.1, ease: EASE }}
+          />
+
+          {/* Dots (pop in last) */}
+          {data.map((d, i) => (
+            <motion.g
+              key={i}
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.9 + i * 0.05, ease: EASE }}
+              style={{ transformOrigin: `${xPos(i)}px ${yPos(d.active)}px` }}
+            >
+              <circle cx={xPos(i)} cy={yPos(d.closed)} r="3" fill="#fff" stroke={CLOSED_COLOR} strokeWidth="1.5" />
+              <circle cx={xPos(i)} cy={yPos(d.active)} r="3.5" fill="#fff" stroke={ACTIVE_COLOR} strokeWidth="2" />
+            </motion.g>
+          ))}
+
+          {/* X-axis labels */}
+          {data.map((d, i) => (
+            <text key={i} x={xPos(i)} y={H - 6} textAnchor="middle" fontSize="9.5" fill="#868e96">
+              {d.month}
+            </text>
+          ))}
+
+          {/* Hover guide + highlight dots */}
+          {hoveredPoint && (
+            <g>
               <line
-                x1={PAD_LEFT}
-                y1={y}
-                x2={W - PAD_RIGHT}
-                y2={y}
-                stroke="#e9ecef"
+                x1={guideX}
+                y1={PAD_TOP}
+                x2={guideX}
+                y2={PAD_TOP + plotH}
+                stroke="#dee2e6"
                 strokeWidth="1"
               />
-              <text x={PAD_LEFT - 6} y={y + 3.5} textAnchor="end" fontSize="9.5" fill="#868e96">
-                {tick}
-              </text>
+              <circle
+                cx={guideX}
+                cy={yPos(hoveredPoint.closed)}
+                r="4.5"
+                fill="#fff"
+                stroke={CLOSED_COLOR}
+                strokeWidth="2"
+              />
+              <circle
+                cx={guideX}
+                cy={yPos(hoveredPoint.active)}
+                r="5"
+                fill="#fff"
+                stroke={ACTIVE_COLOR}
+                strokeWidth="2.5"
+              />
             </g>
-          );
-        })}
+          )}
+        </svg>
 
-        {/* Areas (fade in) */}
-        <motion.path
-          d={areaFrom(closedPts)}
-          fill="url(#ns-closed-fill)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.5, ease: EASE }}
-        />
-        <motion.path
-          d={areaFrom(activePts)}
-          fill="url(#ns-active-fill)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.55, ease: EASE }}
-        />
-
-        {/* Lines (draw in) */}
-        <motion.path
-          d={smoothPath(closedPts)}
-          fill="none"
-          stroke={CLOSED_COLOR}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 1.1, ease: EASE }}
-        />
-        <motion.path
-          d={smoothPath(activePts)}
-          fill="none"
-          stroke={ACTIVE_COLOR}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 1.1, ease: EASE }}
-        />
-
-        {/* Dots (pop in last) */}
-        {data.map((d, i) => (
-          <motion.g
-            key={i}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: 0.9 + i * 0.05, ease: EASE }}
-            style={{ transformOrigin: `${xPos(i)}px ${yPos(d.active)}px` }}
+        {/* Hover tooltip — HTML overlay positioned in CSS px, flips to the
+            left of the guide line once the point sits in the right ~35% of
+            the plot so it never overflows the chart's right edge. */}
+        {hoveredPoint && hover && (
+          <div
+            className="pointer-events-none absolute z-10 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-2 text-xs shadow-lg"
+            style={{
+              top: tooltipTop,
+              ...(flip
+                ? { right: hover.rectWidth - cssGuideX + 12 }
+                : { left: cssGuideX + 12 }),
+            }}
           >
-            <circle cx={xPos(i)} cy={yPos(d.closed)} r="3" fill="#fff" stroke={CLOSED_COLOR} strokeWidth="1.5" />
-            <circle cx={xPos(i)} cy={yPos(d.active)} r="3.5" fill="#fff" stroke={ACTIVE_COLOR} strokeWidth="2" />
-          </motion.g>
-        ))}
-
-        {/* X-axis labels */}
-        {data.map((d, i) => (
-          <text key={i} x={xPos(i)} y={H - 6} textAnchor="middle" fontSize="9.5" fill="#868e96">
-            {d.month}
-          </text>
-        ))}
-      </svg>
+            <p className="font-medium text-[var(--text-primary)]">{hoveredPoint.month}</p>
+            <p style={{ color: ACTIVE_COLOR }}>Active Deals : {hoveredPoint.active}</p>
+            <p style={{ color: CLOSED_COLOR }}>Closed Deals : {hoveredPoint.closed}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
