@@ -1,12 +1,13 @@
 "use client";
 
-import { cloneElement, isValidElement, useActionState, useId, useRef, useState } from "react";
+import { cloneElement, isValidElement, useActionState, useEffect, useId, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { PasswordInput } from "@/components/ui";
 import { options, label } from "@/lib/vocab";
 import { CURRENCY_OPTIONS } from "@/lib/currencies";
 import { EASE } from "@/components/ui/motion";
+import { stepFromHistoryState, withWizardStep } from "@/lib/wizard-history";
 import { registerWizardAction, type WizardActionState } from "./actions";
 import {
   EMPTY_WIZARD_VALUES,
@@ -50,6 +51,21 @@ export default function RegisterWizard({ initialEmail = "" }: { initialEmail?: s
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
 
+  // mount: stamp step 0 on the current history entry + listen for Back/Forward
+  useEffect(() => {
+    window.history.replaceState(withWizardStep(window.history.state, 0), "");
+    const onPop = (event: PopStateEvent) => {
+      const target = stepFromHistoryState(event.state);
+      if (target !== null) {
+        setErrors({});
+        setStep(target);
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const goNext = () => {
     const res = validateStep(step, values);
     if (!res.ok) {
@@ -57,11 +73,24 @@ export default function RegisterWizard({ initialEmail = "" }: { initialEmail?: s
       return;
     }
     setErrors({});
-    setStep((s) => Math.min(s + 1, STEP_COUNT - 1));
+    const next = Math.min(step + 1, STEP_COUNT - 1);
+    if (next !== step) window.history.pushState(withWizardStep(window.history.state, next), "");
+    setStep(next);
   };
-  const goBack = () => setStep((s) => Math.max(s - 1, 0));
+
+  // In-page Back rides the same history entries as the browser button, so the
+  // two stay in sync. At step 0 the button is disabled (unchanged).
+  const goBack = () => {
+    if (step > 0 && stepFromHistoryState(window.history.state) === step) {
+      window.history.back();
+      return;
+    }
+    setStep((s) => Math.max(s - 1, 0));
+  };
+
   const goTo = (target: number) => {
     setErrors({});
+    if (target !== step) window.history.pushState(withWizardStep(window.history.state, target), "");
     setStep(target);
   };
 
