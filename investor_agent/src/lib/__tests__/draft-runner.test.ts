@@ -66,3 +66,36 @@ describe("fallbackIntro", () => {
     expect(f.body).not.toMatch(/undefined|null|\{\{/);
   });
 });
+
+describe("runDraftOutreach — outbound scanner on generated drafts", () => {
+  const ctx = {
+    codename: "Project Zensa", sectors: ["Technology"], geographies: ["EastAfrica"], dealType: null,
+    instruments: ["Equity"], targetRaiseBand: "growth capital", revenueBand: null,
+    revenueForecastBand: null, description: null, contact: "team@noblestride.com",
+  };
+  const match = {
+    investorId: "inv1", name: "Meridian", personId: "p1", contactName: "Sarah Doe",
+    contactEmail: "sarah@meridian.fund", matchReasons: ["fintech focus"], hasExistingEngagement: false,
+  };
+  function crmStub(saved = 1) {
+    return {
+      query: vi.fn(async (doc: string) => {
+        if (doc.includes("matchInvestorsForTransaction")) return { matchInvestorsForTransaction: [match] };
+        if (doc.includes("transactionTeaserContext")) return { transactionTeaserContext: ctx };
+        return { saveOutreachDrafts: { ok: true, created: saved, skipped: 0 } };
+      }),
+    } as never;
+  }
+
+  it("falls back to the safe template when a generation trips the scanner", async () => {
+    // generation returns a leaky body (record-id token) -> must be discarded for the fallback
+    const generate = vi.fn(async () => "Reaching out re clx2abcd1234efgh5678ijkl90mn");
+    const res = await runDraftOutreach({ crm: crmStub(), generate }, "tx1");
+    expect(res.fallbacks).toBe(1);
+  });
+  it("uses a clean generation as-is (no fallback)", async () => {
+    const generate = vi.fn(async () => "Dear Sarah, we are advising a growth opportunity in East Africa. Reply for the teaser. Noblestride Advisory");
+    const res = await runDraftOutreach({ crm: crmStub(), generate }, "tx1");
+    expect(res.fallbacks).toBe(0);
+  });
+});
