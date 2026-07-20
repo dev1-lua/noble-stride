@@ -5,6 +5,7 @@
 // conversation; "New chat" just regenerates it (remounting the iframe).
 
 import { useEffect, useState } from "react";
+import { LUA_CHAT_FORCE_LIGHT_SCRIPT, LUA_CHAT_THEME_SCRIPT } from "@/lib/lua-chat-theme";
 
 const LUA_POP_SRC = "https://lua-ai-global.github.io/lua-pop/lua-pop.umd.js";
 
@@ -49,10 +50,10 @@ function buildSrcdoc(agentId: string, sessionId: string, channelId: string, webs
 <script>
   // Inside an iframe-srcdoc, window.location.hostname is "" — so LuaPop's
   // webchat/config call goes out with an empty website param and 400s, no
-  // webchat auth is established, and every chat call after it 401s. Same
-  // class of workaround as the CRM shell's LuaPopWidget dev shim: patch XHR
-  // (LuaPop uses axios/XHR) to (a) fill the empty website param with the
-  // parent page's hostname and (b) attach the webchat channel identifier.
+  // webchat auth is established, and every chat call after it 401s. The
+  // fix: patch XHR (LuaPop uses axios/XHR) to (a) fill the empty website
+  // param with the parent page's hostname and (b) attach the webchat channel
+  // identifier.
   (function () {
     var channelId = ${JSON.stringify(channelId)};
     var websiteHost = ${JSON.stringify(websiteHost)};
@@ -92,9 +93,11 @@ function buildSrcdoc(agentId: string, sessionId: string, channelId: string, webs
       return originalFetch.call(this, input, init);
     };
   })();
+${LUA_CHAT_FORCE_LIGHT_SCRIPT}
   window.__LUA_BOOT = function () {
     try { window.LuaPop && window.LuaPop.init(${JSON.stringify(config)}); }
     catch (e) { console.error("LuaPop init failed", e); }
+${LUA_CHAT_THEME_SCRIPT}
   };
 </script>
 <script src="${LUA_POP_SRC}" onload="window.__LUA_BOOT()"></script>

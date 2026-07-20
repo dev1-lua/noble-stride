@@ -1,7 +1,7 @@
 // Pure wizard config + per-step validation for /register.
 // Validation reuses the registration schema so client checks are identical to
 // the server's (including the corporate-email refinement). No React here.
-import { registrationFieldsSchema } from "@/lib/schemas/registration";
+import { registrationFieldsSchema, teamMemberSchema } from "@/lib/schemas/registration";
 
 export interface WizardValues {
   fundName: string;
@@ -16,6 +16,7 @@ export interface WizardValues {
   ticketMin: string;
   ticketMax: string;
   currency: string;
+  members: { name: string; email: string; phone: string }[];
 }
 
 export const EMPTY_WIZARD_VALUES: WizardValues = {
@@ -30,6 +31,7 @@ export const EMPTY_WIZARD_VALUES: WizardValues = {
   ticketMin: "",
   ticketMax: "",
   currency: "USD",
+  members: [],
 };
 
 /** Fields shown on each input step (light grouping). Review = last index, no entry. */
@@ -41,14 +43,33 @@ export const STEP_FIELDS = [
   ["dealTypes", "ticketMin", "ticketMax", "currency"],
 ] as const satisfies readonly (readonly (keyof WizardValues)[])[];
 
-/** 5 input steps + 1 review step. */
-export const STEP_COUNT = STEP_FIELDS.length + 1;
+/** Optional team step sits between the input steps and review. */
+export const TEAM_STEP_INDEX = STEP_FIELDS.length; // 5
+
+/** 5 input steps + team step + review step. */
+export const STEP_COUNT = STEP_FIELDS.length + 2;
 
 type StepValidation =
   | { ok: true }
   | { ok: false; errors: Partial<Record<keyof WizardValues, string>> };
 
 export function validateStep(stepIndex: number, values: WizardValues): StepValidation {
+  if (stepIndex === TEAM_STEP_INDEX) {
+    for (const m of values.members) {
+      const res = teamMemberSchema.safeParse(m);
+      if (!res.success) {
+        return { ok: false, errors: { members: res.error.issues[0]?.message ?? "Check the team member details" } };
+      }
+    }
+    const emails = values.members.map((m) => m.email.trim().toLowerCase());
+    if (new Set(emails).size !== emails.length) {
+      return { ok: false, errors: { members: "Each team member needs a different email" } };
+    }
+    if (emails.includes(values.email.trim().toLowerCase())) {
+      return { ok: false, errors: { members: "A team member can't reuse the primary contact's email" } };
+    }
+    return { ok: true };
+  }
   const fields = STEP_FIELDS[stepIndex];
   if (!fields) return { ok: true }; // review step
 

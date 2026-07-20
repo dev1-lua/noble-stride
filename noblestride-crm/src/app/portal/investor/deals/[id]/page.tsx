@@ -8,9 +8,10 @@ import { getViewpoint } from "@/server/viewpoint";
 import { label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
 import { MILESTONE_ORDER, MILESTONE_LABELS } from "@/lib/milestones";
+import { nextStepLabel } from "@/lib/next-step";
 import { TierBadge } from "@/components/portal/tier-badge";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
-import { expressInterest } from "./actions";
+import { expressInterest, requestNextStep, declineDeal } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -58,14 +59,14 @@ export default async function InvestorDealPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ interest?: string }>;
+  searchParams: Promise<{ interest?: string; request?: string }>;
 }) {
   const vp = await getViewpoint();
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
   const { id } = await params;
-  const { interest } = await searchParams;
+  const { interest, request } = await searchParams;
   const { deals } = await loadInvestorPortalData(prisma, vp.recordId);
   const deal = deals.find((d) => d.id === id);
   if (!deal) notFound();
@@ -251,6 +252,40 @@ export default async function InvestorDealPage({
                 );
               })}
             </ol>
+            {(() => {
+              const step = nextStepLabel(journey.own.stage);
+              return (
+                <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--border-subtle)] pt-4">
+                  {request && (
+                    <p className="w-full rounded-md bg-[var(--t-tag-bg-emerald)] px-3 py-2 text-sm font-medium text-[var(--t-tag-text-emerald)]">
+                      Request sent — the deal team will follow up.
+                    </p>
+                  )}
+                  {step && (
+                    <form action={requestNextStep}>
+                      <input type="hidden" name="dealId" value={deal.id} />
+                      <button
+                        type="submit"
+                        className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+                      >
+                        {step}
+                      </button>
+                    </form>
+                  )}
+                  {journey.own.stage !== "Declined" && journey.own.stage !== "Invested" && (
+                    <form action={declineDeal}>
+                      <input type="hidden" name="dealId" value={deal.id} />
+                      <button
+                        type="submit"
+                        className="rounded-md border border-[var(--t-tag-bg-rose)] px-4 py-2 text-sm font-medium text-[var(--t-tag-text-rose)] transition-colors hover:bg-[var(--t-tag-bg-rose)]"
+                      >
+                        Withdraw from this deal
+                      </button>
+                    </form>
+                  )}
+                </div>
+              );
+            })()}
           </CardBody>
         </Card>
       ) : null}

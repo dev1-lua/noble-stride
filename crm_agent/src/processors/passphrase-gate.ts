@@ -7,6 +7,7 @@ export const STAFF_COLLECTION = "staff_users";
 export type GateOutcome =
   | "proceed"
   | "verify"
+  | "verify_and_identify"
   | "challenge"
   | "unconfigured"
   | "ask_email"
@@ -18,14 +19,29 @@ export interface GateState {
 }
 
 const EMAIL_LIKE = /^\S+@\S+\.\S+$/;
+const EMAIL_TOKEN = /\S+@\S+\.\S+/; // first email-like token anywhere in the message
+
+// Split a reply into its email token (if any) and the remaining text, so a
+// single message can carry both the passphrase and the CRM email.
+export function extractCredentials(text: string): { email: string | null; rest: string } {
+  const match = text.match(EMAIL_TOKEN);
+  if (!match || match.index === undefined) return { email: null, rest: text.trim() };
+  const email = match[0].replace(/[.,;:!?]+$/, "");
+  const rest = (text.slice(0, match.index) + " " + text.slice(match.index + match[0].length))
+    .replace(/\s+/g, " ")
+    .trim();
+  return { email, rest };
+}
 
 /**
  * Pure decision function — no CRM calls, no side effects.
  *
- * Two gates in sequence:
- *  1. passphrase (verified) — unchanged from v1.
- *  2. staff-identify (staffEmail) — new in v2. Once verified, we need the
- *     user's CRM email once before they can act on the CRM's behalf.
+ * Two gates, but the first one now accepts both credentials at once:
+ *  1. passphrase (verified) — a reply may carry just the passphrase, or the
+ *     passphrase plus a CRM email in either order, in one message.
+ *  2. staff-identify (staffEmail) — once verified (without an email already
+ *     supplied), we need the user's CRM email once before they can act on
+ *     the CRM's behalf.
  */
 export function gateDecision(
   state: GateState,
@@ -34,7 +50,12 @@ export function gateDecision(
 ): GateOutcome {
   if (!state.verified) {
     if (!passphrase) return "unconfigured";
-    if (lastText !== undefined && lastText.trim() === passphrase) return "verify";
+    if (lastText === undefined) return "challenge";
+    const { email, rest } = extractCredentials(lastText);
+    const normalized = passphrase.trim();
+    if (rest === normalized || lastText.trim() === normalized) {
+      return email ? "verify_and_identify" : "verify";
+    }
     return "challenge";
   }
   if (state.staffEmail) return "proceed";
@@ -44,12 +65,12 @@ export function gateDecision(
 }
 
 const CHALLENGE =
-  "This assistant is for Noblestride staff only. Please reply with the team passphrase to continue.";
+  "This assistant is for Noblestride staff only. Please reply with the team passphrase AND your CRM email together in one message (e.g. `<passphrase> you@noblestride.capital`).";
 const WELCOME =
   "✅ You're verified. Ask me to summarize any client, investor, mandate, transaction, engagement, or partner — or ask \"what moved this week?\" for a pipeline digest.";
 const UNCONFIGURED = "The assistant isn't fully configured yet (missing team passphrase). Please contact the Noblestride admin.";
 const ASK_EMAIL =
-  "✅ Passphrase accepted. To act on your behalf in the CRM I need your CRM email — what is it?";
+  "✅ Passphrase accepted. To act on your behalf in the CRM I also need your CRM email — what is it?";
 const IDENTIFY_FAIL =
   "That email doesn't match an active CRM user — please check the spelling (it must be your CRM login email).";
 const IDENTIFY_ERROR = "I can't verify your email right now — please try again shortly.";
@@ -58,6 +79,12 @@ const identifyOk = (firstName: string) => {
   return name
     ? `✅ Thanks ${name} — you're set. Ask me for summaries, digests, or tell me what to update in the CRM.`
     : `✅ You're set. Ask me for summaries, digests, or tell me what to update in the CRM.`;
+};
+const verifyAndIdentifyOk = (firstName: string) => {
+  const name = firstName.trim();
+  return name
+    ? `✅ Verified! Welcome, ${name} — ask me for summaries, digests, or tell me what to update in the CRM.`
+    : `✅ Verified! Ask me for summaries, digests, or tell me what to update in the CRM.`;
 };
 
 export interface StaffResolution {
@@ -76,9 +103,18 @@ export interface GateDeps {
   updateUser: (patch: Record<string, unknown>) => Promise<unknown>;
 }
 
+/** Marks the user verified and registers them in staff_users once (shared by "verify" and "verify_and_identify"). */
+async function markVerified(deps: GateDeps, userId: string | undefined): Promise<void> {
+  await deps.updateUser({ verified: true });
+  if (userId) {
+    const existing = await deps.data.get(STAFF_COLLECTION, { userId: { $eq: userId } }, 1, 1);
+    if (existing.data.length === 0) await deps.data.create(STAFF_COLLECTION, { userId });
+  }
+}
+
 /**
  * Side-effecting core, DI'd for testing (mirrors weekly-digest.job's runWeeklyDigest).
- * The CRM call only ever happens on the "try_identify" branch.
+ * The CRM call happens on the "try_identify" and "verify_and_identify" branches.
  */
 export async function runGate(
   deps: GateDeps,
@@ -92,12 +128,23 @@ export async function runGate(
     case "proceed":
       return { action: "proceed" };
     case "verify": {
-      await deps.updateUser({ verified: true });
-      if (userId) {
-        const existing = await deps.data.get(STAFF_COLLECTION, { userId: { $eq: userId } }, 1, 1);
-        if (existing.data.length === 0) await deps.data.create(STAFF_COLLECTION, { userId });
-      }
+      await markVerified(deps, userId);
       return { action: "block", response: WELCOME };
+    }
+    case "verify_and_identify": {
+      await markVerified(deps, userId);
+      const { email } = extractCredentials(lastText!);
+      const resolvedEmail = email!.trim();
+      try {
+        const result = await deps.resolveStaff(resolvedEmail);
+        if (!result.ok) {
+          return { action: "block", response: IDENTIFY_FAIL };
+        }
+        await deps.updateUser({ staffEmail: resolvedEmail, staffName: result.firstName });
+        return { action: "block", response: verifyAndIdentifyOk(result.firstName ?? "") };
+      } catch {
+        return { action: "block", response: IDENTIFY_ERROR };
+      }
     }
     case "unconfigured":
       return { action: "block", response: UNCONFIGURED };

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AdvisorType, PartnerAgreementStatus, PartnerType, PartnerStatus } from "@prisma/client";
+import { optionalPhone } from "@/lib/schemas/phone";
 
 export const partnerCreateSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -13,7 +14,7 @@ export const partnerCreateSchema = z.object({
   advisorType: z.nativeEnum(AdvisorType).optional(),
   organization: z.string().trim().optional(),
   email: z.string().trim().optional(),
-  phone: z.string().trim().optional(),
+  phone: optionalPhone,
   feeSharingAgreement: z.boolean().optional(),
   feeSharingTerms: z.string().trim().optional(),
   partnerAgreementStatus: z.nativeEnum(PartnerAgreementStatus).optional(),

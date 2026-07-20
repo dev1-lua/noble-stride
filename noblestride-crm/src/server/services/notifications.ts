@@ -18,6 +18,9 @@ export type NotificationKind =
   | "new_registration"
   | "new_intake"
   | "interest_expressed"
+  // Investor portal self-serve actions (spec 2026-07-19 §8)
+  | "next_step_requested"
+  | "deal_declined"
   // Proactive staff alerts (cron sweep, client feedback 2026-07)
   | "stalled_engagement"
   | "deal_stuck"

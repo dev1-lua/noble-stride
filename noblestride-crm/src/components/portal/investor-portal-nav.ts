@@ -27,6 +27,12 @@ export const INVESTOR_NAV = [
     title: "Fund Profile",
     subtitle: "Preferences that drive deal matching",
   },
+  {
+    href: "/portal/investor/team",
+    label: "Team",
+    title: "Team",
+    subtitle: "Colleagues with access to this workspace",
+  },
 ] as const;
 
 export type InvestorNavItem = (typeof INVESTOR_NAV)[number];

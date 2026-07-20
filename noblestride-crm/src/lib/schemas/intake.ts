@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Sector, Geography } from "@prisma/client";
 import { isCorporateEmail } from "@/lib/corporate-email";
+import { requiredPhone } from "@/lib/schemas/phone";
 
 /** Sectors that require a loan-book figure on the financial-snapshot step (intake spec §3.2). */
 export const LOAN_BOOK_SECTORS = ["FinancialServices", "Banking"] as const;
@@ -59,7 +60,7 @@ export const intakeSchema = z.object({
     .trim()
     .email("Enter a valid email address")
     .refine(isCorporateEmail, "Please use your corporate email address — free providers (Gmail, Yahoo, …) are not accepted"),
-  phone: z.string().trim().min(7, "Phone number is required"),
+  phone: requiredPhone("Phone number is required"),
 
   // Step 3 — Financial snapshot
   revenueUsd: requiredUsd("Revenue for the last full year is required"),

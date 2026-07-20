@@ -13,12 +13,13 @@ const filled: WizardValues = {
   ticketMin: "500000",
   ticketMax: "5000000",
   currency: "USD",
+  members: [],
 };
 
 describe("wizard step config", () => {
-  it("has 5 input steps + a review step", () => {
+  it("has 5 input steps + a team step + a review step", () => {
     expect(STEP_FIELDS.length).toBe(5);
-    expect(STEP_COUNT).toBe(6);
+    expect(STEP_COUNT).toBe(7);
   });
 });
 
@@ -62,7 +63,17 @@ describe("validateStep", () => {
     expect(validateStep(4, { ...filled, ticketMax: "-5" }).ok).toBe(false);
   });
 
-  it("review step (index 5) has nothing to validate", () => {
+  it("team step (index 5) is valid with no members", () => {
     expect(validateStep(5, EMPTY_WIZARD_VALUES).ok).toBe(true);
+  });
+
+  it("team step (index 5) rejects a duplicate/reused member email", () => {
+    expect(
+      validateStep(5, { ...filled, members: [{ name: "A", email: filled.email, phone: "" }] }).ok,
+    ).toBe(false);
+  });
+
+  it("review step (index 6) has nothing to validate", () => {
+    expect(validateStep(6, EMPTY_WIZARD_VALUES).ok).toBe(true);
   });
 });

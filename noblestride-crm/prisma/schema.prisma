@@ -1368,6 +1368,7 @@ enum AccountStatus {
 enum AuthTokenPurpose {
   RESET_PASSWORD
   VERIFY_EMAIL
+  INVITE
 }
 
 enum AuthOtpPurpose {

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
 import { updateInvestor } from "@/server/services/investors";
 import type { InvestorUpdateInput } from "@/lib/schemas/investor";
+import { optionalPhone } from "@/lib/schemas/phone";
 
 function str(fd: FormData, key: string): string | undefined {
   const v = fd.get(key);
@@ -30,6 +31,16 @@ export async function saveFundProfile(formData: FormData): Promise<void> {
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
   const investorId = vp.recordId as string;
+
+  // Validate the contact phone BEFORE any write — a bad phone must not leave
+  // the §1–§7 fields below partially saved while the error banner implies
+  // nothing happened.
+  const contactPhoneRaw = str(formData, "contactPhone");
+  const contactPhoneCheck = optionalPhone.safeParse(contactPhoneRaw);
+  if (!contactPhoneCheck.success) {
+    redirect("/portal/investor/profile?error=phone");
+  }
+  const contactPhone = contactPhoneCheck.data;
 
   // ── §1–§7 profile fields — validated by updateInvestor's Zod schema ──────
   const input = {
@@ -69,7 +80,6 @@ export async function saveFundProfile(formData: FormData): Promise<void> {
   // ── §6 Point of Contact — update or create the primary contact Person ────
   const contactName = str(formData, "contactName") ?? "";
   const contactEmail = str(formData, "contactEmail");
-  const contactPhone = str(formData, "contactPhone");
 
   if (contactName || contactEmail || contactPhone) {
     const existing = await prisma.person.findFirst({
