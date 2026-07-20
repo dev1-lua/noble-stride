@@ -1,0 +1,11 @@
+agent:
+  agentId: baseAgent_agent_1784533792964_cdn1jgbrd
+  orgId: 1e5359cc-c465-44cb-b040-44e338433411
+skills:
+  - name: website-intake
+    skillId: aacaab73-1530-4263-83f9-857ab61b9512
+    version: 1.0.1
+backup:
+  activeVersion: 1
+  lastHash: d0418dd561a8e28cd58a3623e8d7f028140c785a6783f176baf56a4402063088
+  lastPushedAt: '2026-07-20T07:52:42.057Z'

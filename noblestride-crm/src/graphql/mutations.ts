@@ -7,7 +7,7 @@ import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, AdvisoryInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, LogClientMessageInput, InvestorUpdateSubmitInput, InvestorCommunicationInput, OutreachDraftsInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, AdvisoryInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, WebsiteIntakeInput, LogClientMessageInput, InvestorUpdateSubmitInput, InvestorCommunicationInput, OutreachDraftsInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor, markInvestorCriteriaVerified } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
@@ -31,7 +31,7 @@ import { sendEsignEnvelope } from "@/server/services/esign";
 import type { ESignKind } from "@/server/integrations/esign/provider";
 import { shareDocumentViaBox } from "@/server/services/docshare";
 import { scheduleMeeting } from "@/server/services/meetings";
-import { submitClientIntake, logInboundClientMessage, type LogClientMessageInput as LogClientMessageInputShape } from "@/server/services/client-intake";
+import { submitClientIntake, submitWebsiteClientIntake, logInboundClientMessage, type LogClientMessageInput as LogClientMessageInputShape } from "@/server/services/client-intake";
 import { requestClientStatusOtp, verifyClientStatusOtp } from "@/server/services/client-status";
 import { prepareAgentWrite, commitAgentWrite, cancelAgentWrite } from "@/server/services/agent-write";
 import { submitInvestorUpdate, logInvestorCommunication } from "@/server/services/investor-agent";
@@ -668,6 +668,24 @@ builder.mutationFields((t) => ({
       // GraphQL optionals arrive as null; intakeSubmitSchema expects absent.
       const raw = Object.fromEntries(Object.entries(intake).filter(([, v]) => v != null));
       return submitClientIntake(raw, { conversationSummary, qualificationNotes, attachmentUrls });
+    },
+  }),
+  // ── Website Intake & Qualification Agent (SOW §10) — automation-only, minimal ack ──
+  submitWebsiteIntake: t.field({
+    type: AgentAckRef,
+    nullable: false,
+    args: { input: t.arg({ type: WebsiteIntakeInput, required: true }) },
+    resolve: async (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      const { conversationSummary, qualificationNotes, attachmentUrls, ...intake } =
+        args.input as Record<string, unknown> & {
+          conversationSummary: string;
+          qualificationNotes?: string | null;
+          attachmentUrls?: string[] | null;
+        };
+      // GraphQL optionals arrive as null; websiteIntakeSchema expects absent.
+      const raw = Object.fromEntries(Object.entries(intake).filter(([, v]) => v != null));
+      return submitWebsiteClientIntake(raw, { conversationSummary, qualificationNotes, attachmentUrls });
     },
   }),
   logInboundClientMessage: t.field({
