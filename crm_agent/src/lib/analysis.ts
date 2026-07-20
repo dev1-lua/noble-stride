@@ -32,25 +32,50 @@ function hasItems(v: unknown): boolean {
   return Array.isArray(v) && v.length > 0;
 }
 
+/**
+ * The CRM `activities` relation has no orderBy (server `t.relation("activities")`),
+ * so the server may return activities in any order (commonly oldest-first, insertion
+ * order). We must not assume `activities[0]` is the most recent — scan every entry
+ * and take the MAX parseable `occurredAt`. Entries with missing/unparseable dates are
+ * ignored; if none are parseable, there is no dated activity (returns null).
+ */
+function latestActivityIso(activities: unknown): string | null {
+  if (!Array.isArray(activities)) return null;
+  let bestIso: string | null = null;
+  let bestT = -Infinity;
+  for (const a of activities) {
+    const iso = (a as Record<string, unknown> | null | undefined)?.occurredAt;
+    if (typeof iso !== "string") continue;
+    const t = new Date(iso).getTime();
+    if (Number.isNaN(t)) continue;
+    if (t > bestT) { bestT = t; bestIso = iso; }
+  }
+  return bestIso;
+}
+
+const STAGED_RECORD_TYPES: ReadonlySet<RecordType> = new Set(["mandate", "transaction", "engagement"]);
+
 /** Deal-health checklist. Facts drive findings; "likely stalled" style items are severity warn/risk but phrased as signals, not verdicts, downstream. */
 export function assessDealHealth(recordType: RecordType, record: Record<string, unknown>, now: Date = new Date()): DealHealthResult {
   const findings: HealthFinding[] = [];
   const depth: DepthDimension[] = [];
 
   const activities = record.activities;
-  const latestActivityIso = Array.isArray(activities) && activities.length
-    ? String((activities[0] as Record<string, unknown>).occurredAt ?? "")
-    : null;
 
-  // Stalled stage: no stage movement for > STALE_DAYS
-  const stageIdle = idleDays(String(record.stageEnteredAt ?? record.updatedAt ?? ""), now);
-  if (stageIdle !== null && stageIdle > STALE_DAYS) {
-    findings.push({ area: "stage", severity: stageIdle > STALE_DAYS * 2 ? "risk" : "warn",
-      detail: `In its current stage for ~${stageIdle} days (signal of a stall).` });
+  // Stalled stage: no stage movement for > STALE_DAYS. Only record types with an
+  // actual pipeline stage are eligible — investors/partners/clients have no
+  // `stage`, and falling back to `updatedAt` for them would mislabel a plain
+  // "hasn't been edited recently" as a stage-stall signal.
+  if (STAGED_RECORD_TYPES.has(recordType)) {
+    const stageIdle = idleDays(String(record.stageEnteredAt ?? record.updatedAt ?? ""), now);
+    if (stageIdle !== null && stageIdle > STALE_DAYS) {
+      findings.push({ area: "stage", severity: stageIdle > STALE_DAYS * 2 ? "risk" : "warn",
+        detail: `In its current stage for ~${stageIdle} days (signal of a stall).` });
+    }
   }
 
   // No recent activity
-  const actIdle = idleDays(latestActivityIso, now);
+  const actIdle = idleDays(latestActivityIso(activities), now);
   if (!hasItems(activities) || (actIdle !== null && actIdle > STALE_DAYS)) {
     findings.push({ area: "activity", severity: "warn",
       detail: hasItems(activities) ? `No logged activity for ~${actIdle} days.` : "No activity has been logged." });

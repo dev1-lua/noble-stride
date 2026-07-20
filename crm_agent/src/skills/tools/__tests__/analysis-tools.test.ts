@@ -67,4 +67,21 @@ describe("MatchInvestorsTool", () => {
     expect(res.status).toBe("ok");
     if (res.status === "ok") expect(res.summary).toContain("FundX");
   });
+
+  it("appends a self-complete go-deeper invitation to the summary when there are more than 8 matches", async () => {
+    const matches = Array.from({ length: 9 }, (_, i) => ({
+      investorId: `i${i}`, name: `Fund${i}`, contactName: null, matchReasons: ["sector"], hasExistingEngagement: false,
+    }));
+    const crm = fakeCrm({
+      globalSearch: { globalSearch: [{ id: "tx1", type: "Transaction", title: "Acme Raise", href: "/transactions/tx1" }] },
+      AgentMatchInvestors: { matchInvestorsForTransaction: matches },
+    });
+    const tool = new MatchInvestorsTool({ crm, generate });
+    const res = await tool.execute({ transactionQuery: "Acme" });
+    expect(res.status).toBe("ok");
+    if (res.status === "ok") {
+      expect(res.depth.length).toBeGreaterThan(0);
+      expect(res.summary).toMatch(/remaining 1 match/i);
+    }
+  });
 });

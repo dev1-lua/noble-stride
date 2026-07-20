@@ -58,6 +58,53 @@ describe("assessDealHealth — mandate & investor", () => {
   });
 });
 
+describe("assessDealHealth — activity recency (unordered `activities` relation)", () => {
+  it("does NOT flag stale activity when the newest activity is recent, even if it is NOT first in the array", () => {
+    // The CRM `activities` relation has no orderBy, so the server may return oldest-first.
+    // activities[0] here is 60 days old, but a 1-day-old activity is also present.
+    const res = assessDealHealth("transaction", {
+      name: "Busoga Raise", stage: "DueDiligence", stageEnteredAt: daysAgo(3), updatedAt: daysAgo(1),
+      targetRaise: 1_000_000, engagements: [{ name: "e1" }],
+      activities: [{ occurredAt: daysAgo(60) }, { occurredAt: daysAgo(1) }],
+    }, NOW);
+    expect(res.findings.map((f) => f.area)).not.toContain("activity");
+  });
+
+  it("DOES flag stale activity when every activity is older than STALE_DAYS, regardless of order", () => {
+    const res = assessDealHealth("transaction", {
+      name: "Busoga Raise", stage: "DueDiligence", stageEnteredAt: daysAgo(3), updatedAt: daysAgo(1),
+      targetRaise: 1_000_000, engagements: [{ name: "e1" }],
+      activities: [{ occurredAt: daysAgo(45) }, { occurredAt: daysAgo(60) }],
+    }, NOW);
+    expect(res.findings.map((f) => f.area)).toContain("activity");
+  });
+});
+
+describe("assessDealHealth — stalled-stage gating by record type", () => {
+  it("does NOT flag 'stage' for an investor even when long unmodified (no pipeline stage exists)", () => {
+    const res = assessDealHealth("investor", {
+      name: "FundZ", investorType: "PE", sectorFocus: ["Fintech"], ticketMin: 100_000, ticketMax: 1_000_000,
+      updatedAt: daysAgo(90), engagements: [], activities: [{ occurredAt: daysAgo(1) }],
+    }, NOW);
+    expect(res.findings.map((f) => f.area)).not.toContain("stage");
+  });
+
+  it("does NOT flag 'stage' for a partner even when long unmodified (no pipeline stage exists)", () => {
+    const res = assessDealHealth("partner", {
+      name: "PartnerCo", updatedAt: daysAgo(90), activities: [{ occurredAt: daysAgo(1) }],
+    }, NOW);
+    expect(res.findings.map((f) => f.area)).not.toContain("stage");
+  });
+
+  it("still flags 'stage' for a transaction whose stage is genuinely stale", () => {
+    const res = assessDealHealth("transaction", {
+      name: "Busoga Raise", stage: "Outreach", stageEnteredAt: daysAgo(60), updatedAt: daysAgo(45),
+      targetRaise: 1_000_000, engagements: [{ name: "e1" }], activities: [{ occurredAt: daysAgo(1) }],
+    }, NOW);
+    expect(res.findings.map((f) => f.area)).toContain("stage");
+  });
+});
+
 describe("analyzePipeline", () => {
   const columns = [
     { stage: "Outreach", label: "Outreach", items: [

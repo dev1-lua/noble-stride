@@ -11,8 +11,7 @@ export const analysisSkill = new LuaSkill({
 - Use analyze_pipeline when the user asks about the pipeline as a whole ("what's stalling?", "where's the value concentrated?", "how healthy is the transaction pipeline?").
 - Use match_investors when the user asks which investors fit a transaction.
 - If a tool returns "ambiguous", list the candidates and ask which one; then call again with the chosen id.
-- Relay the tool's summary as the core answer. It already contains the insight layer.
-- DEPTH: each tool returns a "depth" list of dimensions with more data. If it is NON-EMPTY, end with ONE short, natural, freshly-worded invitation to go deeper into 1–3 of those dimensions, naming this specific record — never a fixed template, never a generic sign-off. If "depth" is EMPTY, do NOT add any such offer.
+- Relay the tool's summary as the complete answer. It already contains the insight layer AND, whenever deeper data exists (the tool's "depth" is non-empty), a tailored go-deeper invitation baked in — do NOT append a second offer, a fixed template, or a generic "anything else?" closer on top of it. If "depth" is empty, the summary already omits any such offer — don't add one.
 - Never expose raw record ids; use names + the deep link when present. Facts only — never invent.`,
   tools: [new DealHealthTool(), new AnalyzePipelineTool(), new MatchInvestorsTool()],
 });

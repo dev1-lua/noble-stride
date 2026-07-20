@@ -37,7 +37,14 @@ export class MatchInvestorsTool implements LuaTool {
 
     const lines = matches.slice(0, 8).map((m) =>
       `- **${m.name}**${m.contactName ? ` (${m.contactName})` : ""} — ${m.matchReasons.join(", ")}${m.hasExistingEngagement ? " · already engaged" : ""}`);
-    const depth: DepthDimension[] = matches.length > 8 ? [{ dimension: "more_matches", label: `the remaining ${matches.length - 8} matches` }] : [];
-    return { status: "ok" as const, summary: `Investors matching this transaction:\n${lines.join("\n")}`, depth, link: `${crm.baseUrl}${resolution.result.href}` };
+    const remaining = matches.length - 8;
+    const depth: DepthDimension[] = remaining > 0 ? [{ dimension: "more_matches", label: `the remaining ${remaining} matches` }] : [];
+    // This tool builds its summary deterministically (no generate() pass), so — unlike
+    // DealHealthTool/AnalyzePipelineTool, whose prompts bake in a tailored go-deeper line —
+    // it must append its own single invitation here when more matches exist, so the
+    // summary is self-complete and the skill layer never needs to add a second one.
+    const summary = `Investors matching this transaction:\n${lines.join("\n")}` +
+      (remaining > 0 ? `\n\nWant to see the remaining ${remaining} match${remaining === 1 ? "" : "es"}?` : "");
+    return { status: "ok" as const, summary, depth, link: `${crm.baseUrl}${resolution.result.href}` };
   }
 }
