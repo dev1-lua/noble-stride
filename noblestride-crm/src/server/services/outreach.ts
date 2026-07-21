@@ -131,6 +131,28 @@ export async function listOutreachQueue(): Promise<OutreachQueueItem[]> {
   }));
 }
 
+export interface OutreachDraftFilter {
+  transactionId?: string;
+  investorId?: string;
+  status?: string;
+}
+
+/**
+ * Flat read across ALL draft statuses (incl. Sent/Rejected) — the agent-facing
+ * counterpart to listOutreachQueue, which is scoped to the human review queue.
+ */
+export async function listOutreachDrafts(filter?: OutreachDraftFilter) {
+  const where: Prisma.OutreachDraftWhereInput = {};
+  if (filter?.transactionId) where.transactionId = filter.transactionId;
+  if (filter?.investorId) where.investorId = filter.investorId;
+  if (filter?.status) where.status = filter.status as Prisma.OutreachDraftWhereInput["status"];
+  return prisma.outreachDraft.findMany({
+    where,
+    include: { transaction: true, investor: true, person: true },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 async function loadReviewableDraft(id: string) {
   const draft = await prisma.outreachDraft.findUnique({
     where: { id },

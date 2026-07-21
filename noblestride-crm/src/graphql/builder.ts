@@ -39,6 +39,7 @@ import {
   NdaType,
   OnboardingStatus,
   OrgRole,
+  OutreachDraftStatus,
   PartnerAgreementStatus,
   PartnerFeeStatus,
   PartnerStatus,
@@ -100,6 +101,7 @@ export const InterestLevelEnum = builder.enumType(InterestLevel, { name: "Intere
 export const MilestoneKeyEnum = builder.enumType(MilestoneKey, { name: "MilestoneKey" });
 export const NdaTypeEnum = builder.enumType(NdaType, { name: "NdaType" });
 export const DisbursementStatusEnum = builder.enumType(DisbursementStatus, { name: "DisbursementStatus" });
+export const OutreachDraftStatusEnum = builder.enumType(OutreachDraftStatus, { name: "OutreachDraftStatus" });
 export const InvestorEngagementClassificationEnum = builder.enumType(InvestorEngagementClassification, { name: "InvestorEngagementClassification" });
 export const InvestorNdaStatusEnum = builder.enumType(InvestorNdaStatus, { name: "InvestorNdaStatus" });
 export const AdvisorTypeEnum = builder.enumType(AdvisorType, { name: "AdvisorType" });
