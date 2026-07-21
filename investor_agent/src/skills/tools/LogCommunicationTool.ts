@@ -3,6 +3,7 @@ import { z } from "zod";
 import { CrmClient, crmClientFromEnv } from "../../lib/crm-client";
 import { LOG_COMMUNICATION } from "../../lib/queries";
 import { INTERACTION_TYPES } from "../../lib/enums";
+import { CHANNEL_UNVERIFIED, verifiedSender } from "../../lib/request-sender";
 
 export default class LogCommunicationTool implements LuaTool {
   name = "log_communication";
@@ -17,9 +18,15 @@ export default class LogCommunicationTool implements LuaTool {
     summary: z.string().min(5).describe("2-3 sentence factual summary of the message"),
   });
 
-  constructor(private deps?: { crm: CrmClient }) {}
+  constructor(private deps?: { crm?: CrmClient; transportFrom?: () => string | undefined }) {}
 
   async execute(input: z.infer<typeof this.inputSchema>) {
+    // SECURITY: only a transport-verified email sender may write to an investor's
+    // activity log — off-email the investorId is a model-supplied guess any
+    // visitor can steer (2026-07-21 prod QA).
+    const resolveFrom = this.deps?.transportFrom ?? verifiedSender;
+    if (!resolveFrom()) return { ok: false as const, ...CHANNEL_UNVERIFIED };
+
     const crm = this.deps?.crm ?? crmClientFromEnv();
     const data = await crm.query<{ logInvestorCommunication: { ok: boolean } }>(LOG_COMMUNICATION, {
       input: {

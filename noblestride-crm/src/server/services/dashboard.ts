@@ -28,6 +28,14 @@ export async function dashboardStats(): Promise<DashboardStats> {
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const { start: qStart } = quarterRange(now);
   const ytdStart = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+  // Each delta must count a SUBSET of its value's population, or the card reads
+  // "96 active, up 110 in 30 days" (2026-07-21 QA). Two rules enforce that:
+  // (1) deltas carry the same stage/status filter as their value; (2) when the
+  // value's own window is shorter than 30 days (early in a quarter/year), the
+  // delta window is clamped to the value's window.
+  const later = (a: Date, b: Date) => (a.getTime() >= b.getTime() ? a : b);
+  const qtrDeltaStart = later(thirtyDaysAgo, qStart);
+  const ytdDeltaStart = later(thirtyDaysAgo, ytdStart);
 
   const [
     activeMandatesValue,
@@ -41,12 +49,12 @@ export async function dashboardStats(): Promise<DashboardStats> {
   ] = await Promise.all([
     // active mandates: stage IN ACTIVE_MANDATE_STAGES
     prisma.mandate.count({ where: { stage: { in: ACTIVE_MANDATE_STAGES } } }),
-    // delta: mandates created in the last 30d
-    prisma.mandate.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+    // delta: still-active mandates created in the last 30d (subset of value)
+    prisma.mandate.count({ where: { stage: { in: ACTIVE_MANDATE_STAGES }, createdAt: { gte: thirtyDaysAgo } } }),
     // active transactions: stage NOT IN CLOSED_TXN_STAGES
     prisma.transaction.count({ where: { stage: { notIn: CLOSED_TXN_STAGES } } }),
-    // delta: transactions created in the last 30d
-    prisma.transaction.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+    // delta: still-active transactions created in the last 30d (subset of value)
+    prisma.transaction.count({ where: { stage: { notIn: CLOSED_TXN_STAGES }, createdAt: { gte: thirtyDaysAgo } } }),
     // investors engaged this quarter: distinct investorId in Activity within quarterRange
     prisma.activity.findMany({
       where: {
@@ -56,11 +64,12 @@ export async function dashboardStats(): Promise<DashboardStats> {
       distinct: ["investorId"],
       select: { investorId: true },
     }),
-    // delta: distinct investors with activity in last 30d
+    // delta: distinct investors with activity in the last 30d, clamped to the
+    // quarter so it stays a subset of the QTD value
     prisma.activity.findMany({
       where: {
         investorId: { not: null },
-        occurredAt: { gte: thirtyDaysAgo, lte: now },
+        occurredAt: { gte: qtrDeltaStart, lte: now },
       },
       distinct: ["investorId"],
       select: { investorId: true },
@@ -73,11 +82,12 @@ export async function dashboardStats(): Promise<DashboardStats> {
       },
       _sum: { targetRaise: true },
     }),
-    // capital raised delta: ClosedWon with closedAt in last 30d
+    // capital raised delta: ClosedWon with closedAt in the last 30d, clamped to
+    // the year so it stays a subset of the YTD value
     prisma.transaction.aggregate({
       where: {
         stage: "ClosedWon",
-        closedAt: { gte: thirtyDaysAgo, lte: now },
+        closedAt: { gte: ytdDeltaStart, lte: now },
       },
       _sum: { targetRaise: true },
     }),

@@ -3,6 +3,12 @@ import { z } from "zod";
 import { CrmClient, crmClientFromEnv } from "../../lib/crm-client";
 import { SUBMIT_INVESTOR_UPDATE } from "../../lib/queries";
 import { SECTORS, GEOGRAPHIES, INSTRUMENTS, INVESTMENT_STAGES, INVESTOR_STATUSES } from "../../lib/enums";
+import { CHANNEL_UNVERIFIED, verifiedSender } from "../../lib/request-sender";
+
+// Contact fields live on the Person record — the CRM only accepts them when a
+// personId accompanies the submission, otherwise it rejects the whole update
+// ("Field \"firstName\" is not allowed in an investor proposed change").
+const PERSON_FIELDS = ["firstName", "lastName", "email", "phone", "jobTitle"] as const;
 
 const changesSchema = z
   .object({
@@ -18,7 +24,7 @@ const changesSchema = z
     esgFocus: z.string().optional(),
     investmentMandate: z.string().optional(),
     feedback: z.string().optional(),
-    // Contact fields (only when contactPersonId is provided):
+    // Contact fields (REQUIRE contactPersonId — they belong to the contact person, not the investor):
     firstName: z.string().optional(),
     lastName: z.string().optional(),
     email: z.string().email().optional(),
@@ -30,19 +36,39 @@ const changesSchema = z
 export default class CaptureInvestorUpdateTool implements LuaTool {
   name = "capture_investor_update";
   description =
-    "Record changes an investor communicated to their criteria, status, or contact details. Creates a PENDING change the Noblestride team must confirm — nothing is written to the record immediately. Tell the investor their update was noted and will be reflected after review.";
+    "Record changes an investor communicated to their criteria, status, or contact details. Creates a PENDING change the Noblestride team must confirm — nothing is written to the record immediately. Contact-detail changes (name, email, phone, job title) apply to the contact person and REQUIRE contactPersonId. Tell the investor their update was noted and will be reflected after review.";
 
-  inputSchema = z.object({
-    investorId: z.string().describe("Investor id from identify_investor"),
-    contactPersonId: z.string().optional().describe("Person id, only when changing contact details"),
-    changes: changesSchema,
-    summary: z.string().min(5).describe("One-sentence summary of what changed, in plain English"),
-    senderEmail: z.string().email().describe("The sender's email address, for the audit trail"),
-  });
+  inputSchema = z
+    .object({
+      investorId: z.string().describe("Investor id from identify_investor"),
+      contactPersonId: z
+        .string()
+        .optional()
+        .describe("Person id of the contact — REQUIRED when changing contact details (name, email, phone, job title)"),
+      changes: changesSchema,
+      summary: z.string().min(5).describe("One-sentence summary of what changed, in plain English"),
+    })
+    .superRefine((val, ctx) => {
+      const personFields = PERSON_FIELDS.filter((f) => val.changes[f] !== undefined);
+      if (personFields.length > 0 && !val.contactPersonId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["contactPersonId"],
+          message: `Contact fields (${personFields.join(", ")}) belong to the contact person — provide contactPersonId (identify_investor / the CRM match returns it) or the CRM will reject the update.`,
+        });
+      }
+    });
 
-  constructor(private deps?: { crm: CrmClient }) {}
+  constructor(private deps?: { crm?: CrmClient; transportFrom?: () => string | undefined }) {}
 
   async execute(input: z.infer<typeof this.inputSchema>) {
+    // SECURITY: writes are queued for review, but the target record and the audit
+    // trail must still be bound to a transport-verified sender — off-email any
+    // visitor could file updates against an arbitrary investor's review queue.
+    const resolveFrom = this.deps?.transportFrom ?? verifiedSender;
+    const transportFrom = resolveFrom();
+    if (!transportFrom) return { ok: false as const, ...CHANNEL_UNVERIFIED };
+
     const entries = Object.entries(input.changes).filter(([, v]) => v !== undefined);
     if (entries.length === 0) throw new Error("Provide at least one changed field");
     const crm = this.deps?.crm ?? crmClientFromEnv();
@@ -52,7 +78,7 @@ export default class CaptureInvestorUpdateTool implements LuaTool {
         personId: input.contactPersonId ?? null,
         proposedFieldsJson: JSON.stringify(Object.fromEntries(entries)),
         summary: input.summary,
-        sourceEmail: input.senderEmail,
+        sourceEmail: transportFrom,
       },
     });
     return { ok: data.submitInvestorUpdate.ok === true, note: "Queued for Noblestride team review — not yet applied." };

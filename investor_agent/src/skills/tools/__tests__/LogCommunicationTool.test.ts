@@ -5,7 +5,10 @@ import type { CrmClient } from "../../../lib/crm-client";
 describe("log_communication", () => {
   it("logs an inbound email", async () => {
     const query = vi.fn(async () => ({ logInvestorCommunication: { ok: true } }));
-    const tool = new LogCommunicationTool({ crm: { baseUrl: "http://x", query } as unknown as CrmClient });
+    const tool = new LogCommunicationTool({
+      crm: { baseUrl: "http://x", query } as unknown as CrmClient,
+      transportFrom: () => "jo@acme.fund",
+    });
     const out = await tool.execute({
       investorId: "inv1",
       direction: "Inbound",

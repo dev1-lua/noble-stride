@@ -1,6 +1,6 @@
 {
-  "lastHash": "85674875ac4fca27784a4d608e387be5058b00799e53772002be6c3a4ac83f7c",
-  "lastPushedAt": "2026-07-21T07:22:12.828Z",
+  "lastHash": "3307f2ca33c9e99e554d9984b3b1c35c05d376d7abc9c0375b903dd01b93c615",
+  "lastPushedAt": "2026-07-21T07:41:58.632Z",
   "files": [
     {
       "relativePath": "env.example",
@@ -8,7 +8,7 @@
     },
     {
       "relativePath": "lua.skill.yaml",
-      "hash": "62a85ee75dac0ca9"
+      "hash": "cbc320ecaa442952"
     },
     {
       "relativePath": "package.json",
@@ -68,7 +68,7 @@
     },
     {
       "relativePath": "src/skills/partner-selfservice.skill.ts",
-      "hash": "5db5028d5eff9fb1"
+      "hash": "51589fd35e376578"
     },
     {
       "relativePath": "src/skills/referral.skill.ts",
@@ -132,7 +132,7 @@
     },
     {
       "relativePath": "src/skills/tools/VerifyPartnerCodeTool.ts",
-      "hash": "022d8b66ac4fccce"
+      "hash": "a2102b89461e86ae"
     },
     {
       "relativePath": "tsconfig.json",

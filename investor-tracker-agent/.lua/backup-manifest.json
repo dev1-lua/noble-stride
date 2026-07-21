@@ -1,6 +1,6 @@
 {
-  "lastHash": "3737b92067ed0b967a5b656ab0b235603d1990856414a7aa96ae1f4f0156343b",
-  "lastPushedAt": "2026-07-21T06:40:52.293Z",
+  "lastHash": "8dfbe9a44870b054257602662155240bcf6234264612f0066616eb03f558acae",
+  "lastPushedAt": "2026-07-21T15:36:49.083Z",
   "files": [
     {
       "relativePath": "env.example",
@@ -8,7 +8,7 @@
     },
     {
       "relativePath": "lua.skill.yaml",
-      "hash": "ff3abd5e1a583539"
+      "hash": "c04e4fc2d1e9a919"
     },
     {
       "relativePath": "package.json",
@@ -40,7 +40,7 @@
     },
     {
       "relativePath": "src/lib/format.ts",
-      "hash": "ff6a858232cf32fc"
+      "hash": "1a7ab305204c7937"
     },
     {
       "relativePath": "src/lib/guards.ts",
@@ -48,7 +48,7 @@
     },
     {
       "relativePath": "src/lib/queries.ts",
-      "hash": "d27a1a16096e16af"
+      "hash": "f8fea718f05e01ef"
     },
     {
       "relativePath": "src/lib/record-lookup.ts",
@@ -64,23 +64,27 @@
     },
     {
       "relativePath": "src/lib/tracker-runner.ts",
-      "hash": "015aee23c92c17e9"
+      "hash": "138d1cf8053c2f64"
     },
     {
       "relativePath": "src/persona.ts",
-      "hash": "8e49709a03e02eba"
+      "hash": "059c0909617097ac"
     },
     {
       "relativePath": "src/processors/passphrase-gate.ts",
-      "hash": "2b3e7d0778e359ee"
+      "hash": "2db4cecd033ff341"
     },
     {
       "relativePath": "src/skills/tools/CreateFollowupTaskTool.ts",
       "hash": "e86111544fb4c6ce"
     },
     {
+      "relativePath": "src/skills/tools/DashboardSnapshotTool.ts",
+      "hash": "99fbeaeb767291c6"
+    },
+    {
       "relativePath": "src/skills/tools/DisbursementSummaryTool.ts",
-      "hash": "f66689961d7529b6"
+      "hash": "e4253664f784e746"
     },
     {
       "relativePath": "src/skills/tools/EngagementHistoryTool.ts",
@@ -100,7 +104,11 @@
     },
     {
       "relativePath": "src/skills/tools/ListDealsTool.ts",
-      "hash": "3761830dca07b232"
+      "hash": "40c1c2819d8c2b43"
+    },
+    {
+      "relativePath": "src/skills/tools/OutreachStatusTool.ts",
+      "hash": "ee6787cf7e087e69"
     },
     {
       "relativePath": "src/skills/tools/PipelineDigestTool.ts",
@@ -128,7 +136,7 @@
     },
     {
       "relativePath": "src/skills/tracker.skill.ts",
-      "hash": "cf3d5a2883ea0e74"
+      "hash": "f584c1eb437d1606"
     },
     {
       "relativePath": "tsconfig.json",

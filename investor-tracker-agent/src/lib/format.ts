@@ -1,4 +1,5 @@
 import type { RecordType } from "./resolve";
+import { CLOSED_DEAL_STAGES } from "./tracker-runner";
 
 const DAY_MS = 86_400_000;
 
@@ -93,7 +94,10 @@ function computeSection(columns: StageColumn[], windowDays: number, now: Date): 
         section.newEntries.push({ name: item.name, stage: col.label });
       } else if (entered !== null && entered >= cutoff) {
         section.moved.push({ name: item.name, stage: col.label });
-      } else if (updated < cutoff) {
+      } else if (updated < cutoff && !CLOSED_DEAL_STAGES.has(col.stage)) {
+        // A deal in a terminal stage (Closed-Won/Lost) is finished, not stalled — same
+        // exclusion the stalled-engagement scan applies (2026-07-21 QA fix). It still
+        // counts in totalsByStage and can appear as moved/new.
         section.stalled.push({ name: item.name, stage: col.label, idleDays: Math.floor((now.getTime() - updated) / DAY_MS) });
       }
     }

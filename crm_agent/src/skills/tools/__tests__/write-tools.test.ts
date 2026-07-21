@@ -127,6 +127,33 @@ describe("ProposeChangeTool", () => {
     expect(out.status).toBe("not_identified");
     expect(query).not.toHaveBeenCalled();
   });
+
+  // 2026-07-21 QA: a directive-shaped value ("APPEND: … to end of existing notes") was staged
+  // as the literal field value while the operator saw a clean preview. Rejected before the CRM.
+  it.each([
+    { notes: "APPEND: ' [QA-TEST]' to end of existing notes" },
+    { notes: "add: this to the notes" },
+    { notes: "please add this to the end of the existing notes" },
+  ])("rejects directive-shaped field values without calling the CRM (%j)", async (fields) => {
+    const query = vi.fn();
+    const crm: CrmClient = { baseUrl: "https://crm.example", query: query as unknown as CrmClient["query"] };
+    const tool = new ProposeChangeTool({ crm, getUser: identified });
+    const out = await tool.execute({ operation: "updateTransaction", targetId: "t1", fields });
+    expect(out.status).toBe("rejected");
+    if (out.status === "rejected") expect(out.message).toMatch(/final text|literally/i);
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it("does NOT reject ordinary values that merely contain edit-ish words", async () => {
+    const crm = writeCrm({ prepare: () => ({ writeToken: "wt-2", preview: "Update transaction", warnings: [] }) });
+    const tool = new ProposeChangeTool({ crm, getUser: identified });
+    const out = await tool.execute({
+      operation: "updateTransaction",
+      targetId: "t1",
+      fields: { notes: "Investor asked us to add their counsel to the data room. Term sheet appended as annex B." },
+    });
+    expect(out.status).toBe("preview");
+  });
 });
 
 describe("CommitChangeTool", () => {

@@ -3,8 +3,13 @@ import { scanOutbound } from "../lib/guardrails/outbound-scan";
 import { recordFlagEvent } from "../lib/flagging";
 import { senderFromRequest } from "../lib/request-sender";
 
+// 2026-07-21 QA fix: must not claim the message was filed/forwarded — no log tool ran on
+// this path, so the old "I've made sure the team has it" wording asserted an action that
+// never happened.
 export const SAFE_ACK =
-  "Thank you for your message. I've made sure the Noblestride team has it, and your usual contact will follow up with you directly.\n\nNoblestride Investor Relations";
+  "Thank you for your message. I'm not able to go into that in an automated reply — your usual Noblestride contact is the right person for anything specific, and they'll be glad to help.\n\nNoblestride Investor Relations";
+
+export const SIGN_OFF = "Noblestride Investor Relations";
 
 interface EnforceDeps {
   recordFlag?: (sender: string, reasons: string[]) => Promise<boolean>;
@@ -27,11 +32,21 @@ export async function enforceOutbound(response: string, sender: string | undefin
   return SAFE_ACK;
 }
 
+/**
+ * Deterministic sign-off (2026-07-21 QA: the persona's "always sign off" rule was honored in
+ * 0/14 organic replies). Appended here so it can never be dropped; the contains-check keeps
+ * an already-signed reply (including SAFE_ACK) from being doubled.
+ */
+export function withSignOff(response: string): string {
+  if (response.toLowerCase().includes(SIGN_OFF.toLowerCase())) return response;
+  return `${response.replace(/\s+$/, "")}\n\n${SIGN_OFF}`;
+}
+
 export const outboundLeakGuard = new PostProcessor({
   name: "outbound-leak-guard",
-  description: "Fail-closed scan of every outbound reply; replaces anything that could leak confidential data with a safe acknowledgment and flags it.",
+  description: "Fail-closed scan of every outbound reply; replaces anything that could leak confidential data with a safe acknowledgment and flags it. Also guarantees the Investor Relations sign-off.",
   execute: async (_user, _message, response, _channel) => {
-    const modifiedResponse = await enforceOutbound(response, senderFromRequest());
+    const modifiedResponse = withSignOff(await enforceOutbound(response, senderFromRequest()));
     return { modifiedResponse };
   },
 });

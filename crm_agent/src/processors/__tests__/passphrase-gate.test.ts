@@ -37,6 +37,21 @@ describe("gateDecision", () => {
     expect(gateDecision({ verified: true }, "evans@noblestride.com", "secret")).toBe("try_identify");
     expect(gateDecision({ verified: true }, "  evans@noblestride.com  ", "secret")).toBe("try_identify");
   });
+
+  // 2026-07-21 QA (cross-cutting): verification used to be permanent.
+  it("a verified user can log out with an explicit whole-message logout phrase", () => {
+    expect(gateDecision({ verified: true, staffEmail: "evans@noblestride.com" }, "log out", "secret")).toBe("logout");
+    expect(gateDecision({ verified: true, staffEmail: "evans@noblestride.com" }, "Logout!", "secret")).toBe("logout");
+    expect(gateDecision({ verified: true }, "exit staff mode", "secret")).toBe("logout");
+    expect(gateDecision({ verified: true, staffEmail: "e@n.com" }, "reset my verification", "secret")).toBe("logout");
+  });
+
+  it("mentioning logout inside a longer message does NOT de-verify", () => {
+    expect(gateDecision({ verified: true, staffEmail: "e@n.com" }, "how do I log out of the CRM?", "secret")).toBe(
+      "proceed",
+    );
+    expect(gateDecision({ verified: false }, "log out", "secret")).toBe("challenge"); // unverified users have nothing to log out of
+  });
 });
 
 function fakeDeps(overrides: Partial<GateDeps> = {}): GateDeps {
@@ -93,6 +108,14 @@ describe("runGate", () => {
     });
     await runGate(deps, { verified: false }, "secret", "u1");
     expect(deps.data.create).not.toHaveBeenCalled();
+  });
+
+  it("logout clears verified + staffEmail + staffName and blocks with a signed-out message", async () => {
+    const deps = fakeDeps();
+    const result = await runGate(deps, { verified: true, staffEmail: "evans@noblestride.com" }, "log out", "u1");
+    expect(result.action).toBe("block");
+    if (result.action === "block") expect(result.response).toMatch(/signed out/i);
+    expect(deps.updateUser).toHaveBeenCalledWith({ verified: false, staffEmail: null, staffName: null });
   });
 
   it("asks a verified-but-unidentified user for their CRM email", async () => {

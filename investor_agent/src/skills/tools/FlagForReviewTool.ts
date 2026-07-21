@@ -2,6 +2,7 @@ import { LuaTool } from "lua-cli";
 import { z } from "zod";
 import { CrmClient, crmClientFromEnv } from "../../lib/crm-client";
 import { FLAG_FOR_REVIEW } from "../../lib/queries";
+import { CHANNEL_UNVERIFIED, verifiedSender } from "../../lib/request-sender";
 
 export default class FlagForReviewTool implements LuaTool {
   name = "flag_for_review";
@@ -20,9 +21,14 @@ export default class FlagForReviewTool implements LuaTool {
       .describe("Optional short category, e.g. 'sender request', 'probe attempt'."),
   });
 
-  constructor(private deps?: { crm: CrmClient }) {}
+  constructor(private deps?: { crm?: CrmClient; transportFrom?: () => string | undefined }) {}
 
   async execute(input: z.infer<typeof this.inputSchema>) {
+    // SECURITY: same transport binding as the other write tools — a flag lands on
+    // an investor's record, so it must come from a verified email sender.
+    const resolveFrom = this.deps?.transportFrom ?? verifiedSender;
+    if (!resolveFrom()) return { ok: false as const, ...CHANNEL_UNVERIFIED };
+
     const crm = this.deps?.crm ?? crmClientFromEnv();
     const data = await crm.query<{ flagInvestorForReview: { ok: boolean } }>(FLAG_FOR_REVIEW, {
       input: {

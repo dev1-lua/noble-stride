@@ -55,8 +55,10 @@ const SCANNED_DEAL_STATUSES = new Set(["Open", "ClosedReopened"]);
  * so the status guard alone is a no-op. A deal in a terminal stage produces no
  * stalled/hygiene noise — only an outstanding disbursement still warrants a
  * chase there (that's money owed after close, the Invested branch's purpose).
+ * Exported so the pipeline digest applies the SAME terminal-stage exclusion
+ * (2026-07-21 QA: the digest was reporting Closed-Won/Lost deals as "stalled").
  */
-const CLOSED_DEAL_STAGES = new Set(["ClosedWon", "ClosedLost"]);
+export const CLOSED_DEAL_STAGES = new Set(["ClosedWon", "ClosedLost"]);
 
 export interface EvaluateContext {
   thresholds: StaleThresholds;

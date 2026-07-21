@@ -17,8 +17,21 @@ const inputSchema = z.object({
     .enum(OPERATIONS)
     .describe("What to do — create<Entity>, update<Entity>, set<Entity>Stage, logActivity, record/unrecordMilestone, recordOpen/ClosedNda"),
   targetId: z.string().optional().describe("Record id from lookup_record — REQUIRED for updates, omit for creates"),
-  fields: z.record(z.unknown()).describe("The fields to set, exactly as the user stated them"),
+  fields: z
+    .record(z.unknown())
+    .describe(
+      "The FINAL literal values to store, exactly as they should be saved in the CRM. The write is a literal set — there are no append/merge semantics. NEVER pass an instruction as a value (e.g. \"APPEND: '…' to end of existing notes\"); to append, read the record's current value first and pass the full final text.",
+    ),
 });
+
+// 2026-07-21 QA: the model once staged fields:{notes:"APPEND: '…' to end of existing notes"}
+// — a free-text directive that a literal write would have stored verbatim — while showing the
+// operator a clean preview. Directive-shaped values are rejected before they reach the CRM.
+const DIRECTIVE_VALUE = /^\s*(append|prepend|add|remove|delete|insert)\s*:|\bto (the )?(end|start|beginning) of (the )?(existing|current)\b/i;
+
+function directiveField(fields: Record<string, unknown>): string | undefined {
+  return Object.entries(fields).find(([, v]) => typeof v === "string" && DIRECTIVE_VALUE.test(v))?.[0];
+}
 
 export class ProposeChangeTool implements LuaTool {
   name = "propose_change";
@@ -40,6 +53,12 @@ export class ProposeChangeTool implements LuaTool {
       return {
         status: "not_identified" as const,
         message: "The user must complete staff verification (CRM email) before any change.",
+      };
+    const badField = directiveField(input.fields);
+    if (badField)
+      return {
+        status: "rejected" as const,
+        message: `The value for "${badField}" looks like an edit instruction, not the final text. The CRM stores values literally — read the record's current value (lookup_record), compose the full final text yourself, and propose that.`,
       };
     const crm = this.deps?.crm ?? crmClientFromEnv();
     try {

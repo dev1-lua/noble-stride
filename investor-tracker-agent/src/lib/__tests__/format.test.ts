@@ -36,6 +36,35 @@ describe("computeDigest", () => {
   it("a new record is not also counted as moved", () => {
     expect(digest.mandates.moved.find((m) => m.name === "Deal New")).toBeUndefined();
   });
+
+  // 2026-07-21 QA fix: pipeline_digest was reporting Closed-Won/Lost deals as "stalled"
+  // while scan_stalled_engagements correctly excluded them.
+  it("terminal-stage deals are never stalled, but still count in totals and can be moved", () => {
+    const closedColumns: StageColumn[] = [
+      {
+        stage: "ClosedWon",
+        label: "Closed Won",
+        items: [
+          // idle for months — finished, not stalled
+          { id: "w1", name: "Won Old", stageEnteredAt: daysAgo(90), createdAt: daysAgo(120), updatedAt: daysAgo(80) },
+          // closed within the window — shows as moved
+          { id: "w2", name: "Won Fresh", stageEnteredAt: daysAgo(2), createdAt: daysAgo(60), updatedAt: daysAgo(2) },
+        ],
+      },
+      {
+        stage: "ClosedLost",
+        label: "Closed Lost",
+        items: [{ id: "l1", name: "Lost Old", stageEnteredAt: daysAgo(90), createdAt: daysAgo(120), updatedAt: daysAgo(45) }],
+      },
+    ];
+    const d = computeDigest({ mandateColumns: [], transactionColumns: closedColumns, windowDays: 7, now: NOW });
+    expect(d.transactions.stalled).toEqual([]);
+    expect(d.transactions.moved.map((m) => m.name)).toEqual(["Won Fresh"]);
+    expect(d.transactions.totalsByStage).toEqual([
+      { label: "Closed Won", count: 2 },
+      { label: "Closed Lost", count: 1 },
+    ]);
+  });
 });
 
 describe("prompts and fallbacks", () => {

@@ -11,7 +11,8 @@ export type GateOutcome =
   | "challenge"
   | "unconfigured"
   | "ask_email"
-  | "try_identify";
+  | "try_identify"
+  | "logout";
 
 export interface GateState {
   verified: boolean;
@@ -20,6 +21,12 @@ export interface GateState {
 
 const EMAIL_LIKE = /^\S+@\S+\.\S+$/;
 const EMAIL_TOKEN = /\S+@\S+\.\S+/; // first email-like token anywhere in the message
+
+// 2026-07-21 QA (cross-cutting): verification used to be permanent — no expiry, no logout.
+// A verified user can now end their staff session explicitly. Deliberately strict: the
+// WHOLE message must be a logout phrase, so "how do I log out of the CRM?" never
+// de-verifies anyone.
+export const LOGOUT_INTENT = /^\s*(log\s?out|sign\s?out|exit staff mode|end staff (mode|session)|reset (my )?verification)\s*[.!]?\s*$/i;
 
 // Split a reply into its email token (if any) and the remaining text, so a
 // single message can carry both the passphrase and the CRM email.
@@ -58,6 +65,7 @@ export function gateDecision(
     }
     return "challenge";
   }
+  if (lastText && LOGOUT_INTENT.test(lastText)) return "logout";
   if (state.staffEmail) return "proceed";
   const trimmed = lastText?.trim();
   if (trimmed && EMAIL_LIKE.test(trimmed)) return "try_identify";
@@ -74,6 +82,8 @@ const ASK_EMAIL =
 const IDENTIFY_FAIL =
   "That email doesn't match an active CRM user — please check the spelling (it must be your CRM login email).";
 const IDENTIFY_ERROR = "I can't verify your email right now — please try again shortly.";
+const LOGGED_OUT =
+  "✅ You've been signed out of staff mode. To use the assistant again, send the team passphrase and your CRM email together in one message.";
 const identifyOk = (firstName: string) => {
   const name = firstName.trim();
   return name
@@ -145,6 +155,10 @@ export async function runGate(
       } catch {
         return { action: "block", response: IDENTIFY_ERROR };
       }
+    }
+    case "logout": {
+      await deps.updateUser({ verified: false, staffEmail: null, staffName: null });
+      return { action: "block", response: LOGGED_OUT };
     }
     case "unconfigured":
       return { action: "block", response: UNCONFIGURED };

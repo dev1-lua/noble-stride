@@ -25,4 +25,17 @@ describe("gateDecision", () => {
     expect(gateDecision(false, "", "")).toBe("partner");
     expect(gateDecision(true, "hi", undefined)).toBe("proceed"); // already-verified staff unaffected
   });
+
+  // 2026-07-21 QA (cross-cutting): staff verification used to be permanent — no way back to
+  // partner mode after an accidental verification.
+  it("verified staff can reset to partner mode with an explicit whole-message phrase", () => {
+    expect(gateDecision(true, "log out", "secret")).toBe("logout");
+    expect(gateDecision(true, "reset to partner mode", "secret")).toBe("logout");
+    expect(gateDecision(true, "Exit staff mode!", "secret")).toBe("logout");
+  });
+
+  it("mentioning logout inside a longer message does NOT de-verify", () => {
+    expect(gateDecision(true, "how do I log out of the portal?", "secret")).toBe("proceed");
+    expect(gateDecision(false, "log out", "secret")).toBe("partner"); // partners have nothing to log out of
+  });
 });

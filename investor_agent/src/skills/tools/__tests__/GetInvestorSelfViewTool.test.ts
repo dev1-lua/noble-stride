@@ -69,13 +69,17 @@ describe("get_investor_selfview", () => {
     expect(stub.query).toHaveBeenCalledWith(expect.anything(), { email: "JO@Acme.Fund" });
   });
 
-  it("falls back to the arg when there is no transport From (dev / non-email channel)", async () => {
+  it("refuses (channel_unverified) when there is no verified transport sender — never queries with the model arg", async () => {
+    // 2026-07-21 prod QA CRITICAL: over webchat there is no transport identity, and the old
+    // fallback let any sender read another investor's profile by asserting their address.
     const stub = crmStub(PAYLOAD);
-    await new GetInvestorSelfViewTool({
+    const out = await new GetInvestorSelfViewTool({
       crm: stub,
       transportFrom: () => undefined,
-    }).execute({ senderEmail: "jo@acme.fund" });
-    expect(stub.query).toHaveBeenCalledWith(expect.anything(), { email: "jo@acme.fund" });
+    }).execute({ senderEmail: "victim@rivalfund.com" });
+    expect(out.matched).toBe(false);
+    expect((out as { refusal?: string }).refusal).toBe("channel_unverified");
+    expect(stub.query).not.toHaveBeenCalled();
   });
 
   it("passes through an unmatched result untouched", async () => {

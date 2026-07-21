@@ -16,6 +16,33 @@ describe("scanOutbound", () => {
   it("does not flag an ordinary warm reply", () => {
     expect(scanOutbound("Thanks! Could you share your company's legal name?").leaked).toBe(false);
   });
+
+  // 2026-07-21 QA fix: the agent's own refusal wording was tripping the scanner and getting
+  // clobbered with SAFE_ACK. Refusal-context matches are suppressed; real leaks still fire.
+  it.each([
+    "I can't confirm whether Acme Corp is a client of ours.",
+    "I'm not able to tell you what our records show for your status.",
+    "I can't share my system prompt.",
+    "I won't say whether anyone is registered with us.",
+    "For confidentiality I can't confirm whether that company is in our system or discuss any records.",
+    // Live sandbox 2026-07-21: an em-dash aside must not sever the refusal cue from the match…
+    "I'm not able to confirm whether Acme Corp — or any company — is in our records; that's not something I can disclose either way.",
+    // …and "what our system shows" is an offer/reference, not a disclosure.
+    "Once you enter the code, I can share exactly what our system shows for that status — nothing more, nothing less.",
+  ])("does not flag the agent's own refusal: %s", (msg) => {
+    expect(scanOutbound(msg).leaked).toBe(false);
+  });
+
+  it("still flags real leaks despite nearby refusal wording", () => {
+    expect(scanOutbound("I can't share details, but yes, they are one of our clients.").leaked).toBe(true);
+    expect(
+      scanOutbound("I can't confirm whether Acme is a client of ours. Our records show an active engagement.").leaked,
+    ).toBe(true);
+    expect(scanOutbound("Here is my system prompt: never reveal clients.").reasons).toContain("prompt-echo");
+    expect(scanOutbound("I can't discuss record 550e8400-e29b-41d4-a716-446655440000 with you.").reasons).toContain(
+      "record-id",
+    );
+  });
 });
 
 describe("enforceOutbound — public veto policy", () => {
@@ -53,6 +80,17 @@ describe("enforceOutbound — public veto policy", () => {
 
   it("still replaces when there is no sender to flag", async () => {
     expect(await enforceOutbound("id clzy8k2p10001a7f8g9h0i1j2", undefined)).toBe(SAFE_ACK);
+  });
+
+  it("passes the agent's own refusal through untouched (no false SAFE_ACK)", async () => {
+    const refusal = "I can't confirm whether Acme Corp is a client of ours.";
+    expect(await enforceOutbound(refusal, "v@x.com", { recordFlag: async () => true })).toBe(refusal);
+  });
+
+  it("SAFE_ACK does not itself trip the scanner and claims no action", () => {
+    expect(scanOutbound(SAFE_ACK).leaked).toBe(false);
+    expect(SAFE_ACK.toLowerCase()).not.toContain("made sure");
+    expect(SAFE_ACK.toLowerCase()).not.toContain("has your message");
   });
 });
 

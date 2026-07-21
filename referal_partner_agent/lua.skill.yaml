@@ -4,22 +4,22 @@ agent:
 skills:
   - name: referral-partner-tracker
     skillId: 6f891030-581a-411d-b2aa-88fc4bd871d3
-    version: 1.0.5
+    version: 1.0.6
   - name: partner-self-service
     skillId: 2d2cfa4b-522f-455f-89a9-056ab1249810
-    version: 1.0.3
+    version: 1.0.4
 webhooks: []
 jobs:
   - jobId: 40cfd53d-8660-44a2-976c-8eb456257190
     name: stage-watch
-    version: 1.0.6
+    version: 1.0.7
 preprocessors:
   - name: passphrase-gate
     preprocessorId: preprocessor_60a4ac8a-2b0b-4eac-9596-23426b80382d
-    version: 1.0.5
+    version: 1.0.6
 postprocessors: []
 mcpServers: []
 backup:
-  activeVersion: 7
-  lastHash: 85674875ac4fca27784a4d608e387be5058b00799e53772002be6c3a4ac83f7c
-  lastPushedAt: '2026-07-21T07:22:12.827Z'
+  activeVersion: 8
+  lastHash: 3307f2ca33c9e99e554d9984b3b1c35c05d376d7abc9c0375b903dd01b93c615
+  lastPushedAt: '2026-07-21T07:41:58.632Z'

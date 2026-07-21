@@ -7,17 +7,29 @@ export const STAFF_COLLECTION = "staff_users";
 // reach the token-scoped partner-self-service tools on the same channel. Security
 // is not weakened: every STAFF tool self-authorizes via staffRefusal (lib/staff-mode)
 // and refuses a non-staff caller, and partner tools are scoped by a verified token.
-export type GateOutcome = "proceed" | "verify" | "partner";
+export type GateOutcome = "proceed" | "verify" | "partner" | "logout";
+
+// 2026-07-21 QA (cross-cutting): staff verification used to be permanent — no way back to
+// partner mode after an accidental verification. Deliberately strict: the WHOLE message must
+// be a logout phrase, so "how do I log out?" never de-verifies anyone.
+export const LOGOUT_INTENT =
+  /^\s*(log\s?out|sign\s?out|exit staff mode|end staff (mode|session)|reset to partner mode|reset (my )?verification)\s*[.!]?\s*$/i;
 
 export function gateDecision(
   verified: boolean,
   lastText: string | undefined,
   passphrase: string | undefined,
 ): GateOutcome {
-  if (verified) return "proceed";
+  if (verified) {
+    if (lastText && LOGOUT_INTENT.test(lastText)) return "logout";
+    return "proceed";
+  }
   if (passphrase && lastText !== undefined && lastText.trim() === passphrase) return "verify";
   return "partner";
 }
+
+const LOGGED_OUT =
+  "✅ You've been signed out of staff mode and are back in partner self-service mode. To unlock staff tools again, send the team passphrase.";
 
 const WELCOME =
   "✅ You're verified as staff. Ask me about any referral partner — who introduced which deal, where each referred deal stands, which introductions converted, and what fees are due. I can also record confirmed introductions, partner updates, partner-to-deal links, and fee statuses, and issue a partner an access code for self-service.";
@@ -41,6 +53,10 @@ export const passphraseGate = new PreProcessor({
           if (existing.data.length === 0) await Data.create(STAFF_COLLECTION, { userId });
         }
         return { action: "block", response: WELCOME };
+      }
+      case "logout": {
+        await user.update({ verified: false });
+        return { action: "block", response: LOGGED_OUT };
       }
       case "proceed":
       case "partner":
