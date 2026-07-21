@@ -1,5 +1,6 @@
 import { type LuaTool } from "lua-cli";
 import { z } from "zod";
+import { staffRefusal, type StaffCheck } from "../../lib/staff-mode";
 import { crmClientFromEnv, type CrmClient, CrmError, CRM_DOWN_MESSAGE } from "../../lib/crm-client";
 import { GLOBAL_SEARCH, CREATE_PARTNER, UPDATE_PARTNER, PARTNER_BY_ID, CREATE_TASK, LOG_ACTIVITY } from "../../lib/queries";
 import { resolveRecord, type SearchResult } from "../../lib/resolve";
@@ -54,9 +55,11 @@ export class RecordIntroductionTool implements LuaTool {
     "Record a partner introduction: create or update the Partner record and file a review task for staff (due in 3 business days). Does NOT create a deal — deals are only created by staff after review, or via create_referred_mandate when explicitly instructed. REQUIRES prior user confirmation stating whether the partner record is new or existing.";
   inputSchema = inputSchema;
 
-  constructor(private deps?: { crm: CrmClient; now?: () => Date }) {}
+  constructor(private deps?: { crm: CrmClient; now?: () => Date; isStaff?: StaffCheck }) {}
 
   async execute(input: z.infer<typeof inputSchema>) {
+    const refusal = await staffRefusal(this.deps?.isStaff);
+    if (refusal) return refusal;
     // Re-validate inside execute: direct invocations (e.g. `lua test`) bypass
     // the platform's schema check, and the confirmed gate must hold everywhere.
     const parsed = inputSchema.safeParse(input);
@@ -145,7 +148,8 @@ export class RecordIntroductionTool implements LuaTool {
       partnerCreated = true;
     }
 
-    // ── File the review task (never a deal) ────────────────────────────────
+    // ── File the review task (never a deal) — always linked to the Partner
+    // (spec §3.8 link rule), plus the deal when the intro concerns one. ──────
     const dealFk =
       input.existingDealId && input.existingDealType
         ? { [input.existingDealType === "mandate" ? "mandateId" : "transactionId"]: input.existingDealId }
@@ -159,6 +163,7 @@ export class RecordIntroductionTool implements LuaTool {
           status: "NotStarted",
           source: "Other",
           dueAt: addBusinessDays(now, 3).toISOString(),
+          partnerId,
           ...dealFk,
         },
       });

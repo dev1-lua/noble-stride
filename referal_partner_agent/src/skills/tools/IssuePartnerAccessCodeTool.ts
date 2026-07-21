@@ -1,5 +1,6 @@
 import { type LuaTool } from "lua-cli";
 import { z } from "zod";
+import { staffRefusal, type StaffCheck } from "../../lib/staff-mode";
 import { crmClientFromEnv, type CrmClient } from "../../lib/crm-client";
 import { ISSUE_PARTNER_ACCESS_CODE } from "../../lib/queries";
 import { resolveByNameOrId } from "../../lib/record-lookup";
@@ -8,7 +9,7 @@ const inputSchema = z.object({
   partner: z.string().min(1).describe("The partner to issue a code for — name as the user said it, or an exact id from a previous result"),
 });
 
-// STAFF-ONLY (wrapped with withStaffGuard in the skill). Generates/rotates a
+// STAFF-ONLY (self-authorizes via staffRefusal). Generates/rotates a
 // partner's static access code and returns it ONCE so staff can pass it to the
 // partner out-of-band (email/WhatsApp/call). Issuing a new code invalidates any
 // previous one.
@@ -18,9 +19,11 @@ export class IssuePartnerAccessCodeTool implements LuaTool {
     "Staff only. Generate (or rotate) the access code a referral partner uses to verify themselves and view/update their own details. Returns the code ONCE — share it with the partner directly; it is not stored in readable form. Issuing a new code replaces any previous one.";
   inputSchema = inputSchema;
 
-  constructor(private deps?: { crm: CrmClient }) {}
+  constructor(private deps?: { crm: CrmClient; isStaff?: StaffCheck }) {}
 
   async execute(input: z.infer<typeof inputSchema>) {
+    const refusal = await staffRefusal(this.deps?.isStaff);
+    if (refusal) return refusal;
     const crm = this.deps?.crm ?? crmClientFromEnv();
 
     const resolution = await resolveByNameOrId(crm, "partner", input.partner);

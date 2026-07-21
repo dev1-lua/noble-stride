@@ -1,4 +1,5 @@
 import { LuaSkill } from "lua-cli";
+import { ListDealsTool } from "./tools/ListDealsTool";
 import { GetPartnerProfileTool } from "./tools/GetPartnerProfileTool";
 import { GetReferralStatusTool } from "./tools/GetReferralStatusTool";
 import { ReferralPipelineDigestTool } from "./tools/ReferralPipelineDigestTool";
@@ -10,7 +11,6 @@ import { LinkPartnerToDealTool } from "./tools/LinkPartnerToDealTool";
 import { UpdatePartnerTool } from "./tools/UpdatePartnerTool";
 import { UpdateFeeStatusTool } from "./tools/UpdateFeeStatusTool";
 import { IssuePartnerAccessCodeTool } from "./tools/IssuePartnerAccessCodeTool";
-import { withStaffGuard } from "../lib/staff-mode";
 
 export const referralSkill = new LuaSkill({
   name: "referral-partner-tracker",
@@ -20,7 +20,8 @@ export const referralSkill = new LuaSkill({
 
 Routing:
 - get_partner_profile when the user asks about one partner ("what has Jane referred?", "does Acme Advisory have a fee agreement?"). Pass names exactly as said, or an id from a previous result.
-- get_referral_status when they ask who introduced a deal or where a referred deal stands ("who brought in the Busoga mandate?").
+- get_referral_status when they ask who introduced ONE named deal or where a referred deal stands ("who brought in the Busoga mandate?").
+- list_deals when they ask about the latest/newest/recent deals, or to trace originators across several deals at once ("who introduced the last 10 deals?") — it covers ALL deals, including ones with no referral on record.
 - referral_pipeline_digest when they ask what's happening across referred deals — optionally scoped to a partner or a recent window (days).
 - partner_performance for conversion numbers and the partner leaderboard ("which partner brings the best deals?").
 - summarize_record for a general briefing on any single client, investor, mandate, transaction, engagement, or partner.
@@ -45,6 +46,10 @@ Write protocol (mandatory):
 3. Relay the result including the deep link. "conflict" from link_partner_to_deal means a different originator is already recorded — show them and only override if the user explicitly chooses to. "possible_duplicate" from record_introduction means similar partners exist — show them and let the user pick existing vs create-new.
 4. If a result says auditLogged: false, mention the change was saved but couldn't be attached to the activity trail (partner-only records have no activity feed).
 
+CRM data comes ONLY from these tools (hard rule):
+- Deal, partner, and pipeline facts live behind the tools above — NEVER answer them from the knowledge base (searchKnowledgeBase holds documents, not CRM records) and never from memory. An empty knowledge-base search says nothing about the CRM.
+- If a question maps to a tool, call the tool. Only report a tool as failing when a call actually returned an error — relay that error's message; never speculate that a tool or connection is unavailable.
+
 Ambiguity and errors:
 - status "ambiguous*": list the candidates (title + subtitle) and ask the user to pick; call again with the chosen id.
 - status "not_found" / "*_not_found": say so plainly and ask for a spelling or more context — never guess.
@@ -53,22 +58,25 @@ Ambiguity and errors:
 - If the CRM is unreachable, say so and suggest retrying shortly — never answer from memory.
 
 Never expose raw record ids; refer to records by name and share the deep links tools return.`,
-  // Every staff tool is wrapped with withStaffGuard: the passphrase-gate no longer
-  // hard-blocks non-staff (partners reach the token-scoped partner-self-service
-  // skill on the same channel), so each staff tool self-authorizes and refuses a
-  // non-staff caller. issue_partner_access_code is staff-only too — staff generate
-  // the code, then hand it to the partner out-of-band.
+  // Every staff tool self-authorizes INSIDE its execute (staffRefusal, see
+  // lib/staff-mode.ts): the passphrase-gate no longer hard-blocks non-staff
+  // (partners reach the token-scoped partner-self-service skill on the same
+  // channel), so each tool refuses a non-staff caller itself.
+  // MUST stay plain `new Tool()` literals: lua-cli resolves this array
+  // statically, and any wrapper call (e.g. withStaffGuard(...)) makes the
+  // skill push with ZERO tools — this broke prod on 2026-07-21.
   tools: [
-    withStaffGuard(new GetPartnerProfileTool()),
-    withStaffGuard(new GetReferralStatusTool()),
-    withStaffGuard(new ReferralPipelineDigestTool()),
-    withStaffGuard(new PartnerPerformanceTool()),
-    withStaffGuard(new SummarizeRecordTool()),
-    withStaffGuard(new RecordIntroductionTool()),
-    withStaffGuard(new CreateReferredMandateTool()),
-    withStaffGuard(new LinkPartnerToDealTool()),
-    withStaffGuard(new UpdatePartnerTool()),
-    withStaffGuard(new UpdateFeeStatusTool()),
-    withStaffGuard(new IssuePartnerAccessCodeTool()),
+    new ListDealsTool(),
+    new GetPartnerProfileTool(),
+    new GetReferralStatusTool(),
+    new ReferralPipelineDigestTool(),
+    new PartnerPerformanceTool(),
+    new SummarizeRecordTool(),
+    new RecordIntroductionTool(),
+    new CreateReferredMandateTool(),
+    new LinkPartnerToDealTool(),
+    new UpdatePartnerTool(),
+    new UpdateFeeStatusTool(),
+    new IssuePartnerAccessCodeTool(),
   ],
 });

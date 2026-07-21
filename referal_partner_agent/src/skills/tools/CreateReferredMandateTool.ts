@@ -1,5 +1,6 @@
 import { type LuaTool } from "lua-cli";
 import { z } from "zod";
+import { staffRefusal, type StaffCheck } from "../../lib/staff-mode";
 import { crmClientFromEnv, type CrmClient, CrmError, CRM_DOWN_MESSAGE } from "../../lib/crm-client";
 import { CREATE_MANDATE, LOG_ACTIVITY } from "../../lib/queries";
 import { resolveByNameOrId } from "../../lib/record-lookup";
@@ -34,9 +35,11 @@ export class CreateReferredMandateTool implements LuaTool {
     "Create a new mandate attributed to a referring partner. ONLY on explicit staff instruction to create the mandate — a recorded introduction is NOT enough; the default path for introductions is record_introduction (partner + review task). Requires an existing client. REQUIRES prior user confirmation of the exact details.";
   inputSchema = inputSchema;
 
-  constructor(private deps?: { crm: CrmClient }) {}
+  constructor(private deps?: { crm: CrmClient; isStaff?: StaffCheck }) {}
 
   async execute(input: z.infer<typeof inputSchema>) {
+    const refusal = await staffRefusal(this.deps?.isStaff);
+    if (refusal) return refusal;
     // Re-validate inside execute: direct invocations (e.g. `lua test`) bypass
     // the platform's schema check, and the confirmed gate must hold everywhere.
     const parsed = inputSchema.safeParse(input);

@@ -2,6 +2,9 @@ import { describe, it, expect, vi } from "vitest";
 import { UpdateFeeStatusTool } from "../UpdateFeeStatusTool";
 import type { CrmClient } from "../../../lib/crm-client";
 
+/** Hermetic staff stub — without it the in-tool guard calls the live Lua API. */
+const STAFF = async () => true;
+
 const TXN_HIT = { id: "t1", type: "Transaction", title: "Busoga Raise", subtitle: null, href: "/transactions/t1" };
 
 interface Originator {
@@ -60,7 +63,7 @@ const BASE = {
 describe("update_fee_status", () => {
   it("refuses without a recorded agreement — and tells staff how to record one", async () => {
     const { crm, calls } = crmStub({ referredBy: UNSIGNED });
-    const out = await new UpdateFeeStatusTool({ crm }).execute(BASE);
+    const out = await new UpdateFeeStatusTool({ isStaff: STAFF, crm }).execute(BASE);
     expect(out.status).toBe("refused");
     if (out.status === "refused") expect(out.message).toContain("update_partner");
     expect(calls.some((c) => c.document.includes("updateTransaction"))).toBe(false);
@@ -68,14 +71,14 @@ describe("update_fee_status", () => {
 
   it("refuses when the deal has no originator at all", async () => {
     const { crm } = crmStub({ referredBy: null, mandateReferredBy: null });
-    const out = await new UpdateFeeStatusTool({ crm }).execute(BASE);
+    const out = await new UpdateFeeStatusTool({ isStaff: STAFF, crm }).execute(BASE);
     expect(out.status).toBe("refused");
     if (out.status === "refused") expect(out.message).toContain("link_partner_to_deal");
   });
 
   it("writes the fee with a signed agreement, echoing name/clientId", async () => {
     const { crm, calls } = crmStub({ referredBy: SIGNED });
-    const out = await new UpdateFeeStatusTool({ crm }).execute({
+    const out = await new UpdateFeeStatusTool({ isStaff: STAFF, crm }).execute({
       ...BASE,
       set: { partnerFeeStatus: "Due", partnerFeeAmount: 40_000 },
     });
@@ -95,14 +98,14 @@ describe("update_fee_status", () => {
 
   it("falls back to the parent mandate's referrer when the transaction has none", async () => {
     const { crm } = crmStub({ referredBy: null, mandateReferredBy: SIGNED });
-    const out = await new UpdateFeeStatusTool({ crm }).execute(BASE);
+    const out = await new UpdateFeeStatusTool({ isStaff: STAFF, crm }).execute(BASE);
     expect(out.status).toBe("ok");
     if (out.status === "ok") expect(out.partner?.name).toBe("Acme Advisory");
   });
 
   it("surfaces the no-terms warning on an otherwise allowed write", async () => {
     const { crm } = crmStub({ referredBy: { ...SIGNED, feeSharingTerms: null } });
-    const out = await new UpdateFeeStatusTool({ crm }).execute(BASE);
+    const out = await new UpdateFeeStatusTool({ isStaff: STAFF, crm }).execute(BASE);
     expect(out.status).toBe("ok");
     if (out.status === "ok") expect(out.warning).toContain("no terms");
   });

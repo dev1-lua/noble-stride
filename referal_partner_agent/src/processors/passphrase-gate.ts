@@ -5,7 +5,7 @@ export const STAFF_COLLECTION = "staff_users";
 // Dual-audience gate (SOW §7.2). Staff unlock the full staff toolset with the
 // team passphrase; everyone else proceeds in PARTNER mode so referral partners can
 // reach the token-scoped partner-self-service tools on the same channel. Security
-// is not weakened: every STAFF tool is wrapped with withStaffGuard (lib/staff-mode)
+// is not weakened: every STAFF tool self-authorizes via staffRefusal (lib/staff-mode)
 // and refuses a non-staff caller, and partner tools are scoped by a verified token.
 export type GateOutcome = "proceed" | "verify" | "partner";
 
@@ -47,7 +47,7 @@ export const passphraseGate = new PreProcessor({
       default:
         // Staff (proceed) get the full toolset; partner-mode visitors get a warm
         // reply and only the token-scoped partner-self-service tools succeed —
-        // every staff tool self-authorizes via withStaffGuard.
+        // every staff tool self-authorizes via staffRefusal inside its execute.
         return { action: "proceed" };
     }
   },

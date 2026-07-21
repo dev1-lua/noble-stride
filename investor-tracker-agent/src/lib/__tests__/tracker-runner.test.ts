@@ -82,6 +82,28 @@ describe("evaluateEngagement", () => {
     expect(flags).toHaveLength(1);
     expect(flags[0].reason).toBe("term_sheet_undated");
   });
+
+  it("suppresses stalled/hygiene noise on closed-STAGE deals even when dealStatus still says Open", () => {
+    // Prod reality: closing a deal moves stage to ClosedWon/ClosedLost but never flips dealStatus.
+    const stale = { updatedAt: "2026-01-01T08:00:00Z", termSheetIssued: true };
+    expect(evaluateEngagement(eng(stale), txn({ stage: "ClosedWon", dealStatus: "Open" }), CTX)).toEqual([]);
+    expect(evaluateEngagement(eng(stale), txn({ stage: "ClosedLost", dealStatus: "Open" }), CTX)).toEqual([]);
+  });
+
+  it("still chases an outstanding disbursement on a Closed-Won deal — that's money owed post-close", () => {
+    const flags = evaluateEngagement(
+      eng({
+        engagementStage: "Invested",
+        updatedAt: "2026-06-01T08:00:00Z",
+        disbursementStatus: "Ongoing",
+        amountPending: 500000,
+      }),
+      txn({ stage: "ClosedWon", dealStatus: "Open" }),
+      CTX,
+    );
+    expect(flags).toHaveLength(1);
+    expect(flags[0].reason).toBe("disbursement_outstanding");
+  });
 });
 
 describe("scanEngagements", () => {

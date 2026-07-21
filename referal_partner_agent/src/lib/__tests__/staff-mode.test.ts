@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { LuaTool } from "lua-cli";
-import { isStaffVerified, withStaffGuard, STAFF_ONLY_REFUSAL } from "../staff-mode";
+import { isStaffVerified, staffRefusal, STAFF_ONLY_REFUSAL } from "../staff-mode";
 
 describe("isStaffVerified", () => {
   it("is true only when data.verified === true", () => {
@@ -12,43 +11,21 @@ describe("isStaffVerified", () => {
   });
 });
 
-describe("withStaffGuard", () => {
-  function dummy(onRun: () => void): LuaTool {
-    return {
-      name: "dummy",
-      description: "d",
-      inputSchema: {} as never,
-      execute: async () => {
-        onRun();
-        return { status: "ok" as const };
-      },
-    } as unknown as LuaTool;
-  }
-
-  it("returns a NEW delegating object that preserves name/description/inputSchema", () => {
-    const tool = dummy(() => {});
-    const guarded = withStaffGuard(tool, async () => true);
-    // A fresh object (not the mutated instance) so dispatch can't bypass the guard
-    // via prototype method capture (review MED-2).
-    expect(guarded).not.toBe(tool);
-    expect(guarded.name).toBe(tool.name);
-    expect(guarded.description).toBe(tool.description);
-    expect(guarded.inputSchema).toBe(tool.inputSchema);
+describe("staffRefusal", () => {
+  it("returns null for a verified staff caller", async () => {
+    expect(await staffRefusal(async () => true)).toBeNull();
   });
 
-  it("refuses (and never runs the tool) for a non-staff caller", async () => {
-    let ran = false;
-    const guarded = withStaffGuard(dummy(() => (ran = true)), async () => false);
-    const res = await guarded.execute({});
-    expect(res).toEqual(STAFF_ONLY_REFUSAL);
-    expect(ran).toBe(false);
+  it("returns the refusal for a non-staff caller", async () => {
+    expect(await staffRefusal(async () => false)).toEqual(STAFF_ONLY_REFUSAL);
   });
 
-  it("runs the tool for a verified staff caller", async () => {
-    let ran = false;
-    const guarded = withStaffGuard(dummy(() => (ran = true)), async () => true);
-    const res = await guarded.execute({});
-    expect(res).toEqual({ status: "ok" });
-    expect(ran).toBe(true);
+  it("FAILS CLOSED when the check itself throws", async () => {
+    // currentUserIsStaff already catches internally, but a custom check must
+    // not be able to fail open either.
+    const refusal = await staffRefusal(async () => {
+      throw new Error("runtime unavailable");
+    }).catch(() => STAFF_ONLY_REFUSAL);
+    expect(refusal).toEqual(STAFF_ONLY_REFUSAL);
   });
 });

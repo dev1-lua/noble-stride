@@ -11,6 +11,7 @@ import {
   SectorEnum,
   GeographyEnum,
   InvestorStatusEnum,
+  OutreachDraftStatusEnum,
   PartnerTypeEnum,
   PartnerStatusEnum,
 } from "./builder";
@@ -60,6 +61,7 @@ import {
   getAdvisory,
 } from "@/server/services/advisory";
 import { engagementsByDeal, getEngagement } from "@/server/services/engagements";
+import { listOutreachDrafts } from "@/server/services/outreach";
 import { listDocuments, getDocument } from "@/server/services/documents";
 import { listPartners, getPartner, partnerReferralStats } from "@/server/services/partners";
 import { dashboardStats, pipelineOverview, dealPipelineTrend } from "@/server/services/dashboard";
@@ -112,6 +114,14 @@ const AdvisoryFilterInput = builder.inputType("AdvisoryFilter", {
   fields: (t) => ({
     stage: t.field({ type: AdvisoryStageEnum, required: false }),
     clientId: t.id({ required: false }),
+  }),
+});
+
+const OutreachDraftFilterInput = builder.inputType("OutreachDraftFilter", {
+  fields: (t) => ({
+    transactionId: t.id({ required: false }),
+    investorId: t.id({ required: false }),
+    status: t.field({ type: OutreachDraftStatusEnum, required: false }),
   }),
 });
 
@@ -489,6 +499,26 @@ builder.queryFields((t) => ({
       id: t.arg.id({ required: true }),
     },
     resolve: (_query, _root, args) => getEngagement(args.id),
+  }),
+
+  // 14b. outreachDrafts(filter): [OutreachDraft] — read across ALL statuses
+  // (listOutreachQueue stays UI-only; this is the flat agent-facing read).
+  outreachDrafts: t.prismaField({
+    type: ["OutreachDraft"],
+    nullable: false,
+    args: {
+      filter: t.arg({ type: OutreachDraftFilterInput, required: false }),
+    },
+    resolve: (_query, _root, args) =>
+      listOutreachDrafts(
+        args.filter != null
+          ? {
+              transactionId: args.filter.transactionId ?? undefined,
+              investorId: args.filter.investorId ?? undefined,
+              status: args.filter.status ?? undefined,
+            }
+          : undefined
+      ),
   }),
 
   // 15. partners(filter): [Partner]

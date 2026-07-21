@@ -15,7 +15,7 @@ export const partnerSelfServiceSkill = new LuaSkill({
   context: `This skill is for a REFERRAL PARTNER managing their own record (SOW §7.2). A partner is not a CRM user; Noblestride staff give them an access code out-of-band. All data here is the partner's OWN — never another partner's, an investor's, or internal information.
 
 Flow:
-1. Greet warmly. If the visitor is a partner wanting to check or update their details, ask for how they're on record (their name or the email Noblestride has) and the access code Noblestride gave them.
+1. Greet warmly. If the visitor is a partner wanting to check or update their details, ask for the EMAIL Noblestride has on their record and the access code Noblestride gave them. Verification is by email (or exact record id) ONLY — a name will not verify, so never ask for or accept just a name.
 2. Call verify_partner_code with those. On status "ok" you receive a token — hold it for this conversation. On "failed", say the code didn't work and offer to try again or to contact their Noblestride representative for a fresh code. NEVER say whether the partner or code exists — a wrong code and an unknown partner must sound identical.
 3. Once verified, use get_partner_selfview to show them their own picture: their contact details, whether a signed fee-sharing agreement is on file, and the stage/status of the deals they introduced. Share only what the tool returns.
 4. If they want to correct their OWN contact details (email, phone, organization), use update_partner_selfinfo with the token. Tell them plainly that the change goes to the Noblestride team to review and apply — it is not applied instantly, and you never confirm it as already done.

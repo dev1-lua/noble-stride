@@ -1,5 +1,6 @@
 import { type LuaTool } from "lua-cli";
 import { z } from "zod";
+import { staffRefusal, type StaffCheck } from "../../lib/staff-mode";
 import { crmClientFromEnv, type CrmClient, CrmError, CRM_DOWN_MESSAGE } from "../../lib/crm-client";
 import { MANDATE_REFERRAL_STATUS, TRANSACTION_REFERRAL_STATUS, UPDATE_MANDATE, UPDATE_TRANSACTION, LOG_ACTIVITY } from "../../lib/queries";
 import { resolveByNameOrId } from "../../lib/record-lookup";
@@ -26,9 +27,11 @@ export class LinkPartnerToDealTool implements LuaTool {
     "Attribute an existing deal (mandate or transaction) to a referring partner by setting its referredBy link. Reports a conflict if a different partner is already recorded as originator — replacing them requires the user to explicitly opt in. REQUIRES prior user confirmation of the exact link.";
   inputSchema = inputSchema;
 
-  constructor(private deps?: { crm: CrmClient }) {}
+  constructor(private deps?: { crm: CrmClient; isStaff?: StaffCheck }) {}
 
   async execute(input: z.infer<typeof inputSchema>) {
+    const refusal = await staffRefusal(this.deps?.isStaff);
+    if (refusal) return refusal;
     // Re-validate inside execute: direct invocations (e.g. `lua test`) bypass
     // the platform's schema check, and the confirmed gate must hold everywhere.
     const parsed = inputSchema.safeParse(input);

@@ -1058,6 +1058,7 @@ model Partner {
   stageChanges     StageChange[]
   documents            Document[]
   proposedChanges  PartnerProposedChange[]
+  tasks            Task[]
 
   @@index([partnerType])
   @@index([status])
@@ -1138,6 +1139,10 @@ model Task {
   assistant     User?        @relation("TaskAssistant", fields: [assistantId], references: [id], onDelete: SetNull)
   activityId    String?
   activity      Activity?    @relation("ActivityTasks", fields: [activityId], references: [id], onDelete: SetNull)
+  // Referral review tasks (spec §3.8 link rule extended): a partner introduction
+  // with no deal yet still gets its review task linked — to the Partner itself.
+  partnerId     String?
+  partner       Partner?     @relation(fields: [partnerId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@index([assigneeId])

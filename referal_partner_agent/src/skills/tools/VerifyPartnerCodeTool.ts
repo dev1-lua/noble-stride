@@ -7,7 +7,7 @@ const inputSchema = z.object({
   partnerRef: z
     .string()
     .min(1)
-    .describe("How the partner identifies themselves — their name or the email on their partner record"),
+    .describe("The EMAIL on the partner's record (or an exact record id) — the CRM deliberately does NOT verify by name, so always collect the email"),
   code: z.string().min(1).describe("The access code / PIN the partner was given by Noblestride"),
 });
 

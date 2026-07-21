@@ -1,6 +1,6 @@
 {
-  "lastHash": "bab64fa392231b5b9b5f2f8c5ba94a441c824405c40d357aaf529eb552304604",
-  "lastPushedAt": "2026-07-17T13:10:16.006Z",
+  "lastHash": "85674875ac4fca27784a4d608e387be5058b00799e53772002be6c3a4ac83f7c",
+  "lastPushedAt": "2026-07-21T07:22:12.828Z",
   "files": [
     {
       "relativePath": "env.example",
@@ -8,7 +8,7 @@
     },
     {
       "relativePath": "lua.skill.yaml",
-      "hash": "5bba5c80215e859b"
+      "hash": "62a85ee75dac0ca9"
     },
     {
       "relativePath": "package.json",
@@ -20,11 +20,11 @@
     },
     {
       "relativePath": "src/index.ts",
-      "hash": "794dc79ca3cebe6d"
+      "hash": "42512063049df3dd"
     },
     {
       "relativePath": "src/jobs/stage-watch.job.ts",
-      "hash": "409b755e5ca65720"
+      "hash": "7925f83defd98951"
     },
     {
       "relativePath": "src/lib/crm-client.ts",
@@ -40,7 +40,7 @@
     },
     {
       "relativePath": "src/lib/queries.ts",
-      "hash": "ab8ce567ca497dd8"
+      "hash": "bf487564b1948600"
     },
     {
       "relativePath": "src/lib/record-lookup.ts",
@@ -55,52 +55,84 @@
       "hash": "7c4de58fe4e23751"
     },
     {
+      "relativePath": "src/lib/staff-mode.ts",
+      "hash": "f644f2046b93fea0"
+    },
+    {
+      "relativePath": "src/persona.ts",
+      "hash": "8c3d3f0078564232"
+    },
+    {
       "relativePath": "src/processors/passphrase-gate.ts",
-      "hash": "430b3006ed47ddbe"
+      "hash": "4310598a4b087b5f"
+    },
+    {
+      "relativePath": "src/skills/partner-selfservice.skill.ts",
+      "hash": "5db5028d5eff9fb1"
     },
     {
       "relativePath": "src/skills/referral.skill.ts",
-      "hash": "75e4d75d93ab7f88"
+      "hash": "046940659cdfb361"
     },
     {
       "relativePath": "src/skills/tools/CreateReferredMandateTool.ts",
-      "hash": "512fd2b90070f67f"
+      "hash": "fe85c44c40090a21"
     },
     {
       "relativePath": "src/skills/tools/GetPartnerProfileTool.ts",
-      "hash": "a44711a0f4fae043"
+      "hash": "437d67e5d2f8536b"
+    },
+    {
+      "relativePath": "src/skills/tools/GetPartnerSelfViewTool.ts",
+      "hash": "14d0569553087332"
     },
     {
       "relativePath": "src/skills/tools/GetReferralStatusTool.ts",
-      "hash": "8374ff19c870b28c"
+      "hash": "c2b8fd309cfeac95"
+    },
+    {
+      "relativePath": "src/skills/tools/IssuePartnerAccessCodeTool.ts",
+      "hash": "a8edc4e84d56c6e9"
     },
     {
       "relativePath": "src/skills/tools/LinkPartnerToDealTool.ts",
-      "hash": "dfd00b7583f55059"
+      "hash": "1a4dda367f0f427c"
+    },
+    {
+      "relativePath": "src/skills/tools/ListDealsTool.ts",
+      "hash": "e943c7a1b16e52d8"
     },
     {
       "relativePath": "src/skills/tools/PartnerPerformanceTool.ts",
-      "hash": "62166f64253bd51e"
+      "hash": "b48dcecf794971ff"
     },
     {
       "relativePath": "src/skills/tools/RecordIntroductionTool.ts",
-      "hash": "a0655bfc2c44e718"
+      "hash": "3269dfba336a6635"
     },
     {
       "relativePath": "src/skills/tools/ReferralPipelineDigestTool.ts",
-      "hash": "38e3a99bbd33fbea"
+      "hash": "15f0407cf25bea99"
     },
     {
       "relativePath": "src/skills/tools/SummarizeRecordTool.ts",
-      "hash": "34ccd1db6698ce26"
+      "hash": "b564439fec9336ce"
     },
     {
       "relativePath": "src/skills/tools/UpdateFeeStatusTool.ts",
-      "hash": "8537a0da70775903"
+      "hash": "f809267f885f2f37"
+    },
+    {
+      "relativePath": "src/skills/tools/UpdatePartnerSelfInfoTool.ts",
+      "hash": "14fd2fbc8110dbad"
     },
     {
       "relativePath": "src/skills/tools/UpdatePartnerTool.ts",
-      "hash": "2be0c8da762d62b5"
+      "hash": "886a6c8b3441a8fa"
+    },
+    {
+      "relativePath": "src/skills/tools/VerifyPartnerCodeTool.ts",
+      "hash": "022d8b66ac4fccce"
     },
     {
       "relativePath": "tsconfig.json",

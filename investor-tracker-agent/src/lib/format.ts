@@ -58,6 +58,7 @@ export interface PipelineItem {
   currency?: string | null;
   dealSize?: number | null;
   targetRaise?: number | null;
+  feeAmount?: number | null;
 }
 
 export interface StageColumn { stage: string; label: string; items: PipelineItem[] }

@@ -31,7 +31,7 @@ async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 describe("graphql schema", () => {
-  it("builds without errors and exposes a query type with 39 queries and 68 mutations", async () => {
+  it("builds without errors and exposes a query type with 42 queries and 72 mutations", async () => {
     // Dynamic import so the module graph is resolved lazily — errors surface here.
     const { schema } = await import("@/graphql/schema");
     expect(schema).toBeTruthy();
@@ -39,7 +39,7 @@ describe("graphql schema", () => {
     const queryType = schema.getQueryType();
     expect(queryType).toBeTruthy();
     const queryFields = Object.keys(queryType?.getFields() ?? {});
-    expect(queryFields).toHaveLength(41);
+    expect(queryFields).toHaveLength(42);
 
     const mutationType = schema.getMutationType();
     expect(mutationType).toBeTruthy();
@@ -66,6 +66,7 @@ describe("graphql schema", () => {
     expect(queryFields).toContain("investorByEmail");
     expect(queryFields).toContain("matchInvestorsForTransaction");
     expect(queryFields).toContain("transactionTeaserContext");
+    expect(queryFields).toContain("outreachDrafts");
 
     // Spot-check mutation fields
     expect(mutationFields).toContain("updateMandateStage");
@@ -126,6 +127,18 @@ describe("graphql schema", () => {
     // (spec: the agent may create/update, never delete) — guard against a
     // future registry entry accidentally growing a matching mutation.
     expect(mutationFields.some((f) => /^agentDelete/i.test(f))).toBe(false);
+  });
+
+  it("Task links to Partner (referral review tasks — spec §3.8 link rule extension)", async () => {
+    const { schema } = await import("@/graphql/schema");
+    const taskInput = schema.getType("TaskInput") as { getFields: () => Record<string, unknown> } | undefined;
+    expect(taskInput).toBeTruthy();
+    expect(Object.keys(taskInput!.getFields())).toContain("partnerId");
+    const taskType = schema.getType("Task") as { getFields: () => Record<string, unknown> } | undefined;
+    expect(taskType).toBeTruthy();
+    const taskFields = Object.keys(taskType!.getFields());
+    expect(taskFields).toContain("partnerId");
+    expect(taskFields).toContain("partner");
   });
 
   it("ClientStatusPayload exposes exactly the 10 whitelisted fields (spec 2026-07-14 §5.3)", async () => {

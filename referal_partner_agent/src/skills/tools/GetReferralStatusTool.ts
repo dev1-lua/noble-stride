@@ -1,5 +1,6 @@
 import { type LuaTool } from "lua-cli";
 import { z } from "zod";
+import { staffRefusal, type StaffCheck } from "../../lib/staff-mode";
 import { crmClientFromEnv, type CrmClient } from "../../lib/crm-client";
 import { MANDATE_REFERRAL_STATUS, TRANSACTION_REFERRAL_STATUS } from "../../lib/queries";
 import { resolveByNameOrId } from "../../lib/record-lookup";
@@ -97,9 +98,11 @@ export class GetReferralStatusTool implements LuaTool {
     "Referral status of ONE deal (mandate or transaction): who introduced it, the stage timeline since introduction, whether the referral converted, partner fee status, and a deep link. Identify the deal by name or by an exact id from a previous candidates list.";
   inputSchema = inputSchema;
 
-  constructor(private deps?: { crm: CrmClient }) {}
+  constructor(private deps?: { crm: CrmClient; isStaff?: StaffCheck }) {}
 
   async execute(input: z.infer<typeof inputSchema>) {
+    const refusal = await staffRefusal(this.deps?.isStaff);
+    if (refusal) return refusal;
     const crm = this.deps?.crm ?? crmClientFromEnv();
 
     // Resolve the deal — across both pipelines unless the user named one.

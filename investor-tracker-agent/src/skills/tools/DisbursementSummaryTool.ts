@@ -1,7 +1,7 @@
 import { type LuaTool } from "lua-cli";
 import { z } from "zod";
 import { crmClientFromEnv, type CrmClient } from "../../lib/crm-client";
-import { ENGAGEMENT_TRACKER_DETAIL, ENGAGEMENTS_BY_DEAL_SCAN } from "../../lib/queries";
+import { ENGAGEMENT_TRACKER_DETAIL, ENGAGEMENTS_BY_DEAL_SCAN, PIPELINE_SNAPSHOT } from "../../lib/queries";
 import { resolveEngagement } from "../../lib/engagement-resolve";
 import { resolveByNameOrId } from "../../lib/record-lookup";
 
@@ -56,10 +56,30 @@ interface DealScan {
 
 const n = (v: number | null | undefined): number => (typeof v === "number" ? v : 0);
 
+type ScanRow = DealScan["engagementsByDeal"][number];
+
+function dealTotals(engagements: ScanRow["engagements"]) {
+  return {
+    total: engagements.reduce((s, e) => s + n(e.totalAmount), 0),
+    disbursed: engagements.reduce((s, e) => s + n(e.amountDisbursed), 0),
+    pending: engagements.reduce((s, e) => s + n(e.amountPending), 0),
+    engagementCount: engagements.length,
+  };
+}
+
+function statusHistogram(engagements: ScanRow["engagements"]) {
+  const byStatus: Record<string, number> = {};
+  for (const eng of engagements) {
+    const key = eng.disbursementStatus ?? "Unspecified";
+    byStatus[key] = (byStatus[key] ?? 0) + 1;
+  }
+  return byStatus;
+}
+
 export class DisbursementSummaryTool implements LuaTool {
   name = "disbursement_summary";
   description =
-    "Disbursement figures (§3.11): total committed, disbursed, and pending. For ONE investor on a deal, pass engagementId or investor + deal. For a whole deal's roll-up across every investor, pass deal alone. Numbers are internal — never share them outside Noblestride.";
+    "Disbursement figures (§3.11): total committed, disbursed, and pending. For ONE investor on a deal, pass engagementId or investor + deal. For a whole deal's roll-up across every investor, pass deal alone. Pass nothing for a portfolio-wide roll-up across every deal at once. Numbers are internal — never share them outside Noblestride.";
   inputSchema = inputSchema;
 
   constructor(private deps?: DisbursementDeps) {}
@@ -79,10 +99,14 @@ export class DisbursementSummaryTool implements LuaTool {
     if (input.deal && !input.investor) {
       return this.dealRollup(crm, input.deal);
     }
-    return {
-      status: "rejected" as const,
-      message: "Provide engagementId, or investor + deal for one engagement, or deal alone for a deal-wide roll-up.",
-    };
+    if (input.investor && !input.deal) {
+      return {
+        status: "rejected" as const,
+        message: "An investor alone isn't enough — pass investor + deal for one engagement, deal alone for a deal roll-up, or nothing for the whole portfolio.",
+      };
+    }
+    // No identifying args: portfolio-wide roll-up across every deal.
+    return this.allDeals(crm);
   }
 
   private async single(crm: CrmClient, input: z.infer<typeof inputSchema>) {
@@ -160,12 +184,6 @@ export class DisbursementSummaryTool implements LuaTool {
       disbursementStatus: eng.disbursementStatus ?? null,
     }));
 
-    const byStatus: Record<string, number> = {};
-    for (const eng of row.engagements) {
-      const key = eng.disbursementStatus ?? "Unspecified";
-      byStatus[key] = (byStatus[key] ?? 0) + 1;
-    }
-
     return {
       status: "ok" as const,
       mode: "deal" as const,
@@ -175,15 +193,67 @@ export class DisbursementSummaryTool implements LuaTool {
         stage: row.transaction.stage,
         dealStatus: row.transaction.dealStatus,
       },
-      totals: {
-        total: row.engagements.reduce((s, e) => s + n(e.totalAmount), 0),
-        disbursed: row.engagements.reduce((s, e) => s + n(e.amountDisbursed), 0),
-        pending: row.engagements.reduce((s, e) => s + n(e.amountPending), 0),
-        engagementCount: row.engagements.length,
-      },
-      byStatus,
+      totals: dealTotals(row.engagements),
+      byStatus: statusHistogram(row.engagements),
       engagements: perInvestor,
       link: `${crm.baseUrl}/transactions/${row.transaction.id}`,
+    };
+  }
+
+  /**
+   * Portfolio-wide roll-up. Deals with zero engagements have nothing to disburse,
+   * so they carry no figures — but they are still listed (dealsWithoutEngagements)
+   * so the roll-up visibly covers every deal in the CRM.
+   */
+  private async allDeals(crm: CrmClient) {
+    const [scan, snapshot] = await Promise.all([
+      crm.query<DealScan>(ENGAGEMENTS_BY_DEAL_SCAN),
+      crm.query<{ transactionsByStage: Array<{ label: string; items: Array<{ id: string; name: string }> }> }>(
+        PIPELINE_SNAPSHOT,
+      ),
+    ]);
+
+    const engagedIds = new Set(scan.engagementsByDeal.map((r) => r.transaction.id));
+    const dealsWithoutEngagements = snapshot.transactionsByStage.flatMap((col) =>
+      col.items
+        .filter((item) => !engagedIds.has(item.id))
+        .map((item) => ({
+          name: item.name,
+          stage: col.label,
+          link: `${crm.baseUrl}/transactions/${item.id}`,
+        })),
+    );
+
+    const deals = scan.engagementsByDeal
+      .map((row) => ({
+        deal: {
+          name: row.transaction.name,
+          stage: row.transaction.stage,
+          dealStatus: row.transaction.dealStatus,
+        },
+        totals: dealTotals(row.engagements),
+        byStatus: statusHistogram(row.engagements),
+        link: `${crm.baseUrl}/transactions/${row.transaction.id}`,
+      }))
+      .sort((a, b) => b.totals.disbursed - a.totals.disbursed);
+
+    return {
+      status: "ok" as const,
+      mode: "all_deals" as const,
+      deals,
+      dealsWithoutEngagements,
+      grandTotals: {
+        total: deals.reduce((s, d) => s + d.totals.total, 0),
+        disbursed: deals.reduce((s, d) => s + d.totals.disbursed, 0),
+        pending: deals.reduce((s, d) => s + d.totals.pending, 0),
+        engagementCount: deals.reduce((s, d) => s + d.totals.engagementCount, 0),
+        dealCount: deals.length,
+        dealsWithoutEngagementsCount: dealsWithoutEngagements.length,
+      },
+      note:
+        dealsWithoutEngagements.length > 0
+          ? `${dealsWithoutEngagements.length} deal(s) have no investor engagements yet, so no disbursement data exists for them — listed in dealsWithoutEngagements.`
+          : null,
     };
   }
 }

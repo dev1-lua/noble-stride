@@ -1,5 +1,6 @@
 import { type LuaTool } from "lua-cli";
 import { z } from "zod";
+import { staffRefusal, type StaffCheck } from "../../lib/staff-mode";
 import { crmClientFromEnv, type CrmClient } from "../../lib/crm-client";
 import { PARTNER_REFERRAL_DETAIL } from "../../lib/queries";
 import { resolveByNameOrId } from "../../lib/record-lookup";
@@ -65,9 +66,11 @@ export class GetPartnerProfileTool implements LuaTool {
     "Full referral profile of ONE partner: contact details, fee-sharing agreement state, every deal they introduced (mandates and transactions, with stages and conversion), fee statuses, change history, and a deep link. Identify the partner by name or by an exact id from a previous candidates list.";
   inputSchema = inputSchema;
 
-  constructor(private deps?: { crm: CrmClient }) {}
+  constructor(private deps?: { crm: CrmClient; isStaff?: StaffCheck }) {}
 
   async execute(input: z.infer<typeof inputSchema>) {
+    const refusal = await staffRefusal(this.deps?.isStaff);
+    if (refusal) return refusal;
     const crm = this.deps?.crm ?? crmClientFromEnv();
 
     const resolution = await resolveByNameOrId(crm, "partner", input.partner);

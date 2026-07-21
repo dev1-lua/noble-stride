@@ -2,6 +2,9 @@ import { describe, it, expect, vi } from "vitest";
 import { UpdatePartnerTool } from "../UpdatePartnerTool";
 import type { CrmClient } from "../../../lib/crm-client";
 
+/** Hermetic staff stub — without it the in-tool guard calls the live Lua API. */
+const STAFF = async () => true;
+
 interface PartnerState {
   feeSharingAgreement?: boolean;
   feeSharingTerms?: string | null;
@@ -41,7 +44,7 @@ const BASE = { partnerId: "p1", reason: "test", confirmed: true as const };
 describe("update_partner", () => {
   it("echoes the existing name into PartnerInput (required even on update)", async () => {
     const { crm, calls } = crmStub();
-    const out = await new UpdatePartnerTool({ crm }).execute({ ...BASE, set: { status: "Preferred" } });
+    const out = await new UpdatePartnerTool({ isStaff: STAFF, crm }).execute({ ...BASE, set: { status: "Preferred" } });
     expect(out.status).toBe("ok");
     const update = calls.find((c) => c.document.includes("updatePartner"));
     expect(update?.variables?.input).toEqual({ name: "Acme Advisory", status: "Preferred" });
@@ -49,7 +52,7 @@ describe("update_partner", () => {
 
   it("recording the agreement itself is allowed (that's how staff satisfy the fee guard)", async () => {
     const { crm } = crmStub();
-    const out = await new UpdatePartnerTool({ crm }).execute({
+    const out = await new UpdatePartnerTool({ isStaff: STAFF, crm }).execute({
       ...BASE,
       set: { feeSharingAgreement: true, partnerAgreementStatus: "Signed", feeSharingTerms: "2% of closed value" },
     });
@@ -59,14 +62,14 @@ describe("update_partner", () => {
 
   it("warns when agreement is set true without terms (merged state)", async () => {
     const { crm } = crmStub({ feeSharingTerms: null });
-    const out = await new UpdatePartnerTool({ crm }).execute({ ...BASE, set: { feeSharingAgreement: true } });
+    const out = await new UpdatePartnerTool({ isStaff: STAFF, crm }).execute({ ...BASE, set: { feeSharingAgreement: true } });
     expect(out.status).toBe("ok");
     if (out.status === "ok") expect(out.warning).toContain("feeSharingTerms");
   });
 
   it("anchors the audit note to a referred deal when one exists", async () => {
     const { crm, calls } = crmStub({ referredMandates: [{ id: "m1" }] });
-    const out = await new UpdatePartnerTool({ crm }).execute({ ...BASE, set: { status: "Inactive" } });
+    const out = await new UpdatePartnerTool({ isStaff: STAFF, crm }).execute({ ...BASE, set: { status: "Inactive" } });
     expect(out.status).toBe("ok");
     if (out.status === "ok") expect(out.auditLogged).toBe(true);
     const log = calls.find((c) => c.document.includes("logActivity"));
@@ -75,7 +78,7 @@ describe("update_partner", () => {
 
   it("reports auditLogged: false honestly when the partner has no referred deals", async () => {
     const { crm, calls } = crmStub();
-    const out = await new UpdatePartnerTool({ crm }).execute({ ...BASE, set: { status: "Inactive" } });
+    const out = await new UpdatePartnerTool({ isStaff: STAFF, crm }).execute({ ...BASE, set: { status: "Inactive" } });
     expect(out.status).toBe("ok");
     if (out.status === "ok") expect(out.auditLogged).toBe(false);
     expect(calls.some((c) => c.document.includes("logActivity"))).toBe(false);
