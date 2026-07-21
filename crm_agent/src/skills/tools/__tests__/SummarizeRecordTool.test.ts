@@ -29,6 +29,22 @@ describe("SummarizeRecordTool", () => {
     expect(seenPrompt).toContain("NDA.pdf"); // document METADATA reaches the briefing
   });
 
+  it("surfaces the resolved deal lead (owner.name) to the briefing instead of a raw ownerId", async () => {
+    let seenPrompt = "";
+    const txHit = { id: "t1", type: "Transaction", title: "Amos Fund", subtitle: null, href: "/transactions/t1" };
+    const tool = new SummarizeRecordTool({
+      crm: crmStub([txHit], {
+        id: "t1", name: "Amos Fund", stage: "ClosedWon",
+        owner: { id: "u1", name: "Amos" }, assistant: { id: "u2", name: "Jane" },
+      }),
+      generate: async (p) => { seenPrompt = p; return "## Headline\nAmos Fund is closed-won."; },
+    });
+    const out = await tool.execute({ recordType: "transaction", query: "Amos Fund" });
+    expect(out.status).toBe("ok");
+    expect(seenPrompt).toContain("Amos");   // resolved lead name reaches the prompt
+    expect(seenPrompt).not.toMatch(/"ownerId"/); // no bare FK
+  });
+
   it("returns candidates when ambiguous", async () => {
     const two = [HIT, { ...HIT, id: "c2", title: "Acme Ltd Kenya" }];
     const tool = new SummarizeRecordTool({ crm: crmStub(two), generate: async () => "unused" });
