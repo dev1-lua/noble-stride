@@ -526,6 +526,14 @@ export const InvestorUpdateSubmitInput = builder.inputType("InvestorUpdateSubmit
   }),
 });
 
+export const PartnerSelfUpdateInput = builder.inputType("PartnerSelfUpdateInput", {
+  fields: (t) => ({
+    token: t.string({ required: true }),
+    proposedFieldsJson: t.string({ required: true }),
+    summary: t.string({ required: true }),
+  }),
+});
+
 export const InvestorCommunicationInput = builder.inputType("InvestorCommunicationInput", {
   fields: (t) => ({
     investorId: t.string({ required: true }),

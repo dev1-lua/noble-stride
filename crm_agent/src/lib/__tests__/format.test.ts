@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { computeDigest, buildRecordPrompt, fallbackDigestMarkdown, type StageColumn } from "../format";
+import {
+  computeDigest,
+  buildRecordPrompt,
+  fallbackDigestMarkdown,
+  buildDealHealthPrompt,
+  buildPipelinePrompt,
+  renderDepthDimensions,
+  type StageColumn,
+} from "../format";
 
 const NOW = new Date("2026-07-13T09:00:00Z");
 const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
@@ -55,5 +63,54 @@ describe("prompts and fallbacks", () => {
     expect(md).toContain("Deal Moved");
     expect(md).toContain("Deal Stalled");
     expect(md).toContain("Due Diligence");
+  });
+});
+
+describe("renderDepthDimensions", () => {
+  it("returns empty string when no depth", () => {
+    expect(renderDepthDimensions([])).toBe("");
+  });
+  it("lists the available dimension labels when present", () => {
+    const out = renderDepthDimensions([{ dimension: "activity", label: "the full activity timeline" }]);
+    expect(out).toContain("the full activity timeline");
+  });
+});
+
+describe("buildDealHealthPrompt", () => {
+  const prompt = buildDealHealthPrompt("transaction", "Busoga Raise",
+    [{ area: "stage", severity: "risk", detail: "In stage ~60 days." }],
+    [{ dimension: "engagements", label: "the investor engagements" }], "risks");
+  it("instructs an insight layer and facts-only", () => {
+    expect(prompt.toLowerCase()).toContain("insight");
+    expect(prompt.toLowerCase()).toContain("only");   // facts-only / only use provided
+  });
+  it("passes the record name and the focus through", () => {
+    expect(prompt).toContain("Busoga Raise");
+    expect(prompt.toLowerCase()).toContain("risks");
+  });
+  it("tells the model to offer depth only because dimensions exist", () => {
+    expect(prompt).toContain("the investor engagements");
+    expect(prompt.toLowerCase()).toContain("vary");
+  });
+});
+
+describe("buildDealHealthPrompt — no depth", () => {
+  it("instructs NOT to add a deeper offer when depth is empty", () => {
+    const prompt = buildDealHealthPrompt("investor", "FundZ",
+      [{ area: "criteria", severity: "warn", detail: "Criteria incomplete." }], []);
+    expect(prompt.toLowerCase()).toContain("do not add");
+  });
+});
+
+describe("buildPipelinePrompt", () => {
+  it("renders the metrics and asks for insight", () => {
+    const prompt = buildPipelinePrompt({
+      metrics: [{ stage: "Outreach", count: 2, totalValue: 1_500_000 }],
+      aging: [{ name: "A", stage: "Outreach", idleDays: 50 }],
+      concentration: [{ sector: "Fintech", count: 2 }],
+      depth: [{ dimension: "aging", label: "the full list of stalled deals" }],
+    }, "transactions");
+    expect(prompt).toContain("Outreach");
+    expect(prompt.toLowerCase()).toContain("insight");
   });
 });

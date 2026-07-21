@@ -12,6 +12,28 @@ export const INVESTOR_BY_EMAIL = /* GraphQL */ `
   }
 `;
 
+export const INVESTOR_SELF_VIEW = /* GraphQL */ `
+  query InvestorSelfView($email: String!) {
+    investorSelfView(email: $email) {
+      matched
+      investorName
+      status
+      onboardingStatus
+      sectorFocus
+      geographicFocus
+      instruments
+      investmentStages
+      ticketBand
+      currency
+      targetIrr
+      countryRestrictions
+      esgFocus
+      investmentMandate
+      criteriaVerifiedAt
+    }
+  }
+`;
+
 export const MATCH_INVESTORS = /* GraphQL */ `
   query MatchInvestors($transactionId: String!) {
     matchInvestorsForTransaction(transactionId: $transactionId) {

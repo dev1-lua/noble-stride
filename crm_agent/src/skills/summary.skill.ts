@@ -11,6 +11,7 @@ export const summarySkill = new LuaSkill({
 - If it returns "not_found", say so plainly and ask for a spelling or more context — never guess.
 - Use pipeline_digest when the user asks what changed, moved, is new, or is stalled ("what happened this week?"). Default days=7.
 - When the user asks for "this week's digest" or "the weekly digest", call pipeline_digest with useStored=true.
-- Relay the tool's summary/digest text as the core of your answer; append the link when present. Never expose raw record ids.`,
+- Relay the tool's summary/digest text as the core of your answer; append the link when present. Never expose raw record ids.
+- Match your shape to the question: a simple "what stage is X?" gets one direct line with NO "go deeper" offer; a briefing gets the structured summary. Do not append generic "anything else?" closers.`,
   tools: [new SummarizeRecordTool(), new PipelineDigestTool()],
 });

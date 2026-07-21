@@ -1,5 +1,6 @@
 import type { CrmClient } from "./crm-client";
 import { MATCH_INVESTORS, TEASER_CONTEXT, SAVE_DRAFTS } from "./queries";
+import { scanOutbound } from "./guardrails/outbound-scan";
 
 export interface TeaserCtx {
   codename: string; sectors: string[]; geographies: string[]; dealType: string | null;
@@ -92,6 +93,21 @@ export async function runDraftOutreach(
     try {
       body = (await deps.generate(buildIntroPrompt(ctx, match))).trim();
       if (!body) throw new Error("empty generation");
+      // scanOutbound's "existence-confirmation" heuristic (Task 5) targets an inbound reply
+      // agent affirming an undisclosed client relationship ("we are currently advising that
+      // company"). A cold-outreach intro necessarily says "we are advising <this codenamed
+      // opportunity>" as its entire premise — same phrasing, different (intended, pre-NDA-safe)
+      // meaning — so that reason alone would false-positive every outreach draft.
+      // "financial-figure" is non-vetoing here too (M3 fix): a teaser legitimately states a
+      // target-raise band (ctx.targetRaiseBand, e.g. "USD 5-10M"), and fallbackIntro below
+      // re-emits that SAME band verbatim without re-scanning it — so vetoing a generation for
+      // stating the band achieves nothing protective, it only discards a possibly-better
+      // generation for a fallback carrying the identical figure. Record-id and prompt-echo
+      // remain hard vetoes for generated drafts.
+      const scan = scanOutbound(body);
+      if (scan.reasons.some((r) => r !== "existence-confirmation" && r !== "financial-figure")) {
+        throw new Error(`outbound scan flagged generated draft: ${scan.reasons.join(", ")}`);
+      }
     } catch {
       const fb = fallbackIntro(ctx, match);
       subject = fb.subject;

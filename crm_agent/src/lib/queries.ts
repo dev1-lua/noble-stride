@@ -22,10 +22,13 @@ export const DETAIL_QUERIES: Record<RecordType, { document: string; rootField: s
         client(id: $id) {
           id name sector status hqCity hqCountry website description
           revenueLastYear revenueForecast currency profitability existingInvestors staffCount
+          countries coreProduct businessModel ownershipStructure branchCount
+          ebitda netProfit existingDebt totalAssets raisedToDateTotal pepExposure governmentOwned
           createdAt updatedAt
           contacts { firstName lastName email jobTitle isPrimaryContact }
           mandates { id name stage dealSize currency nextAction stageEnteredAt }
           transactions { id name stage targetRaise currency dealStatus stageEnteredAt }
+          tasks { title status dueAt }
           ${ACTIVITY_FIELDS}
         }
       }
@@ -39,11 +42,15 @@ export const DETAIL_QUERIES: Record<RecordType, { document: string; rootField: s
           id name investorType status website sectorFocus geographicFocus instruments
           investmentStages aum ticketMin ticketMax currency esgFocus ndaStatus onboardingStatus
           engagementClassification nextActionDate feedback notes createdAt updatedAt
+          targetIrr shareholdingPreference minRevenue minEbitda pricingPreference
+          ddRequirements icApprovalProcess trackRecord investmentMandate reinvestmentPolicy
+          registeredAt criteriaVerifiedAt openNdaSignedAt
           contacts { firstName lastName email jobTitle isPrimaryContact }
           engagements {
             id name status engagementStage interestLevel lastContact totalAmount probability
             transaction { id name stage }
           }
+          tasks { title status dueAt }
           ${ACTIVITY_FIELDS}
         }
       }
@@ -57,8 +64,11 @@ export const DETAIL_QUERIES: Record<RecordType, { document: string; rootField: s
           id name stage stageEnteredAt daysInStage dealStatus dealSize currency sector source
           dateOpened ndaStatus ndaSignedDate eaStatus eaSignedDate nextAction notes
           retainerAmount priority createdAt updatedAt leadId
+          referralQualified qualificationVerdict qualifiedAt intakeNdaAccepted
           client { id name }
           transactions { id name stage }
+          stageChanges { field fromValue toValue changedAt }
+          tasks { title status dueAt }
           ${ACTIVITY_FIELDS}
         }
       }
@@ -72,12 +82,16 @@ export const DETAIL_QUERIES: Record<RecordType, { document: string; rootField: s
           id name stage stageEnteredAt dealType instrument targetRaise currency sector
           dateOpened closedAt dealStatus dealMilestone financingType probability notes priority
           activeConversations createdAt updatedAt ownerId
+          maxSellingStake useOfFunds targetProfile partnerFeeStatus
           client { id name }
           mandate { id name stage }
           engagements {
             id name status engagementStage interestLevel lastContact totalAmount termSheetIssued
             investor { id name }
           }
+          stageChanges { field fromValue toValue changedAt }
+          serviceProviders { id name }
+          tasks { title status dueAt }
           ${ACTIVITY_FIELDS}
         }
       }
@@ -91,9 +105,11 @@ export const DETAIL_QUERIES: Record<RecordType, { document: string; rootField: s
           id name status engagementStage interestLevel ndaType ndaSignedAt termSheetIssued termSheetDate
           totalAmount amountDisbursed amountPending disbursementStatus probability feedback notes
           lastContact createdAt updatedAt
+          year quarter dateReceived
           transaction { id name stage client { id name } }
           investor { id name investorType }
           milestones { key completedAt notes }
+          stageChanges { field fromValue toValue changedAt }
           ${ACTIVITY_FIELDS}
         }
       }
@@ -106,9 +122,12 @@ export const DETAIL_QUERIES: Record<RecordType, { document: string; rootField: s
         partner(id: $id) {
           id name partnerType status location organization email phone profile
           feeSharingAgreement feeSharingTerms partnerAgreementStatus internalOnly feedbackNotes
+          amount currency advisorType
           createdAt updatedAt
           contacts { firstName lastName email }
           referredMandates { id name stage }
+          referredTransactions { id name stage }
+          stageChanges { field fromValue toValue changedAt }
         }
       }
     `,
@@ -119,11 +138,20 @@ export const PIPELINE_SNAPSHOT = /* GraphQL */ `
   query AgentPipelineSnapshot {
     mandatesByStage {
       stage label
-      items { id name stageEnteredAt createdAt updatedAt dateOpened currency dealSize }
+      items { id name stageEnteredAt createdAt updatedAt dateOpened currency dealSize sector }
     }
     transactionsByStage {
       stage label
-      items { id name stageEnteredAt createdAt updatedAt dateOpened currency targetRaise }
+      items { id name stageEnteredAt createdAt updatedAt dateOpened currency targetRaise sector }
+    }
+  }
+`;
+
+/** Reuses the CRM's existing agent-gated matcher (assertAutomation). Read-only. */
+export const MATCH_INVESTORS = /* GraphQL */ `
+  query AgentMatchInvestors($transactionId: String!) {
+    matchInvestorsForTransaction(transactionId: $transactionId) {
+      investorId name contactName matchReasons hasExistingEngagement
     }
   }
 `;

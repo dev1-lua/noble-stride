@@ -9,6 +9,8 @@ import { CreateReferredMandateTool } from "./tools/CreateReferredMandateTool";
 import { LinkPartnerToDealTool } from "./tools/LinkPartnerToDealTool";
 import { UpdatePartnerTool } from "./tools/UpdatePartnerTool";
 import { UpdateFeeStatusTool } from "./tools/UpdateFeeStatusTool";
+import { IssuePartnerAccessCodeTool } from "./tools/IssuePartnerAccessCodeTool";
+import { withStaffGuard } from "../lib/staff-mode";
 
 export const referralSkill = new LuaSkill({
   name: "referral-partner-tracker",
@@ -23,6 +25,7 @@ Routing:
 - partner_performance for conversion numbers and the partner leaderboard ("which partner brings the best deals?").
 - summarize_record for a general briefing on any single client, investor, mandate, transaction, engagement, or partner.
 - record_introduction / create_referred_mandate / link_partner_to_deal / update_partner / update_fee_status for writes — see the write protocol below.
+- issue_partner_access_code when staff want to let a partner self-serve: it returns a one-time code to hand to the partner out-of-band (they then verify on the partner self-service surface to view/update their own details). Every tool here is staff-only; if one returns status "staff_only", the caller isn't a verified staff member — do not retry.
 
 Introductions (default path — hard rule):
 - When staff report an introduction, the default action is record_introduction: it creates/updates the Partner and files a review task. It NEVER creates a deal.
@@ -50,16 +53,22 @@ Ambiguity and errors:
 - If the CRM is unreachable, say so and suggest retrying shortly — never answer from memory.
 
 Never expose raw record ids; refer to records by name and share the deep links tools return.`,
+  // Every staff tool is wrapped with withStaffGuard: the passphrase-gate no longer
+  // hard-blocks non-staff (partners reach the token-scoped partner-self-service
+  // skill on the same channel), so each staff tool self-authorizes and refuses a
+  // non-staff caller. issue_partner_access_code is staff-only too — staff generate
+  // the code, then hand it to the partner out-of-band.
   tools: [
-    new GetPartnerProfileTool(),
-    new GetReferralStatusTool(),
-    new ReferralPipelineDigestTool(),
-    new PartnerPerformanceTool(),
-    new SummarizeRecordTool(),
-    new RecordIntroductionTool(),
-    new CreateReferredMandateTool(),
-    new LinkPartnerToDealTool(),
-    new UpdatePartnerTool(),
-    new UpdateFeeStatusTool(),
+    withStaffGuard(new GetPartnerProfileTool()),
+    withStaffGuard(new GetReferralStatusTool()),
+    withStaffGuard(new ReferralPipelineDigestTool()),
+    withStaffGuard(new PartnerPerformanceTool()),
+    withStaffGuard(new SummarizeRecordTool()),
+    withStaffGuard(new RecordIntroductionTool()),
+    withStaffGuard(new CreateReferredMandateTool()),
+    withStaffGuard(new LinkPartnerToDealTool()),
+    withStaffGuard(new UpdatePartnerTool()),
+    withStaffGuard(new UpdateFeeStatusTool()),
+    withStaffGuard(new IssuePartnerAccessCodeTool()),
   ],
 });

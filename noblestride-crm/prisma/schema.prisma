@@ -538,6 +538,7 @@ model User {
   authAccount AuthAccount?
   reviewedOutreachDrafts  OutreachDraft[]           @relation("OutreachDraftReviewer")
   reviewedProposedChanges InvestorProposedChange[]  @relation("ProposedChangeReviewer")
+  reviewedPartnerProposedChanges PartnerProposedChange[] @relation("PartnerProposedChangeReviewer")
 }
 
 model Person {
@@ -1039,6 +1040,14 @@ model Partner {
   internalOnly           Boolean                @default(true)
   // Task 6: feedback notes
   feedbackNotes          String?
+  // Partner self-service (SOW §7.2 Partner "own" access): a static reference
+  // code/PIN issued out-of-band by staff lets a partner verify on their channel
+  // and view/propose updates to their OWN record. Only the sha256 hash is stored
+  // (never the raw code); attempts/lockout mirror the OTP challenge discipline.
+  accessCodeHash           String?
+  accessCodeSetAt          DateTime?
+  accessCodeFailedAttempts Int       @default(0)
+  accessCodeLockedUntil    DateTime?
   createdSource ActorSource   @default(HUMAN)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -1048,6 +1057,7 @@ model Partner {
   referredTransactions Transaction[] @relation("PartnerTransactionReferral")
   stageChanges     StageChange[]
   documents            Document[]
+  proposedChanges  PartnerProposedChange[]
 
   @@index([partnerType])
   @@index([status])
@@ -1651,4 +1661,26 @@ model InvestorProposedChange {
 
   @@index([status])
   @@index([investorId])
+}
+
+// PartnerProposedChange — a verified partner's self-service edit to their OWN
+// record, queued for staff review (SOW §8.4: advisor-to-Noblestride changes are
+// reviewed by a person). Mirrors InvestorProposedChange; never mutates the
+// Partner directly — staff confirm in the CRM under RBAC.
+model PartnerProposedChange {
+  id             String               @id @default(cuid())
+  proposedFields Json
+  summary        String
+  status         ProposedChangeStatus @default(Pending)
+  reviewedAt     DateTime?
+  createdSource  ActorSource          @default(AGENT)
+  createdAt      DateTime             @default(now())
+
+  partnerId    String
+  partner      Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  reviewedById String?
+  reviewedBy   User?   @relation("PartnerProposedChangeReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([partnerId])
 }

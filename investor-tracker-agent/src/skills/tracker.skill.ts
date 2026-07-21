@@ -8,6 +8,9 @@ import { FindFitInvestorsTool } from "./tools/FindFitInvestorsTool";
 import { ScanStalledEngagementsTool } from "./tools/ScanStalledEngagementsTool";
 import { SummarizeRecordTool } from "./tools/SummarizeRecordTool";
 import { PipelineDigestTool } from "./tools/PipelineDigestTool";
+import { GetTermSheetStatusTool } from "./tools/GetTermSheetStatusTool";
+import { DisbursementSummaryTool } from "./tools/DisbursementSummaryTool";
+import { EngagementHistoryTool } from "./tools/EngagementHistoryTool";
 
 export const trackerSkill = new LuaSkill({
   name: "investor-tracker",
@@ -17,6 +20,9 @@ export const trackerSkill = new LuaSkill({
 
 Routing:
 - get_engagement_status when the user asks where one investor stands on one deal ("where is Vantage on the Busoga deal?"). Pass names exactly as said, or engagementId from a previous result.
+- get_term_sheet_status when the question is specifically about the term sheet — issued? non-binding? executed? Identify by engagementId or investor + deal.
+- disbursement_summary for the money (§3.11: total committed / disbursed / pending). For one investor pass investor + deal (or engagementId); for a deal-wide roll-up across every investor pass the deal alone.
+- engagement_history when they ask how an engagement got here — its stage-move timeline. Defaults to stage moves; pass allFields:true for every tracked transition.
 - scan_stalled_engagements when they ask what's stalled, overdue, idle, or needs chasing — optionally scoped to a deal or investor.
 - find_fit_investors when they ask which investors fit/match a deal or mandate.
 - update_engagement / record_milestone / update_dd_status / create_followup_task for writes — see the write protocol below.
@@ -38,6 +44,9 @@ After scan_stalled_engagements, offer to create a follow-up task for any flag th
 Never expose raw record ids; refer to records by name and share the deep links tools return.`,
   tools: [
     new GetEngagementStatusTool(),
+    new GetTermSheetStatusTool(),
+    new DisbursementSummaryTool(),
+    new EngagementHistoryTool(),
     new UpdateEngagementTool(),
     new RecordMilestoneTool(),
     new UpdateDDStatusTool(),

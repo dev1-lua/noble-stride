@@ -28,7 +28,9 @@ import {
   CheckCompanyResultRef,
   StaffResolveResultRef,
   ClientStatusPayloadRef,
+  PartnerSelfPayloadRef,
   InvestorIdentityRef,
+  InvestorSelfViewRef,
   AgentInvestorMatchRef,
   TeaserContextRef,
 } from "./types";
@@ -69,9 +71,11 @@ import { globalSearch, type SearchResult } from "@/server/search/global-search";
 import { assertAutomation } from "@/server/rbac/enforce";
 import { checkCompany } from "@/server/services/client-intake";
 import { getClientStatus } from "@/server/services/client-status";
+import { partnerSelfView } from "@/server/services/partner-self";
 import { resolveStaffUserSummary } from "@/server/services/agent-delegation";
 import {
   investorByEmail,
+  investorSelfView,
   matchInvestorsForTransaction,
   transactionTeaserContext,
 } from "@/server/services/investor-agent";
@@ -690,6 +694,18 @@ builder.queryFields((t) => ({
     },
   }),
 
+  // Partner self-service (SOW §7.2): trade a verified partner-self token for the
+  // hard-whitelisted own-record view (own contact/agreement + own referred deals).
+  partnerSelfView: t.field({
+    type: PartnerSelfPayloadRef,
+    nullable: false,
+    args: { token: t.arg.string({ required: true }) },
+    resolve: (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return partnerSelfView(args.token);
+    },
+  }),
+
   // Investor Agent (spec 2026-07-14): identity match for inbound email routing.
   investorByEmail: t.field({
     type: InvestorIdentityRef,
@@ -698,6 +714,16 @@ builder.queryFields((t) => ({
     resolve: (_root, args, ctx) => {
       assertAutomation(ctx.actor);
       return investorByEmail(args.email);
+    },
+  }),
+  // Investor Agent: the investor's OWN whitelisted profile (spec §7.2 "own profile").
+  investorSelfView: t.field({
+    type: InvestorSelfViewRef,
+    nullable: false,
+    args: { email: t.arg.string({ required: true }) },
+    resolve: (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return investorSelfView(args.email);
     },
   }),
   // Investor Agent: eligible investors for a deal (internal-only data; feeds drafts).

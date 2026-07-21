@@ -7,20 +7,22 @@ describe("gateDecision", () => {
     expect(gateDecision(true, undefined, "secret")).toBe("proceed");
   });
 
-  it("correct passphrase (trimmed, case-sensitive) verifies", () => {
+  it("correct passphrase (trimmed, case-sensitive) verifies as staff", () => {
     expect(gateDecision(false, "  secret ", "secret")).toBe("verify");
-    expect(gateDecision(false, "Secret", "secret")).toBe("challenge");
+    // wrong case is NOT the passphrase → falls through to partner mode (not blocked)
+    expect(gateDecision(false, "Secret", "secret")).toBe("partner");
   });
 
-  it("anything else is challenged", () => {
-    expect(gateDecision(false, "summarize acme", "secret")).toBe("challenge");
-    expect(gateDecision(false, undefined, "secret")).toBe("challenge");
+  it("a non-staff message proceeds in partner mode (never hard-blocked)", () => {
+    expect(gateDecision(false, "summarize acme", "secret")).toBe("partner");
+    expect(gateDecision(false, undefined, "secret")).toBe("partner");
+    expect(gateDecision(false, "I'd like to check my referrals", "secret")).toBe("partner");
   });
 
-  it("missing TEAM_PASSPHRASE fails closed", () => {
-    expect(gateDecision(false, "secret", undefined)).toBe("unconfigured");
-    expect(gateDecision(false, "anything", "")).toBe("unconfigured"); // empty-string env is unconfigured too
-    expect(gateDecision(false, "", "")).toBe("unconfigured");
-    expect(gateDecision(true, "hi", undefined)).toBe("proceed"); // already-verified users unaffected
+  it("with no TEAM_PASSPHRASE configured, staff can't verify but partners still proceed", () => {
+    expect(gateDecision(false, "secret", undefined)).toBe("partner");
+    expect(gateDecision(false, "anything", "")).toBe("partner"); // empty-string env can't verify anyone
+    expect(gateDecision(false, "", "")).toBe("partner");
+    expect(gateDecision(true, "hi", undefined)).toBe("proceed"); // already-verified staff unaffected
   });
 });

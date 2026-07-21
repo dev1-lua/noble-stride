@@ -300,3 +300,45 @@ export const LOG_ACTIVITY = /* GraphQL */ `
     logActivity(input: $input) { id }
   }
 `;
+
+// ─── Partner self-service (SOW §7.2) ─────────────────────────────────────────
+
+// Staff-only: mint (or rotate) a partner's static access code. Returns the raw
+// code ONCE for out-of-band delivery to the partner.
+export const ISSUE_PARTNER_ACCESS_CODE = /* GraphQL */ `
+  mutation ReferralIssuePartnerAccessCode($partnerId: String!) {
+    issuePartnerAccessCode(partnerId: $partnerId) { code }
+  }
+`;
+
+// Partner-facing: verify a partner's access code. Returns { status, token };
+// every failure collapses to status "failed" (anti-enumeration).
+export const VERIFY_PARTNER_ACCESS_CODE = /* GraphQL */ `
+  mutation ReferralVerifyPartnerAccessCode($partnerRef: String!, $code: String!) {
+    verifyPartnerAccessCode(partnerRef: $partnerRef, code: $code) { status token }
+  }
+`;
+
+// Partner-facing: the verified partner's OWN whitelisted view.
+export const PARTNER_SELF_VIEW = /* GraphQL */ `
+  query ReferralPartnerSelfView($token: String!) {
+    partnerSelfView(token: $token) {
+      name
+      organization
+      email
+      phone
+      advisorType
+      feeAgreementOnFile
+      referredDealCount
+      referredDeals { dealName stage status }
+    }
+  }
+`;
+
+// Partner-facing: propose an update to the partner's OWN contact details
+// (queued for staff review — never applied directly).
+export const SUBMIT_PARTNER_SELF_UPDATE = /* GraphQL */ `
+  mutation ReferralSubmitPartnerSelfUpdate($input: PartnerSelfUpdateInput!) {
+    submitPartnerSelfUpdate(input: $input) { ok }
+  }
+`;

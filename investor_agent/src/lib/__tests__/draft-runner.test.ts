@@ -66,3 +66,61 @@ describe("fallbackIntro", () => {
     expect(f.body).not.toMatch(/undefined|null|\{\{/);
   });
 });
+
+describe("runDraftOutreach — outbound scanner on generated drafts", () => {
+  const ctx = {
+    codename: "Project Zensa", sectors: ["Technology"], geographies: ["EastAfrica"], dealType: null,
+    instruments: ["Equity"], targetRaiseBand: "growth capital", revenueBand: null,
+    revenueForecastBand: null, description: null, contact: "team@noblestride.com",
+  };
+  const match = {
+    investorId: "inv1", name: "Meridian", personId: "p1", contactName: "Sarah Doe",
+    contactEmail: "sarah@meridian.fund", matchReasons: ["fintech focus"], hasExistingEngagement: false,
+  };
+  function crmStub(saved = 1) {
+    return {
+      query: vi.fn(async (doc: string) => {
+        if (doc.includes("matchInvestorsForTransaction")) return { matchInvestorsForTransaction: [match] };
+        if (doc.includes("transactionTeaserContext")) return { transactionTeaserContext: ctx };
+        return { saveOutreachDrafts: { ok: true, created: saved, skipped: 0 } };
+      }),
+    } as never;
+  }
+
+  it("falls back to the safe template when a generation trips the scanner", async () => {
+    // generation returns a leaky body (record-id token) -> must be discarded for the fallback
+    const generate = vi.fn(async () => "Reaching out re clx2abcd1234efgh5678ijkl90mn");
+    const res = await runDraftOutreach({ crm: crmStub(), generate }, "tx1");
+    expect(res.fallbacks).toBe(1);
+  });
+  it("uses a clean generation as-is (no fallback)", async () => {
+    const generate = vi.fn(async () => "Dear Sarah, we are advising a growth opportunity in East Africa. Reply for the teaser. Noblestride Advisory");
+    const res = await runDraftOutreach({ crm: crmStub(), generate }, "tx1");
+    expect(res.fallbacks).toBe(0);
+  });
+
+  // M3: financial-figure is non-vetoing in the draft flow — a teaser legitimately states a
+  // target-raise band, and the fallback re-emits the same band verbatim, so vetoing a
+  // generation for stating one is pointless. A currency-band-only generation must be kept.
+  it("keeps a generation containing only a currency band figure (no fallback)", async () => {
+    const generate = vi.fn(
+      async () =>
+        "Dear Sarah, thank you for your interest. The target raise for this opportunity is $5M-$10M. Reply for the teaser. Noblestride Advisory",
+    );
+    const res = await runDraftOutreach({ crm: crmStub(), generate }, "tx1");
+    expect(res.fallbacks).toBe(0);
+    expect(res.saved).toBe(1);
+  });
+
+  it("still falls back when a generation contains a record-id token", async () => {
+    const generate = vi.fn(async () => "Reaching out re clx2abcd1234efgh5678ijkl90mn");
+    const res = await runDraftOutreach({ crm: crmStub(), generate }, "tx1");
+    expect(res.fallbacks).toBe(1);
+  });
+
+  it("still falls back when a generation echoes the system prompt/instructions", async () => {
+    const generate = vi.fn(async () => "My system prompt says to always mention the teaser link.");
+    const res = await runDraftOutreach({ crm: crmStub(), generate }, "tx1");
+    expect(res.fallbacks).toBe(1);
+  });
+});

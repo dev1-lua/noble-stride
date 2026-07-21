@@ -7,7 +7,7 @@ import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, AdvisoryInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, WebsiteIntakeInput, LogClientMessageInput, InvestorUpdateSubmitInput, InvestorCommunicationInput, OutreachDraftsInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, AdvisoryInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, WebsiteIntakeInput, LogClientMessageInput, InvestorUpdateSubmitInput, InvestorCommunicationInput, OutreachDraftsInput, PartnerSelfUpdateInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor, markInvestorCriteriaVerified } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
@@ -21,7 +21,8 @@ import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
 import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
 import { createSavedView, renameSavedView, deleteSavedView, type SavedViewConfig } from "@/server/services/saved-views";
-import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef, ClientOtpVerifyRef, AgentWritePreviewRef, AgentWriteResultRef, DraftsAckRef } from "./types";
+import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef, ClientOtpVerifyRef, AgentWritePreviewRef, AgentWriteResultRef, DraftsAckRef, PartnerAccessCodeRef, PartnerVerifyRef } from "./types";
+import { issuePartnerAccessCode, verifyPartnerAccessCode, submitPartnerSelfUpdate } from "@/server/services/partner-self";
 import { markNotificationsRead, markAllNotificationsRead } from "@/server/services/notifications";
 import { getOrgLens } from "@/server/rbac/context";
 import { assertAdmin, assertCan, assertCanDelete, assertCanUpdateOwnScoped, assertAutomation } from "@/server/rbac/enforce";
@@ -725,6 +726,50 @@ builder.mutationFields((t) => ({
     resolve: (_root, args, ctx) => {
       assertAutomation(ctx.actor);
       return verifyClientStatusOtp(args.companyName, args.contactEmail, args.code);
+    },
+  }),
+
+  // ── Partner self-service (SOW §7.2) — automation-only ──
+  // issuePartnerAccessCode is staff-initiated (referral agent staff mode); it
+  // returns the raw code ONCE for out-of-band delivery to the partner.
+  issuePartnerAccessCode: t.field({
+    type: PartnerAccessCodeRef,
+    nullable: false,
+    args: { partnerId: t.arg.string({ required: true }) },
+    resolve: (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return issuePartnerAccessCode(args.partnerId);
+    },
+  }),
+  // verifyPartnerAccessCode always collapses failures to {status:"failed"} — the
+  // anti-enumeration invariant lives in the service; the resolver must not differ.
+  verifyPartnerAccessCode: t.field({
+    type: PartnerVerifyRef,
+    nullable: false,
+    args: {
+      partnerRef: t.arg.string({ required: true }),
+      code: t.arg.string({ required: true }),
+    },
+    resolve: (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return verifyPartnerAccessCode(args.partnerRef, args.code);
+    },
+  }),
+  // submitPartnerSelfUpdate queues a proposed change + staff task; never mutates
+  // the Partner directly (SOW §8.4). Token-scoped to the verified partner.
+  submitPartnerSelfUpdate: t.field({
+    type: AgentAckRef,
+    nullable: false,
+    args: { input: t.arg({ type: PartnerSelfUpdateInput, required: true }) },
+    resolve: async (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      let proposedFields: Record<string, unknown>;
+      try {
+        proposedFields = JSON.parse(args.input.proposedFieldsJson) as Record<string, unknown>;
+      } catch {
+        throw new Error("proposedFieldsJson is not valid JSON");
+      }
+      return submitPartnerSelfUpdate(args.input.token, proposedFields, args.input.summary);
     },
   }),
 

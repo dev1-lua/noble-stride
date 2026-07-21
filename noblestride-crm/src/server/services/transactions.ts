@@ -13,7 +13,34 @@ import { transactionCreateSchema, transactionUpdateSchema, type TransactionCreat
 import { actorSource, CrudError, sameCalendarDate } from "./crud";
 import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
+import { assertAgentFeeAllowed, feeChangeMarksOwed, isAgentActor } from "@/server/domain/agent-write-guards";
 import { notify } from "./notifications";
+
+// Fields the fee guard needs from the deal's referring partner.
+const FEE_PARTNER_SELECT = { name: true, feeSharingAgreement: true, partnerAgreementStatus: true } as const;
+
+/**
+ * The partner the fee guard must evaluate. On UPDATE, if the payload itself sets
+ * `referredById` (including clearing it to null), the guard must judge the INCOMING
+ * partner — not the stale persisted one — otherwise an agent could point a fee at
+ * an unsigned/absent partner in the same call (gap-F fee-guard, review H2). When
+ * the payload doesn't touch `referredById`, fall back to the persisted referrer.
+ */
+async function feeGuardPartner(
+  transactionId: string,
+  data: { referredById?: string | null },
+): Promise<{ name: string; feeSharingAgreement: boolean; partnerAgreementStatus: string } | null> {
+  if ("referredById" in data) {
+    return data.referredById
+      ? prisma.partner.findUnique({ where: { id: data.referredById }, select: FEE_PARTNER_SELECT })
+      : null;
+  }
+  const txn = await prisma.transaction.findUniqueOrThrow({
+    where: { id: transactionId },
+    select: { referredBy: { select: FEE_PARTNER_SELECT } },
+  });
+  return txn.referredBy;
+}
 
 // ─── Filter type ─────────────────────────────────────────────────────────────
 
@@ -158,6 +185,14 @@ function transactionStageNotification(id: string, name: string, fromStage: Trans
 
 export async function createTransaction(input: TransactionCreateInput, actor: Actor) {
   const { serviceProviderIds, assistIds, ...data } = transactionCreateSchema.parse(input);
+  // gap F (review H3): an agent creating a deal with a partner fee already marked
+  // owed must satisfy the same signed-agreement rule as an update (SPEC §8.4).
+  if (isAgentActor(actor) && feeChangeMarksOwed(data)) {
+    const partner = data.referredById
+      ? await prisma.partner.findUnique({ where: { id: data.referredById }, select: FEE_PARTNER_SELECT })
+      : null;
+    assertAgentFeeAllowed(actor, data, partner);
+  }
   const now = new Date();
   // Deal country defaults from the client's HQ country when not provided.
   const country = data.country ?? (await prisma.client.findUnique({ where: { id: data.clientId }, select: { hqCountry: true } }))?.hqCountry ?? undefined;
@@ -176,6 +211,13 @@ export async function createTransaction(input: TransactionCreateInput, actor: Ac
 export async function updateTransaction(id: string, input: TransactionUpdateInput, actor: Actor = { type: "HUMAN" }) {
   const { serviceProviderIds, assistIds, stage, ...data } = transactionUpdateSchema.parse(input);
   const now = new Date();
+
+  // gap F: an agent may not mark a partner fee owed/amount unless the deal's
+  // referring partner has a recorded, signed fee-sharing agreement (SPEC §8.4).
+  // Evaluate the INCOMING referrer (review H2). Humans (CRM UI) are unaffected.
+  if (isAgentActor(actor) && feeChangeMarksOwed(data)) {
+    assertAgentFeeAllowed(actor, data, await feeGuardPartner(id, data));
+  }
 
   const result = await prisma.$transaction(async (tx) => {
     const existing = await tx.transaction.findUniqueOrThrow({

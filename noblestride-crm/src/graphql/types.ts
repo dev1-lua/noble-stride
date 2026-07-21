@@ -56,6 +56,7 @@ import {
 import { daysInStage } from "@/server/domain/metrics";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
 import type { ClientStatusPayload } from "@/server/services/client-status";
+import type { PartnerSelfPayload, PartnerReferredDealView } from "@/server/services/partner-self";
 
 // ─── User ────────────────────────────────────────────────────────────────────
 
@@ -163,10 +164,11 @@ export const InvestorRef = builder.prismaObject("Investor", {
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (i) => i.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (i) => i.updatedAt }),
-    // Relations — tasks excluded per brief
+    // Relations
     contacts: t.relation("contacts"),
     engagements: t.relation("engagements"),
     activities: t.relation("activities"),
+    tasks: t.relation("tasks"),
     // Counts
     engagementCount: t.relationCount("engagements"),
   }),
@@ -230,11 +232,12 @@ export const ClientRef = builder.prismaObject("Client", {
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (c) => c.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (c) => c.updatedAt }),
-    // Relations — tasks excluded per brief
+    // Relations
     contacts: t.relation("contacts"),
     mandates: t.relation("mandates"),
     transactions: t.relation("transactions"),
     activities: t.relation("activities"),
+    tasks: t.relation("tasks"),
   }),
 });
 
@@ -288,7 +291,7 @@ export const MandateRef = builder.prismaObject("Mandate", {
     clientId: t.exposeString("clientId"),
     leadId: t.exposeString("leadId", { nullable: true }),
     referredById: t.exposeString("referredById", { nullable: true }),
-    // Relations — tasks excluded per brief
+    // Relations
     client: t.relation("client"),
     lead: t.relation("lead", { nullable: true }),
     assists: t.relation("assists"),
@@ -296,6 +299,7 @@ export const MandateRef = builder.prismaObject("Mandate", {
     transactions: t.relation("transactions"),
     activities: t.relation("activities"),
     stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
+    tasks: t.relation("tasks"),
   }),
 });
 
@@ -349,7 +353,7 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     ownerId: t.exposeString("ownerId", { nullable: true }),
     assistantId: t.exposeString("assistantId", { nullable: true }),
     referredById: t.exposeString("referredById", { nullable: true }),
-    // Relations — tasks excluded per brief
+    // Relations
     client: t.relation("client"),
     mandate: t.relation("mandate", { nullable: true }),
     owner: t.relation("owner", { nullable: true }),
@@ -361,6 +365,7 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     serviceProviders: t.relation("serviceProviders"),
     ddTracks: t.relation("ddTracks"),
     stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
+    tasks: t.relation("tasks"),
     // Derived counts
     investorsContacted: t.relationCount("engagements"),
     activeConversations: t.int({
@@ -443,6 +448,7 @@ export const EngagementRef = builder.prismaObject("Engagement", {
     owner: t.relation("owner", { nullable: true }),
     activities: t.relation("activities"),
     milestones: t.relation("milestones"),
+    stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
   }),
 });
 
@@ -799,6 +805,49 @@ export const ClientStatusPayloadRef = builder.objectRef<ClientStatusPayload>("Cl
   }),
 });
 
+// ─── Partner self-service (SOW §7.2) ─────────────────────────────────────────
+// issuePartnerAccessCode returns the raw code ONCE (staff relay it out-of-band).
+export interface PartnerAccessCodeData { code: string }
+export const PartnerAccessCodeRef = builder.objectRef<PartnerAccessCodeData>("PartnerAccessCode").implement({
+  fields: (t) => ({ code: t.exposeString("code", { nullable: false }) }),
+});
+
+// verifyPartnerAccessCode: {status:"ok", token} | {status:"failed"} — every
+// failure path collapses to the same shape (anti-enumeration lives in the service).
+export interface PartnerVerifyData { status: string; token?: string | null }
+export const PartnerVerifyRef = builder.objectRef<PartnerVerifyData>("PartnerVerify").implement({
+  fields: (t) => ({
+    status: t.exposeString("status", { nullable: false }),
+    token: t.field({ type: "String", nullable: true, resolve: (p) => p.token ?? null }),
+  }),
+});
+
+const PartnerReferredDealRef = builder.objectRef<PartnerReferredDealView>("PartnerReferredDeal").implement({
+  fields: (t) => ({
+    dealName: t.exposeString("dealName", { nullable: false }),
+    stage: t.exposeString("stage", { nullable: false }),
+    status: t.exposeString("status", { nullable: false }),
+  }),
+});
+
+// partnerSelfView payload: this field list IS the security boundary — it must
+// mirror PartnerSelfPayload in src/server/services/partner-self.ts exactly. It
+// carries ONLY the partner's own contact/agreement state and the stage/status of
+// deals THEY introduced — never other partners, investor identities, fee amounts,
+// or internal notes. Adding a field here is a spec violation.
+export const PartnerSelfPayloadRef = builder.objectRef<PartnerSelfPayload>("PartnerSelfPayload").implement({
+  fields: (t) => ({
+    name: t.exposeString("name", { nullable: false }),
+    organization: t.field({ type: "String", nullable: true, resolve: (p) => p.organization }),
+    email: t.field({ type: "String", nullable: true, resolve: (p) => p.email }),
+    phone: t.field({ type: "String", nullable: true, resolve: (p) => p.phone }),
+    advisorType: t.field({ type: "String", nullable: true, resolve: (p) => p.advisorType }),
+    feeAgreementOnFile: t.exposeBoolean("feeAgreementOnFile", { nullable: false }),
+    referredDeals: t.field({ type: [PartnerReferredDealRef], nullable: false, resolve: (p) => p.referredDeals }),
+    referredDealCount: t.exposeInt("referredDealCount", { nullable: false }),
+  }),
+});
+
 // ─── crmAgent write surface (spec 2026-07-14) ───────────────────────────────
 // Two-phase prepare/confirm write payloads. Unlike the client-agent acks
 // above, these carry an operator-facing preview/summary (this surface is
@@ -834,6 +883,45 @@ export const InvestorIdentityRef = builder.objectRef<InvestorIdentityData>("Inve
     investorId: t.exposeString("investorId", { nullable: true }),
     investorName: t.exposeString("investorName", { nullable: true }),
     contactName: t.exposeString("contactName", { nullable: true }),
+  }),
+});
+
+// The investor's OWN whitelisted profile (spec §7.2). Backed by investorSelfView —
+// no record id, no aum, no notes, no other party. ticketBand is symbol-free by design.
+export interface InvestorSelfViewData {
+  matched: boolean;
+  investorName?: string | null;
+  status?: string | null;
+  onboardingStatus?: string | null;
+  sectorFocus: string[];
+  geographicFocus: string[];
+  instruments: string[];
+  investmentStages: string[];
+  ticketBand?: string | null;
+  currency?: string | null;
+  targetIrr?: number | null;
+  countryRestrictions?: string | null;
+  esgFocus?: string | null;
+  investmentMandate?: string | null;
+  criteriaVerifiedAt?: Date | null;
+}
+export const InvestorSelfViewRef = builder.objectRef<InvestorSelfViewData>("InvestorSelfView").implement({
+  fields: (t) => ({
+    matched: t.exposeBoolean("matched"),
+    investorName: t.exposeString("investorName", { nullable: true }),
+    status: t.exposeString("status", { nullable: true }),
+    onboardingStatus: t.exposeString("onboardingStatus", { nullable: true }),
+    sectorFocus: t.exposeStringList("sectorFocus"),
+    geographicFocus: t.exposeStringList("geographicFocus"),
+    instruments: t.exposeStringList("instruments"),
+    investmentStages: t.exposeStringList("investmentStages"),
+    ticketBand: t.exposeString("ticketBand", { nullable: true }),
+    currency: t.exposeString("currency", { nullable: true }),
+    targetIrr: t.exposeFloat("targetIrr", { nullable: true }),
+    countryRestrictions: t.exposeString("countryRestrictions", { nullable: true }),
+    esgFocus: t.exposeString("esgFocus", { nullable: true }),
+    investmentMandate: t.exposeString("investmentMandate", { nullable: true }),
+    criteriaVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (d) => d.criteriaVerifiedAt ?? null }),
   }),
 });
 
