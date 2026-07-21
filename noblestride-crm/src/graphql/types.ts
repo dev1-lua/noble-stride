@@ -886,6 +886,45 @@ export const InvestorIdentityRef = builder.objectRef<InvestorIdentityData>("Inve
   }),
 });
 
+// The investor's OWN whitelisted profile (spec §7.2). Backed by investorSelfView —
+// no record id, no aum, no notes, no other party. ticketBand is symbol-free by design.
+export interface InvestorSelfViewData {
+  matched: boolean;
+  investorName?: string | null;
+  status?: string | null;
+  onboardingStatus?: string | null;
+  sectorFocus: string[];
+  geographicFocus: string[];
+  instruments: string[];
+  investmentStages: string[];
+  ticketBand?: string | null;
+  currency?: string | null;
+  targetIrr?: number | null;
+  countryRestrictions?: string | null;
+  esgFocus?: string | null;
+  investmentMandate?: string | null;
+  criteriaVerifiedAt?: Date | null;
+}
+export const InvestorSelfViewRef = builder.objectRef<InvestorSelfViewData>("InvestorSelfView").implement({
+  fields: (t) => ({
+    matched: t.exposeBoolean("matched"),
+    investorName: t.exposeString("investorName", { nullable: true }),
+    status: t.exposeString("status", { nullable: true }),
+    onboardingStatus: t.exposeString("onboardingStatus", { nullable: true }),
+    sectorFocus: t.exposeStringList("sectorFocus"),
+    geographicFocus: t.exposeStringList("geographicFocus"),
+    instruments: t.exposeStringList("instruments"),
+    investmentStages: t.exposeStringList("investmentStages"),
+    ticketBand: t.exposeString("ticketBand", { nullable: true }),
+    currency: t.exposeString("currency", { nullable: true }),
+    targetIrr: t.exposeFloat("targetIrr", { nullable: true }),
+    countryRestrictions: t.exposeString("countryRestrictions", { nullable: true }),
+    esgFocus: t.exposeString("esgFocus", { nullable: true }),
+    investmentMandate: t.exposeString("investmentMandate", { nullable: true }),
+    criteriaVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (d) => d.criteriaVerifiedAt ?? null }),
+  }),
+});
+
 // Named "AgentInvestorMatch" (not "InvestorMatch") to avoid colliding with the
 // unrelated InvestorMatch objectRef already defined locally in queries.ts for
 // aiMatchInvestors (different shape: id/score/reasons/warnings/criteriaStale).

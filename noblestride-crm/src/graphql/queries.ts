@@ -30,6 +30,7 @@ import {
   ClientStatusPayloadRef,
   PartnerSelfPayloadRef,
   InvestorIdentityRef,
+  InvestorSelfViewRef,
   AgentInvestorMatchRef,
   TeaserContextRef,
 } from "./types";
@@ -74,6 +75,7 @@ import { partnerSelfView } from "@/server/services/partner-self";
 import { resolveStaffUserSummary } from "@/server/services/agent-delegation";
 import {
   investorByEmail,
+  investorSelfView,
   matchInvestorsForTransaction,
   transactionTeaserContext,
 } from "@/server/services/investor-agent";
@@ -712,6 +714,16 @@ builder.queryFields((t) => ({
     resolve: (_root, args, ctx) => {
       assertAutomation(ctx.actor);
       return investorByEmail(args.email);
+    },
+  }),
+  // Investor Agent: the investor's OWN whitelisted profile (spec §7.2 "own profile").
+  investorSelfView: t.field({
+    type: InvestorSelfViewRef,
+    nullable: false,
+    args: { email: t.arg.string({ required: true }) },
+    resolve: (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return investorSelfView(args.email);
     },
   }),
   // Investor Agent: eligible investors for a deal (internal-only data; feeds drafts).

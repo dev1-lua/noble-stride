@@ -45,6 +45,115 @@ export async function investorByEmail(email: string): Promise<{
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// investorSelfView — a HARD-WHITELISTED read of the investor's OWN on-file
+// criteria/status, keyed on the (identify-then-read) email match (spec §7.2 "own
+// profile"). Mirrors the partnerSelfView discipline: adding a field here is a spec
+// violation. NEVER other investors/partners/deals, no record id, no aum, no notes.
+//
+// IDENTITY CAVEAT (deliberate, registered): identity is the sender email, which is
+// spoofable and NOT OTP-verified in this version — acceptable only because the
+// payload is the investor's own low-sensitivity criteria. When the mail-service API
+// lands, gate this behind an OTP-verified token (clone client-status.ts).
+//
+// LEAK-GUARD NOTE: the investor agent's outbound scanner fail-closes on any "$"/
+// currency figure, so the ticket is returned as a SYMBOL-FREE band ("1M–5M"), never
+// a raw number or a "$"-prefixed bandCurrency label (which would blank the reply).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface InvestorSelfView {
+  matched: boolean;
+  investorName?: string | null;
+  status?: string | null;
+  onboardingStatus?: string | null;
+  sectorFocus: string[];
+  geographicFocus: string[];
+  instruments: string[];
+  investmentStages: string[];
+  ticketBand?: string | null;
+  currency?: string | null;
+  targetIrr?: number | null;
+  countryRestrictions?: string | null;
+  esgFocus?: string | null;
+  investmentMandate?: string | null;
+  criteriaVerifiedAt?: Date | null;
+}
+
+const UNMATCHED_SELF_VIEW: InvestorSelfView = {
+  matched: false,
+  sectorFocus: [],
+  geographicFocus: [],
+  instruments: [],
+  investmentStages: [],
+};
+
+/** Lower/upper edge labels of a stripped bandCurrency bucket ("1M–5M" → 1M / 5M;
+ *  "< 1M" → under 1M / 1M; "100M+" → 100M / 100M+). Edge parsing splits on the en-dash
+ *  bandCurrency emits, falling back to a hyphen. */
+function bucketEdges(label: string): { lo: string; hi: string } {
+  if (label.startsWith("<")) {
+    const n = label.replace(/[^0-9A-Za-z.]/g, "");
+    return { lo: `under ${n}`, hi: n };
+  }
+  if (label.endsWith("+")) {
+    const n = label.replace("+", "").trim();
+    return { lo: n, hi: `${n}+` };
+  }
+  const [a, b] = label.split(/[–-]/);
+  return { lo: a.trim(), hi: (b ?? a).trim() };
+}
+
+/** Symbol-free ticket band — bandCurrency buckets with the "$" stripped (the outbound
+ *  leak scanner vetoes any "$"/currency figure, blanking the whole reply). A min/max pair
+ *  that straddles two buckets collapses to its outer edges ("1M–5M" + "5M–10M" → "1M–10M");
+ *  a single-bound appetite is qualified ("at least 5M" / "up to 8M"). */
+function symbolFreeTicketBand(
+  min: Parameters<typeof bandCurrency>[0],
+  max: Parameters<typeof bandCurrency>[0],
+): string | null {
+  const strip = (v: Parameters<typeof bandCurrency>[0]) => {
+    const b = bandCurrency(v);
+    return b ? b.replace(/\$\s?/g, "").trim() : null;
+  };
+  const lo = min == null ? null : strip(min);
+  const hi = max == null ? null : strip(max);
+  if (lo && hi) return lo === hi ? lo : `${bucketEdges(lo).lo}–${bucketEdges(hi).hi}`;
+  if (lo) return `at least ${bucketEdges(lo).lo}`;
+  if (hi) return `up to ${bucketEdges(hi).hi}`;
+  return null;
+}
+
+export async function investorSelfView(email: string): Promise<InvestorSelfView> {
+  const trimmed = email.trim();
+  if (!trimmed) return UNMATCHED_SELF_VIEW;
+  const person = await prisma.person.findFirst({
+    where: { email: { equals: trimmed, mode: "insensitive" }, investorId: { not: null } },
+    include: { investor: true },
+  });
+  const investor = person?.investor;
+  if (!person || !investor) return UNMATCHED_SELF_VIEW;
+  // Blocked or unapproved investors are indistinguishable from unknown senders.
+  if (investorTier(investor, null) === "NONE") return UNMATCHED_SELF_VIEW;
+
+  return {
+    matched: true,
+    investorName: investor.name,
+    status: investor.status ? String(investor.status) : null,
+    onboardingStatus: String(investor.onboardingStatus),
+    sectorFocus: investor.sectorFocus.map(String),
+    geographicFocus: investor.geographicFocus.map(String),
+    instruments: investor.instruments.map(String),
+    investmentStages: investor.investmentStages.map(String),
+    ticketBand: symbolFreeTicketBand(investor.ticketMin, investor.ticketMax),
+    currency: investor.currency ?? null,
+    targetIrr: investor.targetIrr ?? null,
+    countryRestrictions: investor.countryRestrictions ?? null,
+    esgFocus: investor.esgFocus ?? null,
+    investmentMandate: investor.investmentMandate ?? null,
+    criteriaVerifiedAt: investor.criteriaVerifiedAt ?? null,
+  };
+}
+
 export interface InvestorMatch {
   investorId: string;
   name: string;
