@@ -76,6 +76,13 @@ export async function runDraftOutreach(
   deps: DraftRunnerDeps,
   transactionId: string,
 ): Promise<{ requested: number; saved: number; skipped: number; fallbacks: number }> {
+  // Defense-in-depth: never send an undefined/blank required `$transactionId`
+  // to the CRM (which returns an opaque HTTP 400). Fail with a legible message
+  // instead — the deferred-job path guards upstream too, this backstops any
+  // other caller.
+  if (!transactionId || !transactionId.trim()) {
+    throw new Error("runDraftOutreach: transactionId is required.");
+  }
   const [matchesData, ctxData] = await Promise.all([
     deps.crm.query<{ matchInvestorsForTransaction: Match[] }>(MATCH_INVESTORS, { transactionId }),
     deps.crm.query<{ transactionTeaserContext: TeaserCtx }>(TEASER_CONTEXT, { transactionId }),
