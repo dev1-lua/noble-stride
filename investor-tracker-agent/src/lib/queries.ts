@@ -119,6 +119,10 @@ export const PIPELINE_SNAPSHOT = /* GraphQL */ `
       stage label
       items { id name stageEnteredAt createdAt updatedAt dateOpened currency targetRaise }
     }
+    advisoryByStage {
+      stage label
+      items { id name stageEnteredAt createdAt updatedAt dateOpened currency feeAmount }
+    }
   }
 `;
 
@@ -216,6 +220,38 @@ export const TRANSACTION_DD_TRACKS = /* GraphQL */ `
       id
       ddTracks { track status notes startedAt completedAt }
     }
+  }
+`;
+
+/**
+ * Outreach draft lifecycle (written by the investor-outreach agent, reviewed by
+ * staff in the CRM's /outreach queue). Read-only here — all statuses, newest first.
+ */
+export const OUTREACH_DRAFTS = /* GraphQL */ `
+  query TrackerOutreachDrafts($transactionId: ID, $investorId: ID) {
+    outreachDrafts(filter: { transactionId: $transactionId, investorId: $investorId }) {
+      id subject status matchRationale error sentAt reviewedAt createdAt
+      investor { id name }
+      transaction { id name }
+      person { firstName lastName email }
+    }
+  }
+`;
+
+/** Org-wide KPI snapshot: dashboard stats + stage counts + 6-month trend, in one round trip. */
+export const DASHBOARD_SNAPSHOT = /* GraphQL */ `
+  query TrackerDashboardSnapshot {
+    dashboardStats {
+      activeMandates { value delta }
+      activeTransactions { value delta }
+      investorsEngagedQtr { value delta }
+      capitalRaisedYtd { value delta }
+    }
+    pipelineOverview {
+      mandatesByStage { stage label count }
+      transactionsByStage { stage label count }
+    }
+    dealPipelineTrend { month active closed }
   }
 `;
 

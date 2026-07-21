@@ -44,6 +44,20 @@ const DEAL_ROW = {
   ],
 };
 
+const SECOND_DEAL_ROW = {
+  transaction: { id: "t2", name: "Kampala Logistics", stage: "ClosedWon", dealStatus: "Closed" },
+  engagements: [
+    {
+      id: "e4",
+      investor: { id: "i4", name: "Helios" },
+      totalAmount: 4_000_000,
+      amountDisbursed: 4_000_000,
+      amountPending: 0,
+      disbursementStatus: "Disbursed",
+    },
+  ],
+};
+
 function singleStub(): CrmClient {
   return {
     baseUrl: "https://crm.example",
@@ -85,8 +99,57 @@ describe("DisbursementSummaryTool", () => {
     expect(out.link).toBe("https://crm.example/transactions/t1");
   });
 
-  it("rejects when no identifying args are given", async () => {
-    const out = await new DisbursementSummaryTool({ crm: singleStub() }).execute({});
+  it("all-deals mode rolls up every deal with grand totals when no args are given", async () => {
+    const crm: CrmClient = {
+      baseUrl: "https://crm.example",
+      query: vi.fn(async (document: string) => {
+        if (document.includes("TrackerEngagementsByDeal")) {
+          return { engagementsByDeal: [DEAL_ROW, SECOND_DEAL_ROW] };
+        }
+        if (document.includes("AgentPipelineSnapshot")) {
+          return {
+            transactionsByStage: [
+              {
+                stage: "DealPreparation",
+                label: "Deal Preparation",
+                items: [
+                  { id: "t3", name: "Fresh Deal – Seed" },
+                  { id: "t1", name: "Busoga Raise" },
+                ],
+              },
+              { stage: "ClosedWon", label: "Closed-Won", items: [{ id: "t2", name: "Kampala Logistics" }] },
+            ],
+          };
+        }
+        throw new Error(`unexpected document: ${document.slice(0, 60)}`);
+      }) as CrmClient["query"],
+    };
+    const out = await new DisbursementSummaryTool({ crm }).execute({});
+    if (out.status !== "ok" || out.mode !== "all_deals") throw new Error("expected all_deals mode");
+    expect(out.grandTotals).toMatchObject({
+      total: 7_000_000,
+      disbursed: 5_500_000,
+      pending: 1_500_000,
+      engagementCount: 4,
+      dealCount: 2,
+      dealsWithoutEngagementsCount: 1,
+    });
+    expect(out.dealsWithoutEngagements).toEqual([
+      { name: "Fresh Deal – Seed", stage: "Deal Preparation", link: "https://crm.example/transactions/t3" },
+    ]);
+    expect(out.note).toContain("1 deal(s) have no investor engagements");
+    // Sorted by disbursed desc: Kampala (4M) before Busoga (1.5M).
+    expect(out.deals.map((d) => d.deal.name)).toEqual(["Kampala Logistics", "Busoga Raise"]);
+    expect(out.deals[1]).toMatchObject({
+      deal: { name: "Busoga Raise", stage: "DueDiligence", dealStatus: "Open" },
+      totals: { total: 3_000_000, disbursed: 1_500_000, pending: 1_500_000, engagementCount: 3 },
+      byStatus: { Ongoing: 1, Disbursed: 1, Unspecified: 1 },
+      link: "https://crm.example/transactions/t1",
+    });
+  });
+
+  it("rejects an investor without a deal", async () => {
+    const out = await new DisbursementSummaryTool({ crm: singleStub() }).execute({ investor: "Vantage Capital" });
     expect(out.status).toBe("rejected");
   });
 });

@@ -1,6 +1,6 @@
 {
-  "lastHash": "307037b62d3652d9cf148932661f371866f79745904d4e2092e381bdb26586dd",
-  "lastPushedAt": "2026-07-17T13:09:57.433Z",
+  "lastHash": "3737b92067ed0b967a5b656ab0b235603d1990856414a7aa96ae1f4f0156343b",
+  "lastPushedAt": "2026-07-21T06:40:52.293Z",
   "files": [
     {
       "relativePath": "env.example",
@@ -8,7 +8,7 @@
     },
     {
       "relativePath": "lua.skill.yaml",
-      "hash": "e6e71cca241b4d4a"
+      "hash": "ff3abd5e1a583539"
     },
     {
       "relativePath": "package.json",
@@ -20,7 +20,7 @@
     },
     {
       "relativePath": "src/index.ts",
-      "hash": "ad0f0b8c87063079"
+      "hash": "4e7a0ecbc1fff2ab"
     },
     {
       "relativePath": "src/jobs/followup-check.job.ts",
@@ -48,7 +48,7 @@
     },
     {
       "relativePath": "src/lib/queries.ts",
-      "hash": "72bf4464c7e658aa"
+      "hash": "d27a1a16096e16af"
     },
     {
       "relativePath": "src/lib/record-lookup.ts",
@@ -67,6 +67,10 @@
       "hash": "015aee23c92c17e9"
     },
     {
+      "relativePath": "src/persona.ts",
+      "hash": "8e49709a03e02eba"
+    },
+    {
       "relativePath": "src/processors/passphrase-gate.ts",
       "hash": "2b3e7d0778e359ee"
     },
@@ -75,12 +79,28 @@
       "hash": "e86111544fb4c6ce"
     },
     {
+      "relativePath": "src/skills/tools/DisbursementSummaryTool.ts",
+      "hash": "f66689961d7529b6"
+    },
+    {
+      "relativePath": "src/skills/tools/EngagementHistoryTool.ts",
+      "hash": "8267e532ba571a51"
+    },
+    {
       "relativePath": "src/skills/tools/FindFitInvestorsTool.ts",
       "hash": "1b4be618a5c73fd0"
     },
     {
       "relativePath": "src/skills/tools/GetEngagementStatusTool.ts",
       "hash": "906ef97d88722526"
+    },
+    {
+      "relativePath": "src/skills/tools/GetTermSheetStatusTool.ts",
+      "hash": "7f87be223b7a458d"
+    },
+    {
+      "relativePath": "src/skills/tools/ListDealsTool.ts",
+      "hash": "3761830dca07b232"
     },
     {
       "relativePath": "src/skills/tools/PipelineDigestTool.ts",
@@ -108,7 +128,7 @@
     },
     {
       "relativePath": "src/skills/tracker.skill.ts",
-      "hash": "7912a7b749edcee0"
+      "hash": "cf3d5a2883ea0e74"
     },
     {
       "relativePath": "tsconfig.json",
