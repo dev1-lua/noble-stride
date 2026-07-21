@@ -14,6 +14,14 @@ export interface ScanResult {
 // all letters never matches, while the digit-bearing test token still does.
 const CUID = /\bc(?=[a-z0-9]*\d)[a-z0-9]{24,}\b/;
 const UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
+// A legitimate portal deep link (login?next=/portal/investor/deals/<id>) embeds a
+// deal cuid BY DESIGN — the interested-reply flow is supposed to send it, the id
+// is not sensitive (access is re-gated by login + investor viewpoint), and it is
+// the one URL the agent may share. Strip that deals-path segment (encoded OR
+// decoded, whichever way the model formats the URL) before the record-id scan so
+// the agent's own link can't self-trip the cuid guard. A cuid appearing anywhere
+// else in the reply is still caught.
+const PORTAL_DEAL_LINK = /(%2f|\/)portal(%2f|\/)investor(%2f|\/)deals(%2f|\/)[a-z0-9]+/gi;
 // High-confidence: the agent affirming a record/relationship exists.
 // M1 fix: bare "we are (advising|working with|representing)" with no object over-triggers on
 // benign warm replies like "we are working with our deal team to get you an answer." — require
@@ -41,7 +49,10 @@ const FINANCIAL =
  */
 export function scanOutbound(reply: string): ScanResult {
   const reasons: string[] = [];
-  if (CUID.test(reply) || UUID.test(reply)) reasons.push("record-id");
+  // Record-id scan runs on the reply with any legitimate portal deep-link removed
+  // (see PORTAL_DEAL_LINK) so the agent's own login link never counts as a leak.
+  const withoutPortalLink = reply.replace(PORTAL_DEAL_LINK, "");
+  if (CUID.test(withoutPortalLink) || UUID.test(withoutPortalLink)) reasons.push("record-id");
   if (EXISTENCE.test(reply)) reasons.push("existence-confirmation");
   if (INJECTION_ECHO.test(reply)) reasons.push("prompt-echo");
   if (FINANCIAL.test(reply)) reasons.push("financial-figure");

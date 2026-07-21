@@ -104,6 +104,16 @@ export const FLAG_FOR_REVIEW = /* GraphQL */ `
   }
 `;
 
+export const EXPRESS_DEAL_INTEREST = /* GraphQL */ `
+  mutation ExpressDealInterest($investorId: String!, $dealHint: String) {
+    expressDealInterestForAgent(investorId: $investorId, dealHint: $dealHint) {
+      matched
+      dealName
+      portalUrl
+    }
+  }
+`;
+
 export const SAVE_DRAFTS = /* GraphQL */ `
   mutation SaveOutreachDrafts($input: OutreachDraftsInput!) {
     saveOutreachDrafts(input: $input) {

@@ -21,7 +21,7 @@ import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
 import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
 import { createSavedView, renameSavedView, deleteSavedView, type SavedViewConfig } from "@/server/services/saved-views";
-import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef, ClientOtpVerifyRef, AgentWritePreviewRef, AgentWriteResultRef, DraftsAckRef, PartnerAccessCodeRef, PartnerVerifyRef } from "./types";
+import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef, ClientOtpVerifyRef, AgentWritePreviewRef, AgentWriteResultRef, DraftsAckRef, DealInterestAckRef, PartnerAccessCodeRef, PartnerVerifyRef } from "./types";
 import { issuePartnerAccessCode, verifyPartnerAccessCode, submitPartnerSelfUpdate } from "@/server/services/partner-self";
 import { markNotificationsRead, markAllNotificationsRead } from "@/server/services/notifications";
 import { getOrgLens } from "@/server/rbac/context";
@@ -35,7 +35,7 @@ import { scheduleMeeting } from "@/server/services/meetings";
 import { submitClientIntake, submitWebsiteClientIntake, logInboundClientMessage, type LogClientMessageInput as LogClientMessageInputShape } from "@/server/services/client-intake";
 import { requestClientStatusOtp, verifyClientStatusOtp } from "@/server/services/client-status";
 import { prepareAgentWrite, commitAgentWrite, cancelAgentWrite } from "@/server/services/agent-write";
-import { submitInvestorUpdate, logInvestorCommunication, flagInvestorForReview } from "@/server/services/investor-agent";
+import { submitInvestorUpdate, logInvestorCommunication, flagInvestorForReview, expressDealInterestFromAgent } from "@/server/services/investor-agent";
 import { saveOutreachDrafts } from "@/server/services/outreach";
 import { InteractionType } from "@prisma/client";
 
@@ -881,6 +881,21 @@ builder.mutationFields((t) => ({
         source: args.input.source,
         summary: args.input.summary,
       });
+    },
+  }),
+  // Investor Agent: a matched investor replied interested → surface it to the
+  // deal owner + return a secure portal deep link (deal detail never leaves email).
+  expressDealInterestForAgent: t.field({
+    type: DealInterestAckRef,
+    nullable: false,
+    args: {
+      investorId: t.arg.string({ required: true }),
+      dealHint: t.arg.string({ required: false }),
+    },
+    resolve: async (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      const r = await expressDealInterestFromAgent({ investorId: args.investorId, dealHint: args.dealHint ?? null });
+      return { matched: r.matched, dealName: r.dealName ?? null, portalUrl: r.portalUrl ?? null };
     },
   }),
   saveOutreachDrafts: t.field({

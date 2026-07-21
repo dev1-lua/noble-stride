@@ -990,6 +990,18 @@ export const TeaserContextRef = builder.objectRef<TeaserContextData>("TeaserCont
   }),
 });
 
+// Investor Agent: ack for an interested-reply → secure portal handoff. `matched`
+// is false when the investor has no open outreach loop (agent falls back to a
+// generic reply); when true, `portalUrl` is the login deep link to the deal.
+export interface DealInterestAckData { matched: boolean; dealName: string | null; portalUrl: string | null }
+export const DealInterestAckRef = builder.objectRef<DealInterestAckData>("DealInterestAck").implement({
+  fields: (t) => ({
+    matched: t.exposeBoolean("matched"),
+    dealName: t.exposeString("dealName", { nullable: true }),
+    portalUrl: t.exposeString("portalUrl", { nullable: true }),
+  }),
+});
+
 export const OutreachDraftRef = builder.prismaObject("OutreachDraft", {
   fields: (t) => ({
     id: t.exposeID("id"),
