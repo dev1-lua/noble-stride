@@ -49,6 +49,15 @@ export interface StalledFlag {
 /** Only live deals produce follow-up noise. */
 const SCANNED_DEAL_STATUSES = new Set(["Open", "ClosedReopened"]);
 
+/**
+ * Belt-and-braces: in production, closing a deal moves its STAGE to
+ * ClosedWon/ClosedLost while dealStatus stays "Open" (the CRM never flips it),
+ * so the status guard alone is a no-op. A deal in a terminal stage produces no
+ * stalled/hygiene noise — only an outstanding disbursement still warrants a
+ * chase there (that's money owed after close, the Invested branch's purpose).
+ */
+const CLOSED_DEAL_STAGES = new Set(["ClosedWon", "ClosedLost"]);
+
 export interface EvaluateContext {
   thresholds: StaleThresholds;
   now: Date;
@@ -61,6 +70,7 @@ export function evaluateEngagement(
   ctx: EvaluateContext,
 ): StalledFlag[] {
   if (!SCANNED_DEAL_STATUSES.has(transaction.dealStatus)) return [];
+  const dealClosed = CLOSED_DEAL_STAGES.has(transaction.stage);
   if (engagement.engagementStage === "Declined") return [];
 
   const flags: StalledFlag[] = [];
@@ -88,7 +98,7 @@ export function evaluateEngagement(
         });
       }
     }
-  } else {
+  } else if (!dealClosed) {
     const threshold = ctx.thresholds[engagement.engagementStage];
     if (threshold !== undefined && idle >= threshold) {
       flags.push({
@@ -102,7 +112,7 @@ export function evaluateEngagement(
   }
 
   // Data hygiene, independent of idleness: an issued term sheet must carry its date.
-  if (engagement.termSheetIssued && !engagement.termSheetDate) {
+  if (!dealClosed && engagement.termSheetIssued && !engagement.termSheetDate) {
     flags.push({
       ...base,
       reason: "term_sheet_undated",
