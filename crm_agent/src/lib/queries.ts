@@ -208,3 +208,18 @@ export const AGENT_CANCEL_WRITE = /* GraphQL */ `
     }
   }
 `;
+
+// Investor roster for classification lookups (e.g. greylisted/excluded). The
+// server filter has no engagementClassification arg, so the tool fetches a
+// bounded page and filters client-side. pageSize is generous because the
+// classified subset is small.
+export const LIST_INVESTORS = /* GraphQL */ `
+  query AgentListInvestors($page: Int!, $pageSize: Int!) {
+    investors(page: $page, pageSize: $pageSize) {
+      id
+      name
+      engagementClassification
+      investorType
+    }
+  }
+`;

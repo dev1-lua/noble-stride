@@ -70,6 +70,65 @@ describe("ListDealsByStageTool", () => {
     expect(res.status).toBe("empty");
   });
 
+  it("caps the overview to a few names per stage and reports the remainder", async () => {
+    const many = Array.from({ length: 9 }, (_, i) => ({
+      id: `x${i}`,
+      name: `Deal ${i}`,
+      targetRaise: 1_000_000,
+      currency: "USD",
+      owner: { name: "Amos" },
+    }));
+    const tool = new ListDealsByStageTool({
+      crm: fakeCrm({
+        AgentPipelineSnapshot: {
+          mandatesByStage: [],
+          transactionsByStage: [{ stage: "Outreach", label: "Outreach", items: many }],
+        },
+      }),
+    });
+    const res = await tool.execute({ pipeline: "transactions" });
+    expect(res.status).toBe("ok");
+    if (res.status !== "ok") return;
+    const stage = res.pipelines[0].stages[0];
+    expect(stage.count).toBe(9); // true total preserved
+    expect(stage.deals).toHaveLength(5); // only the first few names shown
+    expect(stage.remaining).toBe(4); // the rest reported as a count
+  });
+
+  it("returns a named stage in full (remaining 0) so drill-down shows every name", async () => {
+    const many = Array.from({ length: 9 }, (_, i) => ({
+      id: `x${i}`,
+      name: `Deal ${i}`,
+      targetRaise: 1_000_000,
+      currency: "USD",
+      owner: { name: "Amos" },
+    }));
+    const tool = new ListDealsByStageTool({
+      crm: fakeCrm({
+        AgentPipelineSnapshot: {
+          mandatesByStage: [],
+          transactionsByStage: [{ stage: "Outreach", label: "Outreach", items: many }],
+        },
+      }),
+    });
+    const res = await tool.execute({ pipeline: "transactions", stage: "Outreach" });
+    expect(res.status).toBe("ok");
+    if (res.status !== "ok") return;
+    const stage = res.pipelines[0].stages[0];
+    expect(stage.deals).toHaveLength(9);
+    expect(stage.remaining).toBe(0);
+  });
+
+  it("adds remaining 0 to a small stage in the default overview", async () => {
+    const tool = new ListDealsByStageTool({ crm: fakeCrm(SNAPSHOT) });
+    const res = await tool.execute({ pipeline: "transactions" });
+    expect(res.status).toBe("ok");
+    if (res.status !== "ok") return;
+    const closedWon = res.pipelines[0].stages.find((s) => s.label === "Closed-Won")!;
+    expect(closedWon.remaining).toBe(0);
+    expect(closedWon.deals).toHaveLength(1);
+  });
+
   it("returns empty when the pipeline has no deals at all", async () => {
     const tool = new ListDealsByStageTool({
       crm: fakeCrm({ AgentPipelineSnapshot: { mandatesByStage: [], transactionsByStage: [] } }),

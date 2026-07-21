@@ -8,6 +8,9 @@ export interface ListDealsDeps {
   crm: CrmClient;
 }
 
+/** How many example names to show per stage in the default (all-stages) overview. */
+export const ROSTER_NAME_CAP = 5;
+
 /** A stage column as returned by PIPELINE_SNAPSHOT; items carry name + owner/lead. */
 interface SnapshotColumn {
   stage: string;
@@ -29,7 +32,7 @@ const inputSchema = z.object({
 export class ListDealsByStageTool implements LuaTool {
   name = "list_deals_by_stage";
   description =
-    "List every deal grouped by pipeline stage, with each deal's name, lead, and target value. Use when the user asks what deals exist in which stage, or wants a full name-by-name roster across stages (not just totals or health). Covers mandates (client acquisition), transactions (fundraising), or both. Facts only; never expose raw record ids.";
+    "List deals grouped by pipeline stage, with each deal's name, lead, and target value. Use when the user asks what deals exist in which stage. By DEFAULT (no stage filter) it returns a short overview: each stage's true total count plus the first few example names and a `remaining` count of names not shown — render that compactly, do not print every name. To get one stage's FULL name-by-name list, pass that stage in the `stage` filter (then every name in it is returned, remaining 0). Covers mandates (client acquisition), transactions (fundraising), or both. Facts only; never expose raw record ids.";
   inputSchema = inputSchema;
 
   constructor(private deps?: ListDealsDeps) {}
@@ -68,6 +71,18 @@ export class ListDealsByStageTool implements LuaTool {
       return { status: "empty" as const };
     }
 
-    return { status: "ok" as const, pipelines: filtered };
+    // Default (all-stages) view stays scannable: show a few example names per
+    // stage and how many are held back. A single-stage drill-down (stage filter
+    // present) returns that stage in full so the reader gets every name.
+    const capNames = !input.stage;
+    const shaped = filtered.map((p) => ({
+      pipeline: p.pipeline,
+      stages: p.stages.map((s) => {
+        const deals = capNames ? s.deals.slice(0, ROSTER_NAME_CAP) : s.deals;
+        return { stage: s.stage, label: s.label, count: s.count, deals, remaining: s.count - deals.length };
+      }),
+    }));
+
+    return { status: "ok" as const, pipelines: shaped };
   }
 }
