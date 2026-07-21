@@ -2,8 +2,10 @@ import { z } from "zod";
 import { TaskStatus, TaskSource } from "@prisma/client";
 
 // Spec §3.8: a task must be linked to at least one record (mandate,
-// transaction, investor, or client). `escalated` is intentionally NOT a field
-// (spec §3.8 marks it Auto — computed by the task service, never caller-set).
+// transaction, investor, client, or partner — partner covers referral review
+// tasks for introductions that have no deal yet). `escalated` is intentionally
+// NOT a field (spec §3.8 marks it Auto — computed by the task service, never
+// caller-set).
 const taskBaseSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
   status: z.nativeEnum(TaskStatus).optional(),
@@ -17,6 +19,7 @@ const taskBaseSchema = z.object({
   investorId: z.string().trim().optional(),
   clientId: z.string().trim().optional(),
   activityId: z.string().trim().optional(),
+  partnerId: z.string().trim().optional(),
 });
 
 const hasLinkedRecord = (v: {
@@ -24,10 +27,11 @@ const hasLinkedRecord = (v: {
   transactionId?: string;
   investorId?: string;
   clientId?: string;
-}) => Boolean(v.mandateId || v.transactionId || v.investorId || v.clientId);
+  partnerId?: string;
+}) => Boolean(v.mandateId || v.transactionId || v.investorId || v.clientId || v.partnerId);
 
 export const taskCreateSchema = taskBaseSchema.refine(hasLinkedRecord, {
-  message: "Link the task to at least one record (mandate, transaction, investor, or client).",
+  message: "Link the task to at least one record (mandate, transaction, investor, client, or partner).",
 });
 export const taskUpdateSchema = taskBaseSchema.partial();
 export type TaskCreateInput = z.infer<typeof taskCreateSchema>;

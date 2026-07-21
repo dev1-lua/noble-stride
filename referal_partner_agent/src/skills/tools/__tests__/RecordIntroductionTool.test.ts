@@ -121,6 +121,33 @@ describe("record_introduction", () => {
     expect(log?.variables?.input).toMatchObject({ mandateId: "m9" });
   });
 
+  it("always links the review task to the partner — with and without a deal FK (spec §3.8)", async () => {
+    // Fresh intro, no deal: partnerId is the task's only link — this is what
+    // used to make createTask fail perpetually ("partial success" QA HIGH).
+    const fresh = crmStub();
+    await new RecordIntroductionTool({ crm: fresh.crm, now: NOW }).execute({
+      ...BASE,
+      partner: "Acme Advisory",
+      partnerAction: "create_new",
+    });
+    const freshTask = fresh.calls.find((c) => c.document.includes("createTask"));
+    expect(freshTask?.variables?.input).toMatchObject({ partnerId: "p-new" });
+
+    // Intro concerning an existing deal: both links present.
+    const withDeal = crmStub({
+      searchHits: [{ id: "p1", type: "Partner", title: "Acme Advisory", subtitle: null, href: "/partners/p1" }],
+    });
+    await new RecordIntroductionTool({ crm: withDeal.crm, now: NOW }).execute({
+      ...BASE,
+      partner: "Acme Advisory",
+      partnerAction: "use_existing",
+      existingDealId: "m9",
+      existingDealType: "mandate",
+    });
+    const dealTask = withDeal.calls.find((c) => c.document.includes("createTask"));
+    expect(dealTask?.variables?.input).toMatchObject({ partnerId: "p1", mandateId: "m9" });
+  });
+
   it("rejects existingDealId without existingDealType", async () => {
     const { crm } = crmStub();
     const out = await new RecordIntroductionTool({ crm, now: NOW }).execute({

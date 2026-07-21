@@ -21,6 +21,14 @@ describe("taskCreateSchema — linked record required (§3.8)", () => {
     expect(taskCreateSchema.safeParse({ title: "x", clientId: "c1" }).success).toBe(true);
   });
 
+  it("accepts a task linked only to a partner (referral review task, no deal yet)", () => {
+    expect(taskCreateSchema.safeParse({ title: "Review referral introduction", partnerId: "p1" }).success).toBe(true);
+  });
+
+  it("still rejects when partnerId is blank/whitespace", () => {
+    expect(taskCreateSchema.safeParse({ title: "x", partnerId: "" }).success).toBe(false);
+  });
+
   it("update schema does NOT require a link (partial edits)", () => {
     expect(taskUpdateSchema.safeParse({ title: "renamed" }).success).toBe(true);
   });

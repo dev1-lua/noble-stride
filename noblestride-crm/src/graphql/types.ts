@@ -18,6 +18,7 @@ import {
   MilestoneKeyEnum,
   NdaTypeEnum,
   DisbursementStatusEnum,
+  OutreachDraftStatusEnum,
   SourceEnum,
   DocStatusEnum,
   DealTypeEnum,
@@ -611,6 +612,7 @@ export const TaskRef = builder.prismaObject("Task", {
     investorId: t.exposeString("investorId", { nullable: true }),
     clientId: t.exposeString("clientId", { nullable: true }),
     activityId: t.exposeString("activityId", { nullable: true }),
+    partnerId: t.exposeString("partnerId", { nullable: true }),
     // Relations
     assignee: t.relation("assignee", { nullable: true }),
     assistant: t.relation("assistant", { nullable: true }),
@@ -619,6 +621,7 @@ export const TaskRef = builder.prismaObject("Task", {
     investor: t.relation("investor", { nullable: true }),
     client: t.relation("client", { nullable: true }),
     activity: t.relation("activity", { nullable: true }),
+    partner: t.relation("partner", { nullable: true }),
   }),
 });
 
@@ -954,6 +957,27 @@ export const TeaserContextRef = builder.objectRef<TeaserContextData>("TeaserCont
     revenueForecastBand: t.exposeString("revenueForecastBand", { nullable: true }),
     description: t.exposeString("description", { nullable: true }),
     contact: t.exposeString("contact"),
+  }),
+});
+
+export const OutreachDraftRef = builder.prismaObject("OutreachDraft", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    subject: t.exposeString("subject"),
+    body: t.exposeString("body"),
+    matchRationale: t.exposeString("matchRationale"),
+    status: t.field({ type: OutreachDraftStatusEnum, resolve: (d) => d.status }),
+    error: t.exposeString("error", { nullable: true }),
+    reviewedAt: t.field({ type: "DateTime", nullable: true, resolve: (d) => d.reviewedAt }),
+    sentAt: t.field({ type: "DateTime", nullable: true, resolve: (d) => d.sentAt }),
+    createdAt: t.field({ type: "DateTime", resolve: (d) => d.createdAt }),
+    // FK scalars
+    transactionId: t.exposeString("transactionId"),
+    investorId: t.exposeString("investorId"),
+    // Relations
+    transaction: t.relation("transaction"),
+    investor: t.relation("investor"),
+    person: t.relation("person", { nullable: true }),
   }),
 });
 

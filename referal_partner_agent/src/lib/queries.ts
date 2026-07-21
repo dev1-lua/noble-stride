@@ -236,6 +236,33 @@ export const REFERRED_DEALS_SCAN = /* GraphQL */ `
   }
 `;
 
+/**
+ * Every deal in both pipelines with its originator — powers list_deals
+ * ("who introduced the latest N deals"). Same stage-column resolvers the
+ * investor-tracker's pipeline snapshot uses; referredBy is null for deals
+ * with no referral on record.
+ */
+export const DEALS_SNAPSHOT = /* GraphQL */ `
+  query ReferralDealsSnapshot {
+    mandatesByStage {
+      stage label
+      items {
+        id name stage dealStatus createdAt updatedAt dateOpened currency dealSize
+        referredBy { id name }
+        client { id name }
+      }
+    }
+    transactionsByStage {
+      stage label
+      items {
+        id name stage dealStatus createdAt updatedAt dateOpened currency targetRaise
+        referredBy { id name }
+        client { id name }
+      }
+    }
+  }
+`;
+
 export const PARTNER_REFERRAL_STATS = /* GraphQL */ `
   query ReferralPartnerStats {
     partnerReferralStats {

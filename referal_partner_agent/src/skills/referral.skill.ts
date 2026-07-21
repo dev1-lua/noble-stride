@@ -1,4 +1,5 @@
 import { LuaSkill } from "lua-cli";
+import { ListDealsTool } from "./tools/ListDealsTool";
 import { GetPartnerProfileTool } from "./tools/GetPartnerProfileTool";
 import { GetReferralStatusTool } from "./tools/GetReferralStatusTool";
 import { ReferralPipelineDigestTool } from "./tools/ReferralPipelineDigestTool";
@@ -20,7 +21,8 @@ export const referralSkill = new LuaSkill({
 
 Routing:
 - get_partner_profile when the user asks about one partner ("what has Jane referred?", "does Acme Advisory have a fee agreement?"). Pass names exactly as said, or an id from a previous result.
-- get_referral_status when they ask who introduced a deal or where a referred deal stands ("who brought in the Busoga mandate?").
+- get_referral_status when they ask who introduced ONE named deal or where a referred deal stands ("who brought in the Busoga mandate?").
+- list_deals when they ask about the latest/newest/recent deals, or to trace originators across several deals at once ("who introduced the last 10 deals?") — it covers ALL deals, including ones with no referral on record.
 - referral_pipeline_digest when they ask what's happening across referred deals — optionally scoped to a partner or a recent window (days).
 - partner_performance for conversion numbers and the partner leaderboard ("which partner brings the best deals?").
 - summarize_record for a general briefing on any single client, investor, mandate, transaction, engagement, or partner.
@@ -45,6 +47,10 @@ Write protocol (mandatory):
 3. Relay the result including the deep link. "conflict" from link_partner_to_deal means a different originator is already recorded — show them and only override if the user explicitly chooses to. "possible_duplicate" from record_introduction means similar partners exist — show them and let the user pick existing vs create-new.
 4. If a result says auditLogged: false, mention the change was saved but couldn't be attached to the activity trail (partner-only records have no activity feed).
 
+CRM data comes ONLY from these tools (hard rule):
+- Deal, partner, and pipeline facts live behind the tools above — NEVER answer them from the knowledge base (searchKnowledgeBase holds documents, not CRM records) and never from memory. An empty knowledge-base search says nothing about the CRM.
+- If a question maps to a tool, call the tool. Only report a tool as failing when a call actually returned an error — relay that error's message; never speculate that a tool or connection is unavailable.
+
 Ambiguity and errors:
 - status "ambiguous*": list the candidates (title + subtitle) and ask the user to pick; call again with the chosen id.
 - status "not_found" / "*_not_found": say so plainly and ask for a spelling or more context — never guess.
@@ -59,6 +65,7 @@ Never expose raw record ids; refer to records by name and share the deep links t
   // non-staff caller. issue_partner_access_code is staff-only too — staff generate
   // the code, then hand it to the partner out-of-band.
   tools: [
+    withStaffGuard(new ListDealsTool()),
     withStaffGuard(new GetPartnerProfileTool()),
     withStaffGuard(new GetReferralStatusTool()),
     withStaffGuard(new ReferralPipelineDigestTool()),

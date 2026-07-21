@@ -145,7 +145,8 @@ export class RecordIntroductionTool implements LuaTool {
       partnerCreated = true;
     }
 
-    // ── File the review task (never a deal) ────────────────────────────────
+    // ── File the review task (never a deal) — always linked to the Partner
+    // (spec §3.8 link rule), plus the deal when the intro concerns one. ──────
     const dealFk =
       input.existingDealId && input.existingDealType
         ? { [input.existingDealType === "mandate" ? "mandateId" : "transactionId"]: input.existingDealId }
@@ -159,6 +160,7 @@ export class RecordIntroductionTool implements LuaTool {
           status: "NotStarted",
           source: "Other",
           dueAt: addBusinessDays(now, 3).toISOString(),
+          partnerId,
           ...dealFk,
         },
       });
