@@ -6,6 +6,8 @@ import {
   updateOutreachDraft,
   rejectOutreachDraft,
   sendOutreachDraft,
+  sendAllForTransaction,
+  rejectAllForTransaction,
 } from "@/server/services/outreach";
 
 let dbUp = true;
@@ -558,5 +560,72 @@ describe("IMPORTANT-3: DB-level dedup for active drafts (partial unique index)",
     const rows = await prisma.outreachDraft.findMany({ where: { investorId: investor7Id, transactionId: txnId } });
     expect(rows.length).toBe(1);
     await prisma.outreachDraft.deleteMany({ where: { investorId: investor7Id, transactionId: txnId } });
+  });
+});
+
+describe("bulk actions (approve/reject all for a deal)", () => {
+  it("authorizes once up front — a non-owner cannot bulk send or reject", async () => {
+    if (!dbUp) return;
+    await expect(
+      sendAllForTransaction(txnId, { orgRole: "TeamMember", userId: teamMemberId }),
+    ).rejects.toThrow(/not authorized/i);
+    await expect(
+      rejectAllForTransaction(txnId, { orgRole: "DealLead", userId: otherLeadId }),
+    ).rejects.toThrow(/not authorized/i);
+  });
+
+  it("send-all: one failure does not abort the batch; counts stay accurate and the failure is retryable", async () => {
+    if (!dbUp) return;
+    process.env.LUA_AGENT_ID = "agent_test";
+    process.env.LUA_API_KEY = "key_test";
+    process.env.LUA_EMAIL_CHANNEL_ID = "noblestride-investor-relations@heymail.ai";
+    // Isolate: clear any reviewable drafts on the deal, then create exactly two.
+    await prisma.outreachDraft.deleteMany({ where: { transactionId: txnId, status: { in: ["Draft", "Approved", "Failed"] } } });
+    const inv8 = await prisma.investor.create({
+      data: { name: "ZZTest Outreach Fund 8", investorType: "PrivateEquity", sectorFocus: ["Healthcare"], geographicFocus: ["EastAfrica"], instruments: ["Equity"], status: "ActivelyDeploying" },
+    });
+    const p8 = await prisma.person.create({
+      data: { firstName: "Pat", lastName: "ZZTest", email: "pat@zztest-outreach.fund", investorId: inv8.id, isPrimaryContact: true },
+    });
+    await saveOutreachDrafts(txnId, [
+      { investorId: investor7Id, personId: person7Id, subject: "ZZTest bulk A", body: "Hi", matchRationale: "bulk" },
+      { investorId: inv8.id, personId: p8.id, subject: "ZZTest bulk B", body: "Hi", matchRationale: "bulk" },
+    ]);
+    let n = 0;
+    const mixedFetch = vi.fn(async () => {
+      n += 1;
+      return n === 1 ? new Response(JSON.stringify({ ok: true }), { status: 200 }) : new Response("boom", { status: 502 });
+    });
+    const r = await sendAllForTransaction(
+      txnId,
+      { orgRole: "DealLead", userId: dealLeadId },
+      { fetchFn: mixedFetch as unknown as typeof fetch },
+    );
+    expect(r.sent).toBe(1);
+    expect(r.failed).toBe(1);
+    expect(r.remaining).toBe(0);
+    const statuses = (
+      await prisma.outreachDraft.findMany({ where: { transactionId: txnId, investorId: { in: [investor7Id, inv8.id] } }, select: { status: true } })
+    )
+      .map((s) => s.status)
+      .sort();
+    expect(statuses).toEqual(["Failed", "Sent"]);
+  });
+
+  it("reject-all: rejects every reviewable draft on the deal", async () => {
+    if (!dbUp) return;
+    await prisma.outreachDraft.deleteMany({ where: { transactionId: txnId, status: { in: ["Draft", "Approved", "Failed"] } } });
+    const inv9 = await prisma.investor.create({
+      data: { name: "ZZTest Outreach Fund 9", investorType: "PrivateEquity", sectorFocus: ["Healthcare"], geographicFocus: ["EastAfrica"], instruments: ["Equity"], status: "ActivelyDeploying" },
+    });
+    const p9 = await prisma.person.create({
+      data: { firstName: "Quinn", lastName: "ZZTest", email: "quinn@zztest-outreach.fund", investorId: inv9.id, isPrimaryContact: true },
+    });
+    await saveOutreachDrafts(txnId, [{ investorId: inv9.id, personId: p9.id, subject: "ZZTest bulk R", body: "Hi", matchRationale: "bulk" }]);
+    const r = await rejectAllForTransaction(txnId, { orgRole: "Admin", userId: adminId });
+    expect(r.rejected).toBeGreaterThanOrEqual(1);
+    expect(r.remaining).toBe(0);
+    const remainingReviewable = await prisma.outreachDraft.count({ where: { transactionId: txnId, status: { in: ["Draft", "Approved", "Failed"] } } });
+    expect(remainingReviewable).toBe(0);
   });
 });
