@@ -1,5 +1,6 @@
 import { type LuaTool } from "lua-cli";
 import { z } from "zod";
+import { staffRefusal, type StaffCheck } from "../../lib/staff-mode";
 import { crmClientFromEnv, type CrmClient, CrmError, CRM_DOWN_MESSAGE } from "../../lib/crm-client";
 import { PARTNER_REFERRAL_DETAIL, UPDATE_PARTNER, LOG_ACTIVITY } from "../../lib/queries";
 
@@ -41,9 +42,11 @@ export class UpdatePartnerTool implements LuaTool {
     "Update one partner record: contact/profile details, status, fee-sharing agreement and terms, agreement status, internal-only flag, feedback notes. This is also how a signed fee-sharing agreement gets recorded. REQUIRES prior user confirmation of the exact change.";
   inputSchema = inputSchema;
 
-  constructor(private deps?: { crm: CrmClient }) {}
+  constructor(private deps?: { crm: CrmClient; isStaff?: StaffCheck }) {}
 
   async execute(input: z.infer<typeof inputSchema>) {
+    const refusal = await staffRefusal(this.deps?.isStaff);
+    if (refusal) return refusal;
     // Re-validate inside execute: direct invocations (e.g. `lua test`) bypass
     // the platform's schema check, and the confirmed gate must hold everywhere.
     const parsed = inputSchema.safeParse(input);

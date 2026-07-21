@@ -2,6 +2,9 @@ import { describe, it, expect, vi } from "vitest";
 import { RecordIntroductionTool } from "../RecordIntroductionTool";
 import type { CrmClient } from "../../../lib/crm-client";
 
+/** Hermetic staff stub — without it the in-tool guard calls the live Lua API. */
+const STAFF = async () => true;
+
 const NOW = () => new Date("2026-07-15T08:00:00Z"); // Wednesday
 
 interface StubOpts {
@@ -36,7 +39,7 @@ const BASE = {
 describe("record_introduction", () => {
   it("create_new: creates the partner and files the review task — NEVER a mandate", async () => {
     const { crm, calls } = crmStub();
-    const out = await new RecordIntroductionTool({ crm, now: NOW }).execute({
+    const out = await new RecordIntroductionTool({ isStaff: STAFF, crm, now: NOW }).execute({
       ...BASE,
       partner: "Acme Advisory",
       partnerAction: "create_new",
@@ -57,14 +60,14 @@ describe("record_introduction", () => {
   it("create_new with similar existing partners returns possible_duplicate until createAnyway", async () => {
     const hits = [{ id: "p1", type: "Partner", title: "Acme Advisory Kenya", subtitle: null, href: "/partners/p1" }];
     const { crm } = crmStub({ searchHits: hits });
-    const out = await new RecordIntroductionTool({ crm, now: NOW }).execute({
+    const out = await new RecordIntroductionTool({ isStaff: STAFF, crm, now: NOW }).execute({
       ...BASE,
       partner: "Acme Advisory",
       partnerAction: "create_new",
     });
     expect(out.status).toBe("possible_duplicate");
 
-    const retry = await new RecordIntroductionTool({ crm: crmStub({ searchHits: hits }).crm, now: NOW }).execute({
+    const retry = await new RecordIntroductionTool({ isStaff: STAFF, crm: crmStub({ searchHits: hits }).crm, now: NOW }).execute({
       ...BASE,
       partner: "Acme Advisory",
       partnerAction: "create_new",
@@ -77,7 +80,7 @@ describe("record_introduction", () => {
     const { crm, calls } = crmStub({
       searchHits: [{ id: "p1", type: "Partner", title: "Acme Advisory", subtitle: null, href: "/partners/p1" }],
     });
-    const out = await new RecordIntroductionTool({ crm, now: NOW }).execute({
+    const out = await new RecordIntroductionTool({ isStaff: STAFF, crm, now: NOW }).execute({
       ...BASE,
       partner: "Acme Advisory",
       partnerAction: "use_existing",
@@ -92,7 +95,7 @@ describe("record_introduction", () => {
 
   it("use_existing with no match returns partner_not_found (no create fallthrough)", async () => {
     const { crm, calls } = crmStub();
-    const out = await new RecordIntroductionTool({ crm, now: NOW }).execute({
+    const out = await new RecordIntroductionTool({ isStaff: STAFF, crm, now: NOW }).execute({
       ...BASE,
       partner: "Ghost Partner",
       partnerAction: "use_existing",
@@ -105,7 +108,7 @@ describe("record_introduction", () => {
     const { crm, calls } = crmStub({
       searchHits: [{ id: "p1", type: "Partner", title: "Acme Advisory", subtitle: null, href: "/partners/p1" }],
     });
-    const out = await new RecordIntroductionTool({ crm, now: NOW }).execute({
+    const out = await new RecordIntroductionTool({ isStaff: STAFF, crm, now: NOW }).execute({
       ...BASE,
       partner: "Acme Advisory",
       partnerAction: "use_existing",
@@ -125,7 +128,7 @@ describe("record_introduction", () => {
     // Fresh intro, no deal: partnerId is the task's only link — this is what
     // used to make createTask fail perpetually ("partial success" QA HIGH).
     const fresh = crmStub();
-    await new RecordIntroductionTool({ crm: fresh.crm, now: NOW }).execute({
+    await new RecordIntroductionTool({ isStaff: STAFF, crm: fresh.crm, now: NOW }).execute({
       ...BASE,
       partner: "Acme Advisory",
       partnerAction: "create_new",
@@ -137,7 +140,7 @@ describe("record_introduction", () => {
     const withDeal = crmStub({
       searchHits: [{ id: "p1", type: "Partner", title: "Acme Advisory", subtitle: null, href: "/partners/p1" }],
     });
-    await new RecordIntroductionTool({ crm: withDeal.crm, now: NOW }).execute({
+    await new RecordIntroductionTool({ isStaff: STAFF, crm: withDeal.crm, now: NOW }).execute({
       ...BASE,
       partner: "Acme Advisory",
       partnerAction: "use_existing",
@@ -150,7 +153,7 @@ describe("record_introduction", () => {
 
   it("rejects existingDealId without existingDealType", async () => {
     const { crm } = crmStub();
-    const out = await new RecordIntroductionTool({ crm, now: NOW }).execute({
+    const out = await new RecordIntroductionTool({ isStaff: STAFF, crm, now: NOW }).execute({
       ...BASE,
       partner: "Acme Advisory",
       partnerAction: "create_new",
@@ -161,7 +164,7 @@ describe("record_introduction", () => {
 
   it("review task lands 3 business days out", async () => {
     const { crm, calls } = crmStub();
-    await new RecordIntroductionTool({ crm, now: NOW }).execute({
+    await new RecordIntroductionTool({ isStaff: STAFF, crm, now: NOW }).execute({
       ...BASE,
       partner: "Acme Advisory",
       partnerAction: "create_new",

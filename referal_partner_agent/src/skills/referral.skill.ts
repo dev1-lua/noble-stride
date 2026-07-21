@@ -11,7 +11,6 @@ import { LinkPartnerToDealTool } from "./tools/LinkPartnerToDealTool";
 import { UpdatePartnerTool } from "./tools/UpdatePartnerTool";
 import { UpdateFeeStatusTool } from "./tools/UpdateFeeStatusTool";
 import { IssuePartnerAccessCodeTool } from "./tools/IssuePartnerAccessCodeTool";
-import { withStaffGuard } from "../lib/staff-mode";
 
 export const referralSkill = new LuaSkill({
   name: "referral-partner-tracker",
@@ -59,23 +58,25 @@ Ambiguity and errors:
 - If the CRM is unreachable, say so and suggest retrying shortly — never answer from memory.
 
 Never expose raw record ids; refer to records by name and share the deep links tools return.`,
-  // Every staff tool is wrapped with withStaffGuard: the passphrase-gate no longer
-  // hard-blocks non-staff (partners reach the token-scoped partner-self-service
-  // skill on the same channel), so each staff tool self-authorizes and refuses a
-  // non-staff caller. issue_partner_access_code is staff-only too — staff generate
-  // the code, then hand it to the partner out-of-band.
+  // Every staff tool self-authorizes INSIDE its execute (staffRefusal, see
+  // lib/staff-mode.ts): the passphrase-gate no longer hard-blocks non-staff
+  // (partners reach the token-scoped partner-self-service skill on the same
+  // channel), so each tool refuses a non-staff caller itself.
+  // MUST stay plain `new Tool()` literals: lua-cli resolves this array
+  // statically, and any wrapper call (e.g. withStaffGuard(...)) makes the
+  // skill push with ZERO tools — this broke prod on 2026-07-21.
   tools: [
-    withStaffGuard(new ListDealsTool()),
-    withStaffGuard(new GetPartnerProfileTool()),
-    withStaffGuard(new GetReferralStatusTool()),
-    withStaffGuard(new ReferralPipelineDigestTool()),
-    withStaffGuard(new PartnerPerformanceTool()),
-    withStaffGuard(new SummarizeRecordTool()),
-    withStaffGuard(new RecordIntroductionTool()),
-    withStaffGuard(new CreateReferredMandateTool()),
-    withStaffGuard(new LinkPartnerToDealTool()),
-    withStaffGuard(new UpdatePartnerTool()),
-    withStaffGuard(new UpdateFeeStatusTool()),
-    withStaffGuard(new IssuePartnerAccessCodeTool()),
+    new ListDealsTool(),
+    new GetPartnerProfileTool(),
+    new GetReferralStatusTool(),
+    new ReferralPipelineDigestTool(),
+    new PartnerPerformanceTool(),
+    new SummarizeRecordTool(),
+    new RecordIntroductionTool(),
+    new CreateReferredMandateTool(),
+    new LinkPartnerToDealTool(),
+    new UpdatePartnerTool(),
+    new UpdateFeeStatusTool(),
+    new IssuePartnerAccessCodeTool(),
   ],
 });

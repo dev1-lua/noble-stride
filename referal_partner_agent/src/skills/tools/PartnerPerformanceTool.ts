@@ -1,5 +1,6 @@
 import { type LuaTool } from "lua-cli";
 import { z } from "zod";
+import { staffRefusal, type StaffCheck } from "../../lib/staff-mode";
 import { crmClientFromEnv, type CrmClient } from "../../lib/crm-client";
 import { PARTNER_REFERRAL_STATS } from "../../lib/queries";
 import { resolveByNameOrId } from "../../lib/record-lookup";
@@ -27,9 +28,11 @@ export class PartnerPerformanceTool implements LuaTool {
     "Referral performance rollup: deals referred, still active, closed, revenue and conversion — firm-wide leaderboard across all partners, or one partner's numbers. Read-only.";
   inputSchema = inputSchema;
 
-  constructor(private deps?: { crm: CrmClient }) {}
+  constructor(private deps?: { crm: CrmClient; isStaff?: StaffCheck }) {}
 
   async execute(input: z.infer<typeof inputSchema>) {
+    const refusal = await staffRefusal(this.deps?.isStaff);
+    if (refusal) return refusal;
     const crm = this.deps?.crm ?? crmClientFromEnv();
 
     let partnerId: string | undefined;

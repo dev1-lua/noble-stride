@@ -2,6 +2,9 @@ import { describe, it, expect, vi } from "vitest";
 import { CreateReferredMandateTool } from "../CreateReferredMandateTool";
 import type { CrmClient } from "../../../lib/crm-client";
 
+/** Hermetic staff stub — without it the in-tool guard calls the live Lua API. */
+const STAFF = async () => true;
+
 const CLIENT_HIT = { id: "c1", type: "Client", title: "Busoga Foods", subtitle: null, href: "/clients/c1" };
 const PARTNER_HIT = { id: "p1", type: "Partner", title: "Acme Advisory", subtitle: null, href: "/partners/p1" };
 
@@ -36,7 +39,7 @@ const BASE = {
 describe("create_referred_mandate", () => {
   it("returns client_not_found when the client does not exist — never creates it", async () => {
     const { crm, calls } = crmStub([PARTNER_HIT]);
-    const out = await new CreateReferredMandateTool({ crm }).execute({
+    const out = await new CreateReferredMandateTool({ isStaff: STAFF, crm }).execute({
       ...BASE,
       client: "Ghost Client",
       partner: "Acme Advisory",
@@ -47,7 +50,7 @@ describe("create_referred_mandate", () => {
 
   it("returns partner_not_found pointing at record_introduction", async () => {
     const { crm } = crmStub([CLIENT_HIT]);
-    const out = await new CreateReferredMandateTool({ crm }).execute({
+    const out = await new CreateReferredMandateTool({ isStaff: STAFF, crm }).execute({
       ...BASE,
       client: "Busoga Foods",
       partner: "Ghost Partner",
@@ -58,7 +61,7 @@ describe("create_referred_mandate", () => {
 
   it("creates the mandate with referredById + source Referral and logs the audit note", async () => {
     const { crm, calls } = crmStub([CLIENT_HIT, PARTNER_HIT]);
-    const out = await new CreateReferredMandateTool({ crm }).execute({
+    const out = await new CreateReferredMandateTool({ isStaff: STAFF, crm }).execute({
       ...BASE,
       client: "Busoga Foods",
       partner: "Acme Advisory",

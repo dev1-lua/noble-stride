@@ -1,5 +1,6 @@
 import { type LuaTool } from "lua-cli";
 import { z } from "zod";
+import { staffRefusal, type StaffCheck } from "../../lib/staff-mode";
 import { crmClientFromEnv, type CrmClient } from "../../lib/crm-client";
 import { resolveByNameOrId } from "../../lib/record-lookup";
 import { scanReferredDeals, type ReferredDeal } from "../../lib/referral-scan";
@@ -23,6 +24,7 @@ const inputSchema = z.object({
 export interface DigestDeps {
   crm: CrmClient;
   now?: () => Date;
+  isStaff?: StaffCheck;
 }
 
 export class ReferralPipelineDigestTool implements LuaTool {
@@ -34,6 +36,8 @@ export class ReferralPipelineDigestTool implements LuaTool {
   constructor(private deps?: DigestDeps) {}
 
   async execute(input: z.infer<typeof inputSchema>) {
+    const refusal = await staffRefusal(this.deps?.isStaff);
+    if (refusal) return refusal;
     const deps = this.deps ?? { crm: crmClientFromEnv() };
     const { crm } = deps;
     const now = deps.now ? deps.now() : new Date();

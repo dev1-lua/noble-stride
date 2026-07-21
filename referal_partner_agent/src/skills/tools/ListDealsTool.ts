@@ -1,5 +1,6 @@
 import { type LuaTool } from "lua-cli";
 import { z } from "zod";
+import { staffRefusal, type StaffCheck } from "../../lib/staff-mode";
 import { crmClientFromEnv, type CrmClient } from "../../lib/crm-client";
 import { DEALS_SNAPSHOT } from "../../lib/queries";
 
@@ -48,9 +49,11 @@ export class ListDealsTool implements LuaTool {
     "The latest/newest/most recent deals across BOTH pipelines (mandates and transactions), newest first, each with who introduced it (originating partner, or none on record). Use when asked about recent deals or to trace originators across several deals at once; get_referral_status is for ONE named deal.";
   inputSchema = inputSchema;
 
-  constructor(private deps?: { crm: CrmClient }) {}
+  constructor(private deps?: { crm: CrmClient; isStaff?: StaffCheck }) {}
 
   async execute(input: z.infer<typeof inputSchema>) {
+    const refusal = await staffRefusal(this.deps?.isStaff);
+    if (refusal) return refusal;
     const crm = this.deps?.crm ?? crmClientFromEnv();
     const snapshot = await crm.query<Snapshot>(DEALS_SNAPSHOT);
 

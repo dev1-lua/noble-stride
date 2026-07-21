@@ -1,5 +1,6 @@
 import { AI, type LuaTool } from "lua-cli";
 import { z } from "zod";
+import { staffRefusal, type StaffCheck } from "../../lib/staff-mode";
 import { crmClientFromEnv, type CrmClient } from "../../lib/crm-client";
 import { GLOBAL_SEARCH, DETAIL_QUERIES, DOCUMENTS_QUERY, DOCUMENT_ARG } from "../../lib/queries";
 import { resolveRecord, type RecordType, type SearchResult } from "../../lib/resolve";
@@ -8,6 +9,7 @@ import { buildRecordPrompt, fallbackRecordMarkdown } from "../../lib/format";
 export interface SummarizeDeps {
   crm: CrmClient;
   generate: (prompt: string) => Promise<string>;
+  isStaff?: StaffCheck;
 }
 
 const inputSchema = z.object({
@@ -31,6 +33,8 @@ export class SummarizeRecordTool implements LuaTool {
   }
 
   async execute(input: z.infer<typeof inputSchema>) {
+    const refusal = await staffRefusal(this.deps?.isStaff);
+    if (refusal) return refusal;
     const { crm, generate } = this.getDeps();
     const recordType = input.recordType as RecordType;
 
