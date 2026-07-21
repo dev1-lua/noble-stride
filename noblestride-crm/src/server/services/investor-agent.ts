@@ -12,6 +12,7 @@ import {
 } from "@/server/visibility/project";
 import { logActivity } from "./engagements";
 import { notify, adminUserIds } from "./notifications";
+import { dealCodename } from "@/server/visibility/codename";
 import { updateInvestor } from "./investors";
 import { updatePerson } from "./persons";
 import { assertCan } from "@/server/rbac/enforce";
@@ -469,6 +470,106 @@ export async function flagInvestorForReview(input: {
   });
 
   return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// expressDealInterestFromAgent — a MATCHED investor replied to outreach saying
+// they're interested / want the teaser. Deal detail is NEVER shared over email;
+// instead we (a) surface the interest to the deal owner (bell) so a human knows
+// to follow up, and (b) hand back a secure portal DEEP LINK so the investor logs
+// in and sees the teaser through the normal, access-gated flow.
+//
+// Scope is deliberately narrow (resolves Fable H2 / avoids all-inbound noise):
+// only an active outreach engagement (Shared/TeaserSent, not Passed/Committed)
+// counts. When several are open, `dealHint` (the codename/subject the investor
+// referenced) breaks the tie, else the most recently contacted. Returns
+// matched:false when there's no open outreach loop so the agent can fall back to
+// its generic "your Noblestride contact will follow up" reply.
+// ─────────────────────────────────────────────────────────────────────────────
+const OUTREACH_ENGAGEMENT_STAGES = ["Shared", "TeaserSent"] as const;
+
+/** Canonical public origin for portal links (agent→CRM has no browser origin to
+ *  trust). Configurable; falls back to the known prod domain so a missing env
+ *  never yields a broken link. */
+function appBaseUrl(): string {
+  const raw = process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://noble-stride.vercel.app";
+  return raw.replace(/\/+$/, "");
+}
+
+export async function expressDealInterestFromAgent(input: {
+  investorId: string;
+  dealHint?: string | null;
+}): Promise<{ matched: boolean; dealName?: string; portalUrl?: string }> {
+  const investorId = input.investorId?.trim();
+  if (!investorId) throw new CrudError("investorId is required");
+  const investor = await prisma.investor.findUnique({ where: { id: investorId }, select: { id: true, name: true } });
+  if (!investor) throw new CrudError("Investor not found");
+
+  const engagements = await prisma.engagement.findMany({
+    where: {
+      investorId,
+      engagementStage: { in: [...OUTREACH_ENGAGEMENT_STAGES] },
+      status: { notIn: ["Passed", "Committed"] },
+      // Exclude closed deals — the portal drops them, so the deep link would
+      // land on notFound() after login (mirrors loadInvestorPortalData's filter).
+      transaction: { stage: { notIn: ["ClosedWon", "ClosedLost"] } },
+    },
+    include: { transaction: { select: { id: true, name: true, ownerId: true } } },
+    // nulls:"last" — Postgres orders NULLs first by default, which would let a
+    // never-contacted engagement outrank a recently-contacted one.
+    orderBy: { lastContact: { sort: "desc", nulls: "last" } },
+  });
+  if (engagements.length === 0) return { matched: false };
+
+  // The investor knows this deal ONLY by its PRE_INTEREST codename, so match the
+  // hint against the codename (real name as a fallback). We return the CODENAME,
+  // never the raw transaction name — surfacing the real name to the external
+  // email agent would defeat the masking the rest of the platform enforces at
+  // this stage. The raw name stays internal (the staff notification title).
+  const hint = input.dealHint?.trim().toLowerCase();
+  const chosen =
+    (hint
+      ? engagements.find(
+          (e) =>
+            dealCodename(e.transaction.id).toLowerCase().includes(hint) ||
+            e.transaction.name.toLowerCase().includes(hint),
+        )
+      : undefined) ?? engagements[0];
+  const dealId = chosen.transaction.id;
+  const codename = dealCodename(dealId);
+
+  // Reflect the interest as a status bump WITHOUT downgrading an engagement staff
+  // already advanced (mirrors the portal expressInterest gate).
+  const bump = chosen.status === "NotContacted" || chosen.status === "Contacted";
+  await prisma.engagement.update({
+    where: { id: chosen.id },
+    data: { lastContact: new Date(), ...(bump ? { status: "Interested" as const } : {}) },
+  });
+
+  await logActivity(
+    {
+      type: "Note",
+      channel: "Email",
+      direction: "Inbound",
+      subject: "Investor expressed interest via email agent",
+      body: `${investor.name} replied expressing interest; directed to the secure portal to view the teaser.`,
+      investorId,
+      transactionId: dealId,
+      engagementId: chosen.id,
+    },
+    { type: "AGENT", authenticated: true },
+  );
+
+  // Alert the deal owner (falls back to the transaction owner) — best-effort.
+  // Staff-facing notification — safe to use the real deal name internally.
+  await notify([chosen.ownerId ?? chosen.transaction.ownerId], {
+    kind: "interest_expressed",
+    title: `${investor.name} expressed interest in ${chosen.transaction.name}`,
+    href: `/engagement/${chosen.id}`,
+  });
+
+  const portalUrl = `${appBaseUrl()}/login?as=investor&next=${encodeURIComponent(`/portal/investor/deals/${dealId}`)}`;
+  return { matched: true, dealName: codename, portalUrl };
 }
 
 export async function confirmProposedChange(id: string, actor: Actor): Promise<{ ok: true }> {

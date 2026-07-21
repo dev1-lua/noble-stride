@@ -34,7 +34,22 @@ export function makeCrmClient(opts: { apiUrl: string; agentKey: string; fetchFn?
       } catch (err) {
         throw new CrmError(CRM_DOWN_MESSAGE, err instanceof Error ? err.message : String(err));
       }
-      if (!res.ok) throw new CrmError(CRM_DOWN_MESSAGE, `HTTP ${res.status}`);
+      if (!res.ok) {
+        // Self-verification instrumentation: a bare "HTTP 400" hides the ONLY
+        // diagnostic that names the cause. graphql-yoga returns the reason in
+        // the body (e.g. `Variable "$transactionId" ... was not provided` vs
+        // `Cannot query field "x"`), so capture it into `detail` (which is what
+        // the job logs surface). Truncated + best-effort so a hung/HTML body
+        // never masks the status. Never changes the user-facing message.
+        let detail = `HTTP ${res.status}`;
+        try {
+          const text = (await res.text()).trim();
+          if (text) detail += `: ${text.slice(0, 500)}`;
+        } catch {
+          /* body unreadable — status alone still tells us it was non-2xx */
+        }
+        throw new CrmError(CRM_DOWN_MESSAGE, detail);
+      }
       let body: { data?: T; errors?: Array<{ message: string }> };
       try {
         body = (await res.json()) as { data?: T; errors?: Array<{ message: string }> };
