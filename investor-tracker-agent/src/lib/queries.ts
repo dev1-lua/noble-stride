@@ -303,3 +303,18 @@ export const LOG_ACTIVITY = /* GraphQL */ `
     logActivity(input: $input) { id }
   }
 `;
+
+// Investor roster for classification lookups (greylisted/excluded). The server
+// filter has no engagementClassification arg, so the tool fetches a bounded
+// page and filters client-side. pageSize is generous because the classified
+// subset is small.
+export const LIST_INVESTORS = /* GraphQL */ `
+  query TrackerListInvestors($page: Int!, $pageSize: Int!) {
+    investors(page: $page, pageSize: $pageSize) {
+      id
+      name
+      engagementClassification
+      investorType
+    }
+  }
+`;

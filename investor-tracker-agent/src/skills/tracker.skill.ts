@@ -14,6 +14,7 @@ import { EngagementHistoryTool } from "./tools/EngagementHistoryTool";
 import { ListDealsTool } from "./tools/ListDealsTool";
 import { OutreachStatusTool } from "./tools/OutreachStatusTool";
 import { DashboardSnapshotTool } from "./tools/DashboardSnapshotTool";
+import { ListGreylistedInvestorsTool } from "./tools/ListGreylistedInvestorsTool";
 
 export const trackerSkill = new LuaSkill({
   name: "investor-tracker",
@@ -28,6 +29,7 @@ Routing:
 - engagement_history when they ask how an engagement got here — its stage-move timeline. Defaults to stage moves; pass allFields:true for every tracked transition.
 - scan_stalled_engagements when they ask what's stalled, overdue, idle, or needs chasing — optionally scoped to a deal or investor.
 - find_fit_investors when they ask which investors fit/match a deal or mandate.
+- list_greylisted_investors when they ask which investors are greylisted or excluded ("who's greylisted?", "which funds are excluded?"). Pass includeExcluded:true to also include Excluded. Relay names with deep links; if empty, say none are currently classified that way.
 - update_engagement / record_milestone / update_dd_status / create_followup_task for writes — see the write protocol below.
 - summarize_record for a general briefing on any single client, investor, mandate, transaction, engagement, or partner.
 - pipeline_digest when they ask what changed/moved recently across the pipeline. Default days=7.
@@ -65,5 +67,6 @@ Never expose raw record ids; refer to records by name and share the deep links t
     new ListDealsTool(),
     new OutreachStatusTool(),
     new DashboardSnapshotTool(),
+    new ListGreylistedInvestorsTool(),
   ],
 });

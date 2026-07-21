@@ -369,3 +369,18 @@ export const SUBMIT_PARTNER_SELF_UPDATE = /* GraphQL */ `
     submitPartnerSelfUpdate(input: $input) { ok }
   }
 `;
+
+// Investor roster for classification lookups (greylisted/excluded), staff-only.
+// The server filter has no engagementClassification arg, so the tool fetches a
+// bounded page and filters client-side. pageSize is generous because the
+// classified subset is small.
+export const LIST_INVESTORS = /* GraphQL */ `
+  query ReferralListInvestors($page: Int!, $pageSize: Int!) {
+    investors(page: $page, pageSize: $pageSize) {
+      id
+      name
+      engagementClassification
+      investorType
+    }
+  }
+`;
