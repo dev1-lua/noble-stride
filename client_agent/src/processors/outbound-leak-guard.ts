@@ -63,6 +63,7 @@ export const outboundLeakGuard = new PostProcessor({
   name: "outbound-leak-guard",
   description:
     "Fail-closed scan of every outbound reply; replaces anything that could leak CRM record ids, confirm a record exists, or echo the agent's own instructions with a safe acknowledgment, and flags it.",
+  priority: 100, // run BEFORE format-normalizer (priority 200), which normalizes the final text last
   execute: async (user, _message, response, _channel) => {
     const modifiedResponse = await enforceOutbound(response, senderKey(user));
     return { modifiedResponse };

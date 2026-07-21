@@ -2,6 +2,7 @@ import { LuaAgent } from "lua-cli";
 import { trackerSkill } from "./skills/tracker.skill";
 import { followupCheckJob } from "./jobs/followup-check.job";
 import { passphraseGate } from "./processors/passphrase-gate";
+import { formatNormalizer } from "./processors/format-normalizer";
 import { INVESTOR_TRACKER_PERSONA } from "./persona";
 
 const agent = new LuaAgent({
@@ -11,6 +12,7 @@ const agent = new LuaAgent({
   skills: [trackerSkill],
   jobs: [followupCheckJob],
   preProcessors: [passphraseGate],
+  postProcessors: [formatNormalizer],
 });
 
 export default agent;

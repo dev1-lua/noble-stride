@@ -45,6 +45,7 @@ export function withSignOff(response: string): string {
 export const outboundLeakGuard = new PostProcessor({
   name: "outbound-leak-guard",
   description: "Fail-closed scan of every outbound reply; replaces anything that could leak confidential data with a safe acknowledgment and flags it. Also guarantees the Investor Relations sign-off.",
+  priority: 100, // run BEFORE format-normalizer (priority 200), which normalizes the final text last
   execute: async (_user, _message, response, _channel) => {
     const modifiedResponse = withSignOff(await enforceOutbound(response, senderFromRequest()));
     return { modifiedResponse };

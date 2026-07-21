@@ -8,7 +8,7 @@ import { join } from "node:path";
 // src/index.ts must be declared in lua.skill.yaml. Keep this list in sync with src/index.ts.
 const REGISTERED = {
   preprocessors: ["auto-reply-guard"],
-  postprocessors: ["outbound-leak-guard"],
+  postprocessors: ["outbound-leak-guard", "format-normalizer"],
 };
 
 function yamlSection(yaml: string, key: string): string {
@@ -33,6 +33,6 @@ describe("lua.skill.yaml declares every processor registered in src/index.ts", (
   it("src/index.ts registers exactly the processors this test pins", () => {
     const index = readFileSync(join(__dirname, "..", "index.ts"), "utf8");
     expect(index).toContain("preProcessors: [autoReplyGuard]");
-    expect(index).toContain("postProcessors: [outboundLeakGuard]");
+    expect(index).toContain("postProcessors: [outboundLeakGuard, formatNormalizer]");
   });
 });
