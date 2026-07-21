@@ -25,7 +25,6 @@ interface SnapshotEntry {
   // under `.data` depending on platform version (QA 2026-07-15 X1) — read both.
   stage?: string;
   dealStatus?: string;
-  // Shared with the staff roster lookup, so arbitrary keys are allowed.
   data?: {
     dealKey?: string;
     partnerId?: string;
@@ -35,7 +34,6 @@ interface SnapshotEntry {
     dealStatus?: string;
     [key: string]: unknown;
   };
-  [key: string]: unknown;
 }
 
 /** Roster entries are written `{ userId }` top-level by passphrase-gate — accept both shapes. */
