@@ -45,6 +45,18 @@ describe("SummarizeRecordTool", () => {
     expect(seenPrompt).not.toMatch(/"ownerId"/); // no bare FK
   });
 
+  it("resolves a record WITHOUT a recordType (check everything on X), inferring the type from the hit", async () => {
+    // globalSearch returns only a Mandate; caller omits recordType.
+    const mandateHit = { id: "m1", type: "Mandate", title: "Sizwe Phamaceuticals Limited", subtitle: "Sizwe", href: "/mandates/m1" };
+    const tool = new SummarizeRecordTool({
+      crm: crmStub([mandateHit], { id: "m1", name: "Sizwe Phamaceuticals Limited", stage: "NDA" }),
+      generate: async () => "## Headline\nAdvisory mandate, NDA stage.",
+    });
+    const out = await tool.execute({ query: "Sizwe Pharmaceuticals Limited" });
+    expect(out.status).toBe("ok");
+    if (out.status === "ok") expect(out.link).toBe("https://crm.example/mandates/m1");
+  });
+
   it("returns candidates when ambiguous", async () => {
     const two = [HIT, { ...HIT, id: "c2", title: "Acme Ltd Kenya" }];
     const tool = new SummarizeRecordTool({ crm: crmStub(two), generate: async () => "unused" });
