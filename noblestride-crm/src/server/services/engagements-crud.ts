@@ -6,6 +6,7 @@ import type { Actor } from "@/graphql/context";
 import { amountPending, deriveYearQuarter } from "@/server/domain/disbursement";
 import { engagementCreateSchema, engagementUpdateSchema } from "@/lib/schemas/engagement";
 import { assertStageAllowed, stageRequiresNda } from "@/server/domain/nda-guard";
+import { assertAgentEngagementAllowed, assertAgentEngagementCreateAllowed, isAgentActor } from "@/server/domain/agent-write-guards";
 import { notify, notifyInvestors } from "./notifications";
 
 function derived(input: { totalAmount?: number | null; amountDisbursed?: number | null; dateReceived?: Date | null }) {
@@ -18,6 +19,16 @@ function derived(input: { totalAmount?: number | null; amountDisbursed?: number 
 
 export async function createEngagement(raw: unknown, actor: Actor) {
   const input = engagementCreateSchema.parse(raw);
+  // gap F: an agent may not open an engagement (share a deal) with an Excluded/
+  // Greylisted investor (SPEC §8.3). Load classification (+ndaStatus for the NDA
+  // gate) once. Humans (CRM UI) are unaffected.
+  if (isAgentActor(actor)) {
+    const guardInvestor = await prisma.investor.findUniqueOrThrow({
+      where: { id: input.investorId },
+      select: { name: true, engagementClassification: true },
+    });
+    assertAgentEngagementCreateAllowed(actor, guardInvestor);
+  }
   if (input.engagementStage && stageRequiresNda(input.engagementStage)) {
     const investor = await prisma.investor.findUniqueOrThrow({
       where: { id: input.investorId },
@@ -48,13 +59,21 @@ export async function updateEngagement(id: string, raw: unknown, actor: Actor = 
   // the other operand to null. Use `"field" in input` so an explicit null
   // (clear) is honored and distinguished from "absent".
   const existing = await prisma.engagement.findUniqueOrThrow({ where: { id } });
-  if (input.engagementStage && input.engagementStage !== existing.engagementStage) {
+  const stageChanging = !!input.engagementStage && input.engagementStage !== existing.engagementStage;
+  // Load the investor once for both the gap-F classification guard (agents only,
+  // SPEC §8.3 — no advancing/enriching an Excluded/Greylisted investor's
+  // engagement) and the NDA stage gate (any actor, on a stage change). Humans are
+  // unaffected by the classification guard.
+  if (isAgentActor(actor) || stageChanging) {
     const investor = await prisma.investor.findUniqueOrThrow({
       where: { id: existing.investorId },
-      select: { ndaStatus: true },
+      select: { name: true, engagementClassification: true, ndaStatus: true },
     });
-    const mergedNdaType = "ndaType" in input ? (input.ndaType ?? null) : existing.ndaType;
-    assertStageAllowed(input.engagementStage, investor, { ndaType: mergedNdaType });
+    if (isAgentActor(actor)) assertAgentEngagementAllowed(actor, investor, input);
+    if (stageChanging) {
+      const mergedNdaType = "ndaType" in input ? (input.ndaType ?? null) : existing.ndaType;
+      assertStageAllowed(input.engagementStage!, investor, { ndaType: mergedNdaType });
+    }
   }
   const merged = {
     totalAmount:
