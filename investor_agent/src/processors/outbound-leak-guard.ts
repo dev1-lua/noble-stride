@@ -1,6 +1,7 @@
-import { PostProcessor, Lua } from "lua-cli";
+import { PostProcessor } from "lua-cli";
 import { scanOutbound } from "../lib/guardrails/outbound-scan";
 import { recordFlagEvent } from "../lib/flagging";
+import { senderFromRequest } from "../lib/request-sender";
 
 export const SAFE_ACK =
   "Thank you for your message. I've made sure the Noblestride team has it, and your usual contact will follow up with you directly.\n\nNoblestride Investor Relations";
@@ -24,18 +25,6 @@ export async function enforceOutbound(response: string, sender: string | undefin
     /* fail-open on flag I/O ONLY — enforcement below is unconditional */
   }
   return SAFE_ACK;
-}
-
-function senderFromRequest(): string | undefined {
-  try {
-    const payload = (Lua.request.webhook?.payload ?? {}) as Record<string, unknown>;
-    const from = payload["from"];
-    if (typeof from === "string") return from.trim() || undefined;
-    const nested = (from as Record<string, unknown> | undefined)?.["address"] ?? (from as Record<string, unknown> | undefined)?.["email"];
-    return typeof nested === "string" ? nested.trim() || undefined : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 export const outboundLeakGuard = new PostProcessor({
