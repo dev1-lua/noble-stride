@@ -180,6 +180,22 @@ export const ENGAGEMENTS_BY_DEAL_SCAN = /* GraphQL */ `
   }
 `;
 
+/**
+ * Stage-change audit trail for one engagement (spec §7.1). The StageChange model
+ * is append-only; `field` distinguishes stage moves ("engagementStage") from other
+ * tracked transitions. Ordered changedAt-desc by the CRM.
+ */
+export const ENGAGEMENT_STAGE_HISTORY = /* GraphQL */ `
+  query TrackerEngagementHistory($id: ID!) {
+    engagement(id: $id) {
+      id name engagementStage
+      transaction { id name }
+      investor { id name }
+      stageChanges { field fromValue toValue changedAt createdSource changedBy { id name } }
+    }
+  }
+`;
+
 // Slim by-id lookups: globalSearch only matches names (contains), so exact ids
 // from previous tool results need a direct fetch.
 export const TRANSACTION_BY_ID = /* GraphQL */ `
