@@ -4,22 +4,25 @@ agent:
 skills:
   - name: investor-correspondence
     skillId: cf322ac2-8cfe-406b-8df9-f6aa88a2a448
-    version: 1.0.8
+    version: 1.0.10
 webhooks:
   - name: draft-outreach
-    version: 1.0.10
+    version: 1.0.12
     webhookId: 485920f4-84bb-4b1a-ab8f-197cdcfa653a
 jobs: []
 preprocessors:
   - name: auto-reply-guard
     preprocessorId: preprocessor_0c6e0dd5-f44d-48bc-abfc-768faa71862c
-    version: 1.0.8
+    version: 1.0.10
 postprocessors:
   - name: outbound-leak-guard
     postprocessorId: postprocessor_b22722e5-c915-4989-960f-062f8bb74a1b
-    version: 1.0.7
+    version: 1.0.9
+  - name: format-normalizer
+    postprocessorId: postprocessor_24afbf74-2ccf-4590-8d01-16c4db9e77ab
+    version: 1.0.1
 mcpServers: []
 backup:
-  activeVersion: 10
-  lastHash: 9c4645c50710cc199a4e26eb186fe7fb7f900648fa5ee12c802b4f5d0c476e34
-  lastPushedAt: '2026-07-21T17:28:03.464Z'
+  activeVersion: 12
+  lastHash: 2009d92825b754e1ec35d142fed3f86847838b2afa25c8c03f43ee5f983a3474
+  lastPushedAt: '2026-07-21T22:11:41.054Z'

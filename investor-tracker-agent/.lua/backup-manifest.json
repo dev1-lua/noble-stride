@@ -1,150 +1,158 @@
 {
-  "lastHash": "8dfbe9a44870b054257602662155240bcf6234264612f0066616eb03f558acae",
-  "lastPushedAt": "2026-07-21T15:36:49.083Z",
+  "lastHash": "d978ea6a31113e336dbd45e5b8228bceb798b963331628311f28751b38dfdada",
+  "lastPushedAt": "2026-07-21T22:13:25.372Z",
   "files": [
     {
       "relativePath": "env.example",
-      "hash": "35792030d7fd9951"
+      "hash": "7b6f11d43c3db2b7"
     },
     {
       "relativePath": "lua.skill.yaml",
-      "hash": "c04e4fc2d1e9a919"
+      "hash": "4b1b4696f42aba4d"
     },
     {
       "relativePath": "package.json",
-      "hash": "79f6a88c5d5bd81b"
+      "hash": "eaccd43c3a7a7932"
     },
     {
       "relativePath": "scripts/smoke.ts",
-      "hash": "ada6f98014da3541"
+      "hash": "d5881d8304f72483"
     },
     {
       "relativePath": "src/index.ts",
-      "hash": "4e7a0ecbc1fff2ab"
+      "hash": "a75fc50fbb0ab25d"
     },
     {
       "relativePath": "src/jobs/followup-check.job.ts",
-      "hash": "0020599679fb94c9"
+      "hash": "04af2db6e4fe29a8"
     },
     {
       "relativePath": "src/lib/crm-client.ts",
-      "hash": "41e7668a481a1d79"
+      "hash": "7b4fe003c1d7661e"
     },
     {
       "relativePath": "src/lib/digest-runner.ts",
-      "hash": "b2f7816d188c12ba"
+      "hash": "887034f89ec89a24"
     },
     {
       "relativePath": "src/lib/engagement-resolve.ts",
-      "hash": "68868f27fd6baeea"
+      "hash": "4421ca7dd965e68c"
     },
     {
       "relativePath": "src/lib/format.ts",
-      "hash": "1a7ab305204c7937"
+      "hash": "d8ca382fa30ad46a"
     },
     {
       "relativePath": "src/lib/guards.ts",
-      "hash": "9a7a004fe293cde5"
+      "hash": "5e8f5e923ded8c10"
     },
     {
       "relativePath": "src/lib/queries.ts",
-      "hash": "f8fea718f05e01ef"
+      "hash": "70f83cd941aa345f"
     },
     {
       "relativePath": "src/lib/record-lookup.ts",
-      "hash": "1257475ba177e71b"
+      "hash": "291c46ad10a1dd21"
     },
     {
       "relativePath": "src/lib/resolve.ts",
-      "hash": "7c4de58fe4e23751"
+      "hash": "f234e7e075d9128e"
     },
     {
       "relativePath": "src/lib/staleness.ts",
-      "hash": "a899db5454b4e38b"
+      "hash": "2c42158145b56429"
     },
     {
       "relativePath": "src/lib/tracker-runner.ts",
-      "hash": "138d1cf8053c2f64"
+      "hash": "dd526ca16cf20904"
     },
     {
       "relativePath": "src/persona.ts",
-      "hash": "059c0909617097ac"
+      "hash": "3e6b1a4925df252c"
+    },
+    {
+      "relativePath": "src/processors/format-normalizer.ts",
+      "hash": "65e4bfda9d677df1"
     },
     {
       "relativePath": "src/processors/passphrase-gate.ts",
-      "hash": "2db4cecd033ff341"
+      "hash": "cb707b0f47e87a1a"
     },
     {
       "relativePath": "src/skills/tools/CreateFollowupTaskTool.ts",
-      "hash": "e86111544fb4c6ce"
+      "hash": "26439e755117e305"
     },
     {
       "relativePath": "src/skills/tools/DashboardSnapshotTool.ts",
-      "hash": "99fbeaeb767291c6"
+      "hash": "fe26917246324541"
     },
     {
       "relativePath": "src/skills/tools/DisbursementSummaryTool.ts",
-      "hash": "e4253664f784e746"
+      "hash": "536d4293dfc5e914"
     },
     {
       "relativePath": "src/skills/tools/EngagementHistoryTool.ts",
-      "hash": "8267e532ba571a51"
+      "hash": "f312b0bc624232c8"
     },
     {
       "relativePath": "src/skills/tools/FindFitInvestorsTool.ts",
-      "hash": "1b4be618a5c73fd0"
+      "hash": "c5ff10805fe2fd29"
     },
     {
       "relativePath": "src/skills/tools/GetEngagementStatusTool.ts",
-      "hash": "906ef97d88722526"
+      "hash": "2576b7907e7ee8ea"
     },
     {
       "relativePath": "src/skills/tools/GetTermSheetStatusTool.ts",
-      "hash": "7f87be223b7a458d"
+      "hash": "003c9b134e9aff8d"
     },
     {
       "relativePath": "src/skills/tools/ListDealsTool.ts",
-      "hash": "40c1c2819d8c2b43"
+      "hash": "7fc9002153d41315"
+    },
+    {
+      "relativePath": "src/skills/tools/ListGreylistedInvestorsTool.ts",
+      "hash": "53827b62f4b58d1f"
     },
     {
       "relativePath": "src/skills/tools/OutreachStatusTool.ts",
-      "hash": "ee6787cf7e087e69"
+      "hash": "fc72763cada2a871"
     },
     {
       "relativePath": "src/skills/tools/PipelineDigestTool.ts",
-      "hash": "e41bd994dc0e1524"
+      "hash": "2ca006b2805c6d37"
     },
     {
       "relativePath": "src/skills/tools/RecordMilestoneTool.ts",
-      "hash": "9229a2e9d5c38c46"
+      "hash": "4ef4aa63e354250c"
     },
     {
       "relativePath": "src/skills/tools/ScanStalledEngagementsTool.ts",
-      "hash": "27b43271eeea3093"
+      "hash": "8ef74df7ba83826d"
     },
     {
       "relativePath": "src/skills/tools/SummarizeRecordTool.ts",
-      "hash": "34ccd1db6698ce26"
+      "hash": "1075fe1127242c4b"
     },
     {
       "relativePath": "src/skills/tools/UpdateDDStatusTool.ts",
-      "hash": "f5ec49a2855f65d0"
+      "hash": "7ef290d9c75f3d9d"
     },
     {
       "relativePath": "src/skills/tools/UpdateEngagementTool.ts",
-      "hash": "0574d5e674a302a7"
+      "hash": "ba04e97c1ba4e51c"
     },
     {
       "relativePath": "src/skills/tracker.skill.ts",
-      "hash": "f584c1eb437d1606"
+      "hash": "d9f399157ffd366f"
     },
     {
       "relativePath": "tsconfig.json",
-      "hash": "748d6fffca1cc9ce"
+      "hash": "deef34fa8b853cfe"
     },
     {
       "relativePath": "vitest.config.ts",
-      "hash": "eeae3902657c50d1"
+      "hash": "b8bbae1d8eb20581"
     }
   ]
 }

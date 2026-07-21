@@ -4,8 +4,19 @@ agent:
 skills:
   - name: website-intake
     skillId: aacaab73-1530-4263-83f9-857ab61b9512
+    version: 1.0.3
+preprocessors:
+  - name: probe-guard
+    preprocessorId: preprocessor_6e401d43-533a-424b-8518-4893466bcbb2
+    version: 1.0.2
+postprocessors:
+  - name: outbound-leak-guard
+    postprocessorId: postprocessor_455bb808-a3dd-4741-8757-425ec9e15404
+    version: 1.0.2
+  - name: format-normalizer
+    postprocessorId: postprocessor_89894e18-a421-4e6f-858a-16f3e65b26fe
     version: 1.0.1
 backup:
-  activeVersion: 1
-  lastHash: d0418dd561a8e28cd58a3623e8d7f028140c785a6783f176baf56a4402063088
-  lastPushedAt: '2026-07-20T07:52:42.057Z'
+  activeVersion: 3
+  lastHash: f94517a68507c89e8a75a3cad10ed2dec8291ee8ce63b86687a2d409df8cb7e0
+  lastPushedAt: '2026-07-21T22:08:28.521Z'

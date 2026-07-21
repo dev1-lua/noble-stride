@@ -4,19 +4,22 @@ agent:
 skills:
   - name: client-intake
     skillId: a1afe403-99dc-41fa-9824-b207294e0d58
-    version: 1.0.6
+    version: 1.0.9
 webhooks: []
 jobs: []
 preprocessors:
   - name: probe-guard
     preprocessorId: preprocessor_ebdc4552-a647-417e-abee-97df265b7d2f
-    version: 1.0.4
+    version: 1.0.7
 postprocessors:
   - name: outbound-leak-guard
     postprocessorId: postprocessor_eb87f00b-99de-4aa5-8bc8-94fdbec1d685
-    version: 1.0.4
+    version: 1.0.7
+  - name: format-normalizer
+    postprocessorId: postprocessor_0a900a81-d9b9-4abc-873e-f07c69f80204
+    version: 1.0.2
 mcpServers: []
 backup:
-  activeVersion: 6
-  lastHash: 120a7cbea80a77d0d3bae1bd4a964c107f867a69ce1b2cf87ed6c16a82edc2b1
-  lastPushedAt: '2026-07-21T17:29:25.479Z'
+  activeVersion: 9
+  lastHash: 576c44afda5a0c6e6d101691acfa7466c41f0136a4308c888055c5e295beadd7
+  lastPushedAt: '2026-07-21T22:23:04.227Z'
