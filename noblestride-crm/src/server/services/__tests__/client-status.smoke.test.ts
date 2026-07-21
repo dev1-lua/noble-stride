@@ -293,6 +293,38 @@ describe("verifyClientStatusOtp / verifyStatusToken", () => {
       .sign(secret);
     expect(await verifyStatusToken(wrongPurpose)).toBeNull();
   });
+
+  it("TEST-ONLY bypass: when CLIENT_STATUS_TEST_OTP is set, code 000000 lets a matched contact verify without a challenge; still requires a match; inert when unset", async () => {
+    const prior = process.env.CLIENT_STATUS_TEST_OTP;
+    process.env.CLIENT_STATUS_TEST_OTP = "1"; // any value enables test mode
+    try {
+      // Matched contact with NO active challenge row: the fixed code 000000 mints a real token.
+      const ok = await verifyClientStatusOtp(COMPANY_A, VERIFY_NOCHALLENGE_EMAIL, "000000");
+      expect(ok.status).toBe("ok");
+      const person = await prisma.person.findFirst({ where: { email: VERIFY_NOCHALLENGE_EMAIL } });
+      const claims = await verifyStatusToken((ok as { status: "ok"; token: string }).token);
+      expect(claims).toEqual({ clientId: companyAId, personId: person!.id });
+
+      // A different code still fails, even in test mode.
+      expect(await verifyClientStatusOtp(COMPANY_A, VERIFY_NOCHALLENGE_EMAIL, "999999")).toEqual({ status: "failed" });
+
+      // The company+email match is STILL required: a non-contact cannot use 000000.
+      expect(await verifyClientStatusOtp(COMPANY_A, RIVAL_EMAIL, "000000")).toEqual({ status: "failed" });
+    } finally {
+      if (prior === undefined) delete process.env.CLIENT_STATUS_TEST_OTP;
+      else process.env.CLIENT_STATUS_TEST_OTP = prior;
+    }
+
+    // With the flag explicitly unset, 000000 no longer works (no challenge row exists).
+    const saved = process.env.CLIENT_STATUS_TEST_OTP;
+    delete process.env.CLIENT_STATUS_TEST_OTP;
+    try {
+      expect(await verifyClientStatusOtp(COMPANY_A, VERIFY_NOCHALLENGE_EMAIL, "000000")).toEqual({ status: "failed" });
+    } finally {
+      if (saved === undefined) delete process.env.CLIENT_STATUS_TEST_OTP;
+      else process.env.CLIENT_STATUS_TEST_OTP = saved;
+    }
+  });
 });
 
 describe("getClientStatus", () => {

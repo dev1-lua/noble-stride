@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { RequestStatusCodeTool } from "../RequestStatusCodeTool";
 import { VerifyStatusCodeTool } from "../VerifyStatusCodeTool";
 import { GetClientStatusTool } from "../GetClientStatusTool";
@@ -24,12 +24,38 @@ const SAMPLE_PAYLOAD = {
 };
 
 describe("RequestStatusCodeTool", () => {
+  // Env hygiene: these tests assume the test-mode flag is NOT ambiently exported
+  // (a plausible dev shell state, since this flag exists so testers set it).
+  const PRIOR_TEST_OTP = process.env.CLIENT_STATUS_TEST_OTP;
+  beforeEach(() => {
+    delete process.env.CLIENT_STATUS_TEST_OTP;
+  });
+  afterEach(() => {
+    if (PRIOR_TEST_OTP === undefined) delete process.env.CLIENT_STATUS_TEST_OTP;
+    else process.env.CLIENT_STATUS_TEST_OTP = PRIOR_TEST_OTP;
+  });
+
   it("always returns {status:'ok'} and passes exact variables", async () => {
     const query = vi.fn(async () => ({ requestClientStatusOtp: { ok: true } })) as CrmClient["query"];
     const crm = stubCrm(query);
     const tool = new RequestStatusCodeTool({ crm });
     const out = await tool.execute({ companyName: "Chai Estates", contactEmail: "jane@chai.example" });
     expect(out).toEqual({ status: "ok" });
+    expect(query).toHaveBeenCalledWith(REQUEST_STATUS_OTP, {
+      companyName: "Chai Estates",
+      contactEmail: "jane@chai.example",
+    });
+  });
+
+  it("TEST MODE: surfaces the fixed 000000 code when CLIENT_STATUS_TEST_OTP is set", async () => {
+    process.env.CLIENT_STATUS_TEST_OTP = "1"; // any value enables test mode
+    const query = vi.fn(async () => ({ requestClientStatusOtp: { ok: true } })) as CrmClient["query"];
+    const out = await new RequestStatusCodeTool({ crm: stubCrm(query) }).execute({
+      companyName: "Chai Estates",
+      contactEmail: "jane@chai.example",
+    });
+    expect(out).toEqual({ status: "ok", testCode: "000000" });
+    // still calls the real OTP mutation (the challenge is issued server-side as usual)
     expect(query).toHaveBeenCalledWith(REQUEST_STATUS_OTP, {
       companyName: "Chai Estates",
       contactEmail: "jane@chai.example",

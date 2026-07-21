@@ -121,6 +121,22 @@ export async function verifyClientStatusOtp(
   );
   if (!match) return FAILED;
 
+  // TEST-ONLY bypass (env-gated). When CLIENT_STATUS_TEST_OTP is set (any value),
+  // a caller whose company + email already matched may verify with the fixed test
+  // code "000000" instead of an emailed one, so the data-out flow is testable
+  // without an inbox. It mints the SAME token as the real path and still requires
+  // the company/email match above. Unset in production it is inert.
+  //
+  // SECURITY: "000000" is intentionally guessable, so while this flag is set the
+  // verify step becomes a company+email existence oracle with no brute-force
+  // protection. Enable it ONLY for a controlled QA window, and never leave it on
+  // for a public-facing deployment.
+  const TEST_OTP_CODE = "000000";
+  if (process.env.CLIENT_STATUS_TEST_OTP && code === TEST_OTP_CODE) {
+    const token = await signStatusToken(match.clientId!, match.id);
+    return { status: "ok", token };
+  }
+
   const row = await prisma.clientOtpChallenge.findFirst({
     where: { personId: match.id, consumedAt: null },
     orderBy: { createdAt: "desc" },
