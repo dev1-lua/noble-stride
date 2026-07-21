@@ -41,6 +41,23 @@ describe("scanOutbound", () => {
       "record-id",
     );
   });
+
+  // 2026-07-21 portal-link exemption — lockstep with investor_agent. This agent never emits
+  // such a link, so these assert the shared scanner logic, not this agent's behaviour.
+  it("allows a portal deep link's embedded deal cuid (encoded or decoded)", () => {
+    const cuid = "clx2abcd1234efgh5678ijkl90mn";
+    expect(
+      scanOutbound(`Log in here: https://noble-stride.vercel.app/login?as=investor&next=%2Fportal%2Finvestor%2Fdeals%2F${cuid}`)
+        .leaked,
+    ).toBe(false);
+    expect(scanOutbound(`See it at /portal/investor/deals/${cuid} after logging in.`).leaked).toBe(false);
+  });
+  it("still catches a loose cuid even when a portal link is also present", () => {
+    const r = scanOutbound(
+      "Log in https://noble-stride.vercel.app/login?as=investor&next=%2Fportal%2Finvestor%2Fdeals%2Fclx2abcd1234efgh5678ijkl90mn — ref cly9zzzz9999yyyy8888xxxx77ww",
+    );
+    expect(r.reasons).toContain("record-id");
+  });
 });
 
 describe("enforceOutbound — public veto policy", () => {

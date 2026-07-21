@@ -2,6 +2,7 @@ import { LuaTool } from "lua-cli";
 import { z } from "zod";
 import { CrmClient, crmClientFromEnv } from "../../lib/crm-client";
 import { EXPRESS_DEAL_INTEREST } from "../../lib/queries";
+import { CHANNEL_UNVERIFIED, verifiedSender } from "../../lib/request-sender";
 
 /**
  * Called when a MATCHED investor's reply indicates genuine interest in the
@@ -26,9 +27,20 @@ export default class ExpressDealInterestTool implements LuaTool {
       .describe("Optional: the deal codename or subject the investor referenced, to disambiguate when they have more than one open opportunity."),
   });
 
-  constructor(private deps?: { crm: CrmClient }) {}
+  constructor(private deps?: { crm?: CrmClient; transportFrom?: () => string | undefined }) {}
 
   async execute(input: z.infer<typeof this.inputSchema>) {
+    // SECURITY: this tool mints a per-deal portal login link and records an
+    // "interested" signal against a deal owner's queue. Like every other investor
+    // tool it must bind to a transport-verified sender — off-email (e.g. webchat)
+    // a visitor could otherwise pass an arbitrary investorId to spoof interest or
+    // fish out a link. Fail closed to the channel_unverified refusal the skill's
+    // step 3b already handles; never fall back to a model-supplied identity.
+    const resolveFrom = this.deps?.transportFrom ?? verifiedSender;
+    if (!resolveFrom()) {
+      return { matched: false as const, dealName: null, portalUrl: null, ...CHANNEL_UNVERIFIED };
+    }
+
     const crm = this.deps?.crm ?? crmClientFromEnv();
     const data = await crm.query<{
       expressDealInterestForAgent: { matched: boolean; dealName: string | null; portalUrl: string | null };

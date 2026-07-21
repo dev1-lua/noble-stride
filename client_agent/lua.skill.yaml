@@ -4,19 +4,19 @@ agent:
 skills:
   - name: client-intake
     skillId: a1afe403-99dc-41fa-9824-b207294e0d58
-    version: 1.0.3
+    version: 1.0.6
 webhooks: []
 jobs: []
 preprocessors:
   - name: probe-guard
     preprocessorId: preprocessor_ebdc4552-a647-417e-abee-97df265b7d2f
-    version: 1.0.1
+    version: 1.0.4
 postprocessors:
   - name: outbound-leak-guard
     postprocessorId: postprocessor_eb87f00b-99de-4aa5-8bc8-94fdbec1d685
-    version: 1.0.1
+    version: 1.0.4
 mcpServers: []
 backup:
-  activeVersion: 5
-  lastHash: 1c815baf99bc60815a7bea52e26a1b65a009d848aaa7b458e4531d204f2c232d
-  lastPushedAt: '2026-07-21T15:34:41.920Z'
+  activeVersion: 6
+  lastHash: 120a7cbea80a77d0d3bae1bd4a964c107f867a69ce1b2cf87ed6c16a82edc2b1
+  lastPushedAt: '2026-07-21T17:29:25.479Z'
