@@ -28,6 +28,7 @@ import {
   CheckCompanyResultRef,
   StaffResolveResultRef,
   ClientStatusPayloadRef,
+  PartnerSelfPayloadRef,
   InvestorIdentityRef,
   AgentInvestorMatchRef,
   TeaserContextRef,
@@ -69,6 +70,7 @@ import { globalSearch, type SearchResult } from "@/server/search/global-search";
 import { assertAutomation } from "@/server/rbac/enforce";
 import { checkCompany } from "@/server/services/client-intake";
 import { getClientStatus } from "@/server/services/client-status";
+import { partnerSelfView } from "@/server/services/partner-self";
 import { resolveStaffUserSummary } from "@/server/services/agent-delegation";
 import {
   investorByEmail,
@@ -687,6 +689,18 @@ builder.queryFields((t) => ({
     resolve: (_root, args, ctx) => {
       assertAutomation(ctx.actor);
       return getClientStatus(args.token);
+    },
+  }),
+
+  // Partner self-service (SOW §7.2): trade a verified partner-self token for the
+  // hard-whitelisted own-record view (own contact/agreement + own referred deals).
+  partnerSelfView: t.field({
+    type: PartnerSelfPayloadRef,
+    nullable: false,
+    args: { token: t.arg.string({ required: true }) },
+    resolve: (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return partnerSelfView(args.token);
     },
   }),
 

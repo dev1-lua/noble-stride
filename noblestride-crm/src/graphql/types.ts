@@ -56,6 +56,7 @@ import {
 import { daysInStage } from "@/server/domain/metrics";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
 import type { ClientStatusPayload } from "@/server/services/client-status";
+import type { PartnerSelfPayload, PartnerReferredDealView } from "@/server/services/partner-self";
 
 // ─── User ────────────────────────────────────────────────────────────────────
 
@@ -801,6 +802,49 @@ export const ClientStatusPayloadRef = builder.objectRef<ClientStatusPayload>("Cl
     submittedRaise: t.exposeString("submittedRaise", { nullable: true }),
     nextStep: t.exposeString("nextStep", { nullable: false }),
     lastUpdated: t.exposeString("lastUpdated", { nullable: false }),
+  }),
+});
+
+// ─── Partner self-service (SOW §7.2) ─────────────────────────────────────────
+// issuePartnerAccessCode returns the raw code ONCE (staff relay it out-of-band).
+export interface PartnerAccessCodeData { code: string }
+export const PartnerAccessCodeRef = builder.objectRef<PartnerAccessCodeData>("PartnerAccessCode").implement({
+  fields: (t) => ({ code: t.exposeString("code", { nullable: false }) }),
+});
+
+// verifyPartnerAccessCode: {status:"ok", token} | {status:"failed"} — every
+// failure path collapses to the same shape (anti-enumeration lives in the service).
+export interface PartnerVerifyData { status: string; token?: string | null }
+export const PartnerVerifyRef = builder.objectRef<PartnerVerifyData>("PartnerVerify").implement({
+  fields: (t) => ({
+    status: t.exposeString("status", { nullable: false }),
+    token: t.field({ type: "String", nullable: true, resolve: (p) => p.token ?? null }),
+  }),
+});
+
+const PartnerReferredDealRef = builder.objectRef<PartnerReferredDealView>("PartnerReferredDeal").implement({
+  fields: (t) => ({
+    dealName: t.exposeString("dealName", { nullable: false }),
+    stage: t.exposeString("stage", { nullable: false }),
+    status: t.exposeString("status", { nullable: false }),
+  }),
+});
+
+// partnerSelfView payload: this field list IS the security boundary — it must
+// mirror PartnerSelfPayload in src/server/services/partner-self.ts exactly. It
+// carries ONLY the partner's own contact/agreement state and the stage/status of
+// deals THEY introduced — never other partners, investor identities, fee amounts,
+// or internal notes. Adding a field here is a spec violation.
+export const PartnerSelfPayloadRef = builder.objectRef<PartnerSelfPayload>("PartnerSelfPayload").implement({
+  fields: (t) => ({
+    name: t.exposeString("name", { nullable: false }),
+    organization: t.field({ type: "String", nullable: true, resolve: (p) => p.organization }),
+    email: t.field({ type: "String", nullable: true, resolve: (p) => p.email }),
+    phone: t.field({ type: "String", nullable: true, resolve: (p) => p.phone }),
+    advisorType: t.field({ type: "String", nullable: true, resolve: (p) => p.advisorType }),
+    feeAgreementOnFile: t.exposeBoolean("feeAgreementOnFile", { nullable: false }),
+    referredDeals: t.field({ type: [PartnerReferredDealRef], nullable: false, resolve: (p) => p.referredDeals }),
+    referredDealCount: t.exposeInt("referredDealCount", { nullable: false }),
   }),
 });
 
