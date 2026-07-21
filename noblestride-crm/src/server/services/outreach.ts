@@ -26,6 +26,11 @@ export const ACTIVE_DRAFT_STATUSES = ["Draft", "Approved", "Sent", "Failed"] as 
 /** Statuses from which a draft may still be edited, rejected, or (re)sent. */
 const REVIEWABLE_STATUSES = ["Draft", "Approved", "Failed"] as const;
 
+/** Max drafts a single bulk invocation processes — a backstop against a very
+ *  large deal exhausting the serverless duration budget mid-send. Callers
+ *  surface `remaining` so the reviewer can run it again for the rest. */
+const BULK_CAP = 25;
+
 function assertMayReview(lens: ReviewerLens, txnOwnerId: string | null): void {
   const allowed = canUpdateRecord(lens.orgRole, "Transactions", lens.userId, { ownerId: txnOwnerId });
   if (!allowed) throw new CrudError("Not authorized: only an Admin or the deal owner can review outreach");
@@ -272,6 +277,11 @@ export async function sendOutreachDraft(
         text: draft.body,
         options: { channelIdentifier: channelId },
       }),
+      // Bound each send so one hung upstream call can't consume the whole
+      // serverless budget mid-batch during a bulk "Approve & send all". On
+      // timeout the AbortError is caught below → draft rolls back to Failed
+      // (retryable), never a silent half-send.
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
@@ -320,4 +330,78 @@ export async function sendOutreachDraft(
   );
 
   return { ok: true };
+}
+
+/** Owner/admin auth for a whole transaction's outreach (single up-front check
+ *  for bulk ops, so a non-owner gets ONE error, not one per draft). */
+async function assertMayReviewTransaction(transactionId: string, lens: ReviewerLens): Promise<void> {
+  const txn = await prisma.transaction.findUnique({ where: { id: transactionId }, select: { ownerId: true } });
+  if (!txn) throw new CrudError("Transaction not found");
+  assertMayReview(lens, txn.ownerId);
+}
+
+/**
+ * Bulk "Approve & send all" for one deal. Authorizes once up front, then sends
+ * each reviewable draft through the SAME per-draft `sendOutreachDraft` path
+ * (its atomic claim guarantees at-most-once send, so this is safe under
+ * concurrent/duplicate submits). Every send is wrapped so one failure never
+ * aborts the batch after real emails have gone out; failures stay retryable
+ * (the draft is left/returned to Failed by sendOutreachDraft). Capped at
+ * BULK_CAP per call — `remaining` tells the caller to run again.
+ */
+export async function sendAllForTransaction(
+  transactionId: string,
+  lens: ReviewerLens,
+  deps?: { fetchFn?: typeof fetch },
+): Promise<{ sent: number; failed: number; remaining: number; errors: string[] }> {
+  await assertMayReviewTransaction(transactionId, lens);
+  const reviewable = await prisma.outreachDraft.findMany({
+    where: { transactionId, status: { in: [...REVIEWABLE_STATUSES] } },
+    select: { id: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const batch = reviewable.slice(0, BULK_CAP);
+  let sent = 0;
+  let failed = 0;
+  const errors: string[] = [];
+  for (const d of batch) {
+    try {
+      const r = await sendOutreachDraft(d.id, lens, deps);
+      if (r.ok) sent += 1;
+      else {
+        failed += 1;
+        if (r.error) errors.push(r.error);
+      }
+    } catch (e) {
+      failed += 1;
+      errors.push(e instanceof Error ? e.message : "send failed");
+    }
+  }
+  return { sent, failed, remaining: Math.max(0, reviewable.length - batch.length), errors };
+}
+
+/** Bulk "Reject all" for one deal — authorize once, then reject each reviewable
+ *  draft through the existing status-guarded `rejectOutreachDraft`. */
+export async function rejectAllForTransaction(
+  transactionId: string,
+  lens: ReviewerLens,
+): Promise<{ rejected: number; remaining: number }> {
+  await assertMayReviewTransaction(transactionId, lens);
+  const reviewable = await prisma.outreachDraft.findMany({
+    where: { transactionId, status: { in: [...REVIEWABLE_STATUSES] } },
+    select: { id: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const batch = reviewable.slice(0, BULK_CAP);
+  let rejected = 0;
+  for (const d of batch) {
+    try {
+      await rejectOutreachDraft(d.id, lens);
+      rejected += 1;
+    } catch {
+      // A draft that raced to Sent/Rejected is simply skipped — bulk reject is
+      // best-effort over whatever is still reviewable.
+    }
+  }
+  return { rejected, remaining: Math.max(0, reviewable.length - batch.length) };
 }
