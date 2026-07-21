@@ -15,6 +15,25 @@ describe("mergeCommTimeline", () => {
     expect(out[1]).toMatchObject({ type: "Meeting", context: "Teams meeting · Busoga Raise" });
   });
 
+  it("carries AGENT provenance and the review flag through to the timeline item", () => {
+    const out = mergeCommTimeline(
+      [{ id: "a2", type: "Note", subject: "⚑ Flagged for review", occurredAt: d("2026-07-10T10:00:00Z"), channel: "Email", direction: "Inbound", createdSource: "AGENT", flagged: true }],
+      [],
+      [],
+    );
+    expect(out[0]).toMatchObject({ id: "act-a2", source: "AGENT", flagged: true });
+  });
+
+  it("defaults source/flagged for activities without provenance", () => {
+    const out = mergeCommTimeline(
+      [{ id: "a3", type: "Call", subject: "Intro", occurredAt: d("2026-07-10T10:00:00Z") }],
+      [],
+      [],
+    );
+    expect(out[0].source).toBeNull();
+    expect(out[0].flagged).toBe(false);
+  });
+
   it("falls back to sentAt then createdAt for email timestamps and labels missing subjects", () => {
     const out = mergeCommTimeline(
       [],

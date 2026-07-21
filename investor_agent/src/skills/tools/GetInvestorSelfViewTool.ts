@@ -20,6 +20,21 @@ interface InvestorSelfView {
   esgFocus?: string | null;
   investmentMandate?: string | null;
   criteriaVerifiedAt?: string | null;
+  decisionProcess?: string | null;
+  shareholdingPreference?: string | null;
+  pricingPreference?: string | null;
+  remainingInvestmentPeriod?: string | null;
+  ddRequirements?: string | null;
+  icApprovalProcess?: string | null;
+  trackRecord?: string | null;
+  notableInvestments?: string | null;
+  portfolioComposition?: string | null;
+  caseStudies?: string | null;
+  reinvestmentPolicy?: string | null;
+  teamComposition?: string | null;
+  collaborationTerms?: string | null;
+  impactMetrics?: string | null;
+  reputationalRisks?: string | null;
 }
 
 const UNMATCHED: InvestorSelfView = {

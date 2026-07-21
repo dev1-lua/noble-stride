@@ -1,4 +1,6 @@
 import { Data } from "lua-cli";
+import { crmClientFromEnv, type CrmClient } from "./crm-client";
+import { FLAG_FOR_REVIEW } from "./queries";
 
 export const SECURITY_FLAG_COLLECTION = "security_flags";
 export const DEFAULT_FLAG_DEDUPE_WINDOW_MIN = 60;
@@ -38,5 +40,32 @@ export async function recordFlagEvent(sender: string, reasons: string[], deps: F
     return true;
   } catch {
     return false; // fail-open
+  }
+}
+
+/**
+ * Bridge a deterministic security flag into the CRM so staff actually SEE it (bell +
+ * flagged timeline note) — the Lua Data flag above is analytics-only and invisible in
+ * the CRM. Keyed on the sender EMAIL (already parsed to a bare address by the caller),
+ * which the CRM resolves to an investor; an unknown sender still alerts admins.
+ * FAIL-OPEN: any CRM/transport error is swallowed so it can never block inbound mail.
+ */
+export async function flagSecurityToCrm(
+  senderEmail: string,
+  reasons: string[],
+  deps: { crm?: CrmClient } = {},
+): Promise<void> {
+  try {
+    const crm = deps.crm ?? crmClientFromEnv();
+    await crm.query(FLAG_FOR_REVIEW, {
+      input: {
+        email: senderEmail,
+        source: "SECURITY",
+        summary: `Automated guard flagged a probe / manipulation attempt from ${senderEmail}.`,
+        reason: reasons.join("; ") || null,
+      },
+    });
+  } catch {
+    /* fail-open: staff visibility is best-effort, never a gate on real mail */
   }
 }

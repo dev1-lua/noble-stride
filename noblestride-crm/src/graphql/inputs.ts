@@ -544,6 +544,16 @@ export const InvestorCommunicationInput = builder.inputType("InvestorCommunicati
   }),
 });
 
+export const InvestorFlagInput = builder.inputType("InvestorFlagInput", {
+  fields: (t) => ({
+    investorId: t.string({ required: false }), // known investor (from identify_investor)
+    email: t.string({ required: false }), // fallback: resolve investor by sender email
+    reason: t.string({ required: false }),
+    source: t.string({ required: true }), // "MANUAL" | "SECURITY" — validated in resolver
+    summary: t.string({ required: true }),
+  }),
+});
+
 export const OutreachDraftItemInput = builder.inputType("OutreachDraftItemInput", {
   fields: (t) => ({
     investorId: t.string({ required: true }),

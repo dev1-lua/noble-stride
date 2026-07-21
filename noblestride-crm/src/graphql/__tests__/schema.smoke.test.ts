@@ -39,12 +39,12 @@ describe("graphql schema", () => {
     const queryType = schema.getQueryType();
     expect(queryType).toBeTruthy();
     const queryFields = Object.keys(queryType?.getFields() ?? {});
-    expect(queryFields).toHaveLength(39);
+    expect(queryFields).toHaveLength(41);
 
     const mutationType = schema.getMutationType();
     expect(mutationType).toBeTruthy();
     const mutationFields = Object.keys(mutationType?.getFields() ?? {});
-    expect(mutationFields).toHaveLength(68);
+    expect(mutationFields).toHaveLength(72);
 
     // Spot-check that key query fields exist
     expect(queryFields).toContain("dashboardStats");
@@ -120,6 +120,7 @@ describe("graphql schema", () => {
     expect(mutationFields).toContain("verifyClientStatusOtp");
     expect(mutationFields).toContain("submitInvestorUpdate");
     expect(mutationFields).toContain("logInvestorCommunication");
+    expect(mutationFields).toContain("flagInvestorForReview");
     expect(mutationFields).toContain("saveOutreachDrafts");
     // No delete-shaped operation is ever exposed on the agent write surface
     // (spec: the agent may create/update, never delete) — guard against a

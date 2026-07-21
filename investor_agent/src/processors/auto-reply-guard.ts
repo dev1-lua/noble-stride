@@ -1,6 +1,7 @@
 import { PreProcessor, Lua, Data, env } from "lua-cli";
 import { classifyInboundProbe } from "../lib/guardrails/inbound-probe";
-import { recordFlagEvent } from "../lib/flagging";
+import { recordFlagEvent, flagSecurityToCrm } from "../lib/flagging";
+import { parseEmailAddress } from "../lib/request-sender";
 
 export interface InboundEmailMeta {
   from?: string;
@@ -21,7 +22,9 @@ export function gateDecision(meta: InboundEmailMeta): { block: boolean; reason?:
     return { block: true, reason: "precedence" };
   if (meta.autoResponseSuppress) return { block: true, reason: "suppress-header" };
   const from = (meta.from ?? "").trim();
-  const local = from.includes("<") ? from.slice(from.indexOf("<") + 1) : from;
+  // Prefer the parsed bare address; fall back to the raw local part for malformed
+  // machine senders (e.g. a bare "MAILER-DAEMON" with no @) that don't parse.
+  const local = parseEmailAddress(from) ?? (from.includes("<") ? from.slice(from.indexOf("<") + 1) : from);
   if (BAD_SENDERS.test(local)) return { block: true, reason: "machine-sender" };
   if (meta.subject && OOO_SUBJECT.test(meta.subject)) return { block: true, reason: "ooo-subject" };
   return { block: false };
@@ -137,6 +140,7 @@ export interface AutoReplyDecisionDeps {
   checkRateLimit?: (sender: string) => Promise<boolean>;
   classifyProbe?: typeof classifyInboundProbe;
   recordFlag?: typeof recordFlagEvent;
+  flagToCrm?: typeof flagSecurityToCrm;
 }
 
 /**
@@ -169,10 +173,14 @@ export async function decideAutoReply(
     // the sender still gets a warm, safe reply. recordFlagEvent is fail-open.
     const classifyProbe = deps.classifyProbe ?? classifyInboundProbe;
     const recordFlag = deps.recordFlag ?? recordFlagEvent;
+    const flagToCrm = deps.flagToCrm ?? flagSecurityToCrm;
     const probe = classifyProbe(probeText);
     if (probe.isProbe) {
       try {
-        await recordFlag(sender, probe.reasons);
+        // recordFlag dedupes to once per window and returns whether a NEW event was
+        // written; gate the CRM bridge on that so staff bells aren't spammed per reply.
+        const recorded = await recordFlag(sender, probe.reasons);
+        if (recorded) await flagToCrm(parseEmailAddress(sender) ?? sender, probe.reasons);
       } catch {
         /* fail-open on flag I/O only — the decision above is unconditional */
       }

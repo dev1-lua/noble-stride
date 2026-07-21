@@ -47,6 +47,19 @@ describe("get_investor_selfview", () => {
     expect(stub.query).not.toHaveBeenCalled(); // never even queries the victim's address
   });
 
+  it("matches when the transport From is a full display-name header (the prod bug)", async () => {
+    // senderFromRequest now returns a bare, parsed address, so the tool receives
+    // "shaurya@luaimplementation.ai" — not the raw "Name <addr>" header. This is the
+    // regression that made every real inbound self-view return UNMATCHED.
+    const stub = crmStub(PAYLOAD);
+    const out = await new GetInvestorSelfViewTool({
+      crm: stub,
+      transportFrom: () => "shaurya@luaimplementation.ai",
+    }).execute({ senderEmail: "shaurya@luaimplementation.ai" });
+    expect(out.matched).toBe(true);
+    expect(stub.query).toHaveBeenCalledWith(expect.anything(), { email: "shaurya@luaimplementation.ai" });
+  });
+
   it("keys on the transport From even when the model arg matches (case-insensitive)", async () => {
     const stub = crmStub(PAYLOAD);
     await new GetInvestorSelfViewTool({
