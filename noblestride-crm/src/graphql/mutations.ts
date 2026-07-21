@@ -7,7 +7,7 @@ import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement, logActivity } from "@/server/services/engagements";
 import { createEngagement, updateEngagement } from "@/server/services/engagements-crud";
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
-import { InvestorInput, ClientInput, MandateInput, TransactionInput, AdvisoryInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, WebsiteIntakeInput, LogClientMessageInput, InvestorUpdateSubmitInput, InvestorCommunicationInput, OutreachDraftsInput, PartnerSelfUpdateInput } from "./inputs";
+import { InvestorInput, ClientInput, MandateInput, TransactionInput, AdvisoryInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, WebsiteIntakeInput, LogClientMessageInput, InvestorUpdateSubmitInput, InvestorCommunicationInput, InvestorFlagInput, OutreachDraftsInput, PartnerSelfUpdateInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor, markInvestorCriteriaVerified } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
@@ -35,7 +35,7 @@ import { scheduleMeeting } from "@/server/services/meetings";
 import { submitClientIntake, submitWebsiteClientIntake, logInboundClientMessage, type LogClientMessageInput as LogClientMessageInputShape } from "@/server/services/client-intake";
 import { requestClientStatusOtp, verifyClientStatusOtp } from "@/server/services/client-status";
 import { prepareAgentWrite, commitAgentWrite, cancelAgentWrite } from "@/server/services/agent-write";
-import { submitInvestorUpdate, logInvestorCommunication } from "@/server/services/investor-agent";
+import { submitInvestorUpdate, logInvestorCommunication, flagInvestorForReview } from "@/server/services/investor-agent";
 import { saveOutreachDrafts } from "@/server/services/outreach";
 import { InteractionType } from "@prisma/client";
 
@@ -862,6 +862,23 @@ builder.mutationFields((t) => ({
         direction: args.input.direction,
         interactionType: args.input.interactionType,
         subject: args.input.subject ?? null,
+        summary: args.input.summary,
+      });
+    },
+  }),
+  flagInvestorForReview: t.field({
+    type: AgentAckRef,
+    nullable: false,
+    args: { input: t.arg({ type: InvestorFlagInput, required: true }) },
+    resolve: async (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      if (args.input.source !== "MANUAL" && args.input.source !== "SECURITY")
+        throw new CrudError("source must be MANUAL or SECURITY");
+      return flagInvestorForReview({
+        investorId: args.input.investorId ?? null,
+        email: args.input.email ?? null,
+        reason: args.input.reason ?? null,
+        source: args.input.source,
         summary: args.input.summary,
       });
     },

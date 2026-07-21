@@ -30,6 +30,21 @@ export const INVESTOR_SELF_VIEW = /* GraphQL */ `
       esgFocus
       investmentMandate
       criteriaVerifiedAt
+      decisionProcess
+      shareholdingPreference
+      pricingPreference
+      remainingInvestmentPeriod
+      ddRequirements
+      icApprovalProcess
+      trackRecord
+      notableInvestments
+      portfolioComposition
+      caseStudies
+      reinvestmentPolicy
+      teamComposition
+      collaborationTerms
+      impactMetrics
+      reputationalRisks
     }
   }
 `;
@@ -76,6 +91,14 @@ export const SUBMIT_INVESTOR_UPDATE = /* GraphQL */ `
 export const LOG_COMMUNICATION = /* GraphQL */ `
   mutation LogInvestorCommunication($input: InvestorCommunicationInput!) {
     logInvestorCommunication(input: $input) {
+      ok
+    }
+  }
+`;
+
+export const FLAG_FOR_REVIEW = /* GraphQL */ `
+  mutation FlagInvestorForReview($input: InvestorFlagInput!) {
+    flagInvestorForReview(input: $input) {
       ok
     }
   }

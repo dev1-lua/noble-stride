@@ -13,6 +13,10 @@ export interface CommTimelineItem {
   context?: string | null;
   channel?: string | null;
   direction?: string | null;
+  /** ActorSource of the backing Activity (e.g. "AGENT") — drives the provenance pill. */
+  source?: string | null;
+  /** Agent-raised review flag — drives the ⚑ timeline badge. */
+  flagged?: boolean;
 }
 
 export interface CommActivityInput {
@@ -23,6 +27,8 @@ export interface CommActivityInput {
   occurredAt: Date;
   channel?: string | null;
   direction?: string | null;
+  createdSource?: string | null;
+  flagged?: boolean;
 }
 
 export interface CommEmailInput {
@@ -74,6 +80,8 @@ export function mergeCommTimeline(
       context: null,
       channel: a.channel,
       direction: a.direction,
+      source: a.createdSource ?? null,
+      flagged: a.flagged ?? false,
     })),
     ...emails.map((e) => ({
       id: `mail-${e.id}`,

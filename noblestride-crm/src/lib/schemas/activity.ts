@@ -14,6 +14,7 @@ export const logActivitySchema = z.object({
   direction: z.nativeEnum(CommDirection).optional(),
   subject: z.string().trim().min(1, "Summary is required"),
   body: z.string().trim().optional(),
+  flagged: z.boolean().optional(),
   occurredAt: z.coerce.date().optional(),
   clientId: z.string().trim().optional(),
   mandateId: z.string().trim().optional(),

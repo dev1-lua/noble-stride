@@ -2,7 +2,7 @@
 // Server Component: no "use client". Receives pre-mapped ActivityTimelineItem[].
 
 import Link from "next/link";
-import { Card, CardHeader, CardBody } from "@/components/ui";
+import { Card, CardHeader, CardBody, Badge } from "@/components/ui";
 import type { SelectOption } from "@/components/ui";
 import { label } from "@/lib/vocab";
 import { daysAgoLabel } from "@/lib/format";
@@ -22,6 +22,10 @@ export interface ActivityTimelineItem {
   links?: { clientId?: string | null; mandateId?: string | null; transactionId?: string | null; investorId?: string | null };
   /** Tasks already extracted from this activity. */
   tasks?: { id: string; title: string; status: string }[];
+  /** ActorSource of the backing record (e.g. "AGENT") — shows a provenance pill. */
+  source?: string | null;
+  /** Agent-raised review flag — shows a ⚑ "Flagged for review" badge. */
+  flagged?: boolean;
 }
 
 export interface ActivityTaskOptions {
@@ -55,9 +59,15 @@ export function ActivityTimeline({
           <ul className="space-y-3">
             {activities.map((a) => (
               <li key={a.id} className="flex items-start gap-3">
-                <span className="mt-1.5 h-2 w-2 rounded-full bg-accent flex-shrink-0" />
+                <span
+                  className={`mt-1.5 h-2 w-2 rounded-full flex-shrink-0 ${
+                    a.flagged ? "bg-[var(--t-tag-text-amber)]" : "bg-accent"
+                  }`}
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
+                    {a.flagged && <Badge tone="warning">⚑ Flagged for review</Badge>}
+                    {a.source === "AGENT" && <Badge tone="info">Agent</Badge>}
                     <span className="text-xs font-medium text-[var(--text-secondary)]">
                       {label("InteractionType", a.type)}
                     </span>

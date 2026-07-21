@@ -26,8 +26,15 @@ const APPROVED_INVESTOR = {
   esgFocus: "Gender-lens",
   investmentMandate: "SSA growth equity",
   notes: "INTERNAL — do not share",
+  feedback: "INTERNAL staff feedback — do not share",
   nextActionDate: new Date("2026-02-01T00:00:00Z"),
   criteriaVerifiedAt: new Date("2026-01-01T00:00:00Z"),
+  // Investor's own self-provided narrative fields (safe to reflect back).
+  trackRecord: "12 exits since 2015",
+  teamComposition: "Partner-led IC of five",
+  impactMetrics: "Jobs created, gender ratio",
+  ddRequirements: "Audited accounts, mgmt refs",
+  reputationalRisks: "Avoids extractives",
 };
 
 beforeEach(() => findFirstMock.mockReset());
@@ -60,6 +67,21 @@ describe("investorSelfView", () => {
     // No raw ticket numbers.
     expect(serialized).not.toContain("2000000");
     expect(serialized).not.toContain("8000000");
+  });
+
+  it("reflects the investor's OWN narrative fields, but never internal feedback", async () => {
+    findFirstMock.mockResolvedValue({ investor: APPROVED_INVESTOR });
+    const out = await investorSelfView("ceo@vantage.com");
+
+    expect(out.trackRecord).toBe("12 exits since 2015");
+    expect(out.teamComposition).toBe("Partner-led IC of five");
+    expect(out.impactMetrics).toBe("Jobs created, gender ratio");
+    expect(out.ddRequirements).toBe("Audited accounts, mgmt refs");
+    expect(out.reputationalRisks).toBe("Avoids extractives");
+
+    // Internal staff feedback is NOT part of the investor-facing self-view.
+    expect(out).not.toHaveProperty("feedback");
+    expect(JSON.stringify(out)).not.toContain("INTERNAL staff feedback");
   });
 
   it("qualifies a single-bound ticket appetite", async () => {

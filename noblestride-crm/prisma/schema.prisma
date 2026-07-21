@@ -1080,6 +1080,9 @@ model Activity {
   // Spec-gap: communication channel/direction (spec §3.10)
   channel       CommChannel?
   direction     CommDirection?
+  // Agent-raised flag (needs staff review): surfaces a ⚑ badge in the comm timeline
+  // and pairs with an `investor_flag` Notification. Set by flagInvestorForReview.
+  flagged       Boolean         @default(false)
 
   engagementId  String?
   engagement    Engagement?  @relation(fields: [engagementId], references: [id], onDelete: Cascade)

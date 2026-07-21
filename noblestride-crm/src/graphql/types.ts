@@ -907,6 +907,21 @@ export interface InvestorSelfViewData {
   esgFocus?: string | null;
   investmentMandate?: string | null;
   criteriaVerifiedAt?: Date | null;
+  decisionProcess?: string | null;
+  shareholdingPreference?: string | null;
+  pricingPreference?: string | null;
+  remainingInvestmentPeriod?: string | null;
+  ddRequirements?: string | null;
+  icApprovalProcess?: string | null;
+  trackRecord?: string | null;
+  notableInvestments?: string | null;
+  portfolioComposition?: string | null;
+  caseStudies?: string | null;
+  reinvestmentPolicy?: string | null;
+  teamComposition?: string | null;
+  collaborationTerms?: string | null;
+  impactMetrics?: string | null;
+  reputationalRisks?: string | null;
 }
 export const InvestorSelfViewRef = builder.objectRef<InvestorSelfViewData>("InvestorSelfView").implement({
   fields: (t) => ({
@@ -925,6 +940,21 @@ export const InvestorSelfViewRef = builder.objectRef<InvestorSelfViewData>("Inve
     esgFocus: t.exposeString("esgFocus", { nullable: true }),
     investmentMandate: t.exposeString("investmentMandate", { nullable: true }),
     criteriaVerifiedAt: t.field({ type: "DateTime", nullable: true, resolve: (d) => d.criteriaVerifiedAt ?? null }),
+    decisionProcess: t.exposeString("decisionProcess", { nullable: true }),
+    shareholdingPreference: t.exposeString("shareholdingPreference", { nullable: true }),
+    pricingPreference: t.exposeString("pricingPreference", { nullable: true }),
+    remainingInvestmentPeriod: t.exposeString("remainingInvestmentPeriod", { nullable: true }),
+    ddRequirements: t.exposeString("ddRequirements", { nullable: true }),
+    icApprovalProcess: t.exposeString("icApprovalProcess", { nullable: true }),
+    trackRecord: t.exposeString("trackRecord", { nullable: true }),
+    notableInvestments: t.exposeString("notableInvestments", { nullable: true }),
+    portfolioComposition: t.exposeString("portfolioComposition", { nullable: true }),
+    caseStudies: t.exposeString("caseStudies", { nullable: true }),
+    reinvestmentPolicy: t.exposeString("reinvestmentPolicy", { nullable: true }),
+    teamComposition: t.exposeString("teamComposition", { nullable: true }),
+    collaborationTerms: t.exposeString("collaborationTerms", { nullable: true }),
+    impactMetrics: t.exposeString("impactMetrics", { nullable: true }),
+    reputationalRisks: t.exposeString("reputationalRisks", { nullable: true }),
   }),
 });
 

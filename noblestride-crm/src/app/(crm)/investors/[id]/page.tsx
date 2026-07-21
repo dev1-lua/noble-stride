@@ -498,6 +498,8 @@ export default async function InvestorDetailPage({ params }: PageProps) {
         context: c.context,
         channel: c.channel,
         direction: c.direction,
+        source: c.source,
+        flagged: c.flagged,
       }))}
     />
   );

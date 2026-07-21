@@ -11,6 +11,7 @@ import {
   type DealInput,
 } from "@/server/visibility/project";
 import { logActivity } from "./engagements";
+import { notify, adminUserIds } from "./notifications";
 import { updateInvestor } from "./investors";
 import { updatePerson } from "./persons";
 import { assertCan } from "@/server/rbac/enforce";
@@ -77,6 +78,24 @@ export interface InvestorSelfView {
   esgFocus?: string | null;
   investmentMandate?: string | null;
   criteriaVerifiedAt?: Date | null;
+  // The investor's OWN self-provided narrative fields (all investor-editable via
+  // INVESTOR_CHANGE_FIELDS — safe to reflect back to them). NOT aum/raw figures/
+  // internal notes/feedback, which stay confidential.
+  decisionProcess?: string | null;
+  shareholdingPreference?: string | null;
+  pricingPreference?: string | null;
+  remainingInvestmentPeriod?: string | null;
+  ddRequirements?: string | null;
+  icApprovalProcess?: string | null;
+  trackRecord?: string | null;
+  notableInvestments?: string | null;
+  portfolioComposition?: string | null;
+  caseStudies?: string | null;
+  reinvestmentPolicy?: string | null;
+  teamComposition?: string | null;
+  collaborationTerms?: string | null;
+  impactMetrics?: string | null;
+  reputationalRisks?: string | null;
 }
 
 const UNMATCHED_SELF_VIEW: InvestorSelfView = {
@@ -151,6 +170,21 @@ export async function investorSelfView(email: string): Promise<InvestorSelfView>
     esgFocus: investor.esgFocus ?? null,
     investmentMandate: investor.investmentMandate ?? null,
     criteriaVerifiedAt: investor.criteriaVerifiedAt ?? null,
+    decisionProcess: investor.decisionProcess ?? null,
+    shareholdingPreference: investor.shareholdingPreference ?? null,
+    pricingPreference: investor.pricingPreference ?? null,
+    remainingInvestmentPeriod: investor.remainingInvestmentPeriod ?? null,
+    ddRequirements: investor.ddRequirements ?? null,
+    icApprovalProcess: investor.icApprovalProcess ?? null,
+    trackRecord: investor.trackRecord ?? null,
+    notableInvestments: investor.notableInvestments ?? null,
+    portfolioComposition: investor.portfolioComposition ?? null,
+    caseStudies: investor.caseStudies ?? null,
+    reinvestmentPolicy: investor.reinvestmentPolicy ?? null,
+    teamComposition: investor.teamComposition ?? null,
+    collaborationTerms: investor.collaborationTerms ?? null,
+    impactMetrics: investor.impactMetrics ?? null,
+    reputationalRisks: investor.reputationalRisks ?? null,
   };
 }
 
@@ -368,6 +402,72 @@ export async function logInvestorCommunication(input: {
     },
     { type: "AGENT", authenticated: true },
   );
+  return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// flagInvestorForReview — raise a staff-visible flag from the agent. Two callers:
+//   • MANUAL — the model flags a genuine concern (a probe/manipulation attempt, or a
+//     sender explicitly asking for the team's attention);
+//   • SECURITY — the auto-reply-guard bridges a deterministic probe detection here.
+// Surfaces on BOTH staff surfaces: a ⚑ flagged Activity in the investor's comm
+// timeline (only when attributable to an investor) AND an `investor_flag`
+// Notification on every admin's bell (always — even an unknown sender's probe is
+// worth a human look). notify()/adminUserIds() are best-effort and never throw.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function flagInvestorForReview(input: {
+  investorId?: string | null;
+  email?: string | null;
+  reason?: string | null;
+  source: "MANUAL" | "SECURITY";
+  summary: string;
+}): Promise<{ ok: true }> {
+  const summary = input.summary.trim();
+  if (!summary) throw new CrudError("Flag summary is required");
+
+  // Resolve the investor: an explicit id wins; otherwise match the sender email.
+  let investorId = input.investorId?.trim() || null;
+  let investorName: string | null = null;
+  if (investorId) {
+    const inv = await prisma.investor.findUnique({ where: { id: investorId } });
+    if (!inv) throw new CrudError("Investor not found");
+    investorName = inv.name;
+  } else if (input.email?.trim()) {
+    const match = await investorByEmail(input.email);
+    if (match.matched && match.investorId) {
+      investorId = match.investorId;
+      investorName = match.investorName ?? null;
+    }
+  }
+
+  const label = input.source === "SECURITY" ? "Security flag" : "Flagged for review";
+  const body = input.reason ? `${summary}\n\nReason: ${input.reason}` : summary;
+
+  // Timeline entry — only when we can attribute the flag to an investor record.
+  if (investorId) {
+    await logActivity(
+      {
+        type: "Note",
+        channel: "Email",
+        direction: "Inbound",
+        subject: `⚑ ${label}`,
+        body,
+        investorId,
+        flagged: true,
+      },
+      { type: "AGENT", authenticated: true },
+    );
+  }
+
+  // Staff bell — always, so an unattributed probe still reaches a human.
+  const who = investorName ?? (input.email?.trim() || "an unknown sender");
+  await notify(await adminUserIds(), {
+    kind: "investor_flag",
+    title: `⚑ Investor email flagged — ${who}`,
+    body: summary,
+    href: investorId ? `/investors/${investorId}` : "/investors",
+  });
+
   return { ok: true };
 }
 

@@ -24,6 +24,8 @@ export type NotificationKind =
   // Proactive staff alerts (cron sweep, client feedback 2026-07)
   | "stalled_engagement"
   | "deal_stuck"
+  // Agent-raised flag needing staff review (investor email agent)
+  | "investor_flag"
   // Investor-portal notifications (Notification.investorId recipients)
   | "deal_shared"
   | "document_shared"
