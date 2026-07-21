@@ -29,6 +29,34 @@ describe("SummarizeRecordTool", () => {
     expect(seenPrompt).toContain("NDA.pdf"); // document METADATA reaches the briefing
   });
 
+  it("surfaces the resolved deal lead (owner.name) to the briefing instead of a raw ownerId", async () => {
+    let seenPrompt = "";
+    const txHit = { id: "t1", type: "Transaction", title: "Amos Fund", subtitle: null, href: "/transactions/t1" };
+    const tool = new SummarizeRecordTool({
+      crm: crmStub([txHit], {
+        id: "t1", name: "Amos Fund", stage: "ClosedWon",
+        owner: { id: "u1", name: "Amos" }, assistant: { id: "u2", name: "Jane" },
+      }),
+      generate: async (p) => { seenPrompt = p; return "## Headline\nAmos Fund is closed-won."; },
+    });
+    const out = await tool.execute({ recordType: "transaction", query: "Amos Fund" });
+    expect(out.status).toBe("ok");
+    expect(seenPrompt).toContain("Amos");   // resolved lead name reaches the prompt
+    expect(seenPrompt).not.toMatch(/"ownerId"/); // no bare FK
+  });
+
+  it("resolves a record WITHOUT a recordType (check everything on X), inferring the type from the hit", async () => {
+    // globalSearch returns only a Mandate; caller omits recordType.
+    const mandateHit = { id: "m1", type: "Mandate", title: "Sizwe Phamaceuticals Limited", subtitle: "Sizwe", href: "/mandates/m1" };
+    const tool = new SummarizeRecordTool({
+      crm: crmStub([mandateHit], { id: "m1", name: "Sizwe Phamaceuticals Limited", stage: "NDA" }),
+      generate: async () => "## Headline\nAdvisory mandate, NDA stage.",
+    });
+    const out = await tool.execute({ query: "Sizwe Pharmaceuticals Limited" });
+    expect(out.status).toBe("ok");
+    if (out.status === "ok") expect(out.link).toBe("https://crm.example/mandates/m1");
+  });
+
   it("returns candidates when ambiguous", async () => {
     const two = [HIT, { ...HIT, id: "c2", title: "Acme Ltd Kenya" }];
     const tool = new SummarizeRecordTool({ crm: crmStub(two), generate: async () => "unused" });

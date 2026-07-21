@@ -34,6 +34,7 @@ describe("globalSearch", () => {
     let taskId: string;
     let personId: string;
     let engagementId: string;
+    let typoMandateId: string;
 
     beforeAll(async () => {
       const investor = await prisma.investor.create({
@@ -66,6 +67,12 @@ describe("globalSearch", () => {
           investorId: investor.id,
         },
       });
+      // A deliberately MISSPELLED mandate name (no space, single token) so the
+      // fuzzy test below can only match it via trigram similarity — a plain
+      // ILIKE substring on the correctly-spelled query cannot.
+      const typoMandate = await prisma.mandate.create({
+        data: { name: `Phamaceuticals${UNIQ}`, clientId: client.id },
+      });
 
       investorId = investor.id;
       clientId = client.id;
@@ -77,6 +84,7 @@ describe("globalSearch", () => {
       taskId = task.id;
       personId = person.id;
       engagementId = engagement.id;
+      typoMandateId = typoMandate.id;
     });
 
     afterAll(async () => {
@@ -85,7 +93,7 @@ describe("globalSearch", () => {
       await prisma.document.deleteMany({ where: { id: documentId } });
       await prisma.person.deleteMany({ where: { id: personId } });
       await prisma.transaction.deleteMany({ where: { id: transactionId } });
-      await prisma.mandate.deleteMany({ where: { id: mandateId } });
+      await prisma.mandate.deleteMany({ where: { id: { in: [mandateId, typoMandateId] } } });
       await prisma.serviceProvider.deleteMany({ where: { id: serviceProviderId } });
       await prisma.partner.deleteMany({ where: { id: partnerId } });
       await prisma.client.deleteMany({ where: { id: clientId } });
@@ -131,6 +139,13 @@ describe("globalSearch", () => {
         title: `Engagement ${UNIQ}`,
         href: `/engagement/${engagementId}`,
       });
+    });
+
+    it("finds a record despite a typo (trigram fuzzy — the correctly-spelled query is NOT a substring of the misspelled stored name)", async () => {
+      // Stored: "Phamaceuticals…"  Query: "Pharmaceuticals…" (extra 'r').
+      // A whole-string ILIKE '%query%' cannot match this; only trigram can.
+      const results = await globalSearch(INTERNAL_ACTOR, `Pharmaceuticals${UNIQ}`, 50);
+      expect(results.find((r) => r.id === typoMandateId)).toMatchObject({ type: "Mandate" });
     });
 
     it("returns [] for an unauthenticated actor", async () => {

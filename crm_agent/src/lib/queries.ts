@@ -63,7 +63,8 @@ export const DETAIL_QUERIES: Record<RecordType, { document: string; rootField: s
         mandate(id: $id) {
           id name stage stageEnteredAt daysInStage dealStatus dealSize currency sector source
           dateOpened ndaStatus ndaSignedDate eaStatus eaSignedDate nextAction notes
-          retainerAmount priority createdAt updatedAt leadId
+          retainerAmount priority createdAt updatedAt
+          lead { id name }
           referralQualified qualificationVerdict qualifiedAt intakeNdaAccepted
           client { id name }
           transactions { id name stage }
@@ -81,7 +82,9 @@ export const DETAIL_QUERIES: Record<RecordType, { document: string; rootField: s
         transaction(id: $id) {
           id name stage stageEnteredAt dealType instrument targetRaise currency sector
           dateOpened closedAt dealStatus dealMilestone financingType probability notes priority
-          activeConversations createdAt updatedAt ownerId
+          activeConversations createdAt updatedAt
+          owner { id name }
+          assistant { id name }
           maxSellingStake useOfFunds targetProfile partnerFeeStatus
           client { id name }
           mandate { id name stage }
@@ -138,11 +141,11 @@ export const PIPELINE_SNAPSHOT = /* GraphQL */ `
   query AgentPipelineSnapshot {
     mandatesByStage {
       stage label
-      items { id name stageEnteredAt createdAt updatedAt dateOpened currency dealSize sector }
+      items { id name stageEnteredAt createdAt updatedAt dateOpened currency dealSize sector lead { name } }
     }
     transactionsByStage {
       stage label
-      items { id name stageEnteredAt createdAt updatedAt dateOpened currency targetRaise sector }
+      items { id name stageEnteredAt createdAt updatedAt dateOpened currency targetRaise sector owner { name } }
     }
   }
 `;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { assessDealHealth, analyzePipeline, STALE_DAYS } from "../analysis";
+import { assessDealHealth, analyzePipeline, rosterByStage, STALE_DAYS } from "../analysis";
 
 const NOW = new Date("2026-07-21T00:00:00Z");
 const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
@@ -133,5 +133,47 @@ describe("analyzePipeline", () => {
     const res = analyzePipeline(columns, NOW);
     const fintech = res.concentration.find((c) => c.sector === "Fintech")!;
     expect(fintech.count).toBe(2);
+  });
+});
+
+describe("rosterByStage", () => {
+  it("groups transactions by stage, resolving lead from owner.name and value from targetRaise", () => {
+    const cols = [
+      { stage: "ClosedWon", label: "Closed-Won", items: [
+        { id: "t1", name: "Amos Fund", targetRaise: 6_000_000, currency: "USD", owner: { name: "Amos" } },
+        { id: "t2", name: "Busoga Raise", targetRaise: 5_000_000, currency: "UGX", owner: { name: "Jane" } },
+      ] },
+      { stage: "Outreach", label: "Outreach", items: [] },
+    ];
+    const roster = rosterByStage(cols, "transaction");
+    expect(roster.map((s) => [s.label, s.count])).toEqual([["Closed-Won", 2], ["Outreach", 0]]);
+    expect(roster[0].deals).toEqual([
+      { name: "Amos Fund", lead: "Amos", value: 6_000_000, currency: "USD" },
+      { name: "Busoga Raise", lead: "Jane", value: 5_000_000, currency: "UGX" },
+    ]);
+  });
+
+  it("resolves lead from lead.name and value from dealSize for mandates", () => {
+    const cols = [
+      { stage: "Proposal", label: "Proposal", items: [
+        { id: "m1", name: "Mandate A", dealSize: 2_000_000, currency: "USD", lead: { name: "Ravi" } },
+      ] },
+    ];
+    const roster = rosterByStage(cols, "mandate");
+    expect(roster[0].deals[0]).toEqual({ name: "Mandate A", lead: "Ravi", value: 2_000_000, currency: "USD" });
+  });
+
+  it("tolerates a missing owner/lead and missing value (nulls, never throws)", () => {
+    const cols = [
+      { stage: "Outreach", label: "Outreach", items: [
+        { id: "t1", name: "Orphan Deal" }, // no owner, no targetRaise, no currency
+        { id: "t2", name: "Null Owner", targetRaise: null, currency: null, owner: null },
+      ] },
+    ];
+    const roster = rosterByStage(cols, "transaction");
+    expect(roster[0].deals).toEqual([
+      { name: "Orphan Deal", lead: null, value: null, currency: null },
+      { name: "Null Owner", lead: null, value: null, currency: null },
+    ]);
   });
 });

@@ -98,51 +98,138 @@ async function searchForInvestor(investorId: string, query: string, limit: numbe
 // ─── Internal (admin) search ──────────────────────────────────────────────────
 // Full entity set, unfiltered by visibility (internal roles read everything —
 // server/rbac/matrix.ts grants "R" on every RBAC_ENTITY to every OrgRole).
+//
+// TYPO-TOLERANT MATCHING: rather than a single whole-string `ILIKE '%q%'` (which
+// missed a record on ANY typo — e.g. searching "Pharmaceuticals" never found the
+// misspelled stored "Phamaceuticals"), candidates are selected by pg_trgm
+// similarity + per-word ILIKE, ranked by trigram score. The extension and its
+// GIN indexes are provisioned by the 20260721130000_pg_trgm_fuzzy_search
+// migration.
 
 function personName(p: { firstName: string; lastName: string | null }): string {
   return [p.firstName, p.lastName ?? ""].join(" ").trim();
 }
 
+// Which table/column each entity matches on. Identifiers are static constants —
+// never user input — so they are safe to interpolate into SQL. The query text
+// and word tokens are always passed as bound parameters ($1, $2…).
+const FUZZY = {
+  investor: { table: "Investor", expr: '"name"' },
+  client: { table: "Client", expr: '"name"' },
+  mandate: { table: "Mandate", expr: '"name"' },
+  transaction: { table: "Transaction", expr: '"name"' },
+  partner: { table: "Partner", expr: '"name"' },
+  serviceProvider: { table: "ServiceProvider", expr: '"name"' },
+  document: { table: "Document", expr: '"name"' },
+  task: { table: "Task", expr: '"title"' },
+  person: { table: "Person", expr: `("firstName" || ' ' || COALESCE("lastName", ''))` },
+  engagement: { table: "Engagement", expr: '"name"' },
+} as const;
+
+// Trigram thresholds. Kept deliberately low so near-misses (one/two typos) still
+// surface; ranking by score keeps the best match on top.
+const SIM_THRESHOLD = 0.2;
+const WORD_SIM_THRESHOLD = 0.35;
+
+/** Split a query into distinct lowercased word tokens worth matching individually. */
+function tokenize(query: string): string[] {
+  return Array.from(
+    new Set(
+      query
+        .toLowerCase()
+        .split(/\s+/)
+        .map((t) => t.trim())
+        .filter((t) => t.length >= 2),
+    ),
+  );
+}
+
+/**
+ * Return candidate ids for one entity, scored by trigram similarity and ranked
+ * best-first. A row qualifies if the whole query is a substring, OR its trigram
+ * similarity clears the threshold, OR any single query word is a substring.
+ */
+async function fuzzyIds(
+  table: string,
+  expr: string,
+  query: string,
+  tokens: string[],
+  limit: number,
+): Promise<Map<string, number>> {
+  const safeLimit = Math.max(1, Math.min(Math.floor(limit), 100));
+  // $1 = full query; $2… = individual word tokens.
+  const tokenClause = tokens.length
+    ? " OR " + tokens.map((_, i) => `${expr} ILIKE ('%' || $${i + 2} || '%')`).join(" OR ")
+    : "";
+  const sql = `
+    SELECT "id", GREATEST(similarity(${expr}, $1), word_similarity($1, ${expr}))::float8 AS score
+    FROM "${table}"
+    WHERE ${expr} ILIKE ('%' || $1 || '%')
+       OR similarity(${expr}, $1) > ${SIM_THRESHOLD}
+       OR word_similarity($1, ${expr}) > ${WORD_SIM_THRESHOLD}${tokenClause}
+    ORDER BY score DESC
+    LIMIT ${safeLimit}
+  `;
+  const rows = await prisma.$queryRawUnsafe<Array<{ id: string; score: number }>>(sql, query, ...tokens);
+  return new Map(rows.map((r) => [r.id, Number(r.score)]));
+}
+
 async function searchForInternal(query: string, limit: number): Promise<SearchResult[]> {
-  const ci = { contains: query, mode: "insensitive" as const };
+  const tokens = tokenize(query);
+  const [invSc, cliSc, manSc, txSc, partSc, spSc, docSc, taskSc, personSc, engSc] = await Promise.all([
+    fuzzyIds(FUZZY.investor.table, FUZZY.investor.expr, query, tokens, limit),
+    fuzzyIds(FUZZY.client.table, FUZZY.client.expr, query, tokens, limit),
+    fuzzyIds(FUZZY.mandate.table, FUZZY.mandate.expr, query, tokens, limit),
+    fuzzyIds(FUZZY.transaction.table, FUZZY.transaction.expr, query, tokens, limit),
+    fuzzyIds(FUZZY.partner.table, FUZZY.partner.expr, query, tokens, limit),
+    fuzzyIds(FUZZY.serviceProvider.table, FUZZY.serviceProvider.expr, query, tokens, limit),
+    fuzzyIds(FUZZY.document.table, FUZZY.document.expr, query, tokens, limit),
+    fuzzyIds(FUZZY.task.table, FUZZY.task.expr, query, tokens, limit),
+    fuzzyIds(FUZZY.person.table, FUZZY.person.expr, query, tokens, limit),
+    fuzzyIds(FUZZY.engagement.table, FUZZY.engagement.expr, query, tokens, limit),
+  ]);
+
+  const idsOf = (m: Map<string, number>) => [...m.keys()];
+  const byScore = (m: Map<string, number>) => (a: { id: string }, b: { id: string }) =>
+    (m.get(b.id) ?? 0) - (m.get(a.id) ?? 0);
 
   const [investors, clients, mandates, transactions, partners, serviceProviders, documents, tasks, people, engagements] =
     await Promise.all([
-      prisma.investor.findMany({ where: { name: ci }, take: limit, orderBy: { name: "asc" } }),
-      prisma.client.findMany({ where: { name: ci }, take: limit, orderBy: { name: "asc" } }),
-      prisma.mandate.findMany({
-        where: { name: ci },
-        take: limit,
-        orderBy: { name: "asc" },
-        include: { client: true },
-      }),
-      prisma.transaction.findMany({
-        where: { name: ci },
-        take: limit,
-        orderBy: { name: "asc" },
-        include: { client: true },
-      }),
-      prisma.partner.findMany({ where: { name: ci }, take: limit, orderBy: { name: "asc" } }),
-      prisma.serviceProvider.findMany({ where: { name: ci }, take: limit, orderBy: { name: "asc" } }),
-      prisma.document.findMany({
-        where: { name: ci },
-        take: limit,
-        orderBy: { name: "asc" },
-        include: { transaction: true, client: true, investor: true },
-      }),
-      prisma.task.findMany({ where: { title: ci }, take: limit, orderBy: { title: "asc" } }),
-      prisma.person.findMany({
-        where: { OR: [{ firstName: ci }, { lastName: ci }] },
-        take: limit,
-        orderBy: { firstName: "asc" },
-      }),
-      prisma.engagement.findMany({
-        where: { name: ci },
-        take: limit,
-        orderBy: { name: "asc" },
-        include: { investor: true, transaction: true },
-      }),
+      invSc.size ? prisma.investor.findMany({ where: { id: { in: idsOf(invSc) } } }) : [],
+      cliSc.size ? prisma.client.findMany({ where: { id: { in: idsOf(cliSc) } } }) : [],
+      manSc.size ? prisma.mandate.findMany({ where: { id: { in: idsOf(manSc) } }, include: { client: true } }) : [],
+      txSc.size
+        ? prisma.transaction.findMany({ where: { id: { in: idsOf(txSc) } }, include: { client: true } })
+        : [],
+      partSc.size ? prisma.partner.findMany({ where: { id: { in: idsOf(partSc) } } }) : [],
+      spSc.size ? prisma.serviceProvider.findMany({ where: { id: { in: idsOf(spSc) } } }) : [],
+      docSc.size
+        ? prisma.document.findMany({
+            where: { id: { in: idsOf(docSc) } },
+            include: { transaction: true, client: true, investor: true },
+          })
+        : [],
+      taskSc.size ? prisma.task.findMany({ where: { id: { in: idsOf(taskSc) } } }) : [],
+      personSc.size ? prisma.person.findMany({ where: { id: { in: idsOf(personSc) } } }) : [],
+      engSc.size
+        ? prisma.engagement.findMany({
+            where: { id: { in: idsOf(engSc) } },
+            include: { investor: true, transaction: true },
+          })
+        : [],
     ]);
+
+  // Rank each entity's rows by trigram score (findMany does not preserve `in` order).
+  investors.sort(byScore(invSc));
+  clients.sort(byScore(cliSc));
+  mandates.sort(byScore(manSc));
+  transactions.sort(byScore(txSc));
+  partners.sort(byScore(partSc));
+  serviceProviders.sort(byScore(spSc));
+  documents.sort(byScore(docSc));
+  tasks.sort(byScore(taskSc));
+  people.sort(byScore(personSc));
+  engagements.sort(byScore(engSc));
 
   const results: SearchResult[] = [];
 

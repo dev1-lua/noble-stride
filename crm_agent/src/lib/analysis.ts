@@ -118,6 +118,41 @@ export function assessDealHealth(recordType: RecordType, record: Record<string, 
   return { findings, depth };
 }
 
+// ── Deal roster by stage ───────────────────────────────────────────────────
+// A full name-by-name listing of every deal in every stage — distinct from
+// analyzePipeline (which collapses items into counts/value/aging). Reuses the
+// same PIPELINE_SNAPSHOT column shape but preserves each deal's name + lead.
+
+export interface RosterDeal { name: string; lead: string | null; value: number | null; currency: string | null }
+export interface RosterStage { stage: string; label: string; count: number; deals: RosterDeal[] }
+
+/**
+ * Group deals by stage, preserving each deal's name and resolved lead.
+ * `kind` selects where the lead name and headline value live:
+ *  - transaction → owner.name / targetRaise
+ *  - mandate     → lead.name  / dealSize
+ */
+export function rosterByStage(
+  columns: Array<{ stage: string; label: string; items: Array<Record<string, unknown>> }>,
+  kind: "mandate" | "transaction",
+): RosterStage[] {
+  return columns.map((col) => ({
+    stage: col.stage,
+    label: col.label,
+    count: col.items.length,
+    deals: col.items.map((it) => {
+      const person = (kind === "transaction" ? it.owner : it.lead) as { name?: string | null } | null | undefined;
+      const value = (kind === "transaction" ? it.targetRaise : it.dealSize) as number | null | undefined;
+      return {
+        name: String(it.name ?? "(unnamed)"),
+        lead: person?.name ?? null,
+        value: value ?? null,
+        currency: (it.currency as string | null | undefined) ?? null,
+      };
+    }),
+  }));
+}
+
 export function analyzePipeline(columns: Array<{ stage: string; label: string; items: AnalysisPipelineItem[] }>, now: Date = new Date()): PipelineAnalysis {
   const metrics: PipelineMetric[] = [];
   const aging: PipelineAnalysis["aging"] = [];
