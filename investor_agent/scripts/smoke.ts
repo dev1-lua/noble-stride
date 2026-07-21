@@ -59,7 +59,6 @@ async function main() {
       investorId: id.investorId,
       changes: { feedback: `Smoke test note ${new Date().toISOString()}` },
       summary: "Smoke: investor left a note about their preferences",
-      senderEmail: knownEmail,
     }),
   );
 

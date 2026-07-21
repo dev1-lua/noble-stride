@@ -38,7 +38,7 @@ export default class ExpressDealInterestTool implements LuaTool {
     // step 3b already handles; never fall back to a model-supplied identity.
     const resolveFrom = this.deps?.transportFrom ?? verifiedSender;
     if (!resolveFrom()) {
-      return { matched: false as const, dealName: null, portalUrl: null, ...CHANNEL_UNVERIFIED };
+      return { dealName: null, portalUrl: null, ...CHANNEL_UNVERIFIED };
     }
 
     const crm = this.deps?.crm ?? crmClientFromEnv();
