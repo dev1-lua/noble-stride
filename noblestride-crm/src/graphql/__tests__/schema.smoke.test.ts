@@ -31,7 +31,7 @@ async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 describe("graphql schema", () => {
-  it("builds without errors and exposes a query type with 42 queries and 72 mutations", async () => {
+  it("builds without errors and exposes a query type with 42 queries and 73 mutations", async () => {
     // Dynamic import so the module graph is resolved lazily — errors surface here.
     const { schema } = await import("@/graphql/schema");
     expect(schema).toBeTruthy();
@@ -44,7 +44,7 @@ describe("graphql schema", () => {
     const mutationType = schema.getMutationType();
     expect(mutationType).toBeTruthy();
     const mutationFields = Object.keys(mutationType?.getFields() ?? {});
-    expect(mutationFields).toHaveLength(72);
+    expect(mutationFields).toHaveLength(73);
 
     // Spot-check that key query fields exist
     expect(queryFields).toContain("dashboardStats");
@@ -123,6 +123,7 @@ describe("graphql schema", () => {
     expect(mutationFields).toContain("logInvestorCommunication");
     expect(mutationFields).toContain("flagInvestorForReview");
     expect(mutationFields).toContain("saveOutreachDrafts");
+    expect(mutationFields).toContain("expressDealInterestForAgent");
     // No delete-shaped operation is ever exposed on the agent write surface
     // (spec: the agent may create/update, never delete) — guard against a
     // future registry entry accidentally growing a matching mutation.

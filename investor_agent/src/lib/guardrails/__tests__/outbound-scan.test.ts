@@ -37,6 +37,28 @@ describe("scanOutbound — catches leaks", () => {
   it("a record id inside a refusal sentence is still a leak (ids are unconditional)", () => {
     expect(scanOutbound("I can't discuss record 550e8400-e29b-41d4-a716-446655440000 with you.").leaked).toBe(true);
   });
+  it("still catches a bare cuid even when a portal link is also present", () => {
+    // the portal link is exempt, but a SECOND, loose cuid in prose must still trip.
+    const r = scanOutbound(
+      "Log in here https://noble-stride.vercel.app/login?as=investor&next=%2Fportal%2Finvestor%2Fdeals%2Fclx2abcd1234efgh5678ijkl90mn — ref cly9zzzz9999yyyy8888xxxx77ww",
+    );
+    expect(r.leaked).toBe(true);
+    expect(r.reasons).toContain("record-id");
+  });
+});
+
+describe("scanOutbound — allows the interested-reply portal deep link", () => {
+  const cuid = "clx2abcd1234efgh5678ijkl90mn";
+  it.each([
+    // encoded next= (what the mutation returns)
+    `Great to hear! Please log in to view the teaser: https://noble-stride.vercel.app/login?as=investor&next=%2Fportal%2Finvestor%2Fdeals%2F${cuid}`,
+    // decoded next= (an LLM commonly reformats the URL this way)
+    `Please sign in here: https://noble-stride.vercel.app/login?as=investor&next=/portal/investor/deals/${cuid}`,
+    // bare decoded portal path
+    `See it in the portal at /portal/investor/deals/${cuid} after logging in.`,
+  ])("clean portal link: %s", (msg) => {
+    expect(scanOutbound(msg).leaked).toBe(false);
+  });
 });
 
 describe("scanOutbound — passes clean warm replies", () => {

@@ -1,37 +1,39 @@
 // outreach/page.tsx — Investor Outreach review queue. Server Component:
 // fetches the queue + org lens via the service/rbac layers; canUpdateRecord
-// (not duplicated auth logic) decides whether a card renders as editable.
+// (not duplicated auth logic) decides whether a row renders as editable. The
+// interactive shell (collapse/filter/search/bulk) lives in <OutreachBoard>.
 import { getOrgLens } from "@/server/rbac/context";
 import { canUpdateRecord } from "@/server/rbac/matrix";
 import { listOutreachQueue } from "@/server/services/outreach";
-import { DraftCard, type DraftCardData } from "./draft-card";
+import { OutreachBoard } from "./outreach-board";
+import type { DraftRowData } from "./queue-view";
 
 export const dynamic = "force-dynamic";
+// Bulk "Approve & send all" loops real email sends server-side; give the route
+// headroom so Vercel can't kill a multi-draft send mid-loop (the action also
+// caps per invocation as a backstop).
+export const maxDuration = 60;
 
 export default async function OutreachPage() {
   const lens = await getOrgLens();
   const drafts = await listOutreachQueue();
 
-  const byDeal = new Map<string, { dealName: string; ownerName: string | null; items: DraftCardData[] }>();
-  for (const d of drafts) {
-    const g = byDeal.get(d.transactionId) ?? {
-      dealName: d.transactionName,
-      ownerName: d.transactionOwnerName,
-      items: [],
-    };
-    g.items.push({
-      id: d.id,
-      subject: d.subject,
-      body: d.body,
-      matchRationale: d.matchRationale,
-      status: d.status,
-      error: d.error,
-      investorName: d.investorName,
-      contactLine: d.contactName || d.contactEmail ? `${d.contactName ?? ""} <${d.contactEmail ?? "no email"}>` : null,
-      mayReview: canUpdateRecord(lens.orgRole, "Transactions", lens.userId, { ownerId: d.transactionOwnerId }),
-    });
-    byDeal.set(d.transactionId, g);
-  }
+  const rows: DraftRowData[] = drafts.map((d) => ({
+    id: d.id,
+    subject: d.subject,
+    body: d.body,
+    matchRationale: d.matchRationale,
+    status: d.status,
+    error: d.error,
+    investorName: d.investorName,
+    contactLine:
+      d.contactName || d.contactEmail ? `${d.contactName ?? ""} <${d.contactEmail ?? "no email"}>` : null,
+    mayReview: canUpdateRecord(lens.orgRole, "Transactions", lens.userId, { ownerId: d.transactionOwnerId }),
+    transactionId: d.transactionId,
+    dealName: d.transactionName,
+    ownerId: d.transactionOwnerId,
+    ownerName: d.transactionOwnerName,
+  }));
 
   return (
     <div className="space-y-6">
@@ -42,22 +44,7 @@ export default async function OutreachPage() {
           email — nothing sends automatically.
         </p>
       </div>
-      {byDeal.size === 0 && (
-        <p className="text-sm text-[var(--text-tertiary)]">
-          No drafts waiting. Use “Generate investor outreach” on a deal page to create some.
-        </p>
-      )}
-      {[...byDeal.entries()].map(([txnId, group]) => (
-        <section key={txnId} className="space-y-3">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-            {group.dealName}
-            {group.ownerName && <span className="ml-2 text-xs text-[var(--text-tertiary)]">owner: {group.ownerName}</span>}
-          </h2>
-          {group.items.map((d) => (
-            <DraftCard key={d.id} draft={d} />
-          ))}
-        </section>
-      ))}
+      <OutreachBoard rows={rows} currentUserId={lens.userId} />
     </div>
   );
 }

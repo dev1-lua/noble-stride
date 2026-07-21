@@ -35,6 +35,13 @@ describe("runDraftOutreach", () => {
     expect(input.drafts[0].subject).toContain("Project Amber Falcon");
     expect(input.drafts[0].body).toContain("Noblestride");
   });
+  it("rejects a blank transactionId before hitting the CRM (no opaque 400)", async () => {
+    const { crm, query } = crmStub();
+    const generate = vi.fn();
+    await expect(runDraftOutreach({ crm, generate }, "")).rejects.toThrow(/transactionId is required/);
+    await expect(runDraftOutreach({ crm, generate }, "   ")).rejects.toThrow(/transactionId is required/);
+    expect(query).not.toHaveBeenCalled();
+  });
   it("falls back to the deterministic template when generation fails", async () => {
     const { crm } = crmStub();
     const generate = vi.fn(async () => { throw new Error("model down"); });

@@ -40,6 +40,22 @@ describe("makeCrmClient", () => {
     expect(err.detail).toContain("502");
   });
 
+  it("surfaces the response body on a non-2xx so the real GraphQL error is logged", async () => {
+    // A yoga request-error (e.g. required variable missing) comes back as 400
+    // with the reason in the body. detail must carry it, not just "HTTP 400".
+    const client = makeCrmClient({
+      ...OPTS,
+      fetchFn: fetchReturning(400, {
+        errors: [{ message: 'Variable "$transactionId" of required type "String!" was not provided.' }],
+      }),
+    });
+    const err = (await client.query("{ ping }").catch((e: unknown) => e)) as CrmError;
+    expect(err).toBeInstanceOf(CrmError);
+    expect(err.message).toBe(CRM_DOWN_MESSAGE);
+    expect(err.detail).toContain("400");
+    expect(err.detail).toContain("$transactionId");
+  });
+
   it("surfaces GraphQL errors distinctly (auth/validation are not 'CRM down')", async () => {
     const client = makeCrmClient({
       ...OPTS,
