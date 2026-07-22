@@ -97,26 +97,28 @@ export default async function InvestorDashboardPage() {
           {data.disbursementByPeriod.length === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)]">No disbursements recorded.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--border-subtle)] text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-                  <th className="py-2">Period</th>
-                  <th className="py-2">Disbursed</th>
-                  <th className="py-2">Pending</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.disbursementByPeriod.map((row) => (
-                  <tr key={`${row.year}-${row.quarter}`} className="border-b border-[var(--border-subtle)] last:border-0">
-                    <td className="py-2 font-medium text-[var(--text-primary)]">
-                      Q{row.quarter} {row.year}
-                    </td>
-                    <td className="py-2 text-[var(--text-secondary)]">{formatMoney(row.disbursed) || "$0"}</td>
-                    <td className="py-2 text-[var(--text-secondary)]">{formatMoney(row.pending) || "$0"}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--border-subtle)] text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                    <th className="py-2">Period</th>
+                    <th className="py-2">Disbursed</th>
+                    <th className="py-2">Pending</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.disbursementByPeriod.map((row) => (
+                    <tr key={`${row.year}-${row.quarter}`} className="border-b border-[var(--border-subtle)] last:border-0">
+                      <td className="py-2 font-medium text-[var(--text-primary)]">
+                        Q{row.quarter} {row.year}
+                      </td>
+                      <td className="py-2 text-[var(--text-secondary)]">{formatMoney(row.disbursed) || "$0"}</td>
+                      <td className="py-2 text-[var(--text-secondary)]">{formatMoney(row.pending) || "$0"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardBody>
       </Card>
