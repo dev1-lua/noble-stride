@@ -111,7 +111,7 @@ export async function verifyClientStatusOtp(
   contactEmail: string,
   code: string,
 ): Promise<{ status: "ok"; token: string } | { status: "failed" }> {
-  if (!companyName.trim() || !contactEmail.trim() || !code.trim()) return FAILED;
+  if (!companyName.trim() || !contactEmail.trim()) return FAILED;
 
   const clients = await matchClients(companyName);
   if (clients.length === 0) return FAILED;
@@ -121,21 +121,24 @@ export async function verifyClientStatusOtp(
   );
   if (!match) return FAILED;
 
-  // TEST-ONLY bypass (env-gated). When CLIENT_STATUS_TEST_OTP is set (any value),
-  // a caller whose company + email already matched may verify with the fixed test
-  // code "000000" instead of an emailed one, so the data-out flow is testable
-  // without an inbox. It mints the SAME token as the real path and still requires
-  // the company/email match above. Unset in production it is inert.
+  // QA MODE (env-gated). When CLIENT_STATUS_TEST_OTP is set (any value), a caller
+  // whose company + email already matched is verified IMMEDIATELY — no emailed code
+  // is required at all (the `code` argument is ignored) — so the data-out flow is
+  // testable without an inbox. It mints the SAME token as the real path and still
+  // requires the company/email match above. Unset in production the full OTP
+  // challenge below is restored unchanged; flipping this one env var is the whole
+  // on/off switch.
   //
-  // SECURITY: "000000" is intentionally guessable, so while this flag is set the
-  // verify step becomes a company+email existence oracle with no brute-force
-  // protection. Enable it ONLY for a controlled QA window, and never leave it on
-  // for a public-facing deployment.
-  const TEST_OTP_CODE = "000000";
-  if (process.env.CLIENT_STATUS_TEST_OTP && code === TEST_OTP_CODE) {
+  // SECURITY: while this flag is set the verify step is a company+email existence
+  // oracle with NO code and NO brute-force protection — any request for a matched
+  // contact succeeds. Enable it ONLY for a controlled QA window, and never leave it
+  // on for a public-facing deployment.
+  if (process.env.CLIENT_STATUS_TEST_OTP) {
     const token = await signStatusToken(match.clientId!, match.id);
     return { status: "ok", token };
   }
+
+  if (!code.trim()) return FAILED;
 
   const row = await prisma.clientOtpChallenge.findFirst({
     where: { personId: match.id, consumedAt: null },

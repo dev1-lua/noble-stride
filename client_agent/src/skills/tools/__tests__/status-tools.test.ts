@@ -47,14 +47,14 @@ describe("RequestStatusCodeTool", () => {
     });
   });
 
-  it("TEST MODE: surfaces the fixed 000000 code when CLIENT_STATUS_TEST_OTP is set", async () => {
-    process.env.CLIENT_STATUS_TEST_OTP = "1"; // any value enables test mode
+  it("QA MODE: signals codeRequired:false when CLIENT_STATUS_TEST_OTP is set", async () => {
+    process.env.CLIENT_STATUS_TEST_OTP = "1"; // any value enables QA mode
     const query = vi.fn(async () => ({ requestClientStatusOtp: { ok: true } })) as CrmClient["query"];
     const out = await new RequestStatusCodeTool({ crm: stubCrm(query) }).execute({
       companyName: "Chai Estates",
       contactEmail: "jane@chai.example",
     });
-    expect(out).toEqual({ status: "ok", testCode: "000000" });
+    expect(out).toEqual({ status: "ok", codeRequired: false });
     // still calls the real OTP mutation (the challenge is issued server-side as usual)
     expect(query).toHaveBeenCalledWith(REQUEST_STATUS_OTP, {
       companyName: "Chai Estates",
@@ -98,6 +98,22 @@ describe("VerifyStatusCodeTool", () => {
       companyName: "Chai Estates",
       contactEmail: "jane@chai.example",
       code: "123456",
+    });
+  });
+
+  it("QA MODE: with no code, sends the placeholder 000000 and relays the token", async () => {
+    const query = vi.fn(async () => ({
+      verifyClientStatusOtp: { status: "ok", token: "opaque-token-abc" },
+    })) as CrmClient["query"];
+    const out = await new VerifyStatusCodeTool({ crm: stubCrm(query) }).execute({
+      companyName: "Chai Estates",
+      contactEmail: "jane@chai.example",
+    });
+    expect(out).toEqual({ status: "ok", token: "opaque-token-abc" });
+    expect(query).toHaveBeenCalledWith(VERIFY_STATUS_OTP, {
+      companyName: "Chai Estates",
+      contactEmail: "jane@chai.example",
+      code: "000000",
     });
   });
 
