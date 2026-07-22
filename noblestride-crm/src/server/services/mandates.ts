@@ -10,7 +10,7 @@ import { actorSource, CrudError, sameCalendarDate } from "./crud";
 import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 import { qualifyIntake, type IntakeQualInput } from "@/server/domain/qualification";
-import { notify } from "./notifications";
+import { notify, notifyAssignment } from "./notifications";
 import { reconcileMandateDocDates } from "@/server/domain/doc-dates";
 
 // ─── Filter type ─────────────────────────────────────────────────────────────
@@ -156,6 +156,7 @@ export async function updateMandate(id: string, input: MandateUpdateInput, actor
         dealStatus: true, dateOpened: true, source: true, stage: true, name: true, leadId: true,
         ndaStatus: true, ndaSentDate: true, ndaSignedDate: true,
         eaStatus: true, eaSentDate: true, eaSignedDate: true,
+        assists: { select: { id: true } },
       },
     });
     if (rest.dateOpened !== undefined && existing.dateOpened != null && !sameCalendarDate(rest.dateOpened, existing.dateOpened)) {
@@ -195,6 +196,18 @@ export async function updateMandate(id: string, input: MandateUpdateInput, actor
   if (result.stageChanging && result.existing.leadId && result.existing.leadId !== actor.userId) {
     await notify([result.existing.leadId], mandateStageNotification(id, result.existing.name, result.existing.stage, stage!));
   }
+
+  // Notify anyone newly assigned as deal lead or assist (after commit).
+  await notifyAssignment({
+    kind: "deal_assigned",
+    entityName: result.existing.name,
+    href: `/mandates/${id}`,
+    actorUserId: actor.userId,
+    prevLeadId: result.existing.leadId,
+    nextLeadId: rest.leadId,
+    prevAssistIds: result.existing.assists.map((a) => a.id),
+    nextAssistIds: assistIds,
+  });
 
   return result.updated;
 }

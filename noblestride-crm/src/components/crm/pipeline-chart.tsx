@@ -60,6 +60,10 @@ interface TrendPoint {
   month: string;
   active: number;
   closed: number;
+  // Optional drilldown targets (computed server-side) — clicking a month's
+  // active/closed dot opens the /deals view reproducing that point's count.
+  activeHref?: string;
+  closedHref?: string;
 }
 
 export function DealPipelineTrendChart({ data }: { data: TrendPoint[] }) {
@@ -86,7 +90,7 @@ export function DealPipelineTrendChart({ data }: { data: TrendPoint[] }) {
   const areaFrom = (pts: Pt[]) =>
     `${smoothPath(pts)} L${xPos(n - 1).toFixed(1)},${baseline} L${xPos(0).toFixed(1)},${baseline} Z`;
 
-  const yTicks = [0, Math.round(maxVal / 2), maxVal];
+  const yTicks = Array.from(new Set([0, Math.round(maxVal / 2), maxVal]));
 
   // ─── Hover tooltip ──────────────────────────────────────────────────────
   // `hover` holds the nearest-month index plus the SVG's live rendered
@@ -207,19 +211,35 @@ export function DealPipelineTrendChart({ data }: { data: TrendPoint[] }) {
             transition={{ duration: 1.1, ease: EASE }}
           />
 
-          {/* Dots (pop in last) */}
-          {data.map((d, i) => (
-            <motion.g
-              key={i}
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: 0.9 + i * 0.05, ease: EASE }}
-              style={{ transformOrigin: `${xPos(i)}px ${yPos(d.active)}px` }}
-            >
-              <circle cx={xPos(i)} cy={yPos(d.closed)} r="3" fill="#fff" stroke={CLOSED_COLOR} strokeWidth="1.5" />
-              <circle cx={xPos(i)} cy={yPos(d.active)} r="3.5" fill="#fff" stroke={ACTIVE_COLOR} strokeWidth="2" />
-            </motion.g>
-          ))}
+          {/* Dots (pop in last) — each wraps in an <a> drilldown when a link is
+              provided, with a larger transparent hit-circle so the small dot is
+              easy to click. */}
+          {data.map((d, i) => {
+            const closedDot = <circle cx={xPos(i)} cy={yPos(d.closed)} r="3" fill="#fff" stroke={CLOSED_COLOR} strokeWidth="1.5" />;
+            const activeDot = <circle cx={xPos(i)} cy={yPos(d.active)} r="3.5" fill="#fff" stroke={ACTIVE_COLOR} strokeWidth="2" />;
+            return (
+              <motion.g
+                key={i}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: 0.9 + i * 0.05, ease: EASE }}
+                style={{ transformOrigin: `${xPos(i)}px ${yPos(d.active)}px` }}
+              >
+                {d.closedHref ? (
+                  <a href={d.closedHref} className="cursor-pointer" aria-label={`${d.month}: ${d.closed} closed deals`}>
+                    <circle cx={xPos(i)} cy={yPos(d.closed)} r="9" fill="transparent" />
+                    {closedDot}
+                  </a>
+                ) : closedDot}
+                {d.activeHref ? (
+                  <a href={d.activeHref} className="cursor-pointer" aria-label={`${d.month}: ${d.active} active deals`}>
+                    <circle cx={xPos(i)} cy={yPos(d.active)} r="9" fill="transparent" />
+                    {activeDot}
+                  </a>
+                ) : activeDot}
+              </motion.g>
+            );
+          })}
 
           {/* X-axis labels */}
           {data.map((d, i) => (
@@ -228,9 +248,10 @@ export function DealPipelineTrendChart({ data }: { data: TrendPoint[] }) {
             </text>
           ))}
 
-          {/* Hover guide + highlight dots */}
+          {/* Hover guide + highlight dots — click-through so the drilldown
+              anchors beneath stay clickable while hovering. */}
           {hoveredPoint && (
-            <g>
+            <g style={{ pointerEvents: "none" }}>
               <line
                 x1={guideX}
                 y1={PAD_TOP}

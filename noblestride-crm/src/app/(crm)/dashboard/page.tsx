@@ -107,6 +107,17 @@ export default async function DashboardPage() {
     disbursementByPeriod(),
   ]);
 
+  // Trend drilldowns — each month's dots link to the /deals view reproducing
+  // that point's definition (active = transactions open as of month end;
+  // closed = transactions closed within the month), so the tooltip count equals
+  // the opened list's row count. Computed server-side (hrefs can't cross the
+  // RSC→client boundary), mirroring the pipeline-overview/breakdown pattern.
+  const trendWithLinks = trend.map((p) => ({
+    ...p,
+    activeHref: `/deals?type=transaction&activeAsOf=${encodeURIComponent(p.monthEndISO)}`,
+    closedHref: `/deals?type=transaction&closedFrom=${encodeURIComponent(p.monthStartISO)}&closedTo=${encodeURIComponent(p.monthEndISO)}`,
+  }));
+
   return (
     <div className="space-y-6">
       <OnboardingQueueCard
@@ -194,7 +205,7 @@ export default async function DashboardPage() {
               <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Active deals vs closed over time</p>
             </CardHeader>
             <CardBody>
-              <DealPipelineTrendChart data={trend} />
+              <DealPipelineTrendChart data={trendWithLinks} />
             </CardBody>
           </Card>
         </Reveal>

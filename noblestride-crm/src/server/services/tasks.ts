@@ -10,7 +10,7 @@ import type { TaskStatus } from "@prisma/client";
 import type { Actor } from "@/graphql/context";
 import { actorSource } from "./crud";
 import { taskCreateSchema, taskUpdateSchema, type TaskCreateInput, type TaskUpdateInput } from "@/lib/schemas/task";
-import { notify } from "./notifications";
+import { notify, notifyAssignment } from "./notifications";
 
 /** Statuses that count as "still open" for overdue escalation (spec §12.2). */
 const OPEN_STATUSES: TaskStatus[] = ["NotStarted", "Pending", "Ongoing"];
@@ -31,15 +31,22 @@ export async function createTask(input: TaskCreateInput, actor?: Actor) {
  * `flagOverdueTasks()` sweep. A task that leaves an open status, or whose
  * dueAt is cleared/moved to the future, is un-flagged in the same update.
  */
-export async function updateTask(id: string, input: TaskUpdateInput, _actor?: Actor) {
+export async function updateTask(id: string, input: TaskUpdateInput, actor?: Actor) {
   const data = taskUpdateSchema.parse(input);
+  const touchesEscalation = "status" in data || "dueAt" in data;
+  const touchesAssignment = "assigneeId" in data || "assistantId" in data;
+
+  // One read covers both the escalation recompute and the assignment diff.
+  const current =
+    touchesEscalation || touchesAssignment
+      ? await prisma.task.findUniqueOrThrow({
+          where: { id },
+          select: { status: true, dueAt: true, title: true, assigneeId: true, assistantId: true },
+        })
+      : null;
 
   let escalated: boolean | undefined;
-  if ("status" in data || "dueAt" in data) {
-    const current = await prisma.task.findUniqueOrThrow({
-      where: { id },
-      select: { status: true, dueAt: true },
-    });
+  if (touchesEscalation && current) {
     const status = "status" in data && data.status ? data.status : current.status;
     const dueAt = "dueAt" in data ? (data.dueAt ?? null) : current.dueAt;
     const isOpen = OPEN_STATUSES.includes(status);
@@ -47,10 +54,28 @@ export async function updateTask(id: string, input: TaskUpdateInput, _actor?: Ac
     escalated = isOpen && isOverdue;
   }
 
-  return prisma.task.update({
+  const updated = await prisma.task.update({
     where: { id },
     data: escalated === undefined ? data : { ...data, escalated },
   });
+
+  // Notify anyone newly made the task's deal lead (assignee) or deal assist
+  // (assistant). Task assist is a single field — modeled as a one-element list
+  // for the shared helper; `undefined` when the update didn't touch it.
+  if (touchesAssignment && current) {
+    await notifyAssignment({
+      kind: "task_assigned",
+      entityName: current.title,
+      href: "/tasks",
+      actorUserId: actor?.userId,
+      prevLeadId: current.assigneeId,
+      nextLeadId: data.assigneeId,
+      prevAssistIds: current.assistantId ? [current.assistantId] : [],
+      nextAssistIds: "assistantId" in data ? (data.assistantId ? [data.assistantId] : []) : undefined,
+    });
+  }
+
+  return updated;
 }
 
 export async function deleteTask(id: string) {

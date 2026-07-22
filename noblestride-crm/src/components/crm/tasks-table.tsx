@@ -12,6 +12,7 @@ import { cn } from "@/lib/cn";
 import type { SelectOption } from "@/components/ui";
 import { TableSearch, type TableFilter } from "@/components/crm/table-search";
 import { TaskFormDrawer } from "./task-form-drawer";
+import { TaskAssignSelect } from "./task-assign-select";
 import { DeleteConfirm } from "./delete-confirm";
 
 const STATUS_CHIP: Record<string, string> = {
@@ -39,6 +40,7 @@ export interface TaskRowData {
   body: string | null;
   assigneeName: string | null;
   assigneeId: string | null;
+  assistantName: string | null;
   assistantId: string | null;
   mandateId: string | null;
   transactionId: string | null;
@@ -75,7 +77,8 @@ export function TasksTable({ tasks, mandates, transactions, investors, clients, 
                   <th className="px-4 py-3">Related to</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Source</th>
-                  <th className="px-4 py-3">Owner</th>
+                  <th className="px-4 py-3">Deal Lead</th>
+                  <th className="px-4 py-3">Deal Assist</th>
                   <th className="px-4 py-3">Deadline</th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -124,7 +127,12 @@ export function TasksTable({ tasks, mandates, transactions, investors, clients, 
                     <td className="px-4 py-2.5 text-[var(--text-secondary)]">
                       {t.source ? label("TaskSource", t.source) : <span className="text-[var(--text-tertiary)]">—</span>}
                     </td>
-                    <td className="px-4 py-2.5 text-[var(--text-secondary)]">{t.assigneeName ?? "—"}</td>
+                    <td className="px-4 py-2.5 text-[var(--text-secondary)]">
+                      <TaskAssignSelect taskId={t.id} field="assigneeId" value={t.assigneeId} users={users} />
+                    </td>
+                    <td className="px-4 py-2.5 text-[var(--text-secondary)]">
+                      <TaskAssignSelect taskId={t.id} field="assistantId" value={t.assistantId} users={users} />
+                    </td>
                     <td className="px-4 py-2.5 text-[var(--text-secondary)]">{t.dueAtDisplay}</td>
                     <td className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
                       <DeleteConfirm mutation={DELETE_TASK} recordId={t.id} entityLabel="task" redirectTo="/tasks" />

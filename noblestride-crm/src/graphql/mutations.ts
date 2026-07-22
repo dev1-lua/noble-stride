@@ -357,6 +357,73 @@ builder.mutationFields((t) => ({
     },
   }),
 
+  // ── Inline lead/assist reassignment (verification step 2026-07) ──
+  // Thin mutations for the /deals inline editors: they call the update services
+  // with a partial payload, so they need neither the create-shaped
+  // MandateInput/TransactionInput/AdvisoryInput (which require name+clientId)
+  // nor a re-send of unrelated fields. Each runs the same ownership-scoped RBAC
+  // check as the full update, and the service fires the assignment notification.
+  assignMandateLead: t.prismaField({
+    type: "Mandate", nullable: false,
+    args: { id: t.arg.id({ required: true }), leadId: t.arg.id({ required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      await assertCanUpdateOwnScoped(ctx.actor, "Mandates", () =>
+        prisma.mandate.findUnique({ where: { id: String(args.id) }, select: { leadId: true } }),
+      );
+      return updateMandate(args.id, { leadId: String(args.leadId) } as never, ctx.actor);
+    },
+  }),
+  setMandateAssists: t.prismaField({
+    type: "Mandate", nullable: false,
+    args: { id: t.arg.id({ required: true }), assistIds: t.arg({ type: ["ID"], required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      await assertCanUpdateOwnScoped(ctx.actor, "Mandates", () =>
+        prisma.mandate.findUnique({ where: { id: String(args.id) }, select: { leadId: true } }),
+      );
+      return updateMandate(args.id, { assistIds: args.assistIds.map(String) } as never, ctx.actor);
+    },
+  }),
+  assignTransactionOwner: t.prismaField({
+    type: "Transaction", nullable: false,
+    args: { id: t.arg.id({ required: true }), ownerId: t.arg.id({ required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      await assertCanUpdateOwnScoped(ctx.actor, "Transactions", () =>
+        prisma.transaction.findUnique({ where: { id: String(args.id) }, select: { ownerId: true } }),
+      );
+      return updateTransaction(args.id, { ownerId: String(args.ownerId) } as never, ctx.actor);
+    },
+  }),
+  setTransactionAssists: t.prismaField({
+    type: "Transaction", nullable: false,
+    args: { id: t.arg.id({ required: true }), assistIds: t.arg({ type: ["ID"], required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      await assertCanUpdateOwnScoped(ctx.actor, "Transactions", () =>
+        prisma.transaction.findUnique({ where: { id: String(args.id) }, select: { ownerId: true } }),
+      );
+      return updateTransaction(args.id, { assistIds: args.assistIds.map(String) } as never, ctx.actor);
+    },
+  }),
+  assignAdvisoryLead: t.prismaField({
+    type: "AdvisoryEngagement", nullable: false,
+    args: { id: t.arg.id({ required: true }), leadId: t.arg.id({ required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      await assertCanUpdateOwnScoped(ctx.actor, "Advisory", () =>
+        prisma.advisoryEngagement.findUnique({ where: { id: String(args.id) }, select: { leadId: true } }),
+      );
+      return updateAdvisory(args.id, { leadId: String(args.leadId) } as never, ctx.actor);
+    },
+  }),
+  setAdvisoryAssists: t.prismaField({
+    type: "AdvisoryEngagement", nullable: false,
+    args: { id: t.arg.id({ required: true }), assistIds: t.arg({ type: ["ID"], required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      await assertCanUpdateOwnScoped(ctx.actor, "Advisory", () =>
+        prisma.advisoryEngagement.findUnique({ where: { id: String(args.id) }, select: { leadId: true } }),
+      );
+      return updateAdvisory(args.id, { assistIds: args.assistIds.map(String) } as never, ctx.actor);
+    },
+  }),
+
   // ── Partner ──
   createPartner: t.prismaField({
     type: "Partner", nullable: false,
@@ -520,7 +587,27 @@ builder.mutationFields((t) => ({
       await assertCanUpdateOwnScoped(ctx.actor, "Tasks", () =>
         prisma.task.findUnique({ where: { id: String(args.id) }, select: { assigneeId: true } }),
       );
-      return updateTask(args.id, args.input as never);
+      return updateTask(args.id, args.input as never, ctx.actor);
+    },
+  }),
+  // Inline task lead/assist reassignment (verification step 2026-07) — partial
+  // payload without the required-title TaskInput; the service fires the
+  // assignment notification. Same ownership-scoped RBAC as updateTask.
+  assignTask: t.prismaField({
+    type: "Task", nullable: false,
+    args: {
+      id: t.arg.id({ required: true }),
+      assigneeId: t.arg.id({ required: false }),
+      assistantId: t.arg.id({ required: false }),
+    },
+    resolve: async (_q, _r, args, ctx) => {
+      await assertCanUpdateOwnScoped(ctx.actor, "Tasks", () =>
+        prisma.task.findUnique({ where: { id: String(args.id) }, select: { assigneeId: true } }),
+      );
+      const input: Record<string, string> = {};
+      if (args.assigneeId != null) input.assigneeId = String(args.assigneeId);
+      if (args.assistantId != null) input.assistantId = String(args.assistantId);
+      return updateTask(args.id, input as never, ctx.actor);
     },
   }),
   deleteTask: t.prismaField({

@@ -20,9 +20,11 @@ function parseList(v: string | null): string[] {
 
 export function DealsFilterBar({
   leads,
+  assists,
   countries,
 }: {
   leads: { value: string; label: string }[];
+  assists: { value: string; label: string }[];
   countries: { value: string; label: string }[];
 }) {
   const router = useRouter();
@@ -88,6 +90,9 @@ export function DealsFilterBar({
       )}
       <div className="w-44">
         <MultiSelect options={leads} selected={parseList(sp.get("lead"))} onChange={(v) => updateMulti("lead", v)} placeholder="Lead" />
+      </div>
+      <div className="w-44">
+        <MultiSelect options={assists} selected={parseList(sp.get("assist"))} onChange={(v) => updateMulti("assist", v)} placeholder="Assist" />
       </div>
       <div className="w-44">
         <MultiSelect options={financingOpts} selected={parseList(sp.get("financing"))} onChange={(v) => updateMulti("financing", v)} placeholder="Financing" />

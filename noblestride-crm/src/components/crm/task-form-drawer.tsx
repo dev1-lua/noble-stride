@@ -79,8 +79,8 @@ export function TaskFormDrawer({
           <RelationSelect label="Investor" value={v.investorId as string} onChange={(x) => f.setValue("investorId", x)} options={investors} placeholder="Select investor…" />
           <RelationSelect label="Client" value={v.clientId as string} onChange={(x) => f.setValue("clientId", x)} options={clients} placeholder="Select client…" />
           <div className="grid grid-cols-2 gap-3">
-            <RelationSelect label="Owner" value={v.assigneeId as string} onChange={(x) => f.setValue("assigneeId", x)} options={users} placeholder="Select owner…" />
-            <RelationSelect label="Assistant" value={v.assistantId as string} onChange={(x) => f.setValue("assistantId", x)} options={users} placeholder="Select assistant…" />
+            <RelationSelect label="Deal Lead" value={v.assigneeId as string} onChange={(x) => f.setValue("assigneeId", x)} options={users} placeholder="Select deal lead…" />
+            <RelationSelect label="Deal Assist" value={v.assistantId as string} onChange={(x) => f.setValue("assistantId", x)} options={users} placeholder="Select deal assist…" />
           </div>
           <DateField label="Deadline" value={v.dueAt as string} onChange={(x) => f.setValue("dueAt", x)} />
           <TextAreaField label="Notes" value={v.body as string} onChange={(x) => f.setValue("body", x)} />
