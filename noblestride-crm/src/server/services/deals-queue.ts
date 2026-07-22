@@ -23,8 +23,16 @@ export interface DealRow {
   country: string | null;
   leadName: string | null;
   leadColor: string | null;
+  // Ids that drive the inline lead/assist editors (mandate.leadId /
+  // transaction.ownerId / advisory.leadId; assists m2m user ids).
+  leadId: string | null;
+  assistIds: string[];
   assistNames: string[];
   dateOnboarded: string | null;
+  // Drilldown date bounds (dashboard trend chart). openedAt = dateOpened ??
+  // createdAt (ISO); closedAt = ISO for closed transactions, null otherwise.
+  openedAt: string | null;
+  closedAt: string | null;
   nextAction: string | null;
   daysInStage: number;
   linkedCounterpartId: string | null;
@@ -43,12 +51,12 @@ async function loadRows(): Promise<DealRow[]> {
   const now = new Date();
   const [mandates, transactions, advisory] = await Promise.all([
     prisma.mandate.findMany({
-      include: { client: true, lead: true, assists: { select: { name: true } }, transactions: { select: { id: true }, take: 1 } },
+      include: { client: true, lead: true, assists: { select: { id: true, name: true } }, transactions: { select: { id: true }, take: 1 } },
     }),
     // Deviation (STEP 0): Transaction has no `lead` relation — it has `owner`
     // (User? via the "TransactionOwner" relation). Used here as the row's lead.
-    prisma.transaction.findMany({ include: { client: true, owner: true, assists: { select: { name: true } } } }),
-    prisma.advisoryEngagement.findMany({ include: { client: true, lead: true, assists: { select: { name: true } } } }),
+    prisma.transaction.findMany({ include: { client: true, owner: true, assists: { select: { id: true, name: true } } } }),
+    prisma.advisoryEngagement.findMany({ include: { client: true, lead: true, assists: { select: { id: true, name: true } } } }),
   ]);
 
   const mRows: DealRow[] = mandates.map((m) => ({
@@ -68,8 +76,12 @@ async function loadRows(): Promise<DealRow[]> {
     country: m.country ?? m.client?.hqCountry ?? null,
     leadName: m.lead?.name ?? null,
     leadColor: m.lead?.avatarColor ?? null,
+    leadId: m.leadId ?? null,
+    assistIds: m.assists.map((a) => a.id),
     assistNames: m.assists.map((a) => a.name),
     dateOnboarded: m.dateOpened ? m.dateOpened.toISOString() : null,
+    openedAt: (m.dateOpened ?? m.createdAt).toISOString(),
+    closedAt: null,
     nextAction: m.nextAction ?? null,
     daysInStage: daysInStage(m.stageEnteredAt ?? now, now),
     linkedCounterpartId: m.transactions[0]?.id ?? null,
@@ -99,8 +111,12 @@ async function loadRows(): Promise<DealRow[]> {
     country: t.country ?? t.client?.hqCountry ?? null,
     leadName: t.owner?.name ?? null,
     leadColor: t.owner?.avatarColor ?? null,
+    leadId: t.ownerId ?? null,
+    assistIds: t.assists.map((a) => a.id),
     assistNames: t.assists.map((a) => a.name),
     dateOnboarded: t.dateOpened ? t.dateOpened.toISOString() : null,
+    openedAt: (t.dateOpened ?? t.createdAt).toISOString(),
+    closedAt: t.closedAt ? t.closedAt.toISOString() : null,
     nextAction: null,
     daysInStage: daysInStage(t.stageEnteredAt ?? now, now),
     linkedCounterpartId: t.mandateId ?? null,
@@ -128,8 +144,12 @@ async function loadRows(): Promise<DealRow[]> {
     country: a.country ?? a.client?.hqCountry ?? null,
     leadName: a.lead?.name ?? null,
     leadColor: a.lead?.avatarColor ?? null,
+    leadId: a.leadId ?? null,
+    assistIds: a.assists.map((u) => u.id),
     assistNames: a.assists.map((u) => u.name),
     dateOnboarded: a.dateOpened ? a.dateOpened.toISOString() : null,
+    openedAt: (a.dateOpened ?? a.createdAt).toISOString(),
+    closedAt: null,
     nextAction: a.nextAction ?? null,
     daysInStage: daysInStage(a.stageEnteredAt ?? now, now),
     linkedCounterpartId: null,
@@ -153,6 +173,18 @@ function matches(r: DealRow, spec: DealsQuerySpec): boolean {
   if (spec.priority.length > 0 && (r.priorityValue == null || !spec.priority.includes(r.priorityValue))) return false;
   if (spec.source.length > 0 && (r.sourceValue == null || !spec.source.includes(r.sourceValue))) return false;
   if (spec.financing.length > 0 && (r.financingValue == null || !spec.financing.includes(r.financingValue))) return false;
+  // Active-as-of drilldown: open by `activeAsOf` and not yet closed by then.
+  // (ISO strings compare chronologically since all are UTC toISOString().)
+  if (spec.activeAsOf) {
+    if (r.openedAt == null || r.openedAt > spec.activeAsOf) return false;
+    if (r.closedAt != null && r.closedAt <= spec.activeAsOf) return false;
+  }
+  // Closed-in-range drilldown: closedAt within [closedFrom, closedTo].
+  if (spec.closedFrom || spec.closedTo) {
+    if (r.closedAt == null) return false;
+    if (spec.closedFrom && r.closedAt < spec.closedFrom) return false;
+    if (spec.closedTo && r.closedAt > spec.closedTo) return false;
+  }
   if (spec.ticketBand.length > 0) {
     const bands = TICKET_BANDS.filter((b) => spec.ticketBand.includes(b.value));
     if (bands.length > 0) {

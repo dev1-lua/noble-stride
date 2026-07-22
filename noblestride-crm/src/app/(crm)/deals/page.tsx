@@ -321,9 +321,20 @@ export default async function DealsPage({ searchParams }: PageProps) {
   // relationOptions() loaded once up top (also feeds the header create-drawers).
   const leadNames = Array.from(new Set(rel.users.map((u) => u.label))).sort((a, b) => a.localeCompare(b));
   const leads = leadNames.map((name) => ({ value: name, label: name }));
+  // Assist filter matches on assist names too (DealRow.assistNames) — same
+  // distinct-user-name option set as the lead filter.
+  const assists = leads;
   const countries = await dealCountryOptions();
 
   const groups = spec.groupBy ? await countsBy(spec, spec.groupBy) : [];
+
+  // Inline lead/assist editing is offered when the viewer can update any deal
+  // kind; the assign mutations still enforce the same ownership-scoped RBAC
+  // per row, so a scoped lead can only reassign their own deals.
+  const canEditAssignments =
+    can(lens.orgRole, "Mandates", "U") ||
+    can(lens.orgRole, "Transactions", "U") ||
+    can(lens.orgRole, "Advisory", "U");
 
   // New column click defaults to ascending; clicking the already-active
   // column flips direction. Re-sorting resets to page 1 since the row order
@@ -340,7 +351,7 @@ export default async function DealsPage({ searchParams }: PageProps) {
       {header(total)}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Suspense>
-          <DealsFilterBar leads={leads} countries={countries} />
+          <DealsFilterBar leads={leads} assists={assists} countries={countries} />
         </Suspense>
         <Suspense>
           <DealsViewControls views={views} />
@@ -364,13 +375,15 @@ export default async function DealsPage({ searchParams }: PageProps) {
                   sort={spec.sort}
                   dir={spec.dir}
                   sortHref={sortHref}
+                  users={rel.users}
+                  canEdit={canEditAssignments}
                 />
               </div>
             ))}
           </div>
         )
       ) : (
-        <DealsTable rows={rows} columns={columns} sort={spec.sort} dir={spec.dir} sortHref={sortHref} />
+        <DealsTable rows={rows} columns={columns} sort={spec.sort} dir={spec.dir} sortHref={sortHref} users={rel.users} canEdit={canEditAssignments} />
       )}
       {!spec.groupBy && pageCount > 1 && (
         <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-3 text-sm">

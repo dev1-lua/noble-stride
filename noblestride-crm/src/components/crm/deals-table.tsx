@@ -1,9 +1,13 @@
-// deals-table.tsx — read-only table for the unified deals queue (mandates + transactions).
+// deals-table.tsx — table for the unified deals queue (mandates + transactions).
+// Mostly read-only, but the Lead/Assists cells are inline-editable dropdowns
+// (DealLeadSelect/DealAssistSelect) when the viewer has update permission.
 import Link from "next/link";
 import { Table, THead, TBody, Tr, Th, Td } from "@/components/ui/table";
 import { Badge } from "@/components/ui";
+import type { SelectOption } from "@/components/ui";
 import { DEAL_COLUMNS, type DealsSortKey } from "@/server/domain/deals-queue";
 import type { DealRow } from "@/server/services/deals-queue";
+import { DealLeadSelect, DealAssistSelect } from "./deal-assign-select";
 
 // Task 8: High=rose, Medium=amber, Low=neutral — mirrors deal-summary-panel.tsx's
 // priorityTone (kept local; too small a helper to warrant a shared module).
@@ -45,7 +49,7 @@ function TypeBadge({ kind }: { kind: DealRow["kind"] }) {
   );
 }
 
-function cell(r: DealRow, key: string): React.ReactNode {
+function cell(r: DealRow, key: string, users: SelectOption[], canEdit: boolean): React.ReactNode {
   switch (key) {
     case "name": return <Link href={r.href} className="font-medium text-[var(--accent)] hover:underline">{r.name}</Link>;
     case "company": return r.company;
@@ -57,8 +61,14 @@ function cell(r: DealRow, key: string): React.ReactNode {
     case "ticket": return r.ticket != null ? `$${r.ticket.toLocaleString()}` : "—";
     case "sector": return r.sectors.length ? r.sectors.join(", ") : "—";
     case "country": return r.country ?? "—";
-    case "lead": return r.leadName ?? "—";
-    case "assist": return r.assistNames.length ? r.assistNames.join(", ") : "—";
+    case "lead":
+      return canEdit
+        ? <DealLeadSelect kind={r.kind} id={r.id} value={r.leadId} users={users} />
+        : (r.leadName ?? "—");
+    case "assist":
+      return canEdit
+        ? <DealAssistSelect kind={r.kind} id={r.id} value={r.assistIds} users={users} />
+        : (r.assistNames.length ? r.assistNames.join(", ") : "—");
     case "dateOnboarded": return r.dateOnboarded ? r.dateOnboarded.slice(0, 10) : "—";
     case "nextAction": return r.nextAction ?? "—";
     case "daysInStage": return String(r.daysInStage);
@@ -68,13 +78,15 @@ function cell(r: DealRow, key: string): React.ReactNode {
 }
 
 export function DealsTable({
-  rows, columns, sort, dir, sortHref,
+  rows, columns, sort, dir, sortHref, users, canEdit = false,
 }: {
   rows: DealRow[];
   columns: string[];
   sort: DealsSortKey;
   dir: "asc" | "desc";
   sortHref: (key: DealsSortKey) => string;
+  users: SelectOption[];
+  canEdit?: boolean;
 }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-[var(--border-subtle)]">
@@ -100,7 +112,7 @@ export function DealsTable({
           {rows.length === 0 ? (
             <Tr><Td colSpan={columns.length}><span className="text-[var(--text-tertiary)]">No deals match these filters.</span></Td></Tr>
           ) : rows.map((r) => (
-            <Tr key={`${r.kind}-${r.id}`}>{columns.map((k) => <Td key={k}>{cell(r, k)}</Td>)}</Tr>
+            <Tr key={`${r.kind}-${r.id}`}>{columns.map((k) => <Td key={k}>{cell(r, k, users, canEdit)}</Td>)}</Tr>
           ))}
         </TBody>
       </Table>

@@ -26,6 +26,12 @@ export interface DealsQuerySpec {
   source: string[];
   financing: string[];
   search?: string;
+  // Link-only date drilldowns (dashboard trend chart) — not filter-bar dropdowns,
+  // like `stage`. `activeAsOf`: rows open as of this instant. `closedFrom`/
+  // `closedTo`: rows closed within this range. All ISO datetime strings.
+  activeAsOf?: string;
+  closedFrom?: string;
+  closedTo?: string;
   sort: DealsSortKey;
   dir: "asc" | "desc";
   groupBy: DealsGroupBy;
@@ -49,7 +55,7 @@ export const DEAL_COLUMNS: { key: string; label: string; default: boolean }[] = 
   { key: "sector", label: "Sector", default: true },
   { key: "country", label: "Country", default: false },
   { key: "lead", label: "Lead", default: true },
-  { key: "assist", label: "Assists", default: false },
+  { key: "assist", label: "Assists", default: true },
   { key: "dateOnboarded", label: "Date onboarded", default: true },
   { key: "nextAction", label: "Next action", default: true },
   { key: "daysInStage", label: "Days in stage", default: true },
@@ -100,6 +106,9 @@ export function parseDealsQuery(sp: Record<string, string | string[] | undefined
     source: list(sp.source),
     financing: list(sp.financing),
     search: str(sp.q),
+    activeAsOf: str(sp.activeAsOf),
+    closedFrom: str(sp.closedFrom),
+    closedTo: str(sp.closedTo),
     sort: sortRaw && SORT_KEYS.includes(sortRaw) ? sortRaw : "dateOnboarded",
     dir: str(sp.dir) === "asc" ? "asc" : "desc",
     groupBy: groupRaw && GROUP_KEYS.includes(groupRaw) ? groupRaw : "",

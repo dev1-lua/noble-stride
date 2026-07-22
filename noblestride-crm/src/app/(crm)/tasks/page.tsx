@@ -21,6 +21,7 @@ export default async function TasksPage() {
       orderBy: [{ dueAt: "desc" }],
       include: {
         assignee: { select: { name: true } },
+        assistant: { select: { name: true } },
         client: { select: { id: true, name: true } },
         investor: { select: { id: true, name: true } },
         mandate: { select: { id: true, name: true } },
@@ -57,6 +58,7 @@ export default async function TasksPage() {
       body: t.body,
       assigneeName: t.assignee?.name ?? null,
       assigneeId: t.assigneeId,
+      assistantName: t.assistant?.name ?? null,
       assistantId: t.assistantId,
       mandateId: t.mandateId,
       transactionId: t.transactionId,

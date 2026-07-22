@@ -10,7 +10,7 @@ import { advisoryCreateSchema, advisoryUpdateSchema, type AdvisoryCreateInput, t
 import { actorSource, CrudError, sameCalendarDate } from "./crud";
 import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
-import { notify } from "./notifications";
+import { notify, notifyAssignment } from "./notifications";
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -114,7 +114,7 @@ export async function updateAdvisory(id: string, input: AdvisoryUpdateInput, act
   const result = await prisma.$transaction(async (tx) => {
     const existing = await tx.advisoryEngagement.findUniqueOrThrow({
       where: { id },
-      select: { dealStatus: true, dateOpened: true, source: true, stage: true, name: true, leadId: true },
+      select: { dealStatus: true, dateOpened: true, source: true, stage: true, name: true, leadId: true, assists: { select: { id: true } } },
     });
     if (rest.dateOpened !== undefined && existing.dateOpened != null && !sameCalendarDate(rest.dateOpened, existing.dateOpened)) {
       throw new CrudError("Date opened is locked once set (spec §7.1: creation date is immutable).");
@@ -149,6 +149,18 @@ export async function updateAdvisory(id: string, input: AdvisoryUpdateInput, act
   if (result.stageChanging && result.existing.leadId && result.existing.leadId !== actor.userId) {
     await notify([result.existing.leadId], advisoryStageNotification(id, result.existing.name, result.existing.stage, stage!));
   }
+
+  // Notify anyone newly assigned as deal lead or assist (after commit).
+  await notifyAssignment({
+    kind: "deal_assigned",
+    entityName: result.existing.name,
+    href: `/advisory/${id}`,
+    actorUserId: actor.userId,
+    prevLeadId: result.existing.leadId,
+    nextLeadId: rest.leadId,
+    prevAssistIds: result.existing.assists.map((a) => a.id),
+    nextAssistIds: assistIds,
+  });
 
   return result.updated;
 }

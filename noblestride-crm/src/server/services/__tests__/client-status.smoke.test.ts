@@ -294,28 +294,28 @@ describe("verifyClientStatusOtp / verifyStatusToken", () => {
     expect(await verifyStatusToken(wrongPurpose)).toBeNull();
   });
 
-  it("TEST-ONLY bypass: when CLIENT_STATUS_TEST_OTP is set, code 000000 lets a matched contact verify without a challenge; still requires a match; inert when unset", async () => {
+  it("QA MODE: when CLIENT_STATUS_TEST_OTP is set, a matched contact verifies with NO code required; still requires a match; inert when unset", async () => {
     const prior = process.env.CLIENT_STATUS_TEST_OTP;
-    process.env.CLIENT_STATUS_TEST_OTP = "1"; // any value enables test mode
+    process.env.CLIENT_STATUS_TEST_OTP = "1"; // any value enables QA mode
     try {
-      // Matched contact with NO active challenge row: the fixed code 000000 mints a real token.
-      const ok = await verifyClientStatusOtp(COMPANY_A, VERIFY_NOCHALLENGE_EMAIL, "000000");
+      // Matched contact with NO active challenge row: any code — even an empty one — mints a real token.
+      const ok = await verifyClientStatusOtp(COMPANY_A, VERIFY_NOCHALLENGE_EMAIL, "");
       expect(ok.status).toBe("ok");
       const person = await prisma.person.findFirst({ where: { email: VERIFY_NOCHALLENGE_EMAIL } });
       const claims = await verifyStatusToken((ok as { status: "ok"; token: string }).token);
       expect(claims).toEqual({ clientId: companyAId, personId: person!.id });
 
-      // A different code still fails, even in test mode.
-      expect(await verifyClientStatusOtp(COMPANY_A, VERIFY_NOCHALLENGE_EMAIL, "999999")).toEqual({ status: "failed" });
+      // The code is ignored in QA mode: an arbitrary value works just the same for a matched contact.
+      expect((await verifyClientStatusOtp(COMPANY_A, VERIFY_NOCHALLENGE_EMAIL, "999999")).status).toBe("ok");
 
-      // The company+email match is STILL required: a non-contact cannot use 000000.
+      // The company+email match is STILL required: a non-contact cannot get in, code or not.
       expect(await verifyClientStatusOtp(COMPANY_A, RIVAL_EMAIL, "000000")).toEqual({ status: "failed" });
     } finally {
       if (prior === undefined) delete process.env.CLIENT_STATUS_TEST_OTP;
       else process.env.CLIENT_STATUS_TEST_OTP = prior;
     }
 
-    // With the flag explicitly unset, 000000 no longer works (no challenge row exists).
+    // With the flag explicitly unset, the code-free path is gone (no challenge row exists → failed).
     const saved = process.env.CLIENT_STATUS_TEST_OTP;
     delete process.env.CLIENT_STATUS_TEST_OTP;
     try {

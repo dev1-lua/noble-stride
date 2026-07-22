@@ -173,7 +173,7 @@ export async function pipelineOverview(): Promise<{
  * - active: (dateOpened ?? createdAt) <= monthEnd AND (closedAt == null || closedAt > monthEnd)
  */
 export async function dealPipelineTrend(): Promise<
-  { month: string; active: number; closed: number }[]
+  { month: string; active: number; closed: number; monthStartISO: string; monthEndISO: string }[]
 > {
   const now = new Date();
 
@@ -206,7 +206,10 @@ export async function dealPipelineTrend(): Promise<
         active++;
       }
     }
-    return { month: monthLabel, active, closed };
+    // ISO bounds drive the line-chart drilldowns (active-as-of monthEnd; closed
+    // within [monthStart, monthEnd]) so the opened /deals list reproduces the
+    // point's count exactly — same definition as the loop above.
+    return { month: monthLabel, active, closed, monthStartISO: start.toISOString(), monthEndISO: end.toISOString() };
   });
 }
 

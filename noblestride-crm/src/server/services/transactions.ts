@@ -14,7 +14,7 @@ import { actorSource, CrudError, sameCalendarDate } from "./crud";
 import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 import { assertAgentFeeAllowed, feeChangeMarksOwed, isAgentActor } from "@/server/domain/agent-write-guards";
-import { notify } from "./notifications";
+import { notify, notifyAssignment } from "./notifications";
 
 // Fields the fee guard needs from the deal's referring partner.
 const FEE_PARTNER_SELECT = { name: true, feeSharingAgreement: true, partnerAgreementStatus: true } as const;
@@ -222,7 +222,7 @@ export async function updateTransaction(id: string, input: TransactionUpdateInpu
   const result = await prisma.$transaction(async (tx) => {
     const existing = await tx.transaction.findUniqueOrThrow({
       where: { id },
-      select: { dealStatus: true, dealMilestone: true, dateOpened: true, stage: true, name: true, ownerId: true },
+      select: { dealStatus: true, dealMilestone: true, dateOpened: true, stage: true, name: true, ownerId: true, assists: { select: { id: true } } },
     });
     if (data.dateOpened !== undefined && existing.dateOpened != null && !sameCalendarDate(data.dateOpened, existing.dateOpened)) {
       throw new CrudError("Date opened is locked once set (spec §7.1: creation date is immutable).");
@@ -258,6 +258,18 @@ export async function updateTransaction(id: string, input: TransactionUpdateInpu
   if (result.stageChanging && result.existing.ownerId && result.existing.ownerId !== actor.userId) {
     await notify([result.existing.ownerId], transactionStageNotification(id, result.existing.name, result.existing.stage, stage!));
   }
+
+  // Notify anyone newly assigned as deal lead (owner) or assist (after commit).
+  await notifyAssignment({
+    kind: "deal_assigned",
+    entityName: result.existing.name,
+    href: `/transactions/${id}`,
+    actorUserId: actor.userId,
+    prevLeadId: result.existing.ownerId,
+    nextLeadId: data.ownerId,
+    prevAssistIds: result.existing.assists.map((a) => a.id),
+    nextAssistIds: assistIds,
+  });
 
   return result.updated;
 }

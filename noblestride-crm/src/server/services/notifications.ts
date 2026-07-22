@@ -26,6 +26,9 @@ export type NotificationKind =
   | "deal_stuck"
   // Agent-raised flag needing staff review (investor email agent)
   | "investor_flag"
+  // Assignment as deal lead/assist or task lead/assist (verification step 2026-07)
+  | "deal_assigned"
+  | "task_assigned"
   // Investor-portal notifications (Notification.investorId recipients)
   | "deal_shared"
   | "document_shared"
@@ -62,6 +65,53 @@ export async function notify(userIds: (string | null | undefined)[], n: NotifyIn
     // Best-effort: a notification failure must never fail the caller's
     // (already-committed) business mutation.
     console.error("notify: failed to create notification(s)", err);
+  }
+}
+
+/**
+ * Assignment notification (verification step 2026-07): when someone is newly
+ * made the lead/owner of a deal or task, or newly added as an assist, tell
+ * them via the bell. Diffs previous vs next so a no-op save (or an update that
+ * doesn't touch assignment) notifies nobody, and never notifies the actor about
+ * assigning themselves. Best-effort — delegates to notify(), which never throws.
+ *
+ * `kind`: "deal_assigned" | "task_assigned". `entityName`/`href` describe the
+ * target. Pass `nextAssistIds: undefined` when the update didn't touch assists
+ * (so existing assists are never re-notified).
+ */
+export async function notifyAssignment(opts: {
+  kind: Extract<NotificationKind, "deal_assigned" | "task_assigned">;
+  entityName: string;
+  href: string;
+  actorUserId?: string | null;
+  prevLeadId?: string | null;
+  nextLeadId?: string | null;
+  prevAssistIds?: string[];
+  nextAssistIds?: string[];
+}): Promise<void> {
+  const { kind, entityName, href, actorUserId } = opts;
+  const isDeal = kind === "deal_assigned";
+  const leadRole = isDeal ? "deal lead" : "lead";
+  const assistRole = isDeal ? "deal assist" : "assist";
+
+  // Lead/owner newly set (present, changed, and not the actor themself).
+  if (opts.nextLeadId && opts.nextLeadId !== opts.prevLeadId && opts.nextLeadId !== actorUserId) {
+    await notify([opts.nextLeadId], {
+      kind,
+      title: `You're now the ${leadRole} on ${entityName}`,
+      href,
+    });
+  }
+
+  // Assists newly added (only when the update touched assists).
+  if (opts.nextAssistIds) {
+    const prev = new Set(opts.prevAssistIds ?? []);
+    const added = opts.nextAssistIds.filter((id) => !prev.has(id) && id !== actorUserId);
+    await notify(added, {
+      kind,
+      title: `You were added as ${assistRole} on ${entityName}`,
+      href,
+    });
   }
 }
 

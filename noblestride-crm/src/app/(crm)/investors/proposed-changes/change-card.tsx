@@ -47,24 +47,26 @@ export function ChangeCard({ change }: { change: ChangeCardData }) {
 
       <p className="text-sm text-[var(--text-secondary)]">{change.summary}</p>
 
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="text-left text-[var(--text-tertiary)]">
-            <th className="py-1 pr-2 font-medium">Field</th>
-            <th className="py-1 pr-2 font-medium">Current</th>
-            <th className="py-1 pr-2 font-medium">Proposed</th>
-          </tr>
-        </thead>
-        <tbody>
-          {change.fields.map((f) => (
-            <tr key={f.key} className="border-t border-[var(--border-subtle)]">
-              <td className="py-1 pr-2 text-[var(--text-primary)]">{f.key}</td>
-              <td className="py-1 pr-2 text-[var(--text-tertiary)]">{f.current}</td>
-              <td className="py-1 pr-2 text-[var(--text-primary)]">{f.proposed}</td>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-left text-[var(--text-tertiary)]">
+              <th className="py-1 pr-2 font-medium">Field</th>
+              <th className="py-1 pr-2 font-medium">Current</th>
+              <th className="py-1 pr-2 font-medium">Proposed</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {change.fields.map((f) => (
+              <tr key={f.key} className="border-t border-[var(--border-subtle)]">
+                <td className="py-1 pr-2 text-[var(--text-primary)]">{f.key}</td>
+                <td className="py-1 pr-2 text-[var(--text-tertiary)]">{f.current}</td>
+                <td className="py-1 pr-2 text-[var(--text-primary)]">{f.proposed}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <div className="flex gap-2">
         <form action={confirmAction}>

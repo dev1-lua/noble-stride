@@ -22,11 +22,12 @@ export class RequestStatusCodeTool implements LuaTool {
       companyName: input.companyName,
       contactEmail: input.contactEmail,
     });
-    // TEST-ONLY (env-gated): when CLIENT_STATUS_TEST_OTP is set, surface the fixed
-    // test code "000000" so the data-out flow can be exercised without an inbox.
-    // The CRM only accepts it for a company+email that actually matches. Unset in
-    // production it is inert. "000000" is guessable, so enable only for controlled QA.
-    if (process.env.CLIENT_STATUS_TEST_OTP) return { status: "ok" as const, testCode: "000000" };
+    // QA MODE (env-gated): when CLIENT_STATUS_TEST_OTP is set, no emailed code is
+    // needed — a matched company+email is verified straight away. We signal that to
+    // the skill with codeRequired:false so it skips the "give me the code" step and
+    // calls verify_status_code immediately. Unset in production it is inert. Enable
+    // only for a controlled QA window (see the CRM-side security note).
+    if (process.env.CLIENT_STATUS_TEST_OTP) return { status: "ok" as const, codeRequired: false as const };
     return { status: "ok" as const };
   }
 }
