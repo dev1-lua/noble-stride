@@ -11,6 +11,13 @@ import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
 import { loadInvestorPortalData } from "@/server/visibility";
 import { notify } from "@/server/services/notifications";
+import {
+  postInvestorMessage,
+  seedInvestorThreadMessage,
+  staffRecipientsForEngagementId,
+} from "@/server/services/conversations";
+import { requirePortalEditor, requireThreadParticipation } from "@/server/auth/portal-authz";
+import { ensureInvestorDealFolder } from "@/server/services/folders";
 import { nextStepLabel } from "@/lib/next-step";
 import { rateLimit } from "@/server/auth/rate-limit";
 
@@ -27,6 +34,9 @@ export async function expressInterest(formData: FormData): Promise<void> {
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
   const investorId = vp.recordId as string;
+  // Seat gate (action points 2026-07 item 3): expressing interest commits the
+  // org — Editors only.
+  const member = await requirePortalEditor();
 
   const dealIdRaw = formData.get("dealId");
   if (typeof dealIdRaw !== "string" || dealIdRaw.length === 0) redirect("/portal/investor");
@@ -73,12 +83,19 @@ export async function expressInterest(formData: FormData): Promise<void> {
     update: { lastContact: new Date(), ...(bumpStatus ? { status: "Interested" as const } : {}) },
   });
 
+  // File-room grouping (item 5): the investor now has a seat on this deal —
+  // scaffold their subfolder under "07 Potential Investors". Idempotent +
+  // best-effort (never throws).
+  await ensureInvestorDealFolder(dealId, investor.name);
+
   // (b) Log the request on the timeline. (InteractionType has no dedicated
   // InfoRequest value; "Note" is the neutral timeline entry — the subject
   // carries the semantics.)
   await prisma.activity.create({
     data: {
       type: "Note",
+      channel: "Portal",
+      direction: "Inbound",
       subject: "Investor expressed interest via portal",
       body: message || null,
       engagementId: engagement.id,
@@ -88,17 +105,23 @@ export async function expressInterest(formData: FormData): Promise<void> {
     },
   });
 
-  // (b2) Best-effort: alert the engagement owner (falling back to the
-  // transaction owner when the engagement has none) that an investor has
-  // expressed interest. Portal actions have no internal actor to skip.
-  const interestRecipient = engagement.ownerId ?? txn.ownerId;
-  if (interestRecipient) {
-    await notify([interestRecipient], {
-      kind: "interest_expressed",
-      title: `${investor.name} expressed interest in ${txn.name}`,
-      href: `/engagement/${engagement.id}`,
-    });
+  // (b1) Seed the two-way conversation thread with the investor's message so
+  // the request opens the queue (action points 2026-07 item 1). The Activity
+  // above already audits it — seed only, no second Activity/notification.
+  if (message) {
+    await seedInvestorThreadMessage(engagement.id, member.personId, message);
   }
+
+  // (b2) Best-effort: alert admins + deal lead + deal assists + engagement
+  // owner (action points 2026-07 item 2), by bell AND email. Portal actions
+  // have no internal actor to skip.
+  await notify(await staffRecipientsForEngagementId(engagement.id), {
+    kind: "interest_expressed",
+    title: `${investor.name} expressed interest in ${txn.name}`,
+    body: message || undefined,
+    href: `/engagement/${engagement.id}#conversation`,
+    email: true,
+  });
 
   // (c) Refresh the portal views that render this journey.
   revalidatePath(`/portal/investor/deals/${dealId}`);
@@ -116,6 +139,8 @@ export async function requestNextStep(formData: FormData): Promise<void> {
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
   const investorId = vp.recordId as string;
+  // Seat gate (item 3): requesting a step acts for the org — Editors only.
+  const member = await requirePortalEditor();
 
   await throttlePortalAction("/portal/investor");
 
@@ -136,6 +161,8 @@ export async function requestNextStep(formData: FormData): Promise<void> {
   await prisma.activity.create({
     data: {
       type: "Note",
+      channel: "Portal",
+      direction: "Inbound",
       subject: `Investor requested next step via portal: ${step}`,
       engagementId: engagement.id,
       transactionId: dealId,
@@ -144,18 +171,22 @@ export async function requestNextStep(formData: FormData): Promise<void> {
     },
   });
 
+  // Drop the request into the conversation thread too, so the queue captures
+  // it (item 1). Seed only — the Activity above and notify below cover audit
+  // + fan-out.
+  await seedInvestorThreadMessage(engagement.id, member.personId, `Requested next step: ${step}`);
+
   const txn = await prisma.transaction.findUniqueOrThrow({
     where: { id: dealId },
     select: { name: true, ownerId: true },
   });
-  const recipient = engagement.ownerId ?? txn.ownerId;
-  if (recipient) {
-    await notify([recipient], {
-      kind: "next_step_requested",
-      title: `${investor.name} — ${step} on ${txn.name}`,
-      href: `/engagement/${engagement.id}`,
-    });
-  }
+  // Route to admins + deal lead + assists + engagement owner, bell AND email (item 2).
+  await notify(await staffRecipientsForEngagementId(engagement.id), {
+    kind: "next_step_requested",
+    title: `${investor.name} — ${step} on ${txn.name}`,
+    href: `/engagement/${engagement.id}#conversation`,
+    email: true,
+  });
 
   revalidatePath(`/portal/investor/deals/${dealId}`);
   redirect(`/portal/investor/deals/${dealId}?request=sent`);
@@ -173,6 +204,8 @@ export async function declineDeal(formData: FormData): Promise<void> {
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
   const investorId = vp.recordId as string;
+  // Seat gate (item 3): withdrawing is the strongest org action — Editors only.
+  await requirePortalEditor("/portal/investor/pipeline");
 
   await throttlePortalAction("/portal/investor/pipeline");
 
@@ -230,17 +263,55 @@ export async function declineDeal(formData: FormData): Promise<void> {
       where: { id: dealId },
       select: { name: true, ownerId: true },
     });
-    const recipient = engagement.ownerId ?? txn.ownerId;
-    if (recipient) {
-      await notify([recipient], {
-        kind: "deal_declined",
-        title: `${investor.name} withdrew from ${txn.name}`,
-        href: `/engagement/${engagement.id}`,
-      });
-    }
+    // Route to admins + deal lead + assists + engagement owner, bell AND email (item 2).
+    await notify(await staffRecipientsForEngagementId(engagement.id), {
+      kind: "deal_declined",
+      title: `${investor.name} withdrew from ${txn.name}`,
+      href: `/engagement/${engagement.id}`,
+      email: true,
+    });
   }
 
   revalidatePath("/portal/investor/pipeline");
   revalidatePath("/portal/investor");
   redirect("/portal/investor/pipeline?declined=1");
+}
+
+/**
+ * Post a follow-up into the engagement's two-way conversation thread (action
+ * points 2026-07 item 1). Editors always may post; Viewers need the
+ * per-member opt-in (item 3). Writes the message + timeline Activity and
+ * notifies admins + deal lead + assists by bell and email (item 2).
+ */
+export async function postThreadMessage(formData: FormData): Promise<void> {
+  const vp = await getViewpoint();
+  if (!vp) redirect("/login");
+  if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
+  const investorId = vp.recordId as string;
+
+  const dealIdRaw = formData.get("dealId");
+  if (typeof dealIdRaw !== "string" || dealIdRaw.length === 0) redirect("/portal/investor");
+  const dealId = dealIdRaw as string;
+
+  const member = await requireThreadParticipation(`/portal/investor/deals/${dealId}`);
+  await throttlePortalAction(`/portal/investor/deals/${dealId}`);
+
+  const messageRaw = formData.get("message");
+  const message = typeof messageRaw === "string" ? messageRaw.trim() : "";
+  if (!message) redirect(`/portal/investor/deals/${dealId}`);
+
+  // Only deals the visibility engine already shows this investor are actionable.
+  const { deals } = await loadInvestorPortalData(prisma, investorId);
+  if (!deals.find((d) => d.id === dealId)) notFound();
+
+  const engagement = await prisma.engagement.findUnique({
+    where: { transactionId_investorId: { transactionId: dealId, investorId } },
+    select: { id: true },
+  });
+  if (!engagement) redirect(`/portal/investor/deals/${dealId}`);
+
+  await postInvestorMessage({ engagementId: engagement.id, personId: member.personId, body: message });
+
+  revalidatePath(`/portal/investor/deals/${dealId}`);
+  redirect(`/portal/investor/deals/${dealId}?message=sent`);
 }

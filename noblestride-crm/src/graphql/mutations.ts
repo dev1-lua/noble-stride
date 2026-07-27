@@ -1,7 +1,8 @@
 // GraphQL mutations for the Noblestride Capital CRM.
 // Thin resolvers — each is a one-line call to the matching service.
 
-import { builder, MandateStageEnum, TransactionStageEnum, AdvisoryStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum, MilestoneKeyEnum, DDTrackEnum } from "./builder";
+import { builder, MandateStageEnum, TransactionStageEnum, AdvisoryStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum, ConversationStatusEnum, MilestoneKeyEnum, DDTrackEnum } from "./builder";
+import { postStaffReply, setConversationStatus } from "@/server/services/conversations";
 import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
 import { logEngagement, logActivity } from "@/server/services/engagements";
@@ -125,6 +126,42 @@ builder.mutationFields((t) => ({
     resolve: async (_query, _root, args, ctx) => {
       assertCan(ctx.actor, "Engagements", "U");
       return logActivity(args.input as never, ctx.actor);
+    },
+  }),
+
+  // ── Conversation threads (action points 2026-07 item 1) ──
+  // replyToConversation posts a staff reply into the engagement's two-way
+  // portal thread (creating it when staff start proactively) and notifies the
+  // investor's portal bell. setConversationStatus moves the triage queue.
+  replyToConversation: t.prismaField({
+    type: "Conversation",
+    nullable: false,
+    args: {
+      engagementId: t.arg.id({ required: true }),
+      body: t.arg.string({ required: true }),
+    },
+    resolve: async (query, _root, args, ctx) => {
+      assertCan(ctx.actor, "Engagements", "U");
+      if (!ctx.actor.userId) throw new CrudError("A signed-in staff user is required to reply");
+      const thread = await postStaffReply({
+        engagementId: String(args.engagementId),
+        userId: ctx.actor.userId,
+        body: args.body,
+      });
+      return prisma.conversation.findUniqueOrThrow({ ...query, where: { id: thread.id } });
+    },
+  }),
+  setConversationStatus: t.prismaField({
+    type: "Conversation",
+    nullable: false,
+    args: {
+      id: t.arg.id({ required: true }),
+      status: t.arg({ type: ConversationStatusEnum, required: true }),
+    },
+    resolve: async (query, _root, args, ctx) => {
+      assertCan(ctx.actor, "Engagements", "U");
+      const thread = await setConversationStatus(String(args.id), args.status);
+      return prisma.conversation.findUniqueOrThrow({ ...query, where: { id: thread.id } });
     },
   }),
 

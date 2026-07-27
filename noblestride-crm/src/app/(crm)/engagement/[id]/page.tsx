@@ -16,6 +16,8 @@ import { SendEsignButton } from "@/components/crm/send-esign-button";
 import { ScheduleTeamsButton } from "@/components/crm/schedule-teams-button";
 import { isConfigured } from "@/server/integrations/config";
 import { EngagementFormDrawer } from "@/components/crm/engagement-form-drawer";
+import { ConversationPanel } from "@/components/crm/conversation-panel";
+import type { ConversationMessageItem } from "@/components/crm/conversation-panel";
 import { MilestoneChecklist } from "@/components/crm/milestone-checklist";
 import type { MilestoneItemDTO } from "@/components/crm/milestone-checklist";
 import { MILESTONE_ORDER, MILESTONE_LABELS, effectiveMilestones } from "@/lib/milestones";
@@ -66,6 +68,18 @@ export default async function EngagementDetailPage({ params }: PageProps) {
     occurredAt: a.occurredAt,
     links: { transactionId: engagement.transactionId, investorId: engagement.investorId },
     tasks: (a.tasks ?? []).map((t) => ({ id: t.id, title: t.title, status: t.status })),
+  }));
+
+  // Two-way portal thread (action points 2026-07): serialize for the client panel.
+  const conversationMessages: ConversationMessageItem[] = (engagement.conversation?.messages ?? []).map((m) => ({
+    id: m.id,
+    senderKind: m.senderKind,
+    senderName:
+      m.senderKind === "STAFF"
+        ? (m.senderUser?.name ?? "Noblestride team")
+        : ([m.senderPerson?.firstName, m.senderPerson?.lastName].filter(Boolean).join(" ") || engagement.investor.name),
+    body: m.body,
+    createdAt: m.createdAt.toISOString(),
   }));
 
   const stageHistoryItems: StageHistoryItem[] = engagement.stageChanges.map((s) => ({
@@ -220,6 +234,15 @@ export default async function EngagementDetailPage({ params }: PageProps) {
           </dl>
         </CardBody>
       </Card>
+
+      {/* Two-way conversation thread (action points 2026-07 item 1) */}
+      <ConversationPanel
+        engagementId={engagement.id}
+        conversationId={engagement.conversation?.id ?? null}
+        status={engagement.conversation?.status ?? null}
+        messages={conversationMessages}
+        investorName={engagement.investor.name}
+      />
 
       {/* NDA */}
       <Card>
