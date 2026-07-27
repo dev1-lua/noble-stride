@@ -112,7 +112,9 @@ export async function runStaffAlerts(now = new Date()): Promise<StaffAlertsResul
 
   const fresh = dedupeAlerts(candidates, recent, now);
   for (const alert of fresh) {
-    await notify(alert.recipientIds, { kind: alert.kind, title: alert.title, body: alert.body, href: alert.href });
+    // email: true — proactive alerts also go out by email (action points
+    // 2026-07 item 2); delivery is best-effort inside notify().
+    await notify(alert.recipientIds, { kind: alert.kind, title: alert.title, body: alert.body, href: alert.href, email: true });
   }
 
   return { candidates: candidates.length, deduped: candidates.length - fresh.length, notified: fresh.length };

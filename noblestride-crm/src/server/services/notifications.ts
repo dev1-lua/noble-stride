@@ -11,6 +11,7 @@
 
 import { prisma } from "@/lib/db";
 import type { Notification } from "@prisma/client";
+import { sendMail } from "@/server/auth/mailer";
 
 export type NotificationKind =
   | "stage_change"
@@ -32,13 +33,40 @@ export type NotificationKind =
   // Investor-portal notifications (Notification.investorId recipients)
   | "deal_shared"
   | "document_shared"
-  | "milestone_update";
+  | "milestone_update"
+  // Two-way conversation threads (action points 2026-07)
+  | "investor_message"
+  | "message_reply";
 
 export interface NotifyInput {
   kind: NotificationKind;
   title: string;
   body?: string;
   href?: string;
+  /**
+   * Also deliver by email (action points 2026-07 item 2). Reserved for cron
+   * alerts + investor portal messages/requests — routine internal bells
+   * (assignments, stage changes) stay in-app only. Best-effort like the rest
+   * of notify(): a mail failure never surfaces to the caller.
+   */
+  email?: boolean;
+}
+
+/** Absolute link base for email bodies (Vercel sets APP_BASE_URL; dev falls back). */
+function appBaseUrl(): string {
+  return process.env.APP_BASE_URL ?? "http://localhost:3000";
+}
+
+/** Email each active recipient via the mail abstraction (Resend or ConsoleMailer). */
+async function emailStaff(recipientIds: string[], n: NotifyInput): Promise<void> {
+  const users = await prisma.user.findMany({
+    where: { id: { in: recipientIds }, isActive: true },
+    select: { email: true },
+  });
+  const text = [n.body ?? n.title, n.href ? `Open in the NobleStride CRM: ${appBaseUrl()}${n.href}` : null]
+    .filter(Boolean)
+    .join("\n\n");
+  await Promise.allSettled(users.map((u) => sendMail({ to: u.email, subject: n.title, text })));
 }
 
 /**
@@ -65,6 +93,15 @@ export async function notify(userIds: (string | null | undefined)[], n: NotifyIn
     // Best-effort: a notification failure must never fail the caller's
     // (already-committed) business mutation.
     console.error("notify: failed to create notification(s)", err);
+  }
+
+  if (n.email) {
+    try {
+      await emailStaff(recipients, n);
+    } catch (err) {
+      // Same contract: email delivery is best-effort on top of the bell row.
+      console.error("notify: failed to email notification(s)", err);
+    }
   }
 }
 
