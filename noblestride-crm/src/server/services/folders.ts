@@ -7,7 +7,11 @@
 import { prisma } from "@/lib/db";
 import type { Folder } from "@prisma/client";
 import { CrudError } from "./crud";
-import { DEAL_FOLDER_TEMPLATE } from "@/server/domain/folder-templates";
+import {
+  DEAL_FOLDER_TEMPLATE,
+  POTENTIAL_INVESTORS_FOLDER,
+  INVESTOR_TERM_SHEETS_FOLDER,
+} from "@/server/domain/folder-templates";
 
 /** One deal/client/investor anchor for a root folder. */
 export interface FolderEntityRef {
@@ -157,4 +161,62 @@ export async function ensureDefaultFolders(ref: FolderEntityRef & { rootName: st
     data: DEAL_FOLDER_TEMPLATE.map((name) => ({ name, parentId: root.id, createdById })),
   });
   return root;
+}
+
+/**
+ * Best-effort variant of ensureDefaultFolders for write paths where a folder
+ * failure must never fail the parent mutation (deal create, doc upload).
+ */
+export async function ensureDefaultFoldersSafe(
+  ref: FolderEntityRef & { rootName: string },
+  createdById?: string,
+): Promise<Folder | null> {
+  try {
+    return await ensureDefaultFolders(ref, createdById);
+  } catch (err) {
+    console.error("ensureDefaultFoldersSafe: folder scaffolding failed", err);
+    return null;
+  }
+}
+
+/**
+ * Transcript grouping (action points 2026-07 item 5): deal root →
+ * "07 Potential Investors" → "{Investor}" → "Term Sheets". Idempotent at
+ * every level and BEST-EFFORT — called from engagement-creating writes, a
+ * folder failure must never fail the engagement.
+ */
+export async function ensureInvestorDealFolder(
+  transactionId: string,
+  investorName: string,
+  createdById?: string,
+): Promise<Folder | null> {
+  try {
+    const txn = await prisma.transaction.findUnique({
+      where: { id: transactionId },
+      select: { name: true },
+    });
+    if (!txn) return null;
+    const root = await ensureDefaultFolders({ transactionId, rootName: txn.name }, createdById);
+
+    // The template guarantees this child for NEW roots; older roots predate it.
+    let parent = await prisma.folder.findFirst({
+      where: { parentId: root.id, name: POTENTIAL_INVESTORS_FOLDER },
+    });
+    parent ??= await prisma.folder.create({
+      data: { name: POTENTIAL_INVESTORS_FOLDER, parentId: root.id, createdById },
+    });
+
+    const name = investorName.trim() || "Investor";
+    let investorFolder = await prisma.folder.findFirst({ where: { parentId: parent.id, name } });
+    if (!investorFolder) {
+      investorFolder = await prisma.folder.create({ data: { name, parentId: parent.id, createdById } });
+      await prisma.folder.create({
+        data: { name: INVESTOR_TERM_SHEETS_FOLDER, parentId: investorFolder.id, createdById },
+      });
+    }
+    return investorFolder;
+  } catch (err) {
+    console.error("ensureInvestorDealFolder: folder scaffolding failed", err);
+    return null;
+  }
 }

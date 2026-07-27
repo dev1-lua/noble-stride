@@ -15,6 +15,7 @@ import { recordStageChange } from "./stage-history";
 import type { Actor } from "@/graphql/context";
 import { assertAgentFeeAllowed, feeChangeMarksOwed, isAgentActor } from "@/server/domain/agent-write-guards";
 import { notify, notifyAssignment } from "./notifications";
+import { ensureDefaultFoldersSafe } from "./folders";
 
 // Fields the fee guard needs from the deal's referring partner.
 const FEE_PARTNER_SELECT = { name: true, feeSharingAgreement: true, partnerAgreementStatus: true } as const;
@@ -196,7 +197,7 @@ export async function createTransaction(input: TransactionCreateInput, actor: Ac
   const now = new Date();
   // Deal country defaults from the client's HQ country when not provided.
   const country = data.country ?? (await prisma.client.findUnique({ where: { id: data.clientId }, select: { hqCountry: true } }))?.hqCountry ?? undefined;
-  return prisma.transaction.create({
+  const created = await prisma.transaction.create({
     data: {
       ...data,
       country,
@@ -206,6 +207,11 @@ export async function createTransaction(input: TransactionCreateInput, actor: Ac
       ...(assistIds ? { assists: { connect: assistIds.map((id) => ({ id })) } } : {}),
     },
   });
+  // Auto-scaffold the standard file-room template for every new deal (action
+  // points 2026-07 item 5). Post-commit and best-effort — a folder failure
+  // must never fail the deal create.
+  await ensureDefaultFoldersSafe({ transactionId: created.id, rootName: created.name });
+  return created;
 }
 
 export async function updateTransaction(id: string, input: TransactionUpdateInput, actor: Actor = { type: "HUMAN" }) {

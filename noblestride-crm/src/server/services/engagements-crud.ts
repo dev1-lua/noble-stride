@@ -8,6 +8,7 @@ import { engagementCreateSchema, engagementUpdateSchema } from "@/lib/schemas/en
 import { assertStageAllowed, stageRequiresNda } from "@/server/domain/nda-guard";
 import { assertAgentEngagementAllowed, assertAgentEngagementCreateAllowed, isAgentActor } from "@/server/domain/agent-write-guards";
 import { notify, notifyInvestors } from "./notifications";
+import { ensureInvestorDealFolder } from "./folders";
 
 function derived(input: { totalAmount?: number | null; amountDisbursed?: number | null; dateReceived?: Date | null }) {
   const pending = amountPending(input.totalAmount ?? null, input.amountDisbursed ?? null);
@@ -38,8 +39,12 @@ export async function createEngagement(raw: unknown, actor: Actor) {
   }
   const created = await prisma.engagement.create({
     data: { ...input, name: input.name ?? "Engagement", ...derived(input), createdSource: actorSource(actor) } as never,
-    include: { transaction: { select: { name: true } } },
+    include: { transaction: { select: { name: true } }, investor: { select: { name: true } } },
   });
+  // File-room grouping (action points 2026-07 item 5): attaching an investor
+  // to a deal scaffolds deal → "07 Potential Investors" → {investor} → "Term
+  // Sheets". Post-commit and best-effort (never throws).
+  await ensureInvestorDealFolder(created.transactionId, created.investor.name);
   // Portal feed (client feedback 2026-07): an engagement is what shares a
   // deal with an investor — surface it in their portal. Post-commit and
   // best-effort (notifyInvestors never throws). The portal deal page itself
