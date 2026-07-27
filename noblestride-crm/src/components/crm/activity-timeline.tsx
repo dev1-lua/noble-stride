@@ -20,6 +20,8 @@ export interface ActivityTimelineItem {
   direction?: string | null; // CommDirection enum value (spec §3.10)
   /** Record links copied onto tasks created from this activity (spec §3.10). */
   links?: { clientId?: string | null; mandateId?: string | null; transactionId?: string | null; investorId?: string | null };
+  /** Backing engagement — portal-channel items link to its conversation thread. */
+  engagementId?: string | null;
   /** Tasks already extracted from this activity. */
   tasks?: { id: string; title: string; status: string }[];
   /** ActorSource of the backing record (e.g. "AGENT") — shows a provenance pill. */
@@ -90,7 +92,20 @@ export function ActivityTimeline({
                       {a.body}
                     </p>
                   )}
-                  <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{daysAgoLabel(a.occurredAt)}</p>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                    {daysAgoLabel(a.occurredAt)}
+                    {a.engagementId && a.channel === "Portal" && (
+                      <>
+                        {" · "}
+                        <Link
+                          href={`/engagement/${a.engagementId}#conversation`}
+                          className="text-accent hover:underline"
+                        >
+                          Reply in conversation →
+                        </Link>
+                      </>
+                    )}
+                  </p>
                   {(a.tasks ?? []).length > 0 && (
                     <ul className="mt-1 space-y-0.5">
                       {a.tasks!.map((task) => (

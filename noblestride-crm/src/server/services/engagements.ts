@@ -11,6 +11,7 @@ import type { InteractionType, CommChannel, CommDirection } from "@prisma/client
 import type { Actor } from "@/graphql/context";
 import { actorSource, CrudError } from "./crud";
 import { logActivitySchema, type LogActivityInput } from "@/lib/schemas/activity";
+import { ensureInvestorDealFolder } from "./folders";
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -118,6 +119,19 @@ export async function getEngagement(id: string) {
       activities: { orderBy: { occurredAt: "desc" }, include: { tasks: { select: { id: true, title: true, status: true } } } },
       stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
       milestones: true,
+      // Two-way portal thread (action points 2026-07): the engagement page's
+      // Conversation card renders it and replies via GraphQL.
+      conversation: {
+        include: {
+          messages: {
+            orderBy: { createdAt: "asc" },
+            include: {
+              senderUser: { select: { name: true } },
+              senderPerson: { select: { firstName: true, lastName: true } },
+            },
+          },
+        },
+      },
     },
   });
 }
@@ -155,7 +169,8 @@ export interface LogEngagementInput {
 export async function logEngagement(input: LogEngagementInput, actor: Actor) {
   const { transactionId, investorId, type, subject, body, channel, direction } = input;
 
-  return prisma.$transaction(async (tx) => {
+  let createdInvestorName: string | null = null;
+  const result = await prisma.$transaction(async (tx) => {
     // 1. Look up existing engagement
     let engagement = await tx.engagement.findUnique({
       where: { transactionId_investorId: { transactionId, investorId } },
@@ -178,6 +193,7 @@ export async function logEngagement(input: LogEngagementInput, actor: Actor) {
           investorId,
         },
       });
+      createdInvestorName = investor.name;
     } else {
       // 3. Update — bump lastContact only
       engagement = await tx.engagement.update({
@@ -211,6 +227,14 @@ export async function logEngagement(input: LogEngagementInput, actor: Actor) {
     // 5. Return the created Activity
     return activity;
   });
+
+  // File-room grouping (action points 2026-07 item 5): a first-touch log that
+  // CREATED the engagement also scaffolds deal → "07 Potential Investors" →
+  // {investor} → "Term Sheets". Post-commit and best-effort (never throws).
+  if (createdInvestorName) {
+    await ensureInvestorDealFolder(transactionId, createdInvestorName);
+  }
+  return result;
 }
 
 // ─── logActivity — generalized communication logging (spec §3.10) ────────────

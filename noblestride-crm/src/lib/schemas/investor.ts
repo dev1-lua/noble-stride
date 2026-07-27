@@ -1,6 +1,20 @@
 import { z } from "zod";
 import { InvestorType, InvestorStatus, Sector, Geography, Instrument, InvestmentStage, InvestorEngagementClassification, InvestorNdaStatus, OnboardingStatus } from "@prisma/client";
 
+/** One ticket-size range; max null/omitted = open-ended upper bound. */
+export const ticketBandInputSchema = z
+  .object({
+    min: z.number().nonnegative("Minimum must be zero or more"),
+    max: z.number().nonnegative().nullable().optional(),
+    currency: z.string().trim().min(1).optional(),
+    note: z.string().trim().max(200).nullable().optional(),
+  })
+  .refine((b) => b.max == null || b.max >= b.min, {
+    message: "Maximum must be at least the minimum",
+    path: ["max"],
+  });
+export type TicketBandInputShape = z.infer<typeof ticketBandInputSchema>;
+
 export const investorCreateSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   investorType: z.nativeEnum(InvestorType),
@@ -49,6 +63,9 @@ export const investorCreateSchema = z.object({
   collaborationTerms: z.string().trim().optional(),
   impactMetrics: z.string().trim().optional(),
   reputationalRisks: z.string().trim().optional(),
+  // Multiple ticket-size bands (action points 2026-07 item 4). Band #0 is
+  // mirrored into ticketMin/ticketMax/currency by the investor service.
+  ticketBands: z.array(ticketBandInputSchema).optional(),
 });
 export const investorUpdateSchema = investorCreateSchema.partial();
 export type InvestorCreateInput = z.infer<typeof investorCreateSchema>;

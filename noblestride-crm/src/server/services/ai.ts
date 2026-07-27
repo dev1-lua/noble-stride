@@ -44,6 +44,7 @@ export async function aiMatchInvestors(transactionId: string): Promise<InvestorM
         geographicFocus: true,
         ticketMin: true,
         ticketMax: true,
+        ticketBands: { orderBy: { sortOrder: "asc" as const }, select: { min: true, max: true, currency: true } },
         status: true,
         instruments: true,
         minRevenue: true,
@@ -62,6 +63,7 @@ export async function aiMatchInvestors(transactionId: string): Promise<InvestorM
   const matchTxn: MatchTxn = {
     sector: txn.sector,
     targetRaise: Number(txn.targetRaise ?? 0),
+    currency: txn.currency,
     geography: txn.client?.countries ?? [],
     instrument: txn.instrument,
     clientFinancials: {
@@ -78,6 +80,11 @@ export async function aiMatchInvestors(transactionId: string): Promise<InvestorM
     geographicFocus: inv.geographicFocus as string[],
     ticketMin: inv.ticketMin != null ? Number(inv.ticketMin) : null,
     ticketMax: inv.ticketMax != null ? Number(inv.ticketMax) : null,
+    ticketBands: inv.ticketBands.map((b) => ({
+      min: Number(b.min),
+      max: b.max == null ? null : Number(b.max),
+      currency: b.currency,
+    })),
     status: inv.status,
     instruments: inv.instruments as string[],
     minRevenue: num(inv.minRevenue),

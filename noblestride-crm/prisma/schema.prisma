@@ -478,6 +478,30 @@ enum CommChannel {
   WebChat
   Call
   Meeting
+  Portal
+}
+
+// Two-way portal conversation queue (action points 2026-07: "queue for
+// managing an investor"). Lifecycle is per-conversation and deliberately
+// DISTINCT from the deal-interest EngagementStatus.
+enum ConversationStatus {
+  Pending
+  Open
+  InProgress
+  Closed
+}
+
+enum MessageSenderKind {
+  INVESTOR
+  STAFF
+}
+
+// Investor-portal seat role (action points 2026-07): Viewers are read-only;
+// Editors can act. Thread participation for Viewers is a per-member opt-in
+// (Person.canPostInThreads).
+enum PortalMemberRole {
+  Editor
+  Viewer
 }
 
 enum CommDirection {
@@ -539,6 +563,7 @@ model User {
   reviewedOutreachDrafts  OutreachDraft[]           @relation("OutreachDraftReviewer")
   reviewedProposedChanges InvestorProposedChange[]  @relation("ProposedChangeReviewer")
   reviewedPartnerProposedChanges PartnerProposedChange[] @relation("PartnerProposedChangeReviewer")
+  conversationMessages    ConversationMessage[]     @relation("MessageSenderUser")
 }
 
 model Person {
@@ -554,6 +579,11 @@ model Person {
 
   isPrimaryContact Boolean   @default(false)
   isSSAContact     Boolean   @default(false)
+  // Portal seat role (action points 2026-07). Default Editor keeps existing
+  // members' behavior; new invites choose explicitly. canPostInThreads is only
+  // consulted for Viewers — Editors always may post.
+  portalRole       PortalMemberRole @default(Editor)
+  canPostInThreads Boolean          @default(false)
 
   investorId String?
   investor   Investor? @relation(fields: [investorId], references: [id], onDelete: SetNull)
@@ -567,6 +597,7 @@ model Person {
   clientOtpChallenges ClientOtpChallenge[]
   outreachDrafts  OutreachDraft[]
   proposedChanges InvestorProposedChange[]
+  conversationMessages ConversationMessage[] @relation("MessageSenderPerson")
 
   @@index([investorId])
   @@index([clientId])
@@ -648,6 +679,7 @@ model Investor {
   proposedChanges InvestorProposedChange[]
   folders         Folder[]
   notifications   Notification[]
+  ticketBands     InvestorTicketBand[]
 
   @@index([investorType])
   @@index([status])
@@ -965,6 +997,7 @@ model Engagement {
   eSignEnvelopes ESignEnvelope[]
   meetings       Meeting[]
   emailMessages  EmailMessage[]
+  conversation   Conversation?
 
   @@unique([transactionId, investorId])
   @@index([status])
@@ -1366,6 +1399,66 @@ model Notification {
 
   @@index([userId, readAt])
   @@index([investorId, readAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Conversation — the two-way investor↔staff thread per engagement (action
+// points 2026-07). Exactly ONE thread per engagement (investor × deal); its
+// status is the staff triage queue (Pending/Open/InProgress/Closed) and is
+// deliberately distinct from the deal-interest EngagementStatus.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Conversation {
+  id            String             @id @default(cuid())
+  engagementId  String             @unique
+  engagement    Engagement         @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  status        ConversationStatus @default(Pending)
+  lastMessageAt DateTime           @default(now())
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  messages ConversationMessage[]
+
+  @@index([status])
+}
+
+model ConversationMessage {
+  id             String            @id @default(cuid())
+  conversationId String
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderKind     MessageSenderKind
+  // Exactly one of these matches senderKind: STAFF → senderUserId,
+  // INVESTOR → senderPersonId. Enforced in the conversations service.
+  senderUserId   String?
+  senderUser     User?             @relation("MessageSenderUser", fields: [senderUserId], references: [id], onDelete: SetNull)
+  senderPersonId String?
+  senderPerson   Person?           @relation("MessageSenderPerson", fields: [senderPersonId], references: [id], onDelete: SetNull)
+  body           String
+  createdAt      DateTime          @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// InvestorTicketBand — multiple ticket-size ranges per investor profile
+// (action points 2026-07). Band #0 (lowest sortOrder) is mirrored into the
+// legacy Investor.ticketMin/ticketMax/currency so matching and older surfaces
+// keep working unchanged.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model InvestorTicketBand {
+  id         String   @id @default(cuid())
+  investorId String
+  investor   Investor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  min        Decimal  @db.Decimal(20, 2)
+  /// null = open-ended upper bound
+  max        Decimal? @db.Decimal(20, 2)
+  currency   String   @default("USD")
+  note       String?
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([investorId])
 }
 
 // Real authentication (design spec 2026-07-08): credentials + DB sessions.

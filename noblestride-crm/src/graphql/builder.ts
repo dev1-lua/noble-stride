@@ -9,6 +9,7 @@ import {
   ClientStatus,
   CommChannel,
   CommDirection,
+  ConversationStatus,
   DealFinancingType,
   DealMilestone,
   DealStatus,
@@ -35,6 +36,7 @@ import {
   InvestorType,
   MandateStage,
   MaxSellingStake,
+  MessageSenderKind,
   MilestoneKey,
   NdaType,
   OnboardingStatus,
@@ -119,6 +121,8 @@ export const MaxSellingStakeEnum = builder.enumType(MaxSellingStake, { name: "Ma
 export const TaskSourceEnum = builder.enumType(TaskSource, { name: "TaskSource" });
 export const CommChannelEnum = builder.enumType(CommChannel, { name: "CommChannel" });
 export const CommDirectionEnum = builder.enumType(CommDirection, { name: "CommDirection" });
+export const ConversationStatusEnum = builder.enumType(ConversationStatus, { name: "ConversationStatus" });
+export const MessageSenderKindEnum = builder.enumType(MessageSenderKind, { name: "MessageSenderKind" });
 export const ClientStatusEnum = builder.enumType(ClientStatus, { name: "ClientStatus" });
 export const ImpactFlagEnum = builder.enumType(ImpactFlag, { name: "ImpactFlag" });
 export const ProfitabilityEnum = builder.enumType(Profitability, { name: "Profitability" });

@@ -11,7 +11,10 @@ import { MILESTONE_ORDER, MILESTONE_LABELS } from "@/lib/milestones";
 import { nextStepLabel } from "@/lib/next-step";
 import { TierBadge } from "@/components/portal/tier-badge";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
-import { expressInterest, requestNextStep, declineDeal } from "./actions";
+import { getThreadForEngagement } from "@/server/services/conversations";
+import { getPortalMembership, capabilitiesOf } from "@/server/auth/portal-authz";
+import { CONVERSATION_STATUS_LABELS, CONVERSATION_STATUS_CLASSES } from "@/lib/conversation-status";
+import { expressInterest, requestNextStep, declineDeal, postThreadMessage } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +22,13 @@ const DATE_FMT = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
   month: "short",
   year: "numeric",
+});
+
+const MSG_DATE_FMT = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
 });
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
@@ -59,19 +69,33 @@ export default async function InvestorDealPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ interest?: string; request?: string }>;
+  searchParams: Promise<{ interest?: string; request?: string; message?: string; denied?: string }>;
 }) {
   const vp = await getViewpoint();
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
   const { id } = await params;
-  const { interest, request } = await searchParams;
+  const { interest, request, message: messageSent, denied } = await searchParams;
   const { deals } = await loadInvestorPortalData(prisma, vp.recordId);
   const deal = deals.find((d) => d.id === id);
   if (!deal) notFound();
 
   const journey = await loadOwnEngagementForDeal(prisma, vp.recordId, id);
+
+  // Seat capabilities (item 3): Viewers see everything but act on nothing;
+  // thread posting needs the per-member opt-in. Server actions re-check.
+  const membership = await getPortalMembership();
+  const caps = membership ? capabilitiesOf(membership) : { canEdit: false, canPostInThreads: false };
+
+  // The two-way conversation thread for this engagement (item 1).
+  const engagement = journey
+    ? await prisma.engagement.findUnique({
+        where: { transactionId_investorId: { transactionId: id, investorId: vp.recordId } },
+        select: { id: true },
+      })
+    : null;
+  const thread = engagement ? await getThreadForEngagement(engagement.id) : null;
 
   const fin = deal.financialsSummary;
 
@@ -261,7 +285,7 @@ export default async function InvestorDealPage({
                       Request sent — the deal team will follow up.
                     </p>
                   )}
-                  {step && (
+                  {step && caps.canEdit && (
                     <form action={requestNextStep}>
                       <input type="hidden" name="dealId" value={deal.id} />
                       <button
@@ -272,7 +296,7 @@ export default async function InvestorDealPage({
                       </button>
                     </form>
                   )}
-                  {journey.own.stage !== "Declined" && journey.own.stage !== "Invested" && (
+                  {journey.own.stage !== "Declined" && journey.own.stage !== "Invested" && caps.canEdit && (
                     <form action={declineDeal}>
                       <input type="hidden" name="dealId" value={deal.id} />
                       <button
@@ -283,6 +307,11 @@ export default async function InvestorDealPage({
                       </button>
                     </form>
                   )}
+                  {!caps.canEdit && (
+                    <p className="text-xs text-[var(--text-tertiary)]">
+                      Your access is view-only — ask a team member with edit access to take deal actions.
+                    </p>
+                  )}
                 </div>
               );
             })()}
@@ -290,40 +319,137 @@ export default async function InvestorDealPage({
         </Card>
       ) : null}
 
-      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--t-tag-text-emerald)]">
-          {journey ? "Request More Information" : "Express Interest"}
-        </h2>
-        {interest && (
-          <p className="mt-2 rounded-md bg-[var(--bg-primary)] px-3 py-2 text-sm font-medium text-[var(--t-tag-text-emerald)]">
-            Thank you — your request has been sent to the Noblestride team. They will follow up
-            shortly.
-          </p>
-        )}
-        <p className="mt-2 text-sm text-[var(--t-tag-text-emerald)]">
-          {journey
-            ? "Need something specific — data room access, a management call, updated financials? Let the deal team know."
-            : "Interested in this opportunity? Register your interest and the Noblestride team will start your process."}
+      {denied && (
+        <p className="rounded-md bg-[var(--t-tag-bg-amber)] px-3 py-2 text-sm font-medium text-[var(--t-tag-text-amber)]">
+          {denied === "thread"
+            ? "Your access is view-only — posting in this conversation needs the team's permission."
+            : "Your access is view-only — this action needs edit access."}
         </p>
-        <form action={expressInterest} className="mt-3 space-y-3">
-          <input type="hidden" name="dealId" value={deal.id} />
-          <textarea
-            name="message"
-            rows={3}
-            placeholder="Optional message for the deal team…"
-            className="w-full rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-          />
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="text-xs text-[var(--t-tag-text-emerald)]">{deal.contact}</span>
-            <button
-              type="submit"
-              className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
-            >
-              {journey ? "Send request" : "Express interest"}
-            </button>
+      )}
+
+      {journey ? (
+        // Two-way conversation thread with the deal team (action points 2026-07 item 1).
+        <section
+          id="conversation"
+          className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+              Conversation with the Deal Team
+            </h2>
+            {thread && (
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${CONVERSATION_STATUS_CLASSES[thread.status]}`}
+              >
+                {CONVERSATION_STATUS_LABELS[thread.status]}
+              </span>
+            )}
           </div>
-        </form>
-      </section>
+          {(messageSent || interest || request) && (
+            <p className="mt-3 rounded-md bg-[var(--t-tag-bg-emerald)] px-3 py-2 text-sm font-medium text-[var(--t-tag-text-emerald)]">
+              {messageSent
+                ? "Message sent — the deal team will reply here."
+                : "Thank you — your request has been sent to the Noblestride team. They will follow up here."}
+            </p>
+          )}
+
+          {thread && thread.messages.length > 0 ? (
+            <ol className="mt-4 space-y-3">
+              {thread.messages.map((m) => (
+                <li
+                  key={m.id}
+                  className={`max-w-[85%] rounded-lg border px-3 py-2 ${
+                    m.senderKind === "STAFF"
+                      ? "ml-auto border-[var(--accent)]/30 bg-[var(--bg-secondary)]"
+                      : "border-[var(--border-subtle)] bg-[var(--bg-primary)]"
+                  }`}
+                >
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                      {m.senderKind === "STAFF" ? `${m.senderName} · Noblestride` : m.senderName}
+                    </span>
+                    <span className="text-[11px] text-[var(--text-tertiary)]">{MSG_DATE_FMT.format(m.createdAt)}</span>
+                  </div>
+                  <p className="mt-1 whitespace-pre-line text-sm text-[var(--text-primary)]">{m.body}</p>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="mt-4 text-sm text-[var(--text-tertiary)]">
+              No messages yet. Need something specific — data room access, a management call, updated
+              financials? Start the conversation below.
+            </p>
+          )}
+
+          {caps.canPostInThreads ? (
+            <form action={postThreadMessage} className="mt-4 space-y-3 border-t border-[var(--border-subtle)] pt-4">
+              <input type="hidden" name="dealId" value={deal.id} />
+              <textarea
+                name="message"
+                rows={3}
+                required
+                placeholder="Write a message to the deal team…"
+                className="w-full rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="text-xs text-[var(--text-tertiary)]">{deal.contact}</span>
+                <button
+                  type="submit"
+                  className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+                >
+                  Send message
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p className="mt-4 border-t border-[var(--border-subtle)] pt-4 text-xs text-[var(--text-tertiary)]">
+              Your access is view-only. Ask your team to enable conversation access if you need to
+              message the deal team directly.
+            </p>
+          )}
+        </section>
+      ) : (
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--t-tag-text-emerald)]">
+            Express Interest
+          </h2>
+          {interest && (
+            <p className="mt-2 rounded-md bg-[var(--bg-primary)] px-3 py-2 text-sm font-medium text-[var(--t-tag-text-emerald)]">
+              Thank you — your request has been sent to the Noblestride team. They will follow up
+              shortly.
+            </p>
+          )}
+          <p className="mt-2 text-sm text-[var(--t-tag-text-emerald)]">
+            Interested in this opportunity? Register your interest and the Noblestride team will start
+            your process.
+          </p>
+          {caps.canEdit ? (
+            <form action={expressInterest} className="mt-3 space-y-3">
+              <input type="hidden" name="dealId" value={deal.id} />
+              <textarea
+                name="message"
+                rows={3}
+                placeholder="Optional message for the deal team…"
+                className="w-full rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="text-xs text-[var(--t-tag-text-emerald)]">{deal.contact}</span>
+                <button
+                  type="submit"
+                  className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+                >
+                  Express interest
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p className="mt-3 text-xs text-[var(--t-tag-text-emerald)]">
+              Your access is view-only — a team member with edit access can express interest for your
+              organization.
+            </p>
+          )}
+        </section>
+      )}
     </div>
   );
 }

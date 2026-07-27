@@ -10,6 +10,8 @@ import {
   memberLinkAction,
   removeMemberAction,
   revokeInviteAction,
+  setMemberRoleAction,
+  setThreadAccessAction,
   type TeamActionState,
 } from "./actions";
 import type { MemberBadge } from "@/lib/team-status";
@@ -23,6 +25,8 @@ export interface TeamRow {
   isPrimaryContact: boolean;
   isSelf: boolean;
   badge: MemberBadge;
+  portalRole: "Editor" | "Viewer";
+  canPostInThreads: boolean;
 }
 
 const inputClass =
@@ -63,7 +67,7 @@ function ShareLinkPanel({ url, email }: { url: string; email?: string }) {
   );
 }
 
-export default function TeamManager({ rows }: { rows: TeamRow[] }) {
+export default function TeamManager({ rows, canManage }: { rows: TeamRow[]; canManage: boolean }) {
   const [inviteState, inviteAction, invitePending] = useActionState<TeamActionState, FormData>(
     inviteTeamMemberAction,
     {},
@@ -78,11 +82,13 @@ export default function TeamManager({ rows }: { rows: TeamRow[] }) {
       <div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">Team</h1>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-          Give colleagues their own sign-in. They&apos;ll see exactly what you see — deals, teasers,
-          documents, and engagement progress.
+          Give colleagues their own sign-in. Choose per member whether they can act for your
+          organization (edit access) or view only — deals, teasers, documents, and engagement
+          progress are visible either way.
         </p>
       </div>
 
+      {canManage && (
       <Card>
         <CardHeader>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
@@ -117,6 +123,21 @@ export default function TeamManager({ rows }: { rows: TeamRow[] }) {
               <label htmlFor="tm-title" className={labelClass}>Job title</label>
               <input id="tm-title" name="jobTitle" className={`${inputClass} mt-1`} placeholder="e.g. Investment Analyst" />
             </div>
+            <fieldset className="sm:col-span-2">
+              <legend className={labelClass}>Access level *</legend>
+              <div className="mt-1 flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
+                  <input type="radio" name="portalRole" value="Viewer" defaultChecked className="accent-[var(--accent)]" />
+                  View only
+                  <span className="text-xs text-[var(--text-tertiary)]">— can browse everything, can&apos;t act</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
+                  <input type="radio" name="portalRole" value="Editor" className="accent-[var(--accent)]" />
+                  Can edit
+                  <span className="text-xs text-[var(--text-tertiary)]">— can message, express interest, edit the profile, manage the team</span>
+                </label>
+              </div>
+            </fieldset>
             <div className="sm:col-span-2 flex justify-end border-t border-[var(--border-subtle)] pt-4">
               <button
                 type="submit"
@@ -129,6 +150,7 @@ export default function TeamManager({ rows }: { rows: TeamRow[] }) {
           </form>
         </CardBody>
       </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -164,11 +186,49 @@ export default function TeamManager({ rows }: { rows: TeamRow[] }) {
                     {[r.jobTitle, r.email, r.phone].filter(Boolean).join(" · ") || "—"}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      r.portalRole === "Editor"
+                        ? "bg-[var(--t-tag-bg-violet)] text-[var(--t-tag-text-violet)]"
+                        : "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]"
+                    }`}
+                  >
+                    {r.portalRole === "Editor" ? "Can edit" : "View only"}
+                  </span>
+                  {r.portalRole === "Viewer" && r.canPostInThreads && (
+                    <span className="rounded-full bg-[var(--t-tag-bg-sky)] px-2.5 py-0.5 text-xs font-medium text-[var(--t-tag-text-sky)]">
+                      Can message
+                    </span>
+                  )}
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${BADGE_STYLES[r.badge]}`}>
                     {r.badge}
                   </span>
-                  {(r.badge === "Invited" || r.badge === "No account") && r.email && (
+                  {canManage && !r.isSelf && !r.isPrimaryContact && (
+                    <form action={setMemberRoleAction}>
+                      <input type="hidden" name="personId" value={r.id} />
+                      <input type="hidden" name="portalRole" value={r.portalRole === "Editor" ? "Viewer" : "Editor"} />
+                      <button
+                        type="submit"
+                        className="rounded border border-[var(--border-subtle)] px-3 py-1 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                      >
+                        {r.portalRole === "Editor" ? "Make view-only" : "Give edit access"}
+                      </button>
+                    </form>
+                  )}
+                  {canManage && !r.isSelf && r.portalRole === "Viewer" && (
+                    <form action={setThreadAccessAction}>
+                      <input type="hidden" name="personId" value={r.id} />
+                      <input type="hidden" name="allowed" value={r.canPostInThreads ? "0" : "1"} />
+                      <button
+                        type="submit"
+                        className="rounded border border-[var(--border-subtle)] px-3 py-1 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                      >
+                        {r.canPostInThreads ? "Disable messaging" : "Allow messaging"}
+                      </button>
+                    </form>
+                  )}
+                  {canManage && (r.badge === "Invited" || r.badge === "No account") && r.email && (
                     <form action={linkAction}>
                       <input type="hidden" name="personId" value={r.id} />
                       <button
@@ -180,7 +240,7 @@ export default function TeamManager({ rows }: { rows: TeamRow[] }) {
                       </button>
                     </form>
                   )}
-                  {r.badge === "Invited" && (
+                  {canManage && r.badge === "Invited" && (
                     <form action={revokeInviteAction}>
                       <input type="hidden" name="personId" value={r.id} />
                       <button type="submit" className="rounded border border-[var(--border-subtle)] px-3 py-1 text-xs font-medium text-[var(--text-tertiary)] hover:bg-[var(--bg-secondary)]">
@@ -188,7 +248,7 @@ export default function TeamManager({ rows }: { rows: TeamRow[] }) {
                       </button>
                     </form>
                   )}
-                  {!r.isSelf && r.badge === "Active" && (
+                  {canManage && !r.isSelf && r.badge === "Active" && (
                     <form action={removeMemberAction}>
                       <input type="hidden" name="personId" value={r.id} />
                       <button type="submit" className="rounded border border-[var(--t-tag-bg-rose)] px-3 py-1 text-xs font-medium text-[var(--t-tag-text-rose)] hover:bg-[var(--t-tag-bg-rose)]">

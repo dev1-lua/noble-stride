@@ -9,6 +9,7 @@ import { useEntityForm } from "@/components/ui/use-entity-form";
 import { investorCreateSchema, investorUpdateSchema } from "@/lib/schemas/investor";
 import { options } from "@/lib/vocab";
 import { CURRENCY_OPTIONS } from "@/lib/currencies";
+import { TicketBandsField, type TicketBandValue } from "@/components/crm/ticket-bands-field";
 
 const CREATE = `mutation CreateInvestor($input: InvestorInput!) { createInvestor(input: $input) { id } }`;
 const UPDATE = `mutation UpdateInvestor($id: ID!, $input: InvestorInput!) { updateInvestor(id: $id, input: $input) { id } }`;
@@ -16,7 +17,10 @@ const UPDATE = `mutation UpdateInvestor($id: ID!, $input: InvestorInput!) { upda
 const EMPTY: Record<string, unknown> = {
   name: "", investorType: "", website: "", status: "",
   sectorFocus: [], geographicFocus: [], instruments: [], investmentStages: [],
-  aum: undefined, ticketMin: undefined, ticketMax: undefined, currency: "",
+  aum: undefined, currency: "",
+  // Multiple ticket bands (item 4). Band #0 mirrors into ticketMin/Max/currency
+  // server-side; undefined (never touched) leaves existing bands untouched.
+  ticketBands: undefined,
   targetIrr: undefined, countryRestrictions: "", esgFocus: "", decisionProcess: "", notes: "",
   engagementClassification: "", ndaStatus: "",
   shareholdingPreference: "", nextActionDate: "", feedback: "",
@@ -74,11 +78,16 @@ export function InvestorFormDrawer({ mode, initial, triggerLabel, contacts = [] 
           <div className="grid grid-cols-2 gap-3">
             <MoneyField label="AUM" value={v.aum as number} onChange={(x) => f.setValue("aum", x)} />
             <NumberField label="Target IRR (%)" value={v.targetIrr as number} onChange={(x) => f.setValue("targetIrr", x)} />
-            <MoneyField label="Ticket Min" value={v.ticketMin as number} onChange={(x) => f.setValue("ticketMin", x)} />
-            <MoneyField label="Ticket Max" value={v.ticketMax as number} onChange={(x) => f.setValue("ticketMax", x)} />
           </div>
+          {/* Multiple ticket bands (item 4) — replaces the single Ticket Min/Max;
+              band #0 mirrors into the legacy columns server-side. */}
+          <TicketBandsField
+            value={(v.ticketBands as TicketBandValue[] | undefined) ?? []}
+            onChange={(x) => f.setValue("ticketBands", x)}
+            error={f.errors.ticketBands}
+          />
           {/* Zod schema always accepted currency — this was the missing input (defaulted USD). */}
-          <SelectField label="Currency" value={v.currency as string} onChange={(x) => f.setValue("currency", x)} options={CURRENCY_OPTIONS} />
+          <SelectField label="AUM Currency" value={v.currency as string} onChange={(x) => f.setValue("currency", x)} options={CURRENCY_OPTIONS} />
           <TextField label="Website" value={v.website as string} onChange={(x) => f.setValue("website", x)} />
           <TextField label="Country Restrictions" value={v.countryRestrictions as string} onChange={(x) => f.setValue("countryRestrictions", x)} />
           <TextField label="ESG Focus" value={v.esgFocus as string} onChange={(x) => f.setValue("esgFocus", x)} />

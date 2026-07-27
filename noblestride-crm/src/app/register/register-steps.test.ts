@@ -13,6 +13,7 @@ const filled: WizardValues = {
   ticketMin: "500000",
   ticketMax: "5000000",
   currency: "USD",
+  extraBands: [],
   members: [],
 };
 

@@ -8,6 +8,16 @@ import { optionalPhoneWithDefault, requiredPhone } from "@/lib/schemas/phone";
 /** Cross-field rule shared by every variant: max ≥ min. */
 const ticketRange = { check: (d: { ticketMin: number; ticketMax: number }) => d.ticketMax >= d.ticketMin, opts: { message: "Maximum ticket must be at least the minimum", path: ["ticketMax"] as ["ticketMax"] } };
 
+/** One additional ticket range (item 4). Numbers arrive as strings from the wizard. */
+export const extraBandSchema = z
+  .object({
+    min: z.coerce.number({ message: "Enter the minimum for each range" }).positive("Range minimum must be greater than zero"),
+    max: z.coerce.number({ message: "Enter the maximum for each range" }).positive("Range maximum must be greater than zero"),
+    currency: z.enum(CURRENCY_CODES as [string, ...string[]], { message: "Select a currency for each range" }),
+  })
+  .refine((b) => b.max >= b.min, { message: "Each range's maximum must be at least its minimum", path: ["max"] });
+export type ExtraBandInput = z.infer<typeof extraBandSchema>;
+
 /** Step-1 registration fields — ALL mandatory (design spec §2).
  * 2026-07 client feedback: multi-select deal types + geography, manual ticket
  * range entry (replacing the fixed dealSizeBand dropdown), currency choice.
@@ -29,6 +39,9 @@ export const registrationFieldsSchema = z.object({
   ticketMin: z.coerce.number({ message: "Enter your minimum ticket size" }).positive("Minimum ticket must be greater than zero"),
   ticketMax: z.coerce.number({ message: "Enter your maximum ticket size" }).positive("Maximum ticket must be greater than zero"),
   currency: z.enum(CURRENCY_CODES as [string, ...string[]], { message: "Select a currency" }),
+  // Additional ticket ranges beyond the primary one (action points 2026-07
+  // item 4) — each with its own currency, e.g. a KES band alongside a USD one.
+  extraBands: z.array(extraBandSchema).max(4, "You can add up to 4 additional ranges").default([]),
 });
 
 export const registrationSchema = registrationFieldsSchema.refine(ticketRange.check, ticketRange.opts);

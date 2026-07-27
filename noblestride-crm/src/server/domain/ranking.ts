@@ -3,12 +3,15 @@
 
 import { formatMoney } from "@/lib/money";
 import { label } from "@/lib/vocab";
+import { toUsd, bandLabel, usdComparison } from "@/lib/fx";
 
 // ─── Domain types ─────────────────────────────────────────────────────────────
 
 export interface MatchTxn {
   sector: string[];
   targetRaise: number;
+  /** Deal currency (ISO 4217); assumed USD when omitted. */
+  currency?: string;
   geography: string[];
   instrument: string[];
   clientFinancials?: {
@@ -25,6 +28,9 @@ export interface MatchInvestor {
   geographicFocus: string[];
   ticketMin: number | null;
   ticketMax: number | null;
+  /** All ticket bands (item 4) — any band fitting the raise (indicative-USD
+   * comparison for cross-currency bands) earns the ticket-fit credit. */
+  ticketBands?: { min: number; max: number | null; currency: string }[];
   status: string | null;
   instruments: string[];
   minRevenue: number | null;
@@ -88,12 +94,34 @@ export function investorMatchScore(
     }
   }
 
-  // Ticket fit: txn.targetRaise within [ticketMin, ticketMax]
+  // Ticket fit: txn.targetRaise within [ticketMin, ticketMax] (legacy nominal
+  // check, kept for no-band investors)…
   const withinMin = inv.ticketMin == null || txn.targetRaise >= inv.ticketMin;
   const withinMax = inv.ticketMax == null || txn.targetRaise <= inv.ticketMax;
   if (withinMin && withinMax) {
     score += WEIGHT_TICKET;
     reasons.push(`Ticket fits (${formatMoney(txn.targetRaise)})`);
+  } else {
+    // …else ANY band fits (item 4): compare in indicative USD so a KES band
+    // can match a USD-denominated raise. The reason chip carries the band
+    // and its ≈USD comparison so the fit is auditable at a glance.
+    const targetUsd = toUsd(txn.targetRaise, txn.currency ?? "USD");
+    const fittingBand =
+      targetUsd == null
+        ? undefined
+        : (inv.ticketBands ?? []).find((b) => {
+            const minUsd = toUsd(b.min, b.currency);
+            if (minUsd == null || targetUsd < minUsd) return false;
+            const maxUsd = b.max == null ? null : toUsd(b.max, b.currency);
+            return maxUsd == null || targetUsd <= maxUsd;
+          });
+    if (fittingBand) {
+      score += WEIGHT_TICKET;
+      const usd = usdComparison(fittingBand.min, fittingBand.max, fittingBand.currency);
+      reasons.push(
+        `Ticket fits: ${bandLabel(fittingBand.min, fittingBand.max, fittingBand.currency)}${usd ? ` ${usd}` : ""}`,
+      );
+    }
   }
 
   // Instrument overlap: fraction of txn.instrument the investor covers.

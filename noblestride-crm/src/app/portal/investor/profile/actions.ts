@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
+import { requirePortalEditor } from "@/server/auth/portal-authz";
 import { updateInvestor } from "@/server/services/investors";
 import type { InvestorUpdateInput } from "@/lib/schemas/investor";
 import { optionalPhone } from "@/lib/schemas/phone";
@@ -26,11 +27,44 @@ function list(fd: FormData, key: string): string[] {
   return fd.getAll(key).filter((v): v is string => typeof v === "string");
 }
 
+/**
+ * Client-serialized ticket band rows (item 4). Blank rows are dropped;
+ * malformed JSON degrades to undefined (bands untouched). Numbers are
+ * validated properly by updateInvestor's Zod schema.
+ */
+function parseBands(
+  fd: FormData,
+): { min: number; max: number | null; currency: string }[] | undefined {
+  const raw = fd.get("ticketBandsJson");
+  if (typeof raw !== "string" || !raw) return undefined;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return undefined;
+    const bands: { min: number; max: number | null; currency: string }[] = [];
+    for (const row of parsed) {
+      const min = Number(row?.min);
+      const maxRaw = typeof row?.max === "string" ? row.max.trim() : row?.max;
+      if (row?.min === "" || !Number.isFinite(min)) continue; // blank/garbage row
+      const max = maxRaw === "" || maxRaw == null ? null : Number(maxRaw);
+      bands.push({
+        min,
+        max: max != null && Number.isFinite(max) ? max : null,
+        currency: typeof row?.currency === "string" && row.currency ? row.currency : "USD",
+      });
+    }
+    return bands;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function saveFundProfile(formData: FormData): Promise<void> {
   const vp = await getViewpoint();
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
   const investorId = vp.recordId as string;
+  // Seat gate (action points 2026-07 item 3): profile edits are Editors-only.
+  await requirePortalEditor("/portal/investor/profile");
 
   // Validate the contact phone BEFORE any write — a bad phone must not leave
   // the §1–§7 fields below partially saved while the error banner implies
@@ -48,8 +82,9 @@ export async function saveFundProfile(formData: FormData): Promise<void> {
     investmentMandate: str(formData, "investmentMandate"),
     sectorFocus: list(formData, "sectorFocus"),
     investmentStages: list(formData, "investmentStages"),
-    ticketMin: num(formData, "ticketMin"),
-    ticketMax: num(formData, "ticketMax"),
+    // Ticket bands (item 4) — replaces the old single ticketMin/ticketMax
+    // inputs; band #0 mirrors into the legacy columns inside updateInvestor.
+    ticketBands: parseBands(formData),
     instruments: list(formData, "instruments"),
     targetIrr: num(formData, "targetIrr"),
     // §2 Geographic Focus

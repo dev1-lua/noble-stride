@@ -22,6 +22,16 @@ import {
   MandateStageEnum, TransactionStageEnum, AdvisoryStageEnum,
 } from "./builder";
 
+// One ticket-size range (action points 2026-07 item 4); max omitted = open-ended.
+export const TicketBandInput = builder.inputType("TicketBandInput", {
+  fields: (t) => ({
+    min: t.float({ required: true }),
+    max: t.float({ required: false }),
+    currency: t.string({ required: false }),
+    note: t.string({ required: false }),
+  }),
+});
+
 export const InvestorInput = builder.inputType("InvestorInput", {
   fields: (t) => ({
     name: t.string({ required: true }),
@@ -65,6 +75,8 @@ export const InvestorInput = builder.inputType("InvestorInput", {
     nextActionDate: t.field({ type: "DateTime", required: false }),
     feedback: t.string({ required: false }),
     ssaRegionContactId: t.id({ required: false }),
+    // Multiple ticket bands (item 4) — band #0 mirrors into ticketMin/Max/currency.
+    ticketBands: t.field({ type: [TicketBandInput], required: false }),
   }),
 });
 

@@ -45,6 +45,8 @@ import {
   ProfitabilityEnum,
   CommChannelEnum,
   CommDirectionEnum,
+  ConversationStatusEnum,
+  MessageSenderKindEnum,
   TaskStatusEnum,
   TaskSourceEnum,
   RegulatoryStatusEnum,
@@ -170,8 +172,22 @@ export const InvestorRef = builder.prismaObject("Investor", {
     engagements: t.relation("engagements"),
     activities: t.relation("activities"),
     tasks: t.relation("tasks"),
+    ticketBands: t.relation("ticketBands", { query: { orderBy: { sortOrder: "asc" } } }),
     // Counts
     engagementCount: t.relationCount("engagements"),
+  }),
+});
+
+// ─── InvestorTicketBand (multiple ticket ranges, action points 2026-07) ──────
+
+export const InvestorTicketBandRef = builder.prismaObject("InvestorTicketBand", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    min: t.float({ resolve: (b) => Number(b.min) }),
+    max: t.float({ nullable: true, resolve: (b) => (b.max == null ? null : Number(b.max)) }),
+    currency: t.exposeString("currency"),
+    note: t.exposeString("note", { nullable: true }),
+    sortOrder: t.exposeInt("sortOrder"),
   }),
 });
 
@@ -450,6 +466,32 @@ export const EngagementRef = builder.prismaObject("Engagement", {
     activities: t.relation("activities"),
     milestones: t.relation("milestones"),
     stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
+    conversation: t.relation("conversation", { nullable: true }),
+  }),
+});
+
+// ─── Conversation (two-way portal thread, action points 2026-07) ─────────────
+
+export const ConversationRef = builder.prismaObject("Conversation", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    engagementId: t.exposeString("engagementId"),
+    status: t.field({ type: ConversationStatusEnum, resolve: (c) => c.status }),
+    lastMessageAt: t.field({ type: "DateTime", resolve: (c) => c.lastMessageAt }),
+    createdAt: t.field({ type: "DateTime", resolve: (c) => c.createdAt }),
+    engagement: t.relation("engagement"),
+    messages: t.relation("messages", { query: { orderBy: { createdAt: "asc" } } }),
+  }),
+});
+
+export const ConversationMessageRef = builder.prismaObject("ConversationMessage", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    senderKind: t.field({ type: MessageSenderKindEnum, resolve: (m) => m.senderKind }),
+    body: t.exposeString("body"),
+    createdAt: t.field({ type: "DateTime", resolve: (m) => m.createdAt }),
+    senderUser: t.relation("senderUser", { nullable: true }),
+    senderPerson: t.relation("senderPerson", { nullable: true }),
   }),
 });
 

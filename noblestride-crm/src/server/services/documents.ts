@@ -6,6 +6,7 @@ import { actorSource, CrudError } from "./crud";
 import type { Actor } from "@/graphql/context";
 import { documentCreateSchema, documentUpdateSchema } from "@/lib/schemas/document";
 import { getStorageProvider } from "@/server/storage/provider";
+import { ensureDefaultFoldersSafe } from "./folders";
 
 export interface DocumentFilter {
   transactionId?: string;
@@ -36,7 +37,19 @@ export const getDocument = (id: string) =>
 
 export async function createDocument(raw: unknown, actor: Actor) {
   const input = documentCreateSchema.parse(raw);
-  return prisma.document.create({ data: { ...input, createdSource: actorSource(actor) } as never });
+  const created = await prisma.document.create({ data: { ...input, createdSource: actorSource(actor) } as never });
+  // Lazy scaffold (action points 2026-07 item 5): touching a deal's file room
+  // ensures its standard folder template exists. Best-effort, post-commit.
+  await lazyEnsureDealFolders(created.transactionId);
+  return created;
+}
+
+/** Lazy-on-touch folder scaffolding for a deal (item 5); never throws. */
+async function lazyEnsureDealFolders(transactionId: string | null | undefined): Promise<void> {
+  if (!transactionId) return;
+  const txn = await prisma.transaction.findUnique({ where: { id: transactionId }, select: { name: true } }).catch(() => null);
+  if (!txn) return;
+  await ensureDefaultFoldersSafe({ transactionId, rootName: txn.name });
 }
 
 // `actor` is accepted for registry uniformity (Task 5) but currently unused —
@@ -68,7 +81,7 @@ export async function createDocumentWithFile(
   actor: Actor,
 ) {
   const { supersedesId, ...rest } = meta;
-  return prisma.$transaction(async (tx) => {
+  const created = await prisma.$transaction(async (tx) => {
     if (supersedesId) {
       const target = await tx.document.findUnique({ where: { id: supersedesId }, select: { isCurrent: true } });
       if (!target || !target.isCurrent) {
@@ -86,6 +99,9 @@ export async function createDocumentWithFile(
       } as never,
     });
   });
+  // Lazy scaffold (item 5) — post-commit, best-effort.
+  await lazyEnsureDealFolders(created.transactionId);
+  return created;
 }
 
 export async function logDocumentAccess(

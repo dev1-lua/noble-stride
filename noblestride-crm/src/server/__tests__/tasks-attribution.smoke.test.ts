@@ -104,6 +104,17 @@ describe("logEngagement actor attribution (smoke)", () => {
         await prisma.engagement.delete({ where: { id: activity.engagementId! } });
       } finally {
         await prisma.investor.delete({ where: { id: investor.id } });
+        // logEngagement's create path scaffolds "07 Potential Investors/<investor>/
+        // Term Sheets" under the (real) transaction — remove the subtree it left.
+        const invFolders = await prisma.folder.findMany({
+          where: { name: "__attribution_smoke_investor__" },
+          select: { id: true },
+        });
+        if (invFolders.length > 0) {
+          const ids = invFolders.map((f) => f.id);
+          await prisma.folder.deleteMany({ where: { parentId: { in: ids } } });
+          await prisma.folder.deleteMany({ where: { id: { in: ids } } });
+        }
       }
       return true;
     });

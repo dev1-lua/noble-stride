@@ -17,6 +17,8 @@ export interface CommTimelineItem {
   source?: string | null;
   /** Agent-raised review flag — drives the ⚑ timeline badge. */
   flagged?: boolean;
+  /** Backing engagement — portal items deep-link to its conversation thread. */
+  engagementId?: string | null;
 }
 
 export interface CommActivityInput {
@@ -29,6 +31,7 @@ export interface CommActivityInput {
   direction?: string | null;
   createdSource?: string | null;
   flagged?: boolean;
+  engagementId?: string | null;
 }
 
 export interface CommEmailInput {
@@ -82,6 +85,7 @@ export function mergeCommTimeline(
       direction: a.direction,
       source: a.createdSource ?? null,
       flagged: a.flagged ?? false,
+      engagementId: a.engagementId ?? null,
     })),
     ...emails.map((e) => ({
       id: `mail-${e.id}`,
