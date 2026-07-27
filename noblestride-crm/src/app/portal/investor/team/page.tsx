@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
 import { getCurrentAuth } from "@/server/auth/current";
+import { getPortalMembership } from "@/server/auth/portal-authz";
 import { deriveMemberStatus } from "@/lib/team-status";
 import TeamManager, { type TeamRow } from "./team-manager";
 
@@ -18,6 +19,12 @@ export default async function TeamPage() {
 
   const auth = await getCurrentAuth();
   const selfPersonId = auth?.person?.id ?? null;
+
+  // Seat gate (action points 2026-07 item 3): Viewers see the roster
+  // read-only; only Editors get invite/role/remove controls (server actions
+  // re-check regardless).
+  const membership = await getPortalMembership();
+  const canManage = membership?.portalRole === "Editor";
 
   const people = await prisma.person.findMany({
     where: { investorId: vp.recordId },
@@ -34,7 +41,9 @@ export default async function TeamPage() {
     isPrimaryContact: p.isPrimaryContact,
     isSelf: p.id === selfPersonId,
     badge: deriveMemberStatus(p.authAccount),
+    portalRole: p.portalRole,
+    canPostInThreads: p.canPostInThreads,
   }));
 
-  return <TeamManager rows={rows} />;
+  return <TeamManager rows={rows} canManage={canManage} />;
 }

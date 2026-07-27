@@ -5,6 +5,9 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
+import { getPortalMembership } from "@/server/auth/portal-authz";
+import { bandsForInvestor } from "@/server/services/ticket-bands";
+import { TicketBandsEditor } from "@/components/portal/ticket-bands-editor";
 import { options } from "@/lib/vocab";
 import { ContactEmailField } from "@/components/portal/contact-email-field";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
@@ -90,13 +93,18 @@ function Textarea({
 export default async function FundProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; denied?: string }>;
 }) {
   const vp = await getViewpoint();
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
-  const { saved, error } = await searchParams;
+  // Seat gate (action points 2026-07 item 3): Viewers get a read-only form;
+  // the save action re-checks server-side regardless.
+  const membership = await getPortalMembership();
+  const canEdit = membership?.portalRole === "Editor";
+
+  const { saved, error, denied } = await searchParams;
   const investor = await prisma.investor.findUniqueOrThrow({
     where: { id: vp.recordId },
     include: {
@@ -109,6 +117,20 @@ export default async function FundProfilePage({
   });
   const contact = investor.contacts[0] ?? null;
   const contactName = contact ? [contact.firstName, contact.lastName ?? ""].join(" ").trim() : "";
+
+  // Ticket bands (item 4): existing rows, falling back to the legacy single
+  // range so pre-bands profiles edit what they see today.
+  const bands = await bandsForInvestor(investor.id);
+  const bandRows =
+    bands.length > 0
+      ? bands.map((b) => ({ min: String(b.min), max: b.max == null ? "" : String(b.max), currency: b.currency }))
+      : investor.ticketMin != null || investor.ticketMax != null
+        ? [{
+            min: investor.ticketMin == null ? "" : String(Number(investor.ticketMin)),
+            max: investor.ticketMax == null ? "" : String(Number(investor.ticketMax)),
+            currency: investor.currency,
+          }]
+        : [];
 
   return (
     <div className="space-y-6">
@@ -132,7 +154,14 @@ export default async function FundProfilePage({
         </div>
       )}
 
+      {(denied || !canEdit) && (
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-amber)] px-5 py-3 text-sm font-medium text-[var(--t-tag-text-amber)]">
+          Your access is view-only — a team member with edit access can update the fund profile.
+        </div>
+      )}
+
       <form action={saveFundProfile} className="space-y-5">
+        <fieldset disabled={!canEdit} className="contents">
         <Section title="Fund Strategy & Preferences">
           <Field label="Investment Mandate (target sectors, regions, thesis)">
             <Textarea
@@ -151,27 +180,10 @@ export default async function FundProfilePage({
               selected={investor.investmentStages}
             />
           </Field>
+          <Field label="Ticket Sizes (add ranges in every currency you invest in)">
+            <TicketBandsEditor initial={bandRows} disabled={!canEdit} />
+          </Field>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label={`Ticket Size — Minimum (${investor.currency})`}>
-              <input
-                type="number"
-                name="ticketMin"
-                min={0}
-                step="any"
-                defaultValue={investor.ticketMin != null ? Number(investor.ticketMin) : ""}
-                className={INPUT_CLS}
-              />
-            </Field>
-            <Field label={`Ticket Size — Maximum (${investor.currency})`}>
-              <input
-                type="number"
-                name="ticketMax"
-                min={0}
-                step="any"
-                defaultValue={investor.ticketMax != null ? Number(investor.ticketMax) : ""}
-                className={INPUT_CLS}
-              />
-            </Field>
             <Field label="Return Expectations — Target IRR (%)">
               <input
                 type="number"
@@ -305,17 +317,20 @@ export default async function FundProfilePage({
           </Field>
         </Section>
 
-        <div className="flex items-center justify-end gap-3">
-          <span className="text-xs text-[var(--text-tertiary)]">
-            Changes apply to {investor.name} only and take effect immediately.
-          </span>
-          <button
-            type="submit"
-            className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
-          >
-            Save Fund Profile
-          </button>
-        </div>
+        {canEdit && (
+          <div className="flex items-center justify-end gap-3">
+            <span className="text-xs text-[var(--text-tertiary)]">
+              Changes apply to {investor.name} only and take effect immediately.
+            </span>
+            <button
+              type="submit"
+              className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+            >
+              Save Fund Profile
+            </button>
+          </div>
+        )}
+        </fieldset>
       </form>
     </div>
   );

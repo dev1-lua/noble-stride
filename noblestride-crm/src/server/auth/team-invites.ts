@@ -7,6 +7,7 @@
 
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
+import type { PortalMemberRole } from "@prisma/client";
 import { PHONE_MESSAGE, PHONE_PATTERN } from "@/lib/schemas/phone";
 import { classifyEmailForSignup, normalizeEmail } from "./guardrails";
 import { hashPassword } from "./password";
@@ -66,6 +67,8 @@ export async function createTeamInvite(input: {
   phone?: string;
   jobTitle?: string;
   invitedByLabel: string;
+  /** Seat role (action points 2026-07 item 3). Defaults to view-only. */
+  portalRole?: PortalMemberRole;
 }): Promise<{ personId: string; rawToken: string }> {
   if (input.phone && !PHONE_PATTERN.test(input.phone)) {
     throw new TeamInviteError(PHONE_MESSAGE);
@@ -96,6 +99,7 @@ export async function createTeamInvite(input: {
         phone: input.phone || null,
         jobTitle: input.jobTitle || null,
         investorId: input.investorId,
+        portalRole: input.portalRole ?? "Viewer",
       },
     });
     const account = await tx.authAccount.create({
@@ -111,7 +115,7 @@ export async function createTeamInvite(input: {
       data: {
         type: "Note",
         subject: `Team member invited via portal: ${input.name.trim()} <${email}>`,
-        body: `Invited by ${input.invitedByLabel}. Access is provisioned through a personal share link.`,
+        body: `Invited by ${input.invitedByLabel} with ${(input.portalRole ?? "Viewer") === "Editor" ? "edit" : "view-only"} access. Access is provisioned through a personal share link.`,
         investorId: input.investorId,
         createdSource: "API",
       },
@@ -260,6 +264,53 @@ export async function removeTeamMember(
       createdSource: "API",
     },
   });
+}
+
+/**
+ * Change a member's seat role (action points 2026-07 item 3). Guards: the
+ * primary contact always keeps edit access, and nobody may change their own
+ * role — together with "primary contact is always an Editor" this guarantees
+ * the org can never lock itself out of edit access.
+ */
+export async function setMemberRole(
+  personId: string,
+  investorId: string,
+  role: PortalMemberRole,
+  currentPersonId: string,
+): Promise<void> {
+  if (personId === currentPersonId) throw new TeamInviteError("You can't change your own access level.");
+  const person = await memberOf(personId, investorId);
+  if (!person) throw new TeamInviteError("Contact not found.");
+  if (person.isPrimaryContact && role !== "Editor") {
+    throw new TeamInviteError("The primary contact always has edit access.");
+  }
+  await prisma.person.update({ where: { id: person.id }, data: { portalRole: role } });
+  await prisma.activity.create({
+    data: {
+      type: "Note",
+      subject: `Team member access changed: ${`${person.firstName} ${person.lastName ?? ""}`.trim()} → ${role === "Editor" ? "edit" : "view-only"}`,
+      investorId,
+      createdSource: "API",
+    },
+  });
+}
+
+/**
+ * Per-member conversation opt-in for Viewers (user decision 2026-07-27):
+ * strictly read-only unless the org allows that member to participate in the
+ * conversation with the Noblestride team. Editors always may post — the flag
+ * is only consulted for Viewers.
+ */
+export async function setThreadAccess(
+  personId: string,
+  investorId: string,
+  allowed: boolean,
+  currentPersonId: string,
+): Promise<void> {
+  if (personId === currentPersonId) throw new TeamInviteError("You can't change your own access level.");
+  const person = await memberOf(personId, investorId);
+  if (!person) throw new TeamInviteError("Contact not found.");
+  await prisma.person.update({ where: { id: person.id }, data: { canPostInThreads: allowed } });
 }
 
 export type InvitePeek = {

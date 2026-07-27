@@ -7,15 +7,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { getViewpoint } from "@/server/viewpoint";
-import { getCurrentAuth } from "@/server/auth/current";
 import {
   TeamInviteError,
   createTeamInvite,
   inviteExistingContact,
   removeTeamMember,
   revokeTeamInvite,
+  setMemberRole,
+  setThreadAccess,
 } from "@/server/auth/team-invites";
+import { requirePortalEditor } from "@/server/auth/portal-authz";
 
 export interface TeamActionState {
   error?: string;
@@ -23,18 +24,10 @@ export interface TeamActionState {
   invitedEmail?: string;
 }
 
+// Seat gate (action points 2026-07 item 3): ALL team management is
+// Editors-only — Viewers see the roster read-only.
 async function requireInvestor(): Promise<{ investorId: string; personId: string; label: string }> {
-  const vp = await getViewpoint();
-  if (!vp) redirect("/login");
-  if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
-  const auth = await getCurrentAuth();
-  const person = auth?.person;
-  if (!person) redirect("/login");
-  return {
-    investorId: vp.recordId as string,
-    personId: person.id,
-    label: `${person.firstName} ${person.lastName ?? ""}`.trim(),
-  };
+  return requirePortalEditor("/portal/investor/team");
 }
 
 async function inviteBaseUrl(): Promise<string> {
@@ -53,6 +46,8 @@ export async function inviteTeamMemberAction(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   if (!name || !email) return { error: "Name and email are required." };
+  const roleRaw = String(formData.get("portalRole") ?? "");
+  const portalRole = roleRaw === "Editor" ? ("Editor" as const) : ("Viewer" as const);
   try {
     const { rawToken } = await createTeamInvite({
       investorId,
@@ -61,6 +56,7 @@ export async function inviteTeamMemberAction(
       phone: String(formData.get("phone") ?? "").trim() || undefined,
       jobTitle: String(formData.get("jobTitle") ?? "").trim() || undefined,
       invitedByLabel: label,
+      portalRole,
     });
     revalidatePath("/portal/investor/team");
     return { inviteUrl: `${await inviteBaseUrl()}/invite/${rawToken}`, invitedEmail: email.toLowerCase() };
@@ -107,4 +103,34 @@ export async function removeMemberAction(formData: FormData): Promise<void> {
   }
   revalidatePath("/portal/investor/team");
   redirect("/portal/investor/team?removed=1");
+}
+
+/** Editors-only: flip a member between view-only and edit access (item 3). */
+export async function setMemberRoleAction(formData: FormData): Promise<void> {
+  const { investorId, personId: self } = await requireInvestor();
+  const personId = String(formData.get("personId") ?? "");
+  const role = String(formData.get("portalRole") ?? "") === "Editor" ? ("Editor" as const) : ("Viewer" as const);
+  try {
+    if (personId) await setMemberRole(personId, investorId, role, self);
+  } catch (err) {
+    if (err instanceof TeamInviteError) redirect("/portal/investor/team?error=role");
+    throw err;
+  }
+  revalidatePath("/portal/investor/team");
+  redirect("/portal/investor/team");
+}
+
+/** Editors-only: grant/revoke a Viewer's conversation participation (item 3). */
+export async function setThreadAccessAction(formData: FormData): Promise<void> {
+  const { investorId, personId: self } = await requireInvestor();
+  const personId = String(formData.get("personId") ?? "");
+  const allowed = String(formData.get("allowed") ?? "") === "1";
+  try {
+    if (personId) await setThreadAccess(personId, investorId, allowed, self);
+  } catch (err) {
+    if (err instanceof TeamInviteError) redirect("/portal/investor/team?error=role");
+    throw err;
+  }
+  revalidatePath("/portal/investor/team");
+  redirect("/portal/investor/team");
 }
