@@ -246,6 +246,34 @@ describe("rankInvestorMatches — criteriaStale", () => {
   });
 });
 
+describe("investorMatchScore — ticket bands (action points 2026-07 item 4)", () => {
+  it("credits ticket fit via a cross-currency band when the legacy range misses", () => {
+    // Legacy range misses ($5M raise vs $50–100M legacy), but the KES band
+    // (129M–645M KES ≈ $1M–$5M indicative) fits after USD conversion.
+    const investor: MatchInvestor = {
+      ...baseInvestor,
+      ticketMin: 50_000_000,
+      ticketMax: 100_000_000,
+      ticketBands: [{ min: 129_000_000, max: 645_000_000, currency: "KES" }],
+    };
+    const [match] = rankInvestorMatches([investor], baseTxn);
+    const bandReason = match.reasons.find((r) => r.startsWith("Ticket fits: KES"));
+    expect(bandReason).toBeDefined();
+    expect(bandReason).toContain("≈ $");
+  });
+
+  it("gives no ticket credit when neither the legacy range nor any band fits", () => {
+    const investor: MatchInvestor = {
+      ...baseInvestor,
+      ticketMin: 50_000_000,
+      ticketMax: 100_000_000,
+      ticketBands: [{ min: 1_290_000_000, max: null, currency: "KES" }], // ≈ $10M+ — misses $5M
+    };
+    const [match] = rankInvestorMatches([investor], baseTxn);
+    expect(match.reasons.some((r) => r.startsWith("Ticket fits"))).toBe(false);
+  });
+});
+
 describe("rankInvestorMatches — contactName passthrough", () => {
   it("passes contactName through, defaulting to null when absent", () => {
     const withContact: MatchInvestor = { ...baseInvestor, contactName: "Jane Doe" };

@@ -6,10 +6,28 @@ import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { prisma } from "@/lib/db";
 
 const UNIQ = `portal-act-${Date.now()}`;
-let investorId: string, txnId: string;
+let investorId: string, txnId: string, personId: string;
 
 vi.mock("@/server/viewpoint", () => ({
   getViewpoint: async () => ({ role: "investor", recordId: investorId }),
+}));
+// Seat gate (item 3): the actions require an Editor membership; supply one
+// backed by a real Person row (the thread seed stores senderPersonId).
+vi.mock("@/server/auth/portal-authz", () => ({
+  requirePortalEditor: async () => ({
+    investorId,
+    personId,
+    label: "Portal Tester",
+    portalRole: "Editor",
+    canPostInThreads: false,
+  }),
+  requireThreadParticipation: async () => ({
+    investorId,
+    personId,
+    label: "Portal Tester",
+    portalRole: "Editor",
+    canPostInThreads: true,
+  }),
 }));
 vi.mock("next/navigation", () => ({
   redirect: () => undefined,
@@ -43,8 +61,12 @@ beforeAll(async () => {
   });
   const client = await prisma.client.create({ data: { name: `Client ${UNIQ}` } });
   const txn = await prisma.transaction.create({ data: { name: `Deal ${UNIQ}`, clientId: client.id } });
+  const person = await prisma.person.create({
+    data: { firstName: "Portal", lastName: UNIQ, email: `${UNIQ}@fund.test`, investorId: investor.id },
+  });
   investorId = investor.id;
   txnId = txn.id;
+  personId = person.id;
   await expressInterest(form(txnId)); // engagement exists at Shared/Interested
 });
 
@@ -53,8 +75,11 @@ afterAll(async () => {
   await prisma.stageChange.deleteMany({ where: { investorId } });
   await prisma.activity.deleteMany({ where: { investorId } });
   await prisma.engagement.deleteMany({ where: { investorId } });
+  // Folder scaffolding (item 5) anchors a root folder to the deal.
+  await prisma.folder.deleteMany({ where: { transaction: { name: { contains: UNIQ } } } });
   await prisma.transaction.deleteMany({ where: { name: { contains: UNIQ } } });
   await prisma.client.deleteMany({ where: { name: { contains: UNIQ } } });
+  await prisma.person.deleteMany({ where: { email: { contains: UNIQ } } });
   await prisma.investor.deleteMany({ where: { id: investorId } });
 });
 
