@@ -25,6 +25,8 @@ import { prisma } from "@/lib/db";
 import { getCurrentAuth } from "@/server/auth/current";
 import { AccountPanel, type InvestorAccountSummary } from "./account-panel";
 import { getInvestorWorkspaceExtras } from "@/server/services/investor-workspace";
+import { bandsForInvestor } from "@/server/services/ticket-bands";
+import { bandLabel, usdComparison, FX_AS_OF } from "@/lib/fx";
 import { mergeCommTimeline, contactFreshness, type ContactFreshness } from "@/server/domain/comm-timeline";
 import { daysAgoLabel } from "@/lib/format";
 import { label } from "@/lib/vocab";
@@ -64,6 +66,9 @@ export default async function InvestorDetailPage({ params }: PageProps) {
   // 360° workspace extras: full comms (emails/meetings), docs, open tasks,
   // agent artifacts — parallel queries, loaded once for all tabs.
   const extras = await getInvestorWorkspaceExtras(id);
+
+  // Multiple ticket bands (action points 2026-07 item 4).
+  const ticketBands = await bandsForInvestor(id);
   const now = new Date();
   const commItems = mergeCommTimeline(
     extras.activities,
@@ -106,8 +111,18 @@ export default async function InvestorDetailPage({ params }: PageProps) {
     instruments: (investor.instruments ?? []) as string[],
     investmentStages: (investor.investmentStages ?? []) as string[],
     aum: investor.aum == null ? undefined : Number(investor.aum),
-    ticketMin: investor.ticketMin == null ? undefined : Number(investor.ticketMin),
-    ticketMax: investor.ticketMax == null ? undefined : Number(investor.ticketMax),
+    // Multiple ticket bands (item 4): existing rows, falling back to the
+    // legacy single range so pre-bands records edit what they display today.
+    ticketBands:
+      ticketBands.length > 0
+        ? ticketBands.map((b) => ({ min: b.min, max: b.max, currency: b.currency }))
+        : investor.ticketMin != null || investor.ticketMax != null
+          ? [{
+              min: investor.ticketMin == null ? 0 : Number(investor.ticketMin),
+              max: investor.ticketMax == null ? null : Number(investor.ticketMax),
+              currency: investor.currency,
+            }]
+          : undefined,
     targetIrr: investor.targetIrr == null ? undefined : Number(investor.targetIrr),
     countryRestrictions: investor.countryRestrictions ?? "",
     esgFocus: investor.esgFocus ?? "",
@@ -311,13 +326,34 @@ export default async function InvestorDetailPage({ params }: PageProps) {
         <CardBody>
           <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Ticket Range</dt>
-              <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
-                {ticketRange}
-                {ticketRange !== "—" && investor.currency !== "USD" && (
-                  <span className="ml-1 text-xs font-normal text-[var(--text-tertiary)]">{investor.currency}</span>
-                )}
-              </dd>
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
+                Ticket Size{ticketBands.length > 1 ? "s" : ""}
+              </dt>
+              {/* Multiple bands + indicative-USD comparison (item 4). */}
+              {ticketBands.length > 0 ? (
+                <dd className="mt-1 space-y-0.5">
+                  {ticketBands.map((b) => (
+                    <div key={b.id} className="text-sm font-semibold text-[var(--text-primary)]">
+                      {bandLabel(b.min, b.max, b.currency)}
+                      {usdComparison(b.min, b.max, b.currency) && (
+                        <span className="ml-1.5 text-xs font-normal text-[var(--text-tertiary)]">
+                          {usdComparison(b.min, b.max, b.currency)}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {ticketBands.some((b) => b.currency !== "USD") && (
+                    <div className="text-[11px] text-[var(--text-tertiary)]">Indicative rates, {FX_AS_OF}</div>
+                  )}
+                </dd>
+              ) : (
+                <dd className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                  {ticketRange}
+                  {ticketRange !== "—" && investor.currency !== "USD" && (
+                    <span className="ml-1 text-xs font-normal text-[var(--text-tertiary)]">{investor.currency}</span>
+                  )}
+                </dd>
+              )}
             </div>
 
             <div>
@@ -500,6 +536,7 @@ export default async function InvestorDetailPage({ params }: PageProps) {
         direction: c.direction,
         source: c.source,
         flagged: c.flagged,
+        engagementId: c.engagementId,
       }))}
     />
   );

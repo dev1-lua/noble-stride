@@ -120,6 +120,16 @@ function safeParseMembers(json: string): unknown {
   }
 }
 
+/** Client-serialized extra ticket ranges (item 4); malformed JSON degrades to none. */
+function safeParseBands(json: string): unknown {
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 /** New-fund wizard submit (replaces the old registerWizardAction). */
 export async function registerWizardAction(_prev: WizardActionState, formData: FormData): Promise<WizardActionState> {
   if (!(await checkRate("signup"))) return { error: "Too many attempts — try again later." };
@@ -135,6 +145,7 @@ export async function registerWizardAction(_prev: WizardActionState, formData: F
     ticketMin: String(formData.get("ticketMin") ?? "").trim(),
     ticketMax: String(formData.get("ticketMax") ?? "").trim(),
     currency: String(formData.get("currency") ?? "").trim(),
+    extraBands: safeParseBands(String(formData.get("extraBandsJson") ?? "[]")),
     password: String(formData.get("password") ?? ""),
     confirmPassword: String(formData.get("confirmPassword") ?? ""),
     members: safeParseMembers(String(formData.get("membersJson") ?? "[]")),

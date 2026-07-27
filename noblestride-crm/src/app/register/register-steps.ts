@@ -1,7 +1,7 @@
 // Pure wizard config + per-step validation for /register.
 // Validation reuses the registration schema so client checks are identical to
 // the server's (including the corporate-email refinement). No React here.
-import { registrationFieldsSchema, teamMemberSchema } from "@/lib/schemas/registration";
+import { extraBandSchema, registrationFieldsSchema, teamMemberSchema } from "@/lib/schemas/registration";
 
 export interface WizardValues {
   fundName: string;
@@ -16,6 +16,8 @@ export interface WizardValues {
   ticketMin: string;
   ticketMax: string;
   currency: string;
+  /** Additional ticket ranges beyond the primary one (item 4). */
+  extraBands: { min: string; max: string; currency: string }[];
   members: { name: string; email: string; phone: string }[];
 }
 
@@ -31,6 +33,7 @@ export const EMPTY_WIZARD_VALUES: WizardValues = {
   ticketMin: "",
   ticketMax: "",
   currency: "USD",
+  extraBands: [],
   members: [],
 };
 
@@ -94,6 +97,17 @@ export function validateStep(stepIndex: number, values: WizardValues): StepValid
     Number(values.ticketMax) < Number(values.ticketMin)
   ) {
     errors.ticketMax = "Maximum ticket must be at least the minimum";
+  }
+
+  // Extra ticket ranges (item 4) live on the same step as the primary range.
+  if ((fields as readonly string[]).includes("ticketMin") && !errors.extraBands) {
+    for (const band of values.extraBands) {
+      const res = extraBandSchema.safeParse(band);
+      if (!res.success) {
+        errors.extraBands = res.error.issues[0]?.message ?? "Check the additional ranges";
+        break;
+      }
+    }
   }
 
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true };

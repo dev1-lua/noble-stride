@@ -11,6 +11,7 @@ import { prisma } from "@/lib/db";
 import { registrationAccountSchema } from "@/lib/schemas/registration";
 import { emailDomain } from "@/lib/corporate-email";
 import { notify, adminUserIds } from "@/server/services/notifications";
+import { replaceBands } from "@/server/services/ticket-bands";
 import { hashPassword } from "@/server/auth/password";
 import { unusablePasswordHash } from "@/server/auth/team-invites";
 import { isUniqueViolation } from "@/server/auth/accounts";
@@ -99,6 +100,12 @@ export async function registerInvestorWithAccount(raw: unknown): Promise<Investo
         createdSource: "API",
       },
     });
+    // Ticket bands (action points 2026-07 item 4): the primary range is band
+    // #0 (mirrored in ticketMin/Max/currency above); any extra ranges follow.
+    await replaceBands(tx, investor.id, [
+      { min: input.ticketMin, max: input.ticketMax, currency: input.currency },
+      ...input.extraBands.map((b) => ({ min: b.min, max: b.max, currency: b.currency })),
+    ]);
     const person = await tx.person.create({
       data: {
         firstName,

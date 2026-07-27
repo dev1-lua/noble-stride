@@ -294,6 +294,13 @@ export default function RegisterWizard({ initialEmail = "" }: { initialEmail?: s
                       />
                     </Field>
                   </div>
+                  {/* Additional ticket ranges (action points 2026-07 item 4) —
+                      e.g. a KES band alongside the primary USD one. */}
+                  <ExtraBandsEditor
+                    bands={values.extraBands}
+                    error={errors.extraBands}
+                    onChange={(extraBands) => set("extraBands", extraBands)}
+                  />
                 </>
               )}
 
@@ -370,6 +377,7 @@ export default function RegisterWizard({ initialEmail = "" }: { initialEmail?: s
                   <input type="hidden" name="ticketMin" value={values.ticketMin} />
                   <input type="hidden" name="ticketMax" value={values.ticketMax} />
                   <input type="hidden" name="currency" value={values.currency} />
+                  <input type="hidden" name="extraBandsJson" value={JSON.stringify(values.extraBands)} />
                   <input type="hidden" name="membersJson" value={JSON.stringify(values.members)} />
                   <button
                     type="submit"
@@ -524,7 +532,9 @@ function Review({
     },
     {
       label: "Deal preference",
-      value: `${values.dealTypes.map((d) => label("Instrument", d)).join(", ")} · ${fmtNum(values.ticketMin)}–${fmtNum(values.ticketMax)} ${values.currency}`,
+      value: `${values.dealTypes.map((d) => label("Instrument", d)).join(", ")} · ${fmtNum(values.ticketMin)}–${fmtNum(values.ticketMax)} ${values.currency}${values.extraBands
+        .map((b) => `; ${fmtNum(b.min)}–${fmtNum(b.max)} ${b.currency}`)
+        .join("")}`,
       step: 4,
     },
     ...(values.members.length
@@ -563,6 +573,77 @@ function Review({
         After you submit, we'll verify your email and phone, then a Noblestride team member reviews
         your request. No deal information is visible before approval.
       </p>
+    </div>
+  );
+}
+
+/** Additional ticket ranges beyond the primary one (action points 2026-07 item 4). */
+function ExtraBandsEditor({
+  bands,
+  error,
+  onChange,
+}: {
+  bands: { min: string; max: string; currency: string }[];
+  error?: string;
+  onChange: (next: { min: string; max: string; currency: string }[]) => void;
+}) {
+  const update = (i: number, key: "min" | "max" | "currency", value: string) =>
+    onChange(bands.map((b, idx) => (idx === i ? { ...b, [key]: value } : b)));
+  return (
+    <div className="space-y-3">
+      {bands.map((b, i) => (
+        <div key={i} className="rounded-lg border border-[var(--border-subtle)] p-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <select
+              className={inputClass}
+              value={b.currency}
+              onChange={(e) => update(i, "currency", e.target.value)}
+              aria-label="Range currency"
+            >
+              {CURRENCY_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              inputMode="numeric"
+              className={inputClass}
+              placeholder={`Minimum (${b.currency})`}
+              value={b.min}
+              onChange={(e) => update(i, "min", e.target.value)}
+            />
+            <input
+              type="number"
+              min="0"
+              step="any"
+              inputMode="numeric"
+              className={inputClass}
+              placeholder={`Maximum (${b.currency})`}
+              value={b.max}
+              onChange={(e) => update(i, "max", e.target.value)}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => onChange(bands.filter((_, idx) => idx !== i))}
+            className="mt-2 text-xs font-medium text-rose-600 hover:underline"
+          >
+            Remove range
+          </button>
+        </div>
+      ))}
+      {bands.length < 4 && (
+        <button
+          type="button"
+          onClick={() => onChange([...bands, { min: "", max: "", currency: "USD" }])}
+          className="rounded border border-[var(--border-subtle)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+        >
+          + Add another range (e.g. in a different currency)
+        </button>
+      )}
+      {error && <p className={errorClass}>{error}</p>}
     </div>
   );
 }

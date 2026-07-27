@@ -8,6 +8,7 @@ import type { InvestorFilter, InvestorSegments, Pagination } from "@/server/doma
 import { investorCreateSchema, investorUpdateSchema, type InvestorCreateInput, type InvestorUpdateInput } from "@/lib/schemas/investor";
 import { actorSource, CrudError } from "./crud";
 import { recordStageChange } from "./stage-history";
+import { bandMirror, replaceBands } from "./ticket-bands";
 import type { Actor } from "@/graphql/context";
 import type { OnboardingStatus } from "@prisma/client";
 import { emailDomain, isFreeEmailDomain } from "@/lib/corporate-email";
@@ -115,8 +116,20 @@ export async function getInvestor(id: string) {
 }
 
 export async function createInvestor(input: InvestorCreateInput, actor: Actor) {
-  const data = investorCreateSchema.parse(input);
-  return prisma.investor.create({ data: { ...data, createdSource: actorSource(actor) } });
+  const { ticketBands, ...data } = investorCreateSchema.parse(input);
+  // Multiple ticket bands (action points 2026-07 item 4): band #0 mirrors
+  // into the legacy ticketMin/ticketMax/currency columns.
+  return prisma.$transaction(async (tx) => {
+    const created = await tx.investor.create({
+      data: {
+        ...data,
+        ...(ticketBands !== undefined ? bandMirror(ticketBands) : {}),
+        createdSource: actorSource(actor),
+      },
+    });
+    if (ticketBands !== undefined) await replaceBands(tx, created.id, ticketBands);
+    return created;
+  });
 }
 
 // Fields that define an investor's matching criteria. Touching any of these
@@ -137,14 +150,21 @@ const CRITERIA_FIELDS = [
 ] as const;
 
 export async function updateInvestor(id: string, input: InvestorUpdateInput, actor: Actor = { type: "HUMAN" }) {
-  const data = investorUpdateSchema.parse(input);
-  const criteriaTouched = CRITERIA_FIELDS.some((field) => data[field] !== undefined);
+  const { ticketBands, ...data } = investorUpdateSchema.parse(input);
+  const criteriaTouched =
+    CRITERIA_FIELDS.some((field) => data[field] !== undefined) || ticketBands !== undefined;
   return prisma.$transaction(async (tx) => {
     const existing = await tx.investor.findUniqueOrThrow({ where: { id }, select: { name: true } });
     const updated = await tx.investor.update({
       where: { id },
-      data: { ...data, ...(criteriaTouched ? { criteriaVerifiedAt: new Date() } : {}) },
+      data: {
+        ...data,
+        // Band #0 mirrors into the legacy range columns (item 4).
+        ...(ticketBands !== undefined ? bandMirror(ticketBands) : {}),
+        ...(criteriaTouched ? { criteriaVerifiedAt: new Date() } : {}),
+      },
     });
+    if (ticketBands !== undefined) await replaceBands(tx, id, ticketBands);
     if (data.name !== undefined) {
       await recordStageChange(tx, { field: "name", fromValue: existing.name, toValue: data.name, actor, investorId: id });
     }
