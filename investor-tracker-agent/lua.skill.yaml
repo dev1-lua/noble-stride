@@ -4,22 +4,22 @@ agent:
 skills:
   - name: investor-tracker
     skillId: 796495cb-ade7-4692-b221-3be62eb2332e
-    version: 1.0.10
+    version: 1.0.11
 webhooks: []
 jobs:
   - jobId: 3d6f7311-b09b-4a2e-bc3a-4c53acdcc7f0
     name: followup-check
-    version: 1.0.11
+    version: 1.0.12
 preprocessors:
   - name: passphrase-gate
     preprocessorId: preprocessor_546b0350-5517-413a-ae28-7e317c33e688
-    version: 1.0.11
+    version: 1.0.12
 postprocessors:
   - name: format-normalizer
     postprocessorId: postprocessor_7d345894-d5c1-4fd5-93c7-68d4399fb7c5
-    version: 1.0.1
+    version: 1.0.2
 mcpServers: []
 backup:
-  activeVersion: 12
-  lastHash: d978ea6a31113e336dbd45e5b8228bceb798b963331628311f28751b38dfdada
-  lastPushedAt: '2026-07-21T22:13:25.372Z'
+  activeVersion: 14
+  lastHash: 974717b22fe5b38a7377b7b65de9104f0457363050fa795df819f630f13f121c
+  lastPushedAt: '2026-08-27T13:43:30.111Z'

@@ -7,9 +7,25 @@ describe("gateDecision", () => {
     expect(gateDecision(true, undefined, "secret")).toBe("proceed");
   });
 
-  it("correct passphrase (trimmed, case-sensitive) verifies", () => {
+  // The server-side gate (v1.0.11) matches the passphrase case-insensitively and
+  // tolerantly of punctuation and surrounding words, so a staff member who types
+  // "the passphrase is Secret" is not turned away. Partial or near-miss phrases
+  // are still refused.
+  it("matches the passphrase tolerantly of case, punctuation and surrounding words", () => {
     expect(gateDecision(false, "  secret ", "secret")).toBe("verify");
-    expect(gateDecision(false, "Secret", "secret")).toBe("challenge");
+    expect(gateDecision(false, "Secret", "secret")).toBe("verify");
+    expect(gateDecision(false, "the passphrase is Secret.", "secret")).toBe("verify");
+  });
+
+  it("does not accept a partial or near-miss passphrase", () => {
+    expect(gateDecision(false, "secrets", "secret")).toBe("challenge");
+    expect(gateDecision(false, "open", "open sesame")).toBe("challenge");
+    expect(gateDecision(false, "open sesame", "open sesame")).toBe("verify");
+  });
+
+  it("treats a punctuation-only passphrase as unconfigured", () => {
+    expect(gateDecision(false, "!!!", "!!!")).toBe("unconfigured");
+    expect(gateDecision(false, "anything", "   ")).toBe("unconfigured");
   });
 
   it("anything else is challenged", () => {
