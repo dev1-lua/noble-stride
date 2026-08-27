@@ -115,6 +115,28 @@ export async function sendEmailChangedNotice(
   }, deps);
 }
 
+/**
+ * Registration heads-up for a listed team member (F3.5). DELIBERATELY LINK-FREE:
+ * at registration the organisation is still PendingReview, so any invite link
+ * would be dead until approval. The real invitation with a link is sent by
+ * sendPendingMemberInvites when the org is approved.
+ */
+export async function sendMemberHeadsUpEmail(
+  o: { to: string; memberName: string; orgName: string; registrantName: string },
+  deps?: AuthMailDeps,
+): Promise<MailResult> {
+  return deliver("sendMemberHeadsUpEmail", {
+    to: o.to,
+    subject: `You were listed as a team member of ${o.orgName} on the Noblestride investor portal`,
+    text:
+      `${o.registrantName} listed you as a team member of ${o.orgName} when registering with ` +
+      `Noblestride Capital.\n\n` +
+      `Once the organisation is approved you will receive an invitation email with a link to ` +
+      `set your own password. No action is needed now.` +
+      SIGNATURE,
+  }, deps);
+}
+
 export async function sendApplicantOtpEmail(
   o: { to: string; code: string },
   deps?: AuthMailDeps,

@@ -46,9 +46,21 @@ function ErrorLine({ state }: { state: UserActionState }) {
 function ResetLinkBlock({ state }: { state: UserActionState }) {
   if (!state.resetLink) return null;
   return (
-    <code className="mt-1 block max-w-xs truncate rounded border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-2 py-1 text-[10px] text-[var(--text-secondary)]">
-      {state.resetLink}
-    </code>
+    <>
+      {/* F3.5: the link is emailed now. Say which happened, and keep the link
+          visible either way so an admin can pass it on out of band. */}
+      <p
+        className="mt-1 text-xs text-[var(--text-secondary)]"
+        data-testid={state.emailSent ? "reset-link-emailed" : "reset-link-not-emailed"}
+      >
+        {state.emailSent
+          ? "Reset link emailed to the member."
+          : "Couldn't email the link — send it to the member yourself."}
+      </p>
+      <code className="mt-1 block max-w-xs truncate rounded border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-2 py-1 text-[10px] text-[var(--text-secondary)]">
+        {state.resetLink}
+      </code>
+    </>
   );
 }
 
@@ -87,7 +99,7 @@ function ResetLinkForm({ investorId, accountId }: { investorId: string; accountI
       <input type="hidden" name="investorId" value={investorId} />
       <input type="hidden" name="accountId" value={accountId} />
       <button type="submit" disabled={isPending} className={buttonClass}>
-        {isPending ? "Generating…" : "Reset link"}
+        {isPending ? "Emailing…" : "Email reset link"}
       </button>
       <ErrorLine state={state} />
       <ResetLinkBlock state={state} />

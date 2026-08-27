@@ -11,7 +11,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { requireRealAdmin } from "@/server/auth/require-real-admin";
 import { suspendAccount, reactivateAccount, AuthFlowError } from "@/server/auth/accounts";
-import { createAuthToken } from "@/server/auth/tokens";
+import { issueStaffResetLink } from "@/server/auth/reset";
 import { prisma } from "@/lib/db";
 
 // Confirms the posted accountId actually belongs to the investor this action
@@ -31,14 +31,18 @@ async function requireAccountBelongsToInvestor(accountId: string, investorId: st
 export interface UserActionState {
   error?: string;
   resetLink?: string;
+  /** F3.5: whether the reset link was also emailed to the member. */
+  emailSent?: boolean;
 }
 
-async function run(investorId: string, fn: (adminUserId: string) => Promise<void | string>): Promise<UserActionState> {
+type RunResult = void | { resetLink: string; emailSent: boolean };
+
+async function run(investorId: string, fn: (adminUserId: string) => Promise<RunResult>): Promise<UserActionState> {
   try {
     const admin = await requireRealAdmin();
     const result = await fn(admin.user!.id);
     revalidatePath(`/investors/${investorId}`);
-    return typeof result === "string" ? { resetLink: result } : {};
+    return result ?? {};
   } catch (err) {
     if (err instanceof AuthFlowError) return { error: err.message };
     if (err instanceof Error && err.message === "Not authorized") return { error: "Not authorized." };
@@ -69,10 +73,10 @@ export async function generateInvestorResetLinkAction(_p: UserActionState, formD
   const accountId = String(formData.get("accountId"));
   return run(investorId, async () => {
     await requireAccountBelongsToInvestor(accountId, investorId);
-    const raw = await createAuthToken(accountId, "RESET_PASSWORD");
     const hdrs = await headers();
     const host = hdrs.get("host") ?? "localhost:3000";
     const proto = hdrs.get("x-forwarded-proto") ?? "http";
-    return `${proto}://${host}/reset-password/${raw}`;
+    const { url, emailSent } = await issueStaffResetLink(accountId, `${proto}://${host}`);
+    return { resetLink: url, emailSent };
   });
 }

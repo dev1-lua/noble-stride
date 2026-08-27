@@ -22,6 +22,8 @@ export interface TeamActionState {
   error?: string;
   inviteUrl?: string;
   invitedEmail?: string;
+  /** F3.5: whether the invitation email actually went out. */
+  emailSent?: boolean;
 }
 
 // Seat gate (action points 2026-07 item 3): ALL team management is
@@ -48,8 +50,9 @@ export async function inviteTeamMemberAction(
   if (!name || !email) return { error: "Name and email are required." };
   const roleRaw = String(formData.get("portalRole") ?? "");
   const portalRole = roleRaw === "Editor" ? ("Editor" as const) : ("Viewer" as const);
+  const baseUrl = await inviteBaseUrl();
   try {
-    const { rawToken } = await createTeamInvite({
+    const { rawToken, emailSent, email: invitedEmail } = await createTeamInvite({
       investorId,
       name,
       email,
@@ -57,9 +60,10 @@ export async function inviteTeamMemberAction(
       jobTitle: String(formData.get("jobTitle") ?? "").trim() || undefined,
       invitedByLabel: label,
       portalRole,
+      baseUrl,
     });
     revalidatePath("/portal/investor/team");
-    return { inviteUrl: `${await inviteBaseUrl()}/invite/${rawToken}`, invitedEmail: email.toLowerCase() };
+    return { inviteUrl: `${baseUrl}/invite/${rawToken}`, invitedEmail, emailSent };
   } catch (err) {
     if (err instanceof TeamInviteError) return { error: err.message };
     throw err;
@@ -74,10 +78,11 @@ export async function memberLinkAction(
   const { investorId, label } = await requireInvestor();
   const personId = String(formData.get("personId") ?? "");
   if (!personId) return { error: "Contact not found." };
+  const baseUrl = await inviteBaseUrl();
   try {
-    const rawToken = await inviteExistingContact(personId, investorId, label);
+    const { rawToken, emailSent, email } = await inviteExistingContact(personId, investorId, label, baseUrl);
     revalidatePath("/portal/investor/team");
-    return { inviteUrl: `${await inviteBaseUrl()}/invite/${rawToken}` };
+    return { inviteUrl: `${baseUrl}/invite/${rawToken}`, invitedEmail: email, emailSent };
   } catch (err) {
     if (err instanceof TeamInviteError) return { error: err.message };
     throw err;

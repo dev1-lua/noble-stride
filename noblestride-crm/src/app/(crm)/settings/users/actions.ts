@@ -10,21 +10,25 @@ import {
   approveInternalAccount, rejectPendingAccount, suspendAccount,
   reactivateAccount, changeInternalRole, activateAccountsForInvestor, AuthFlowError,
 } from "@/server/auth/accounts";
-import { createAuthToken } from "@/server/auth/tokens";
+import { issueStaffResetLink } from "@/server/auth/reset";
 import { prisma } from "@/lib/db";
 import { headers } from "next/headers";
 
 export interface UserActionState {
   error?: string;
   resetLink?: string;
+  /** F3.5: whether the reset link was also emailed to the member. */
+  emailSent?: boolean;
 }
 
-async function run(fn: (adminUserId: string) => Promise<void | string>): Promise<UserActionState> {
+type RunResult = void | { resetLink: string; emailSent: boolean };
+
+async function run(fn: (adminUserId: string) => Promise<RunResult>): Promise<UserActionState> {
   try {
     const admin = await requireRealAdmin();
     const result = await fn(admin.user!.id);
     revalidatePath("/settings/users");
-    return typeof result === "string" ? { resetLink: result } : {};
+    return result ?? {};
   } catch (err) {
     if (err instanceof AuthFlowError) return { error: err.message };
     if (err instanceof Error && err.message === "Not authorized") return { error: "Not authorized." };
@@ -67,10 +71,13 @@ export async function changeRoleAction(_p: UserActionState, formData: FormData):
 
 export async function generateResetLinkAction(_p: UserActionState, formData: FormData): Promise<UserActionState> {
   return run(async () => {
-    const raw = await createAuthToken(String(formData.get("accountId")), "RESET_PASSWORD");
     const hdrs = await headers();
     const host = hdrs.get("host") ?? "localhost:3000";
     const proto = hdrs.get("x-forwarded-proto") ?? "http";
-    return `${proto}://${host}/reset-password/${raw}`;
+    const { url, emailSent } = await issueStaffResetLink(
+      String(formData.get("accountId")),
+      `${proto}://${host}`,
+    );
+    return { resetLink: url, emailSent };
   });
 }

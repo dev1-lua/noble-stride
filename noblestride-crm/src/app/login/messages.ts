@@ -12,6 +12,10 @@ const NOTICES: Record<string, string> = {
   suspended: "This account is suspended. Contact Noblestride if you believe this is an error.",
   "account-created": "Account created — sign in.",
   "invite-complete": "Your access is set up — sign in with your email and new password.",
+  // Aug-2026 feedback: F3.5 invites, F3.6 email change.
+  "invite-sent": "Invitation sent — check the inbox for the sign-in link.",
+  "email-verified": "Email address confirmed — sign in with your new email.",
+  "email-change-requested": "Check your new inbox for a confirmation link.",
 };
 
 const GENERIC = "Please sign in to continue.";

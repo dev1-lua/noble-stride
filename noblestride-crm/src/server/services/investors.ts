@@ -13,6 +13,8 @@ import type { Actor } from "@/graphql/context";
 import type { OnboardingStatus } from "@prisma/client";
 import { emailDomain, isFreeEmailDomain } from "@/lib/corporate-email";
 import { activateAccountsForInvestor, suspendAccountsForInvestor } from "@/server/auth/accounts";
+import { sendPendingMemberInvites } from "@/server/auth/pending-member-invites";
+import { appBaseUrl } from "@/server/auth/auth-mail";
 
 /**
  * List investors matching the given filter, ordered by name asc.
@@ -197,7 +199,18 @@ export async function setOnboardingStatus(id: string, status: OnboardingStatus, 
     });
     return investor;
   });
-  if (status === "Approved") await activateAccountsForInvestor(id);
+  if (status === "Approved") {
+    await activateAccountsForInvestor(id);
+    // F3.5: the members listed at registration only got a link-free heads-up,
+    // because a pre-approval invite link would have been dead. Now that the org
+    // is approved, send the real invitations. Best-effort and post-commit: a
+    // mail or token failure must not undo an approval that already committed.
+    try {
+      await sendPendingMemberInvites(id, appBaseUrl());
+    } catch (err) {
+      console.error("setOnboardingStatus: pending member invites failed", err);
+    }
+  }
   if (status === "Rejected") await suspendAccountsForInvestor(id);
   return investor;
 }
