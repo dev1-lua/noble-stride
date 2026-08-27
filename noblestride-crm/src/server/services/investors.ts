@@ -10,7 +10,7 @@ import { actorSource, CrudError } from "./crud";
 import { recordStageChange } from "./stage-history";
 import { bandMirror, replaceBands } from "./ticket-bands";
 import type { Actor } from "@/graphql/context";
-import type { OnboardingStatus } from "@prisma/client";
+import type { OnboardingStatus, Prisma } from "@prisma/client";
 import { emailDomain, isFreeEmailDomain } from "@/lib/corporate-email";
 import { activateAccountsForInvestor, suspendAccountsForInvestor } from "@/server/auth/accounts";
 import { sendPendingMemberInvites } from "@/server/auth/pending-member-invites";
@@ -20,19 +20,35 @@ import { appBaseUrl } from "@/server/auth/auth-mail";
  * List investors matching the given filter, ordered by name asc.
  * When `page` is provided, applies offset-based pagination.
  */
+/**
+ * F3.3: the list can now be ordered by when an investor was onboarded, not only
+ * by name. Name is the secondary key for the date sorts so rows with no date (or
+ * the same date) come back in a stable order rather than shuffling per query.
+ */
+function investorOrderBy(filter: InvestorFilter): Prisma.InvestorOrderByWithRelationInput[] {
+  const dir = filter.dir ?? (filter.sort && filter.sort !== "name" ? "desc" : "asc");
+  // nulls: "last" in BOTH directions. Postgres puts NULLs first on DESC, which
+  // would head a "newest onboarded" list with every investor that has no date —
+  // undated rows are never the answer to a question about dates.
+  if (filter.sort === "approvedAt") return [{ approvedAt: { sort: dir, nulls: "last" } }, { name: "asc" }];
+  if (filter.sort === "registeredAt") return [{ registeredAt: { sort: dir, nulls: "last" } }, { name: "asc" }];
+  return [{ name: dir }];
+}
+
 export async function listInvestors(filter: InvestorFilter, page?: Pagination) {
   const where = buildInvestorWhere(filter);
+  const orderBy = investorOrderBy(filter);
 
   if (page != null) {
     return prisma.investor.findMany({
       where,
-      orderBy: { name: "asc" },
+      orderBy,
       skip: (page.page - 1) * page.pageSize,
       take: page.pageSize,
     });
   }
 
-  return prisma.investor.findMany({ where, orderBy: { name: "asc" } });
+  return prisma.investor.findMany({ where, orderBy });
 }
 
 /**
@@ -188,7 +204,16 @@ const ONBOARDING_ACTIVITY_SUBJECT: Record<OnboardingStatus, string> = {
 /** Approve/reject a registration; logs the decision on the timeline. */
 export async function setOnboardingStatus(id: string, status: OnboardingStatus, actor: Actor) {
   const investor = await prisma.$transaction(async (tx) => {
-    const investor = await tx.investor.update({ where: { id }, data: { onboardingStatus: status } });
+    const investor = await tx.investor.update({
+      where: { id },
+      data: {
+        onboardingStatus: status,
+        // F3.3 "date onboarded". Stamped on approval and never cleared: a later
+        // Rejected changes the current status, but the fact that they were once
+        // approved on that date remains true.
+        ...(status === "Approved" ? { approvedAt: new Date() } : {}),
+      },
+    });
     await tx.activity.create({
       data: {
         type: "Note",

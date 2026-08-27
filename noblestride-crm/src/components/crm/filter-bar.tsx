@@ -1,6 +1,7 @@
 "use client";
 
-// filter-bar.tsx — Search + 4 filter dropdowns for the investors list page.
+// filter-bar.tsx — Search + 4 filter dropdowns + an onboarded-date range for
+// the investors list page (F3.3/F3.4).
 // Client Component: pushes searchParams to the URL so the server page re-queries.
 
 import { useCallback } from "react";
@@ -38,6 +39,18 @@ export function FilterBar() {
     [router, searchParams, pathname]
   );
 
+  // Single-value params (search, date bounds) — an empty value clears the key
+  // rather than leaving ?approvedFrom= in the URL.
+  const updateValue = useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value) params.set(key, value);
+      else params.delete(key);
+      router.push(`${pathname}?${params.toString()}`);
+    },
+    [router, searchParams, pathname],
+  );
+
   const updateSearch = useCallback(
     (value: string) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -59,10 +72,11 @@ export function FilterBar() {
       <div className="w-56">
         <Input
           type="search"
-          placeholder="Search investors…"
+          // F3.4: the same box now finds a fund by its contacts, so say so.
+          placeholder="Search funds or people…"
           defaultValue={searchParams.get("q") ?? ""}
           onChange={(e) => updateSearch(e.target.value)}
-          aria-label="Search investors"
+          aria-label="Search funds or people"
         />
       </div>
 
@@ -103,6 +117,40 @@ export function FilterBar() {
           selected={parseList(searchParams.get("status"))}
           onChange={(v) => update("status", v)}
           placeholder="Status"
+        />
+      </div>
+
+      {/* F3.3 (image8): "date onboarded" range. Two bounds, either usable alone. */}
+      <div className="w-40">
+        <label
+          htmlFor="filter-approved-from"
+          className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]"
+        >
+          Onboarded from
+        </label>
+        <Input
+          id="filter-approved-from"
+          type="date"
+          data-testid="filter-approved-from"
+          defaultValue={searchParams.get("approvedFrom") ?? ""}
+          onChange={(e) => updateValue("approvedFrom", e.target.value)}
+          aria-label="Onboarded from"
+        />
+      </div>
+      <div className="w-40">
+        <label
+          htmlFor="filter-approved-to"
+          className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]"
+        >
+          Onboarded to
+        </label>
+        <Input
+          id="filter-approved-to"
+          type="date"
+          data-testid="filter-approved-to"
+          defaultValue={searchParams.get("approvedTo") ?? ""}
+          onChange={(e) => updateValue("approvedTo", e.target.value)}
+          aria-label="Onboarded to"
         />
       </div>
     </div>

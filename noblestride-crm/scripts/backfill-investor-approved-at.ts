@@ -14,9 +14,18 @@
  * Only rows with `onboardingStatus = Approved AND approvedAt IS NULL` are
  * touched. Re-running is a no-op.
  *
+ * WHICH FALLBACKS TO TRUST is the operator's call, so `--sources` selects them.
+ * On the restored production data, 93 of 94 investors fall back to `createdAt`,
+ * and every one of those carries the same bulk-import timestamp — writing that
+ * as a "date onboarded" would be inventing history, not recovering it. The
+ * default is therefore `activity,registeredAt`: dates that mean something.
+ * Pass `--sources=activity,registeredAt,createdAt` to accept the import date
+ * too, e.g. when seeding a demo environment.
+ *
  * USAGE (run from noblestride-crm/)
  *   npm run db:backfill-approved-at                 # DRY RUN (default)
  *   npm run db:backfill-approved-at -- --execute    # write
+ *   npm run db:backfill-approved-at -- --sources=activity,registeredAt,createdAt
  *   npm run db:backfill-approved-at -- --allow-remote --execute
  *
  * SAFETY: refuses a non-localhost database host without --allow-remote.
@@ -29,6 +38,19 @@ const APPROVED_SUBJECT_PREFIX = "Investor approved";
 
 const execute = process.argv.includes("--execute");
 const allowRemote = process.argv.includes("--allow-remote");
+
+const ALL_SOURCES = ["activity", "registeredAt", "createdAt"] as const;
+type Source = (typeof ALL_SOURCES)[number];
+
+const sourcesArg = process.argv.find((a) => a.startsWith("--sources="))?.slice("--sources=".length);
+const sources: Source[] = sourcesArg
+  ? (sourcesArg.split(",").map((s) => s.trim()) as Source[])
+  : ["activity", "registeredAt"];
+const unknown = sources.filter((s) => !(ALL_SOURCES as readonly string[]).includes(s));
+if (unknown.length > 0) {
+  console.error(`Unknown --sources value(s): ${unknown.join(", ")}. Valid: ${ALL_SOURCES.join(", ")}`);
+  process.exit(1);
+}
 
 if (!process.env.DATABASE_URL) {
   try {
@@ -61,8 +83,6 @@ if (!LOCAL_HOSTS.has(host) && !allowRemote) {
 
 const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
 
-type Source = "activity" | "registeredAt" | "createdAt";
-
 async function main(): Promise<number> {
   const candidates = await prisma.investor.findMany({
     where: { onboardingStatus: "Approved", approvedAt: null },
@@ -77,16 +97,34 @@ async function main(): Promise<number> {
     return 0;
   }
 
+  console.log(`Accepted date sources: ${sources.join(", ")}\n`);
+
   const plan: Array<{ id: string; name: string; source: Source; value: Date }> = [];
+  const skipped: Array<{ id: string; name: string; wouldUse: Source }> = [];
   for (const inv of candidates) {
-    const approval = await prisma.activity.findFirst({
-      where: { investorId: inv.id, subject: { startsWith: APPROVED_SUBJECT_PREFIX } },
-      orderBy: { occurredAt: "asc" },
-      select: { occurredAt: true },
-    });
-    if (approval) plan.push({ id: inv.id, name: inv.name, source: "activity", value: approval.occurredAt });
-    else if (inv.registeredAt) plan.push({ id: inv.id, name: inv.name, source: "registeredAt", value: inv.registeredAt });
-    else plan.push({ id: inv.id, name: inv.name, source: "createdAt", value: inv.createdAt });
+    const approval = sources.includes("activity")
+      ? await prisma.activity.findFirst({
+          where: { investorId: inv.id, subject: { startsWith: APPROVED_SUBJECT_PREFIX } },
+          orderBy: { occurredAt: "asc" },
+          select: { occurredAt: true },
+        })
+      : null;
+    if (approval) {
+      plan.push({ id: inv.id, name: inv.name, source: "activity", value: approval.occurredAt });
+    } else if (inv.registeredAt && sources.includes("registeredAt")) {
+      plan.push({ id: inv.id, name: inv.name, source: "registeredAt", value: inv.registeredAt });
+    } else if (sources.includes("createdAt")) {
+      plan.push({ id: inv.id, name: inv.name, source: "createdAt", value: inv.createdAt });
+    } else {
+      // No trusted date: leave approvedAt null rather than stamp a guess.
+      skipped.push({ id: inv.id, name: inv.name, wouldUse: inv.registeredAt ? "registeredAt" : "createdAt" });
+    }
+  }
+
+  if (plan.length === 0) {
+    console.log(`Nothing to write: ${skipped.length} investor(s) have no date from the accepted sources.`);
+    console.log("Their approvedAt stays null — the Onboarded column shows an em-dash for them.");
+    return 0;
   }
 
   const width = Math.min(40, Math.max(...plan.map((p) => p.name.length)));
@@ -95,6 +133,12 @@ async function main(): Promise<number> {
   }
   const bySource = plan.reduce<Record<string, number>>((acc, p) => ({ ...acc, [p.source]: (acc[p.source] ?? 0) + 1 }), {});
   console.log(`\nBy source: ${Object.entries(bySource).map(([k, v]) => `${k}=${v}`).join(", ")}`);
+  if (skipped.length > 0) {
+    console.log(
+      `Skipped ${skipped.length} investor(s) with no accepted date (would have used ` +
+        `${[...new Set(skipped.map((s) => s.wouldUse))].join("/")}); their approvedAt stays null.`,
+    );
+  }
 
   if (!execute) {
     console.log("\nDRY RUN — nothing written. Re-run with --execute to apply.");

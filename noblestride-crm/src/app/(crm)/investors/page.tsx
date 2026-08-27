@@ -8,6 +8,8 @@ import type { InvestorType, Sector, Geography, InvestorStatus, OnboardingStatus 
 import { SegmentRow } from "@/components/crm/segment-row";
 import { FilterBar } from "@/components/crm/filter-bar";
 import { RecordTable } from "@/components/crm/record-table";
+import { PeopleResults } from "@/components/crm/people-results";
+import { searchInvestorPeople } from "@/server/services/persons";
 import { InvestorFormDrawer } from "@/components/crm/investor-form-drawer";
 import { getOrgLens } from "@/server/rbac/context";
 import { can } from "@/server/rbac/matrix";
@@ -25,6 +27,19 @@ function parseList<T extends string>(v: string | string[] | undefined): T[] {
   return s ? (s.split(",").filter(Boolean) as T[]) : [];
 }
 
+/** yyyy-mm-dd from a date input; anything unparseable is treated as absent. */
+function parseDate(v: string | string[] | undefined): Date | undefined {
+  const s = Array.isArray(v) ? v[0] : v;
+  if (!s) return undefined;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
+
+function parseSort(v: string | string[] | undefined): InvestorFilter["sort"] {
+  const s = Array.isArray(v) ? v[0] : v;
+  return s === "approvedAt" || s === "registeredAt" || s === "name" ? s : undefined;
+}
+
 export default async function InvestorsPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const lens = await getOrgLens();
@@ -37,12 +52,22 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
     status: parseList<InvestorStatus>(sp.status),
     search: typeof sp.q === "string" && sp.q.trim() ? sp.q.trim() : undefined,
     onboardingStatus: sp.onboarding ? (sp.onboarding as OnboardingStatus) : undefined,
+    // F3.3 "date onboarded" range + sort.
+    approvedFrom: parseDate(sp.approvedFrom),
+    approvedTo: parseDate(sp.approvedTo),
+    sort: parseSort(sp.sort),
+    dir: (Array.isArray(sp.dir) ? sp.dir[0] : sp.dir) === "asc" ? "asc" : undefined,
   };
+  const dir: "asc" | "desc" | undefined = filter.sort
+    ? (filter.dir ?? (filter.sort === "name" ? "asc" : "desc"))
+    : undefined;
 
-  // Parallel fetch: segments (for counters) + filtered list
-  const [segments, investors] = await Promise.all([
+  // Parallel fetch: segments (for counters) + filtered list + people matches
+  // (F3.4 — only when there is something to search for).
+  const [segments, investors, peopleHits] = await Promise.all([
     investorSegments(),
     listInvestors(filter),
+    filter.search ? searchInvestorPeople(filter.search) : Promise.resolve([]),
   ]);
 
   return (
@@ -93,6 +118,9 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
         <FilterBar />
       </Suspense>
 
+      {/* F3.4 (image9): people matching the search, above the fund list. */}
+      {filter.search && <PeopleResults hits={peopleHits} query={filter.search} />}
+
       {/* Results count */}
       <p className="text-sm text-[var(--text-tertiary)]">
         {investors.length === segments.total
@@ -101,7 +129,18 @@ export default async function InvestorsPage({ searchParams }: PageProps) {
       </p>
 
       {/* Investor table */}
-      <RecordTable investors={investors} />
+      <RecordTable
+        investors={investors}
+        sort={filter.sort}
+        dir={dir}
+        query={new URLSearchParams(
+          Object.entries(sp).flatMap(([k, v]) =>
+            k === "sort" || k === "dir" || v == null
+              ? []
+              : [[k, Array.isArray(v) ? v[0]! : v] as [string, string]],
+          ),
+        ).toString()}
+      />
     </div>
   );
 }

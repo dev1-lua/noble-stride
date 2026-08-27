@@ -8,7 +8,7 @@
 //      the parent's other contacts inside the same $transaction.
 
 import { prisma } from "@/lib/db";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PortalMemberRole } from "@prisma/client";
 import { CrudError } from "./crud";
 import { recordStageChange } from "./stage-history";
 import { personCreateSchema, personUpdateSchema } from "@/lib/schemas/person";
@@ -105,6 +105,66 @@ export async function updatePerson(id: string, raw: unknown, actor: Actor = { ty
     const updated = await tx.person.update({ where: { id }, data });
     if (input.isPrimaryContact) await reassignPrimary(tx, merged, updated, actor);
     return updated;
+  });
+}
+
+export interface InvestorPersonHit {
+  personId: string;
+  name: string;
+  jobTitle: string | null;
+  email: string | null;
+  phone: string | null;
+  investorId: string;
+  investorName: string;
+  portalRole: PortalMemberRole;
+  hasAccount: boolean;
+}
+
+/**
+ * Search people across every investor org (F3.4 / image9: "I want an overview of
+ * all investors — I search a person and get their profile, their fund and their
+ * contacts").
+ *
+ * Deliberately separate from the investor-list filter: that one narrows the list
+ * of FUNDS, while this answers "who is this person?" and links straight to their
+ * row on the fund page. A one-character query returns nothing — matching a third
+ * of the address book is not a search result.
+ */
+export async function searchInvestorPeople(q: string, limit = 20): Promise<InvestorPersonHit[]> {
+  const needle = q.trim();
+  if (needle.length < 2) return [];
+
+  const people = await prisma.person.findMany({
+    where: {
+      investorId: { not: null },
+      OR: [
+        { firstName: { contains: needle, mode: "insensitive" } },
+        { lastName: { contains: needle, mode: "insensitive" } },
+        { email: { contains: needle, mode: "insensitive" } },
+        { jobTitle: { contains: needle, mode: "insensitive" } },
+      ],
+    },
+    include: {
+      investor: { select: { id: true, name: true } },
+      authAccount: { select: { id: true } },
+    },
+    orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+    take: limit,
+  });
+
+  return people.flatMap((p) => {
+    if (!p.investor) return [];
+    return [{
+      personId: p.id,
+      name: [p.firstName, p.lastName].filter(Boolean).join(" "),
+      jobTitle: p.jobTitle,
+      email: p.email,
+      phone: p.phone,
+      investorId: p.investor.id,
+      investorName: p.investor.name,
+      portalRole: p.portalRole,
+      hasAccount: Boolean(p.authAccount),
+    }];
   });
 }
 

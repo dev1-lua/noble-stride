@@ -144,7 +144,13 @@ export function ContactsCard({ contacts, parent, showSSAFlag = false }: {
         ) : (
           <ul className="divide-y divide-[var(--border-subtle)]">
             {contacts.map((contact) => (
-              <li key={contact.id} className="py-3 flex items-start gap-4">
+              <li
+                key={contact.id}
+                // F3.4: the people-search card deep-links to #contact-<personId>;
+                // scroll-mt keeps the row clear of the sticky header.
+                id={`contact-${contact.id}`}
+                className="py-3 flex items-start gap-4 scroll-mt-24"
+              >
                 <Avatar name={`${contact.firstName} ${contact.lastName ?? ""}`} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
