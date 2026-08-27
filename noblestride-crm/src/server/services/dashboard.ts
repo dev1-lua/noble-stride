@@ -501,6 +501,9 @@ export async function pendingOnboardingInvestors() {
         take: 1,
         select: { firstName: true, lastName: true, email: true },
       },
+      // F3.1 (image6): show the reviewer, in the queue, whether the fund sent
+      // their investment criteria — that is the document the decision turns on.
+      _count: { select: { documents: { where: { type: "InvestmentCriteria", isCurrent: true } } } },
     },
   });
 
@@ -512,6 +515,7 @@ export async function pendingOnboardingInvestors() {
       registeredAt: inv.registeredAt,
       contactName: c ? [c.firstName, c.lastName].filter(Boolean).join(" ") || null : null,
       contactEmail: c?.email ?? null,
+      hasCriteria: inv._count.documents > 0,
     };
   });
 }

@@ -12,6 +12,7 @@ import { options } from "@/lib/vocab";
 import { ContactEmailField } from "@/components/portal/contact-email-field";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { PHONE_MESSAGE } from "@/lib/schemas/phone";
+import { PortalDocumentsCard, type PortalDocumentSlot } from "./documents-card";
 import { saveFundProfile } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -115,6 +116,41 @@ export default async function FundProfilePage({
       },
     },
   });
+  // F3.1/F3.2: the fund's own documents, so it can see what we hold and upload
+  // what we are missing without emailing anyone.
+  const portalDocuments = await prisma.document.findMany({
+    where: {
+      investorId: investor.id,
+      type: { in: ["InvestmentCriteria", "NDA"] },
+      isCurrent: true,
+    },
+    orderBy: { uploadedAt: "desc" },
+    select: { id: true, name: true, type: true, status: true, uploadedAt: true },
+  });
+  const documentSlots: PortalDocumentSlot[] = [
+    {
+      type: "InvestmentCriteria",
+      title: "Investment criteria",
+      description: "A one-page mandate summary helps us match you to the right opportunities.",
+      documents: [],
+    },
+    {
+      type: "NDA",
+      title: "Non-disclosure agreement",
+      description: "Required before any confidential deal information is shared.",
+      documents: [],
+    },
+  ];
+  for (const doc of portalDocuments) {
+    const slot = documentSlots.find((s) => s.type === doc.type);
+    slot?.documents.push({
+      id: doc.id,
+      name: doc.name,
+      status: doc.status,
+      uploadedAt: doc.uploadedAt.toISOString(),
+    });
+  }
+
   const contact = investor.contacts[0] ?? null;
   const contactName = contact ? [contact.firstName, contact.lastName ?? ""].join(" ").trim() : "";
 
@@ -358,6 +394,8 @@ export default async function FundProfilePage({
         )}
         </fieldset>
       </form>
+
+      <PortalDocumentsCard slots={documentSlots} canEdit={canEdit} />
     </div>
   );
 }

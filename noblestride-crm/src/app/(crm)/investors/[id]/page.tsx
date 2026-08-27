@@ -541,6 +541,15 @@ export default async function InvestorDetailPage({ params }: PageProps) {
     />
   );
 
+  // F3.1 (image5/image6): the investment criteria is the document the review
+  // decision turns on, so it is pinned to the top of the list instead of being
+  // sorted in with everything else by date.
+  const criteriaDocuments = extras.documents.filter((d) => d.type === "InvestmentCriteria");
+  const orderedDocuments = [
+    ...criteriaDocuments,
+    ...extras.documents.filter((d) => d.type !== "InvestmentCriteria"),
+  ];
+
   const documentsTab = (
     <Card>
       <CardHeader>
@@ -554,8 +563,14 @@ export default async function InvestorDetailPage({ params }: PageProps) {
           <p className="text-sm text-[var(--text-tertiary)]">No documents linked to this investor.</p>
         ) : (
           <ul className="divide-y divide-[var(--border-subtle)]">
-            {extras.documents.map((doc) => (
-              <li key={doc.id} className="py-3 flex items-center justify-between gap-4">
+            {orderedDocuments.map((doc) => (
+              <li
+                key={doc.id}
+                className={
+                  "py-3 flex items-center justify-between gap-4 " +
+                  (doc.type === "InvestmentCriteria" ? "bg-[var(--t-tag-bg-emerald)]/30 -mx-2 px-2 rounded" : "")
+                }
+              >
                 <div className="min-w-0">
                   {doc.fileUrl ? (
                     <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-[var(--text-primary)] hover:text-accent transition-colors truncate block">
@@ -651,6 +666,16 @@ export default async function InvestorDetailPage({ params }: PageProps) {
             )}
             {investor.ndaStatus && investor.ndaStatus !== "None" && (
               <Chip value={investor.ndaStatus} group="InvestorNdaStatus" />
+            )}
+            {/* F3.1: criteria on file is worth seeing without opening the tab. */}
+            {criteriaDocuments.length > 0 && (
+              <Link
+                href="#documents"
+                data-testid="criteria-chip"
+                className="rounded-full bg-[var(--t-tag-bg-emerald)] px-2 py-0.5 text-xs font-medium text-[var(--t-tag-text-emerald)] hover:underline"
+              >
+                Criteria on file
+              </Link>
             )}
           </div>
           {investor.website && (

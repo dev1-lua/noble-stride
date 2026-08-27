@@ -35,6 +35,11 @@ export const IDS = {
   applicantPerson: "zze2eapplicantperson0001",
   acceptedApplicantClient: "zze2eacceptedclient00001",
   acceptedApplicantMandate: "zze2eacceptedmandate0001",
+  // F3.1: a registration still awaiting review, with its investment criteria
+  // attached — so the review queue's "Criteria attached" badge is exercisable.
+  pendingInvestor: "zze2ependinginvestor0001",
+  pendingInvestorPerson: "zze2ependinginvperson001",
+  pendingCriteriaDoc: "zze2ependingcriteria0001",
 } as const;
 
 export const EMAILS = {
@@ -245,6 +250,39 @@ export async function seedE2E(): Promise<void> {
       geographicFocus: ["EastAfrica"],
     },
   });
+  // ── a PendingReview registration with criteria attached (F3.1 / image6) ───
+  await prisma.investor.upsert({
+    where: { id: IDS.pendingInvestor },
+    update: {},
+    create: {
+      id: IDS.pendingInvestor,
+      name: "zz-E2E Pending Fund",
+      investorType: "VentureCapital",
+      onboardingStatus: "PendingReview",
+      registeredAt: daysAgo(1),
+      sectorFocus: ["Technology"],
+      geographicFocus: ["EastAfrica"],
+      contacts: {
+        create: {
+          id: IDS.pendingInvestorPerson,
+          firstName: "Pending",
+          lastName: "Contact",
+          email: "zz-pending-contact@e2e.noblestride.test",
+          isPrimaryContact: true,
+        },
+      },
+      documents: {
+        create: {
+          id: IDS.pendingCriteriaDoc,
+          name: "zz-E2E investment-criteria.pdf",
+          type: "InvestmentCriteria",
+          accessLevel: "Internal",
+          status: "UnderReview",
+        },
+      },
+    },
+  });
+
   await prisma.person.upsert({
     where: { id: IDS.investorPerson },
     update: {},

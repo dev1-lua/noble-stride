@@ -12,6 +12,11 @@ import { AuthFlowError, signupExistingContact, signupInternal } from "@/server/a
 import { registerInvestorWithAccount, RegistrationError } from "@/server/onboarding/register-investor";
 import { rateLimit } from "@/server/auth/rate-limit";
 import { notify, adminUserIds } from "@/server/services/notifications";
+import {
+  issueCriteriaUploadToken,
+  REG_UPLOAD_COOKIE,
+  REG_UPLOAD_TTL_S,
+} from "@/server/onboarding/criteria-upload-token";
 
 export interface WizardActionState {
   error?: string;
@@ -151,14 +156,26 @@ export async function registerWizardAction(_prev: WizardActionState, formData: F
     confirmPassword: String(formData.get("confirmPassword") ?? ""),
     members: safeParseMembers(String(formData.get("membersJson") ?? "[]")),
   };
+  let investor: { id: string };
   try {
-    await registerInvestorWithAccount(raw);
+    investor = await registerInvestorWithAccount(raw);
   } catch (err) {
     if (err instanceof ZodError) return { error: err.issues[0]?.message ?? "Check the form and try again" };
     if (err instanceof RegistrationError) return { error: err.message };
     throw err;
   }
-  redirect("/register?step=pending");
+
+  // F3.1: offer the optional investment-criteria upload straight away, while the
+  // fund is still on the page. There is no session yet (the account is PENDING),
+  // so the hand-off is a 15-minute token naming this one investor.
+  (await cookies()).set(REG_UPLOAD_COOKIE, await issueCriteriaUploadToken(investor.id), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: REG_UPLOAD_TTL_S,
+  });
+  redirect("/register?step=upload");
 }
 
 /**

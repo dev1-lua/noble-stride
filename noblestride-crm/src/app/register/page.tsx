@@ -15,12 +15,13 @@ import RegisterWizard from "./register-wizard";
 import InternalForm from "./internal-form";
 import ContactForm from "./contact-form";
 import PartnerClaimForm from "./partner-claim-form";
+import CriteriaUploadStep from "./criteria-upload-step";
 import { RolePicker } from "./role-picker";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: Promise<{ path?: string; step?: string; error?: string }>;
+  searchParams: Promise<{ path?: string; step?: string; error?: string; uploaded?: string }>;
 }
 
 const inputClass =
@@ -44,9 +45,11 @@ export default async function RegisterPage({ searchParams }: PageProps) {
   // F1.1: bare /register now opens with the four role cards (image1). The
   // email-first classifier it used to show still lives at ?path=email, so
   // routeEmailAction and its tests are untouched.
-  const view: "picker" | "email" | "internal" | "contact" | "fund" | "partner" | "pending" =
+  const view: "picker" | "email" | "internal" | "contact" | "fund" | "partner" | "upload" | "pending" =
     sp.step === "pending"
       ? "pending"
+      : sp.step === "upload"
+        ? "upload"
       : sp.path === "internal"
         ? "internal"
         : sp.path === "contact"
@@ -66,6 +69,7 @@ export default async function RegisterPage({ searchParams }: PageProps) {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-[var(--text-primary)]">
               {view === "picker" && "Create an account"}
+              {view === "upload" && "One last thing"}
               {view === "email" && "Register"}
               {view === "internal" && "Staff account request"}
               {view === "contact" && "Create your account"}
@@ -92,6 +96,8 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         )}
 
         {view === "picker" && <RolePicker />}
+
+        {view === "upload" && <CriteriaUploadStep />}
 
         {view === "partner" && <PartnerClaimForm />}
 
@@ -144,6 +150,11 @@ export default async function RegisterPage({ searchParams }: PageProps) {
               Thanks — your account request is in. The Noblestride team reviews every account; you&apos;ll
               be able to sign in once approved.
             </p>
+            {sp.uploaded === "1" && (
+              <p className="mt-2 text-xs text-[var(--t-tag-text-emerald)]" data-testid="criteria-uploaded">
+                Your investment criteria was received and is with the team.
+              </p>
+            )}
             <div className="mt-6 flex items-center justify-center gap-4 text-sm font-medium">
               <a href="/" className="text-[var(--text-secondary)] hover:text-[var(--accent)]">
                 ← Back to home
