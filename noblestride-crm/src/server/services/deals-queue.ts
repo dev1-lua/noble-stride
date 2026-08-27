@@ -210,6 +210,7 @@ function matches(r: DealRow, spec: DealsQuerySpec): boolean {
   if (spec.priority.length > 0 && (r.priorityValue == null || !spec.priority.includes(r.priorityValue))) return false;
   if (spec.source.length > 0 && (r.sourceValue == null || !spec.source.includes(r.sourceValue))) return false;
   if (spec.financing.length > 0 && (r.financingValue == null || !spec.financing.includes(r.financingValue))) return false;
+  if (spec.classification.length > 0 && (r.classificationValue == null || !spec.classification.includes(r.classificationValue))) return false;
   // Active-as-of drilldown: open by `activeAsOf` and not yet closed by then.
   // (ISO strings compare chronologically since all are UTC toISOString().)
   if (spec.activeAsOf) {
@@ -249,6 +250,8 @@ function sortValue(r: DealRow, key: DealsQuerySpec["sort"]): string | number {
     case "daysInStage": return r.daysInStage;
     case "dateOnboarded": return r.dateOnboarded ?? "";
     case "priority": return r.priorityValue ? (PRIORITY_RANK[r.priorityValue] ?? 0) : 0;
+    // Rows with nothing owed (or no fee recorded) sort below any real balance.
+    case "balance": return r.balance ?? -1;
   }
 }
 
@@ -303,7 +306,7 @@ export async function countsBy(spec: DealsQuerySpec, dimension: DealsGroupBy) {
   return [...map.values()].sort((a, b) => b.count - a.count);
 }
 
-const CSV_HEADERS = ["Project", "Company", "Type", "Stage", "Status", "Milestone", "Deal type", "Ticket (USD)", "Sector", "Country", "Lead", "Assists", "Date onboarded", "Days in stage", "Priority"];
+const CSV_HEADERS = ["Project", "Company", "Type", "Pipeline status", "Status", "Milestone", "Deal type", "Ticket (USD)", "Sector", "Country", "Lead", "Assists", "Date onboarded", "Days in stage", "Priority", "Classification", "Paid (USD)", "Balance (USD)"];
 
 export async function dealsCsvRows(spec: DealsQuerySpec): Promise<string[][]> {
   const all = applySort((await loadRows()).filter((r) => matches(r, spec)), spec);
@@ -312,6 +315,9 @@ export async function dealsCsvRows(spec: DealsQuerySpec): Promise<string[][]> {
     r.dealTypeLabel, r.ticket != null ? String(r.ticket) : "", r.sectors.map((s) => label("Sector", s)).join("; "),
     r.country ?? "", r.leadName ?? "", r.assistNames.join("; "), r.dateOnboarded ? r.dateOnboarded.slice(0, 10) : "", String(r.daysInStage),
     r.priorityLabel,
+    r.classificationLabel,
+    r.paidAmount != null ? String(r.paidAmount) : "",
+    r.balance != null ? String(r.balance) : "",
   ]);
   return [CSV_HEADERS, ...body];
 }

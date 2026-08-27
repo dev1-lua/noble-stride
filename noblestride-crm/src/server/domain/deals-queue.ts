@@ -2,11 +2,13 @@
 
 export type DealKind = "mandate" | "transaction" | "advisory";
 export type DealsSortKey =
-  | "name" | "company" | "stage" | "status" | "ticket" | "lead" | "dateOnboarded" | "daysInStage" | "priority";
+  | "name" | "company" | "stage" | "status" | "ticket" | "lead" | "dateOnboarded" | "daysInStage" | "priority"
+  // Aug-2026 feedback F4.3.1: outstanding fee/retainer balance
+  | "balance";
 export type DealsGroupBy = "" | "stage" | "lead" | "sector" | "type" | "status";
 export type DealsView = "list" | "board";
 
-const SORT_KEYS: DealsSortKey[] = ["name", "company", "stage", "status", "ticket", "lead", "dateOnboarded", "daysInStage", "priority"];
+const SORT_KEYS: DealsSortKey[] = ["name", "company", "stage", "status", "ticket", "lead", "dateOnboarded", "daysInStage", "priority", "balance"];
 const GROUP_KEYS: DealsGroupBy[] = ["", "stage", "lead", "sector", "type", "status"];
 
 export interface DealsQuerySpec {
@@ -25,6 +27,8 @@ export interface DealsQuerySpec {
   priority: string[];
   source: string[];
   financing: string[];
+  // Aug-2026 feedback F4.2.1: AdvisoryClassification values (advisory rows only)
+  classification: string[];
   search?: string;
   // Link-only date drilldowns (dashboard trend chart) — not filter-bar dropdowns,
   // like `stage`. `activeAsOf`: rows open as of this instant. `closedFrom`/
@@ -63,6 +67,12 @@ export const DEAL_COLUMNS: { key: string; label: string; default: boolean }[] = 
   { key: "ticket", label: "Ticket size", default: true },
   // Task 8: not in the default set — chooser-toggleable via ?cols=
   { key: "priority", label: "Priority", default: false },
+  // Aug-2026 feedback F4.2.1/F4.3.1: advisory work type + fee/retainer payment
+  // state. `balance` is on by default — an unpaid balance is what the client
+  // asked to see at a glance; the other two are chooser-toggleable.
+  { key: "classification", label: "Classification", default: false },
+  { key: "paid", label: "Paid", default: false },
+  { key: "balance", label: "Balance", default: true },
 ];
 
 const KNOWN_COLUMNS = new Set(DEAL_COLUMNS.map((c) => c.key));
@@ -105,6 +115,7 @@ export function parseDealsQuery(sp: Record<string, string | string[] | undefined
     priority: list(sp.priority),
     source: list(sp.source),
     financing: list(sp.financing),
+    classification: list(sp.classification),
     search: str(sp.q),
     activeAsOf: str(sp.activeAsOf),
     closedFrom: str(sp.closedFrom),
