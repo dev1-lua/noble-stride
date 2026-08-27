@@ -10,11 +10,13 @@ export interface RelationOptions {
   transactions: RelationOption[];
   investors: RelationOption[];
   serviceProviders: RelationOption[];
+  /** Workflow templates; the org default is labelled "<name> (default)". */
+  workflowTemplates: RelationOption[];
 }
 
 /** Lightweight {id,name} option lists for form relation pickers (one query each). */
 export async function relationOptions(): Promise<RelationOptions> {
-  const [clients, users, partners, mandates, transactions, investors, serviceProviders] = await Promise.all([
+  const [clients, users, partners, mandates, transactions, investors, serviceProviders, workflowTemplates] = await Promise.all([
     prisma.client.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.partner.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
@@ -22,11 +24,13 @@ export async function relationOptions(): Promise<RelationOptions> {
     prisma.transaction.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.investor.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.serviceProvider.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.workflowTemplate.findMany({ select: { id: true, name: true, isDefault: true }, orderBy: [{ isDefault: "desc" }, { name: "asc" }] }),
   ]);
   const map = (rows: { id: string; name: string }[]) => rows.map((r) => ({ value: r.id, label: r.name }));
   return {
     clients: map(clients), users: map(users), partners: map(partners), mandates: map(mandates),
     transactions: map(transactions), investors: map(investors), serviceProviders: map(serviceProviders),
+    workflowTemplates: workflowTemplates.map((w) => ({ value: w.id, label: w.isDefault ? `${w.name} (default)` : w.name })),
   };
 }
 

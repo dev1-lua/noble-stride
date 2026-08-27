@@ -18,6 +18,8 @@ export const advisoryCreateSchema = z.object({
   notes: z.string().trim().optional(),
   // Clearable back to unset via the drawer's clearableFields opt-in (see mandate.ts).
   priority: z.nativeEnum(Priority).nullable().optional(),
+  // Aug-2026 feedback: per-deal workflow template; "" → null clears back to the org default.
+  workflowTemplateId: z.string().trim().nullable().optional(),
 });
 export const advisoryUpdateSchema = advisoryCreateSchema.partial();
 export type AdvisoryCreateInput = z.infer<typeof advisoryCreateSchema>;

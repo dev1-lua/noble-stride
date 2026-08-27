@@ -33,6 +33,8 @@ export const mandateCreateSchema = z.object({
   // null, not just omission.
   priority: z.nativeEnum(Priority).nullable().optional(),
   referralQualified: z.boolean().nullable().optional(),
+  // Aug-2026 feedback: per-deal workflow template; "" → null clears back to the org default.
+  workflowTemplateId: z.string().trim().nullable().optional(),
 });
 export const mandateUpdateSchema = mandateCreateSchema.partial();
 export type MandateCreateInput = z.infer<typeof mandateCreateSchema>;

@@ -1,7 +1,7 @@
 // GraphQL mutations for the Noblestride Capital CRM.
 // Thin resolvers — each is a one-line call to the matching service.
 
-import { builder, MandateStageEnum, TransactionStageEnum, AdvisoryStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum, ConversationStatusEnum, MilestoneKeyEnum, DDTrackEnum } from "./builder";
+import { builder, MandateStageEnum, TransactionStageEnum, AdvisoryStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum, ConversationStatusEnum, MilestoneKeyEnum, DDTrackEnum, DealKindEnum } from "./builder";
 import { postStaffReply, setConversationStatus } from "@/server/services/conversations";
 import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
@@ -22,7 +22,9 @@ import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
 import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
 import { createSavedView, renameSavedView, deleteSavedView, type SavedViewConfig } from "@/server/services/saved-views";
-import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef, ClientOtpVerifyRef, AgentWritePreviewRef, AgentWriteResultRef, DraftsAckRef, DealInterestAckRef, PartnerAccessCodeRef, PartnerVerifyRef } from "./types";
+import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef, ClientOtpVerifyRef, AgentWritePreviewRef, AgentWriteResultRef, DraftsAckRef, DealInterestAckRef, PartnerAccessCodeRef, PartnerVerifyRef, DealWorkflowRef } from "./types";
+import { setDealStageState, moveDealToWorkflowStep } from "@/server/services/workflow";
+import type { DealKindEnum as DealKindValue } from "@/server/domain/deal-kind";
 import { issuePartnerAccessCode, verifyPartnerAccessCode, submitPartnerSelfUpdate } from "@/server/services/partner-self";
 import { markNotificationsRead, markAllNotificationsRead } from "@/server/services/notifications";
 import { getOrgLens } from "@/server/rbac/context";
@@ -40,6 +42,28 @@ import { submitInvestorUpdate, logInvestorCommunication, flagInvestorForReview, 
 import { saveOutreachDrafts } from "@/server/services/outreach";
 import { InteractionType } from "@prisma/client";
 
+/**
+ * Workflow step writes reuse the deal's own update permission: an Admin, or a
+ * DealLead/TeamMember who owns the record (Mandate/Advisory `leadId`,
+ * Transaction `ownerId`) — exactly what updateMandate/updateTransaction/
+ * updateAdvisory enforce.
+ */
+async function assertCanEditWorkflow(actor: Parameters<typeof assertCanUpdateOwnScoped>[0], dealKind: DealKindValue, dealId: string) {
+  if (dealKind === "Mandate") {
+    await assertCanUpdateOwnScoped(actor, "Mandates", () =>
+      prisma.mandate.findUnique({ where: { id: dealId }, select: { leadId: true } }),
+    );
+  } else if (dealKind === "Transaction") {
+    await assertCanUpdateOwnScoped(actor, "Transactions", () =>
+      prisma.transaction.findUnique({ where: { id: dealId }, select: { ownerId: true } }),
+    );
+  } else {
+    await assertCanUpdateOwnScoped(actor, "Advisory", () =>
+      prisma.advisoryEngagement.findUnique({ where: { id: dealId }, select: { leadId: true } }),
+    );
+  }
+}
+
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
   updateMandateStage: t.prismaField({
@@ -54,6 +78,45 @@ builder.mutationFields((t) => ({
         prisma.mandate.findUnique({ where: { id: String(args.id) }, select: { leadId: true } }),
       );
       return setMandateStage(args.id, args.stage, ctx.actor);
+    },
+  }),
+
+  // 1b. Aug-2026 feedback F4.1.x / G2 — manual workflow step writes
+  setDealStageState: t.field({
+    type: DealWorkflowRef,
+    nullable: false,
+    args: {
+      dealKind: t.arg({ type: DealKindEnum, required: true }),
+      dealId: t.arg.id({ required: true }),
+      stepKey: t.arg.string({ required: true }),
+      done: t.arg.boolean({ required: true }),
+      note: t.arg.string({ required: false }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const dealId = String(args.dealId);
+      await assertCanEditWorkflow(ctx.actor, args.dealKind, dealId);
+      return setDealStageState(
+        { dealKind: args.dealKind, dealId, stepKey: args.stepKey, done: args.done, note: args.note ?? null },
+        ctx.actor,
+      );
+    },
+  }),
+  moveDealToWorkflowStep: t.field({
+    type: DealWorkflowRef,
+    nullable: false,
+    args: {
+      dealKind: t.arg({ type: DealKindEnum, required: true }),
+      dealId: t.arg.id({ required: true }),
+      stepKey: t.arg.string({ required: true }),
+      note: t.arg.string({ required: false }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const dealId = String(args.dealId);
+      await assertCanEditWorkflow(ctx.actor, args.dealKind, dealId);
+      return moveDealToWorkflowStep(
+        { dealKind: args.dealKind, dealId, stepKey: args.stepKey, note: args.note ?? null },
+        ctx.actor,
+      );
     },
   }),
 

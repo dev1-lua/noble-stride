@@ -14,6 +14,7 @@ import {
   OutreachDraftStatusEnum,
   PartnerTypeEnum,
   PartnerStatusEnum,
+  DealKindEnum,
 } from "./builder";
 import {
   InvestorRef,
@@ -34,7 +35,10 @@ import {
   InvestorSelfViewRef,
   AgentInvestorMatchRef,
   TeaserContextRef,
+  DealWorkflowRef,
 } from "./types";
+import { prisma } from "@/lib/db";
+import { resolveDealWorkflow } from "@/server/services/workflow";
 import type { StatValue, DashboardStats, InvestorSegments, Insight } from "@/server/domain/types";
 import type { InvestorMatch } from "@/server/domain/ranking";
 import type { PartnerReferralStats } from "@/server/services/partners";
@@ -633,6 +637,23 @@ builder.queryFields((t) => ({
   }),
 
   // 25. savedViews(entity: String): [SavedView] — team-shared deals-queue views
+  // Aug-2026 feedback F4.1.x — deal workflow (replaces the hard-coded journey)
+  workflowTemplates: t.prismaField({
+    type: ["WorkflowTemplate"],
+    nullable: false,
+    resolve: (query) =>
+      prisma.workflowTemplate.findMany({ ...query, orderBy: [{ isDefault: "desc" }, { name: "asc" }] }),
+  }),
+  dealWorkflow: t.field({
+    type: DealWorkflowRef,
+    nullable: true,
+    args: {
+      dealKind: t.arg({ type: DealKindEnum, required: true }),
+      dealId: t.arg.id({ required: true }),
+    },
+    resolve: (_root, args) => resolveDealWorkflow(args.dealKind, String(args.dealId)),
+  }),
+
   savedViews: t.field({
     type: [SavedViewRef],
     args: {

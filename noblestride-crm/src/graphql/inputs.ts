@@ -162,6 +162,8 @@ export const MandateInput = builder.inputType("MandateInput", {
     retainerPaidDate: t.field({ type: "DateTime", required: false }),
     priority: t.field({ type: PriorityEnum, required: false }),
     referralQualified: t.boolean({ required: false }),
+    // Aug-2026 feedback: per-deal workflow template (null → org default)
+    workflowTemplateId: t.id({ required: false }),
   }),
 });
 
@@ -206,6 +208,8 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     priority: t.field({ type: PriorityEnum, required: false }),
     partnerFeeStatus: t.field({ type: PartnerFeeStatusEnum, required: false }),
     partnerFeeAmount: t.float({ required: false }),
+    // Aug-2026 feedback: per-deal workflow template (null → org default)
+    workflowTemplateId: t.id({ required: false }),
   }),
 });
 
@@ -226,6 +230,8 @@ export const AdvisoryInput = builder.inputType("AdvisoryInput", {
     nextAction: t.string({ required: false }),
     notes: t.string({ required: false }),
     priority: t.field({ type: PriorityEnum, required: false }),
+    // Aug-2026 feedback: per-deal workflow template (null → org default)
+    workflowTemplateId: t.id({ required: false }),
   }),
 });
 

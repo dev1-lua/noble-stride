@@ -1,13 +1,13 @@
 // DB-backed smoke tests for the comprehensive deal editor: stage change via the
 // generic update service (full restage semantics) + NDA/EA date auto-stamp and
-// its effect on the Deal Journey. Uses the project's withDb skip pattern.
+// its effect on the Deal Workflow (ndaSigned step). Uses the project's withDb skip pattern.
 
 import { describe, it, expect } from "vitest";
 import { prisma } from "@/lib/db";
 import { createClient, deleteClient } from "@/server/services/clients";
 import { createMandate, deleteMandate, updateMandate } from "@/server/services/mandates";
 import { createTransaction, deleteTransaction, updateTransaction } from "@/server/services/transactions";
-import { journeyForMandate } from "@/server/services/journey";
+import { resolveDealWorkflow } from "@/server/services/workflow";
 
 async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
   if (!process.env.DATABASE_URL) return null;
@@ -22,8 +22,8 @@ async function withDb<T>(fn: () => Promise<T>): Promise<T | null> {
   }
 }
 
-const stepState = (steps: Awaited<ReturnType<typeof journeyForMandate>>, index: number) =>
-  steps?.find((s) => s.index === index)?.state;
+const stepStatus = (wf: Awaited<ReturnType<typeof resolveDealWorkflow>>, key: string) =>
+  wf?.steps.find((s) => s.key === key)?.status;
 
 describe("deal editor — mandate (smoke)", () => {
   it("changing stage via updateMandate records history and resets the timer", async () => {
@@ -56,7 +56,7 @@ describe("deal editor — mandate (smoke)", () => {
     void ran;
   });
 
-  it("setting NDA status to Signed stamps ndaSignedDate and greens journey step 3; downgrade clears it", async () => {
+  it("setting NDA status to Signed stamps ndaSignedDate and marks the ndaSigned workflow step done; downgrade clears it", async () => {
     const ran = await withDb(async () => {
       const client = await createClient({ name: "__editor_nda_client__" }, { type: "HUMAN" });
       const mandate = await createMandate({ name: "__editor_nda__", clientId: client.id }, { type: "HUMAN" });
@@ -64,13 +64,13 @@ describe("deal editor — mandate (smoke)", () => {
         await updateMandate(mandate.id, { ndaStatus: "Signed" }, { type: "HUMAN" });
         const signed = await prisma.mandate.findUniqueOrThrow({ where: { id: mandate.id } });
         expect(signed.ndaSignedDate).not.toBeNull();
-        expect(stepState(await journeyForMandate(mandate.id), 3)).toBe("done");
+        expect(stepStatus(await resolveDealWorkflow("Mandate", mandate.id), "ndaSigned")).toBe("done");
 
         await updateMandate(mandate.id, { ndaStatus: "Sent" }, { type: "HUMAN" });
         const lowered = await prisma.mandate.findUniqueOrThrow({ where: { id: mandate.id } });
         expect(lowered.ndaSignedDate).toBeNull();
         expect(lowered.ndaSentDate).not.toBeNull();
-        expect(stepState(await journeyForMandate(mandate.id), 3)).not.toBe("done");
+        expect(stepStatus(await resolveDealWorkflow("Mandate", mandate.id), "ndaSigned")).not.toBe("done");
       } finally {
         await deleteMandate(mandate.id);
         await deleteClient(client.id);
