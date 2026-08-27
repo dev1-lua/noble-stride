@@ -7,6 +7,9 @@ const ERRORS: Record<string, string> = {
   "free-provider": "Please use your official company email address — free providers (Gmail, Yahoo, …) are not accepted.",
   greylisted: "This email is not eligible to register. Contact Noblestride if you believe this is an error.",
   "invalid-email": "Enter a valid email address.",
+  // F1.1 partner card
+  "invalid-token": "That doesn't look like a Noblestride invitation link. Paste the whole link from your email.",
+  "missing-fields": "Please fill in your name, organisation and work email.",
 };
 
 const GENERIC = "Something went wrong. Please try again.";

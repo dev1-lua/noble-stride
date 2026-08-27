@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { PasswordInput } from "@/components/ui";
 import { loginAction, type LoginFormState } from "./actions";
+import { LOGIN_ROLE_COPY, type LoginRole } from "./role-tabs";
 
 const inputClass =
   "w-full rounded-md border border-[var(--border-strong)] bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)] " +
@@ -12,8 +13,11 @@ const labelClass = "block text-xs font-medium uppercase tracking-wide text-[var(
 
 const initial: LoginFormState = {};
 
-export function LoginForm({ isInvestor, next }: { isInvestor: boolean; next?: string }) {
+export function LoginForm({ role, next }: { role: LoginRole; next?: string }) {
   const [state, submitAction, isPending] = useActionState(loginAction, initial);
+  // F1.1: per-role helper link. Staff has none — internal accounts are
+  // requested through /register?path=internal, not self-served from here.
+  const footer = LOGIN_ROLE_COPY[role].footer;
   return (
     <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
       {state.error && (
@@ -42,10 +46,10 @@ export function LoginForm({ isInvestor, next }: { isInvestor: boolean; next?: st
             placeholder="Your password" className="mt-1"
           />
         </div>
-        <div className={"flex items-center gap-4 border-t border-[var(--border-subtle)] pt-4 " + (isInvestor ? "justify-between" : "justify-end")}>
-          {isInvestor && (
-            <Link href="/register" className="text-xs font-medium text-[var(--accent)] hover:underline">
-              New here? Register your fund →
+        <div className={"flex items-center gap-4 border-t border-[var(--border-subtle)] pt-4 " + (footer ? "justify-between" : "justify-end")}>
+          {footer && (
+            <Link href={footer.href} className="text-xs font-medium text-[var(--accent)] hover:underline">
+              {footer.label}
             </Link>
           )}
           <button type="submit" disabled={isPending}
@@ -57,6 +61,14 @@ export function LoginForm({ isInvestor, next }: { isInvestor: boolean; next?: st
           <Link href="/forgot-password" className="font-medium text-[var(--accent)] hover:underline">Forgot password?</Link>
           <Link href="/register" className="font-medium text-[var(--accent)] hover:underline">Create an account →</Link>
         </div>
+        {role === "client" && (
+          <div className="text-xs text-[var(--text-tertiary)]">
+            Haven&apos;t applied yet?{" "}
+            <Link href="/intake" className="font-medium text-[var(--accent)] hover:underline">
+              Start a new application →
+            </Link>
+          </div>
+        )}
       </form>
     </section>
   );

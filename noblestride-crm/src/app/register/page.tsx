@@ -14,6 +14,8 @@ import { registerError } from "./messages";
 import RegisterWizard from "./register-wizard";
 import InternalForm from "./internal-form";
 import ContactForm from "./contact-form";
+import PartnerClaimForm from "./partner-claim-form";
+import { RolePicker } from "./role-picker";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +41,10 @@ export default async function RegisterPage({ searchParams }: PageProps) {
   const email = (await cookies()).get("reg_email")?.value ?? "";
   const errorText = registerError(sp.error);
 
-  const view: "email" | "internal" | "contact" | "fund" | "pending" =
+  // F1.1: bare /register now opens with the four role cards (image1). The
+  // email-first classifier it used to show still lives at ?path=email, so
+  // routeEmailAction and its tests are untouched.
+  const view: "picker" | "email" | "internal" | "contact" | "fund" | "partner" | "pending" =
     sp.step === "pending"
       ? "pending"
       : sp.path === "internal"
@@ -48,7 +53,11 @@ export default async function RegisterPage({ searchParams }: PageProps) {
           ? "contact"
           : sp.path === "fund"
             ? "fund"
-            : "email";
+            : sp.path === "partner"
+              ? "partner"
+              : sp.path === "email"
+                ? "email"
+                : "picker";
 
   return (
     <div className="flex min-h-screen items-start justify-center bg-[var(--bg-secondary)] px-4 py-12">
@@ -56,11 +65,23 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         {view !== "fund" && (
           <div className="text-center">
             <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+              {view === "picker" && "Create an account"}
               {view === "email" && "Register"}
               {view === "internal" && "Staff account request"}
               {view === "contact" && "Create your account"}
+              {view === "partner" && "Partner access"}
               {view === "pending" && "Registration received"}
             </h1>
+            {view === "picker" && (
+              <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+                Tell us who you are, and we&apos;ll take you to the right place.
+              </p>
+            )}
+            {view === "internal" && (
+              <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+                Noblestride team accounts are approved by an administrator before first sign-in.
+              </p>
+            )}
           </div>
         )}
 
@@ -69,6 +90,10 @@ export default async function RegisterPage({ searchParams }: PageProps) {
             {errorText}
           </div>
         )}
+
+        {view === "picker" && <RolePicker />}
+
+        {view === "partner" && <PartnerClaimForm />}
 
         {view === "email" && (
           <section className="mx-auto w-full max-w-md rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
