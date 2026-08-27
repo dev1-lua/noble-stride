@@ -23,6 +23,10 @@ export default function ApplyPage() {
             <Link href="/intake" className="font-medium text-[var(--accent)] hover:underline">
               Apply here
             </Link>
+            . Already applied?{" "}
+            <Link href="/apply/status" className="font-medium text-[var(--accent)] hover:underline">
+              Track your application
+            </Link>
             .
           </p>
         </div>

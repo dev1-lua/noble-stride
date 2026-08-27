@@ -47,9 +47,17 @@ export default async function IntakePage({ searchParams }: PageProps) {
               Thank you — your application is under review. Our team will be in touch after an
               initial assessment.
             </p>
+            {/* F2.4: the applicant can now follow their own application. */}
+            <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+              You can check the status any time — we&apos;ll email a code to the address you applied
+              with.
+            </p>
             <div className="mt-6 flex items-center justify-center gap-4 text-sm font-medium">
               <Link href="/" className="text-[var(--text-secondary)] hover:text-[var(--accent)]">
                 ← Back to home
+              </Link>
+              <Link href="/apply/status" className="text-[var(--accent)] hover:underline">
+                Track this application →
               </Link>
             </div>
           </section>
