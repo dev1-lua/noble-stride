@@ -10,6 +10,7 @@ import { getViewpoint } from "@/server/viewpoint";
 import { LABELS, label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
 import { StatCard } from "@/components/ui/stat-card";
+import { getBoolSetting } from "@/server/services/app-settings";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,14 @@ export default async function InvestorDashboardPage() {
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
-  const data = await loadInvestorDashboard(prisma, vp.recordId);
+  // image30 feedback: finance KPIs (Committed / Disbursed / Pending) and the
+  // disbursements-by-quarter table are hidden unless an admin turns on
+  // `portal.dashboard.financeTiles` under /settings/app. Values come from CRM
+  // Engagement records — investors never edit them.
+  const [data, showFinance] = await Promise.all([
+    loadInvestorDashboard(prisma, vp.recordId),
+    getBoolSetting("portal.dashboard.financeTiles", false),
+  ]);
 
   // Render stages in vocab order (loader returns insertion order).
   const stageOrder = Object.keys(LABELS.EngagementStage);
@@ -31,9 +39,13 @@ export default async function InvestorDashboardPage() {
   const kpis = [
     { label: "Matching opportunities", value: String(data.matchingOpportunities), icon: <Target className="h-4 w-4" /> },
     { label: "Deals engaged", value: String(data.engagedDeals), icon: <Handshake className="h-4 w-4" /> },
-    { label: "Committed", value: formatMoney(data.disbursement.committed) || "$0", icon: <Landmark className="h-4 w-4" /> },
-    { label: "Disbursed", value: formatMoney(data.disbursement.disbursed) || "$0", icon: <CheckCircle2 className="h-4 w-4" /> },
-    { label: "Pending", value: formatMoney(data.disbursement.pending) || "$0", icon: <Clock className="h-4 w-4" /> },
+    ...(showFinance
+      ? [
+          { label: "Committed", value: formatMoney(data.disbursement.committed) || "$0", icon: <Landmark className="h-4 w-4" /> },
+          { label: "Disbursed", value: formatMoney(data.disbursement.disbursed) || "$0", icon: <CheckCircle2 className="h-4 w-4" /> },
+          { label: "Pending", value: formatMoney(data.disbursement.pending) || "$0", icon: <Clock className="h-4 w-4" /> },
+        ]
+      : []),
   ];
 
   return (
@@ -47,7 +59,10 @@ export default async function InvestorDashboardPage() {
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div
+        data-testid="portal-kpis"
+        className={showFinance ? "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5" : "grid grid-cols-2 gap-4"}
+      >
         {kpis.map((k) => (
           <StatCard key={k.label} label={k.label} value={k.value} icon={k.icon} />
         ))}
@@ -86,8 +101,9 @@ export default async function InvestorDashboardPage() {
         </CardBody>
       </Card>
 
-      {/* Own disbursements by quarter */}
-      <Card>
+      {/* Own disbursements by quarter — finance data, gated with the tiles */}
+      {showFinance && (
+      <Card data-testid="portal-disbursements">
         <CardHeader>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
             Your Disbursements by Quarter
@@ -122,6 +138,7 @@ export default async function InvestorDashboardPage() {
           )}
         </CardBody>
       </Card>
+      )}
     </div>
   );
 }

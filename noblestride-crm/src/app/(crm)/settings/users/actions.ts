@@ -5,7 +5,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { OrgRole } from "@prisma/client";
-import { getCurrentAuth } from "@/server/auth/current";
+import { requireRealAdmin } from "@/server/auth/require-real-admin";
 import {
   approveInternalAccount, rejectPendingAccount, suspendAccount,
   reactivateAccount, changeInternalRole, activateAccountsForInvestor, AuthFlowError,
@@ -13,14 +13,6 @@ import {
 import { createAuthToken } from "@/server/auth/tokens";
 import { prisma } from "@/lib/db";
 import { headers } from "next/headers";
-
-async function requireRealAdmin() {
-  const auth = await getCurrentAuth();
-  if (!auth || auth.account.kind !== "INTERNAL" || auth.user?.role !== "Admin" || !auth.user?.isActive) {
-    throw new Error("Not authorized");
-  }
-  return auth;
-}
 
 export interface UserActionState {
   error?: string;

@@ -6,11 +6,18 @@
 
 import Link from "next/link";
 import { TalkToUsChat } from "./talk-to-us-chat";
+import { getBoolSetting } from "@/server/services/app-settings";
 
 export const metadata = { title: "Talk to us — Noblestride Capital" };
 
-export default function TalkToUsPage() {
-  const agentId = process.env.NEXT_PUBLIC_LUA_CLIENT_AGENT_ID ?? "";
+export const dynamic = "force-dynamic";
+
+export default async function TalkToUsPage() {
+  // Admin switch (AppSetting `agent.client.enabled`, /settings/app): when off,
+  // pass an empty agentId so TalkToUsChat renders its "chat is not configured"
+  // fallback pointing at /intake — regardless of the env-configured agent.
+  const enabled = await getBoolSetting("agent.client.enabled", true);
+  const agentId = enabled ? (process.env.NEXT_PUBLIC_LUA_CLIENT_AGENT_ID ?? "") : "";
   const channelId = process.env.NEXT_PUBLIC_LUA_CLIENT_CHANNEL_ID ?? "";
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-[var(--bg-secondary)] px-4 py-6">

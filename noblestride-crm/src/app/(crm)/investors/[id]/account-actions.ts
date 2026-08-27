@@ -9,18 +9,10 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { getCurrentAuth } from "@/server/auth/current";
+import { requireRealAdmin } from "@/server/auth/require-real-admin";
 import { suspendAccount, reactivateAccount, AuthFlowError } from "@/server/auth/accounts";
 import { createAuthToken } from "@/server/auth/tokens";
 import { prisma } from "@/lib/db";
-
-async function requireRealAdmin() {
-  const auth = await getCurrentAuth();
-  if (!auth || auth.account.kind !== "INTERNAL" || auth.user?.role !== "Admin" || !auth.user?.isActive) {
-    throw new Error("Not authorized");
-  }
-  return auth;
-}
 
 // Confirms the posted accountId actually belongs to the investor this action
 // is scoped to — without this, any admin viewing investor A's page could post
