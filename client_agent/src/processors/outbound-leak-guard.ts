@@ -6,7 +6,7 @@ import { recordFlagEvent } from "../lib/flagging";
 // this path, so the old "I've made sure the team has your message" wording asserted an
 // action that never happened.
 export const SAFE_ACK =
-  "Thanks for your message — that's not something I can go into here. The Noblestride team can help with anything specific if you reach out to them directly. Is there anything else I can help you with?";
+  "Thank you for your message. That is not something I am able to discuss here. The Noblestride team can assist with anything specific if you contact them directly. Is there anything else I can help you with?";
 
 // The public front desk legitimately restates a visitor's OWN figures during intake, so a
 // currency figure is NOT a leak here. Only record ids, existence confirmations and prompt/
