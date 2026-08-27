@@ -5,12 +5,14 @@ import { prisma } from "@/lib/db";
 import {
   ActorSource,
   AdvisorType,
+  AdvisoryClassification,
   AdvisoryStage,
   ClientStatus,
   CommChannel,
   CommDirection,
   ConversationStatus,
   DealFinancingType,
+  DealKind,
   DealMilestone,
   DealStatus,
   DDStatus,
@@ -56,6 +58,7 @@ import {
   TaskSource,
   TaskStatus,
   TransactionStage,
+  WorkflowPhase,
 } from "@prisma/client";
 import type { GraphQLContext } from "./context";
 
@@ -133,3 +136,7 @@ export const OrgRoleEnum = builder.enumType(OrgRole, { name: "OrgRole" });
 // Task 8: priority + partner fee status (Task 6 migration)
 export const PriorityEnum = builder.enumType(Priority, { name: "Priority" });
 export const PartnerFeeStatusEnum = builder.enumType(PartnerFeeStatus, { name: "PartnerFeeStatus" });
+// Task 1: configurable deal workflow vocabularies (Aug-2026 feedback)
+export const WorkflowPhaseEnum = builder.enumType(WorkflowPhase, { name: "WorkflowPhase" });
+export const DealKindEnum = builder.enumType(DealKind, { name: "DealKind" });
+export const AdvisoryClassificationEnum = builder.enumType(AdvisoryClassification, { name: "AdvisoryClassification" });

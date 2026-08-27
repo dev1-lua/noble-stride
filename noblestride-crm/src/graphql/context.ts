@@ -21,7 +21,7 @@ export interface Actor {
   authenticated?: boolean;
   /** Effective in-org role (lens-aware) — internal HUMAN actors only. */
   orgRole?: OrgRole;
-  accountKind?: "INTERNAL" | "INVESTOR";
+  accountKind?: "INTERNAL" | "INVESTOR" | "PARTNER";
   /**
    * The signed-in Investor record id — set only when accountKind is
    * "INVESTOR" (mirrors Viewpoint.recordId, resolveViewpointFor's investor
