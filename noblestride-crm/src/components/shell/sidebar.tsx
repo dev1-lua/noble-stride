@@ -21,6 +21,7 @@ import {
   Bot,
   Settings2,
   GitBranch,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { SidebarProfile } from "./sidebar-profile";
@@ -31,6 +32,8 @@ const MAIN_NAV = [
   { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard, iconColor: "text-[var(--t-tag-text-emerald)]" },
   { href: "/deals", label: "Deals", Icon: Briefcase, iconColor: "text-[var(--t-tag-text-amber)]" },
   { href: "/clients", label: "Clients", Icon: Building, iconColor: "text-[var(--t-tag-text-blue)]" },
+  // F2.1/image2: website applications used to be reachable only via the bell.
+  { href: "/applications", label: "Applications", Icon: Globe, iconColor: "text-[var(--t-tag-text-amber)]" },
   { href: "/investors", label: "Investors", Icon: Users, iconColor: "text-[var(--t-tag-text-sky)]" },
   { href: "/engagement", label: "Engagements", Icon: MessageSquare, iconColor: "text-[var(--t-tag-text-violet)]" },
   { href: "/documents", label: "Documents", Icon: FileText, iconColor: "text-[var(--t-tag-text-orange)]" },
@@ -244,6 +247,7 @@ function AgentsNav({ pendingChanges }: { pendingChanges: number }) {
 export function Sidebar({
   pendingReview = 0,
   pendingChanges = 0,
+  pendingApplications = 0,
   isAdmin = false,
   userName = "",
   userEmail = "",
@@ -252,6 +256,8 @@ export function Sidebar({
   pendingReview?: number;
   /** Agent-captured profile updates awaiting confirmation — Investor Updates card badge. */
   pendingChanges?: number;
+  /** Website applications with no deal lead yet — Applications row badge (F2.1). */
+  pendingApplications?: number;
   isAdmin?: boolean;
   userName?: string;
   userEmail?: string;
@@ -287,7 +293,13 @@ export function Sidebar({
                 Icon={Icon}
                 active={isActive(href)}
                 iconColor={iconColor}
-                badge={href === "/investors" ? pendingReview : undefined}
+                badge={
+                  href === "/investors"
+                    ? pendingReview
+                    : href === "/applications"
+                      ? pendingApplications
+                      : undefined
+                }
               />
             ),
           )}

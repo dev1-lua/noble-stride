@@ -14,6 +14,7 @@ import { prisma } from "@/lib/db";
 import { websiteIntakeSchema } from "@/lib/schemas/website-intake";
 import { qualifyIntake, type IntakeQualInput } from "@/server/domain/qualification";
 import { notify, adminUserIds } from "@/server/services/notifications";
+import { splitFullName } from "@/lib/name-split";
 
 export interface WebsiteIntakeExtras {
   conversationSummary?: string;
@@ -89,7 +90,9 @@ export async function submitWebsiteIntake(raw: unknown, extras: WebsiteIntakeExt
         createdSource: "AGENT",
         contacts: {
           create: {
-            firstName: input.contactName,
+            // F2.3: split the one free-text name field into first/last, instead
+            // of storing "Solomon Oulula" as a first name with no surname.
+            ...splitFullName(input.contactName),
             jobTitle: input.role,
             email: input.email,
             phone: input.phone || undefined,
@@ -180,7 +183,7 @@ export async function submitWebsiteIntake(raw: unknown, extras: WebsiteIntakeExt
     await notify(await adminUserIds(), {
       kind: "new_intake",
       title: `New website application: ${input.legalName}`,
-      href: "/deals?type=mandate&stage=NewLead&source=Website",
+      href: "/applications",
     });
   } catch (err) {
     console.error("submitWebsiteIntake: post-commit notification failed", err);

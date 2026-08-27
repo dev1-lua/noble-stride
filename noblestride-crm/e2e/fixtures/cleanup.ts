@@ -13,25 +13,31 @@ import { IDS, EMAILS } from "./seed";
 const prisma = new PrismaClient();
 
 export async function cleanupE2E(): Promise<void> {
-  const dealIds = [IDS.mandate, IDS.transaction, IDS.advisory];
-  const clientIds = [IDS.clientKenya, IDS.clientUganda];
+  const dealIds = [IDS.mandate, IDS.transaction, IDS.advisory, IDS.applicantMandate, IDS.acceptedApplicantMandate];
+  const clientIds = [
+    IDS.clientKenya,
+    IDS.clientUganda,
+    // F2.1 website-application fixtures.
+    IDS.applicantClient,
+    IDS.acceptedApplicantClient,
+  ];
 
   // Workflow progress + audit trails first.
   await prisma.dealStageState.deleteMany({ where: { dealId: { in: dealIds } } });
   await prisma.stageChange.deleteMany({
-    where: { OR: [{ mandateId: IDS.mandate }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }, { investorId: IDS.investor }] },
+    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }, { investorId: IDS.investor }] },
   });
   await prisma.activity.deleteMany({
-    where: { OR: [{ mandateId: IDS.mandate }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }, { investorId: IDS.investor }, { engagementId: IDS.engagement }] },
+    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }, { investorId: IDS.investor }, { engagementId: IDS.engagement }] },
   });
   await prisma.document.deleteMany({
-    where: { OR: [{ mandateId: IDS.mandate }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }, { investorId: IDS.investor }] },
+    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }, { investorId: IDS.investor }] },
   });
   await prisma.task.deleteMany({
-    where: { OR: [{ mandateId: IDS.mandate }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }] },
+    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }] },
   });
   await prisma.folder.deleteMany({
-    where: { OR: [{ mandateId: IDS.mandate }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }] },
+    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }] },
   });
   await prisma.engagementParticipant.deleteMany({ where: { engagementId: IDS.engagement } });
   await prisma.outreachDraft.deleteMany({ where: { OR: [{ transactionId: IDS.transaction }, { investorId: IDS.investor }] } });
@@ -40,7 +46,9 @@ export async function cleanupE2E(): Promise<void> {
   // Deals, then their clients.
   await prisma.transaction.deleteMany({ where: { OR: [{ id: IDS.transaction }, { clientId: { in: clientIds } }] } });
   await prisma.advisoryEngagement.deleteMany({ where: { OR: [{ id: IDS.advisory }, { clientId: { in: clientIds } }] } });
-  await prisma.mandate.deleteMany({ where: { OR: [{ id: IDS.mandate }, { clientId: { in: clientIds } }] } });
+  await prisma.mandate.deleteMany({
+    where: { OR: [{ id: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { clientId: { in: clientIds } }] },
+  });
 
   // Templates created by the workflow-settings spec.
   const zzTemplates = await prisma.workflowTemplate.findMany({
@@ -62,7 +70,16 @@ export async function cleanupE2E(): Promise<void> {
   await prisma.authToken.deleteMany({ where: { account: { email: { in: emails } } } });
   await prisma.authSession.deleteMany({ where: { account: { email: { in: emails } } } });
   await prisma.authAccount.deleteMany({ where: { email: { in: emails } } });
-  await prisma.person.deleteMany({ where: { OR: [{ id: IDS.investorPerson }, { investorId: IDS.investor }] } });
+  await prisma.person.deleteMany({
+    where: {
+      OR: [
+        { id: IDS.investorPerson },
+        { investorId: IDS.investor },
+        { id: IDS.applicantPerson },
+        { clientId: { in: clientIds } },
+      ],
+    },
+  });
   await prisma.investor.deleteMany({ where: { id: IDS.investor } });
   await prisma.client.deleteMany({ where: { id: { in: clientIds } } });
   await prisma.notification.deleteMany({ where: { userId: { in: [IDS.adminUser, IDS.memberUser] } } });

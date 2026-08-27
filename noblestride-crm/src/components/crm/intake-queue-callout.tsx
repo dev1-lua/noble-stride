@@ -1,7 +1,8 @@
 // intake-queue-callout.tsx — top-of-dashboard alert for website-intake
 // mandates awaiting review (Task 12). Mirrors OnboardingQueueCard's alert
 // styling, but is a plain count + link (the per-mandate review actions live
-// on the mandate detail page's IntakeReviewPanel, not inline here).
+// on the mandate detail page's IntakeReviewPanel, not inline here). F2.1: the
+// link now goes to /applications rather than a pre-filtered /deals URL.
 import Link from "next/link";
 import { Globe } from "lucide-react";
 
@@ -23,10 +24,10 @@ export function IntakeQueueCallout({ count }: { count: number }) {
           </div>
         </div>
         <Link
-          href="/deals?type=mandate&stage=NewLead&source=Website"
+          href="/applications"
           className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100"
         >
-          View queue →
+          View applications →
         </Link>
       </div>
     </div>

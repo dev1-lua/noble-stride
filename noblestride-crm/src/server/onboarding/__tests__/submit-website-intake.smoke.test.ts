@@ -92,6 +92,10 @@ describe("submitWebsiteIntake (SOW §10)", () => {
     expect(client?.createdSource).toBe("AGENT");
     expect(client?.contacts[0]?.email).toBe("amos@zztestwebsiteagent.example");
     expect(client?.contacts[0]?.phone).toBeNull();
+    // F2.3: the one free-text "contact person" field is split, so the surname
+    // is not swallowed into firstName.
+    expect(client?.contacts[0]?.firstName).toBe("Amos");
+    expect(client?.contacts[0]?.lastName).toBe("Tester");
 
     const task = await prisma.task.findFirst({ where: { mandateId: mandate.id } });
     expect(task?.title).toBe("Review website intake: ZZTest WebsiteAgent Required Ltd");

@@ -27,6 +27,14 @@ export const IDS = {
   investor: "zze2einvestor000000000001",
   investorPerson: "zze2einvestorperson00001",
   engagement: "zze2eengagement000000001",
+  // F2.1/F2.3: a website application, so the Applications queue and the
+  // applicant block on the mandate page have something real to show. The
+  // restored production dump contains no `source: "Website"` mandates.
+  applicantClient: "zze2eapplicantclient0001",
+  applicantMandate: "zze2eapplicantmandate001",
+  applicantPerson: "zze2eapplicantperson0001",
+  acceptedApplicantClient: "zze2eacceptedclient00001",
+  acceptedApplicantMandate: "zze2eacceptedmandate0001",
 } as const;
 
 export const EMAILS = {
@@ -112,6 +120,78 @@ export async function seedE2E(): Promise<void> {
       retainerPaidAmount: 20_000,
       sector: ["Agribusiness"],
       source: "Referral",
+    },
+  });
+
+  // ── website applications (F2.1/F2.3) ─────────────────────────────────────
+  // One awaiting review with a full applicant contact, one already accepted, so
+  // both tabs and the Applicant block are exercisable.
+  await prisma.client.upsert({
+    where: { id: IDS.applicantClient },
+    update: {},
+    create: {
+      id: IDS.applicantClient,
+      name: "zz-E2E Applicant (Website)",
+      status: "Prospect",
+      source: "Website",
+      sector: ["Agribusiness"],
+      hqCountry: "Kenya",
+      contacts: {
+        create: {
+          id: IDS.applicantPerson,
+          firstName: "Solomon",
+          lastName: "Oulula",
+          jobTitle: "Managing Director",
+          email: "zz-solomon@e2e-applicant.test",
+          phone: "+254700000111",
+          isPrimaryContact: true,
+        },
+      },
+    },
+  });
+  await prisma.mandate.upsert({
+    where: { id: IDS.applicantMandate },
+    update: {},
+    create: {
+      id: IDS.applicantMandate,
+      name: "zz-E2E Applicant (Website) — Fundraising",
+      clientId: IDS.applicantClient,
+      stage: "NewLead",
+      source: "Website",
+      dealStatus: "Open",
+      leadId: null,
+      dealSize: 1_500_000,
+      qualificationVerdict: "NeedsReview",
+      qualificationReasons: ["Revenue below the usual threshold"],
+      qualifiedAt: daysAgo(1),
+      createdSource: "API",
+    },
+  });
+  await prisma.client.upsert({
+    where: { id: IDS.acceptedApplicantClient },
+    update: {},
+    create: {
+      id: IDS.acceptedApplicantClient,
+      name: "zz-E2E Applicant Accepted (Web chat)",
+      status: "Prospect",
+      source: "Website",
+      hqCountry: "Uganda",
+    },
+  });
+  await prisma.mandate.upsert({
+    where: { id: IDS.acceptedApplicantMandate },
+    update: {},
+    create: {
+      id: IDS.acceptedApplicantMandate,
+      name: "zz-E2E Applicant Accepted — Fundraising",
+      clientId: IDS.acceptedApplicantClient,
+      stage: "Qualification",
+      source: "Website",
+      dealStatus: "Open",
+      leadId: admin.id,
+      // AGENT provenance is what makes the row read "Web chat".
+      createdSource: "AGENT",
+      qualificationVerdict: "Qualified",
     },
   });
 

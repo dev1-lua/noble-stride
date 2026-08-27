@@ -208,6 +208,17 @@ export default async function MandateDetailPage({ params }: PageProps) {
           qualifiedAt={m.qualifiedAt ? m.qualifiedAt.toISOString() : null}
           users={rel.users}
           canReview={mayReviewIntake}
+          contact={
+            m.client.contacts[0]
+              ? {
+                  name: `${m.client.contacts[0].firstName} ${m.client.contacts[0].lastName ?? ""}`.trim(),
+                  jobTitle: m.client.contacts[0].jobTitle,
+                  email: m.client.contacts[0].email,
+                  phone: m.client.contacts[0].phone,
+                }
+              : null
+          }
+          submittedAt={m.createdAt.toISOString()}
         />
       )}
 

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
 import { getCurrentAuth } from "@/server/auth/current";
 import { unreadFor, unreadCountFor } from "@/server/services/notifications";
+import { intakeAwaitingReviewCount } from "@/server/services/dashboard";
 
 // CRM pages read live data from Postgres per request — never prerender them at
 // build time (that needs the DB at build and would freeze data into static HTML).
@@ -22,9 +23,13 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
   // Two distinct review queues: pendingReview = investors awaiting onboarding
   // approval (Investors row badge); pendingChanges = agent-captured profile
   // updates awaiting confirmation (Investor Updates agent card badge).
-  const [pendingReview, pendingChanges, auth] = await Promise.all([
+  // pendingApplications = website applications with no deal lead yet
+  // (Applications row badge, F2.1) — the same predicate the dashboard callout
+  // and the Applications page's Awaiting tab use.
+  const [pendingReview, pendingChanges, pendingApplications, auth] = await Promise.all([
     prisma.investor.count({ where: { onboardingStatus: "PendingReview" } }),
     prisma.investorProposedChange.count({ where: { status: "Pending" } }),
+    intakeAwaitingReviewCount(),
     getCurrentAuth(),
   ]);
 
@@ -53,6 +58,7 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
       <Sidebar
         pendingReview={pendingReview}
         pendingChanges={pendingChanges}
+        pendingApplications={pendingApplications}
         isAdmin={auth?.user?.role === "Admin"}
         userName={userName}
         userEmail={userEmail}

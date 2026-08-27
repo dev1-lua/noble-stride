@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 const PROTECTED_PREFIXES = [
   "/dashboard", "/deals", "/mandates", "/transactions", "/investors",
   "/engagement", "/partners", "/clients", "/documents", "/tasks",
-  "/access-matrix", "/service-providers", "/settings", "/portal",
+  "/access-matrix", "/service-providers", "/settings", "/portal", "/applications",
 ];
 
 export function middleware(req: NextRequest) {
