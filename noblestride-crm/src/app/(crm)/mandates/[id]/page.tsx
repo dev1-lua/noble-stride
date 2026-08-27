@@ -76,6 +76,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
     qualificationVerdict: m.qualificationVerdict ?? "",
     // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
     retainerAmount: m.retainerAmount == null ? undefined : Number(m.retainerAmount),
+    retainerPaidAmount: m.retainerPaidAmount == null ? undefined : Number(m.retainerPaidAmount),
     retainerInvoicedDate: toDate(m.retainerInvoicedDate),
     retainerPaidDate: toDate(m.retainerPaidDate),
     priority: m.priority ?? "",
@@ -125,6 +126,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
     referrer: referredBy,
     priorityValue: m.priority ?? null,
     retainerAmount: m.retainerAmount != null ? Number(m.retainerAmount) : null,
+    retainerPaidAmount: m.retainerPaidAmount != null ? Number(m.retainerPaidAmount) : null,
     retainerInvoicedDate: m.retainerInvoicedDate ? m.retainerInvoicedDate.toISOString() : null,
     retainerPaidDate: m.retainerPaidDate ? m.retainerPaidDate.toISOString() : null,
   };

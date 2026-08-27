@@ -8,6 +8,7 @@ import { TextField, TextAreaField, MoneyField, SelectField, RelationSelect, Mult
 import { useEntityForm } from "@/components/ui/use-entity-form";
 import { mandateCreateSchema, mandateUpdateSchema } from "@/lib/schemas/mandate";
 import { options } from "@/lib/vocab";
+import { balanceDue, formatMoney } from "@/lib/money";
 
 const CREATE = `mutation CreateMandate($input: MandateInput!) { createMandate(input: $input) { id } }`;
 const UPDATE = `mutation UpdateMandate($id: ID!, $input: MandateInput!) { updateMandate(id: $id, input: $input) { id } }`;
@@ -18,7 +19,8 @@ const EMPTY: Record<string, unknown> = {
   sector: [], country: "", source: "", dateOpened: "", ndaStatus: "", ndaSentDate: "", ndaSignedDate: "",
   eaStatus: "", eaSentDate: "", eaSignedDate: "", nextAction: "", notes: "",
   // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
-  retainerAmount: undefined, retainerInvoicedDate: "", retainerPaidDate: "",
+  retainerAmount: undefined, retainerPaidAmount: undefined,
+  retainerInvoicedDate: "", retainerPaidDate: "",
   priority: "", referralQualified: undefined,
   stage: "", qualificationVerdict: "",
 };
@@ -127,7 +129,20 @@ triggerLabel?: string;
           <TextField label="Next Action" value={v.nextAction as string} onChange={(x) => f.setValue("nextAction", x)} />
           <TextField label="Qualification Verdict" value={v.qualificationVerdict as string} onChange={(x) => f.setValue("qualificationVerdict", x)} />
           <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Retainer</p>
-          <MoneyField label="Retainer Amount" value={v.retainerAmount as number} onChange={(x) => f.setValue("retainerAmount", x)} />
+          {/* F4.3.1: amount, amount paid, derived balance (image18). */}
+          <div className="grid grid-cols-2 gap-3">
+            <MoneyField label="Retainer Amount" value={v.retainerAmount as number} onChange={(x) => f.setValue("retainerAmount", x)} />
+            <MoneyField label="Retainer Paid" value={v.retainerPaidAmount as number} onChange={(x) => f.setValue("retainerPaidAmount", x)} />
+          </div>
+          <p className="text-xs text-[var(--text-tertiary)]">
+            Balance due:{" "}
+            <span className="font-semibold text-[var(--text-secondary)]">
+              {(() => {
+                const b = balanceDue(v.retainerAmount as number | null, v.retainerPaidAmount as number | null);
+                return b == null ? "—" : formatMoney(b);
+              })()}
+            </span>
+          </p>
           <div className="grid grid-cols-2 gap-3">
             <DateField label="Retainer Invoiced" value={v.retainerInvoicedDate as string} onChange={(x) => f.setValue("retainerInvoicedDate", x)} />
             <DateField label="Retainer Paid" value={v.retainerPaidDate as string} onChange={(x) => f.setValue("retainerPaidDate", x)} />

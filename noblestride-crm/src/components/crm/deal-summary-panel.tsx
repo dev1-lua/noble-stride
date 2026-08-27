@@ -6,7 +6,7 @@
 
 import { Avatar, Card, CardHeader, CardBody, Chip, Badge, HelpHint } from "@/components/ui";
 import { formatDate } from "@/lib/format";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, balanceDue } from "@/lib/money";
 import { STATUS_DOT, label as vocabLabel } from "@/lib/vocab";
 
 export interface DealSummaryProps {
@@ -26,6 +26,8 @@ export interface DealSummaryProps {
   eaStatusLabel?: string;
   referrer?: string | null;
   retainerAmount?: number | null;
+  /** F4.3.1: amount actually paid; the balance is derived from the pair. */
+  retainerPaidAmount?: number | null;
   retainerInvoicedDate?: string | null;
   retainerPaidDate?: string | null;
   // transaction
@@ -75,7 +77,7 @@ export function DealSummaryPanel(props: DealSummaryProps) {
   const {
     kind, statusLabel, statusValue, stageLabel, daysInStage, leadName, assistantName,
     nextAction, dateOnboarded, dealSize, sectors, ndaStatusLabel, eaStatusLabel, referrer,
-    retainerAmount, retainerInvoicedDate, retainerPaidDate,
+    retainerAmount, retainerPaidAmount, retainerInvoicedDate, retainerPaidDate,
     targetRaise, instruments, milestoneLabel, probability, docReadiness, engagement,
     priorityValue,
   } = props;
@@ -135,7 +137,17 @@ export function DealSummaryPanel(props: DealSummaryProps) {
                 <Badge tone="neutral">{eaStatusLabel || "—"}</Badge>
               </Cell>
               <Cell label="Retainer">
-                <span className="font-semibold">{retainerAmount != null ? formatMoney(retainerAmount) : "—"}</span>
+                <span className="font-semibold" data-testid="retainer-amount">
+                  {retainerAmount != null ? formatMoney(retainerAmount) : "—"}
+                </span>
+                {retainerAmount != null && (
+                  <p className="mt-0.5 text-xs font-normal text-[var(--text-secondary)]" data-testid="retainer-balance">
+                    Paid {formatMoney(retainerPaidAmount ?? 0)} ·{" "}
+                    <span className={(balanceDue(retainerAmount, retainerPaidAmount) ?? 0) > 0 ? "font-semibold text-rose-600" : "font-semibold"}>
+                      Balance {formatMoney(balanceDue(retainerAmount, retainerPaidAmount) ?? 0)}
+                    </span>
+                  </p>
+                )}
                 {(retainerInvoicedDate || retainerPaidDate) && (
                   <p className="mt-0.5 text-xs font-normal text-[var(--text-tertiary)]">
                     {retainerInvoicedDate && <>Invoiced {formatDate(retainerInvoicedDate)}</>}

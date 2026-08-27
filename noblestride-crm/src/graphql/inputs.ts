@@ -20,6 +20,7 @@ import {
   RegulatoryStatusEnum, DDTrackEnum, DDStatusEnum,
   PriorityEnum, PartnerFeeStatusEnum,
   MandateStageEnum, TransactionStageEnum, AdvisoryStageEnum,
+  AdvisoryClassificationEnum,
 } from "./builder";
 
 // One ticket-size range (action points 2026-07 item 4); max omitted = open-ended.
@@ -160,6 +161,8 @@ export const MandateInput = builder.inputType("MandateInput", {
     retainerAmount: t.float({ required: false }),
     retainerInvoicedDate: t.field({ type: "DateTime", required: false }),
     retainerPaidDate: t.field({ type: "DateTime", required: false }),
+    // Aug-2026 feedback F4.3.1
+    retainerPaidAmount: t.float({ required: false }),
     priority: t.field({ type: PriorityEnum, required: false }),
     referralQualified: t.boolean({ required: false }),
     // Aug-2026 feedback: per-deal workflow template (null → org default)
@@ -222,6 +225,9 @@ export const AdvisoryInput = builder.inputType("AdvisoryInput", {
     stage: t.field({ type: AdvisoryStageEnum, required: false }),
     dealStatus: t.field({ type: DealStatusEnum, required: false }),
     feeAmount: t.float({ required: false }),
+    // Aug-2026 feedback F4.2.1
+    classification: t.field({ type: AdvisoryClassificationEnum, required: false }),
+    feePaidAmount: t.float({ required: false }),
     currency: t.string({ required: false }),
     sector: t.field({ type: [SectorEnum], required: false }),
     country: t.string({ required: false }),

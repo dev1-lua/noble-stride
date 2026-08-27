@@ -28,6 +28,8 @@ export const mandateCreateSchema = z.object({
   retainerAmount: z.number().nonnegative().optional(),
   retainerInvoicedDate: z.coerce.date().optional(),
   retainerPaidDate: z.coerce.date().optional(),
+  // Aug-2026 feedback F4.3.1: amount actually paid (balance is derived).
+  retainerPaidAmount: z.number().nonnegative().optional(),
   // Clearable back to unset via the mandate drawer's clearableFields opt-in
   // (buildMutationInput sends "" as explicit null for these) — must accept
   // null, not just omission.

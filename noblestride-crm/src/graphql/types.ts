@@ -61,6 +61,7 @@ import {
 } from "./builder";
 import type { DealWorkflow, StepState } from "@/server/domain/workflow";
 import { daysInStage } from "@/server/domain/metrics";
+import { balanceDue } from "@/lib/money";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
 import type { ClientStatusPayload } from "@/server/services/client-status";
 import type { PartnerSelfPayload, PartnerReferredDealView } from "@/server/services/partner-self";
@@ -299,6 +300,14 @@ export const MandateRef = builder.prismaObject("Mandate", {
     retainerPaidDate: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.retainerPaidDate }),
     // Aug-2026 feedback F4.3.1: amount actually paid + derived balance due
     retainerPaidAmount: t.float({ nullable: true, resolve: (m) => (m.retainerPaidAmount == null ? null : Number(m.retainerPaidAmount)) }),
+    retainerBalance: t.float({
+      nullable: true,
+      resolve: (m) =>
+        balanceDue(
+          m.retainerAmount == null ? null : Number(m.retainerAmount),
+          m.retainerPaidAmount == null ? null : Number(m.retainerPaidAmount),
+        ),
+    }),
     priority: t.field({ type: PriorityEnum, nullable: true, resolve: (m) => m.priority }),
     referralQualified: t.exposeBoolean("referralQualified", { nullable: true }),
     // Task 11/12: public-intake qualification verdict + reasons, reviewed here.
@@ -422,6 +431,14 @@ export const AdvisoryEngagementRef = builder.prismaObject("AdvisoryEngagement", 
     // Aug-2026 feedback F4.2.1: work-type classification + fee paid
     classification: t.field({ type: AdvisoryClassificationEnum, nullable: true, resolve: (a) => a.classification }),
     feePaidAmount: t.float({ nullable: true, resolve: (a) => (a.feePaidAmount == null ? null : Number(a.feePaidAmount)) }),
+    feeBalance: t.float({
+      nullable: true,
+      resolve: (a) =>
+        balanceDue(
+          a.feeAmount == null ? null : Number(a.feeAmount),
+          a.feePaidAmount == null ? null : Number(a.feePaidAmount),
+        ),
+    }),
     workflowTemplateId: t.exposeString("workflowTemplateId", { nullable: true }),
     workflowTemplate: t.relation("workflowTemplate", { nullable: true }),
     currency: t.exposeString("currency"),
