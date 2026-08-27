@@ -236,6 +236,17 @@ export const LABELS: Record<string, Record<string, string>> = {
   // Task 6: qualification/scoping gap fields
   Priority: { High: "High", Medium: "Medium", Low: "Low" },
   PartnerFeeStatus: { NotDue: "Not Due", Due: "Due", Invoiced: "Invoiced", Paid: "Paid" },
+  // Aug-2026 feedback: configurable deal workflow + advisory classification.
+  WorkflowPhase: { Qualify: "Qualify", Prepare: "Prepare", Execute: "Execute" },
+  DealKind: { Mandate: "Mandate", Transaction: "Transaction", Advisory: "Advisory" },
+  AdvisoryClassification: {
+    Valuation: "Valuation",
+    DueDiligence: "Due Diligence",
+    BusinessPlanPitchDeck: "Business Plan / Pitch Deck",
+    FinancialModel: "Financial Model",
+    AdvisorySupport: "Advisory Support",
+    Other: "Other",
+  },
 };
 
 // ── Stage tooltips (Wave 1 teaching layer) ──────────────────────────────────
