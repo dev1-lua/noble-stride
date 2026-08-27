@@ -11,6 +11,7 @@ import { label } from "@/lib/vocab";
 import { MILESTONE_ORDER } from "@/lib/milestones";
 import { MilestoneStepper } from "@/components/portal/milestone-stepper";
 import { Card, CardBody } from "@/components/ui/card";
+import { portalStatusLabel, type PortalDealStatusLabel } from "@/server/domain/access-state";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,18 @@ const DATE_FMT = new Intl.DateTimeFormat("en-GB", {
   month: "short",
   year: "numeric",
 });
+
+// F6b.2 (§2c Aika vocabulary): the fund reads its own position without being
+// shown the internal stage enum. Amber is "we are waiting on Noblestride".
+const STATUS_TONE: Record<PortalDealStatusLabel, string> = {
+  "Shared with you": "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",
+  "Awaiting access": "bg-[var(--t-tag-bg-amber)] text-[var(--t-tag-text-amber)]",
+  "Access granted": "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]",
+  "NDA signed": "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]",
+  "In discussion": "bg-[var(--t-tag-bg-sky)] text-[var(--t-tag-text-sky)]",
+  Closed: "bg-[var(--t-tag-bg-violet)] text-[var(--t-tag-text-violet)]",
+  Declined: "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",
+};
 
 export default async function InvestorPipelinePage({
   searchParams,
@@ -68,6 +81,7 @@ export default async function InvestorPipelinePage({
         <div className="space-y-4">
           {items.map(({ deal, own }) => {
             const declined = own.stage === "Declined";
+            const statusLabel = portalStatusLabel({ stage: own.stage, status: own.status });
             return (
               <Link
                 key={deal.id}
@@ -91,13 +105,11 @@ export default async function InvestorPipelinePage({
                     </div>
                   </div>
                   <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                      declined
-                        ? "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]"
-                        : "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
-                    }`}
+                    data-testid={`pipeline-status-${deal.id}`}
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_TONE[statusLabel]}`}
+                    title={label("EngagementStage", own.stage)}
                   >
-                    {label("EngagementStage", own.stage)}
+                    {statusLabel}
                   </span>
                 </div>
 

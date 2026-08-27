@@ -13,6 +13,7 @@ import { TierBadge } from "@/components/portal/tier-badge";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { getThreadForEngagement } from "@/server/services/conversations";
 import { getPortalMembership, capabilitiesOf } from "@/server/auth/portal-authz";
+import { accessState } from "@/server/domain/access-state";
 import { CONVERSATION_STATUS_LABELS, CONVERSATION_STATUS_CLASSES } from "@/lib/conversation-status";
 import { expressInterest, requestNextStep, declineDeal, postThreadMessage } from "./actions";
 
@@ -118,6 +119,29 @@ export default async function InvestorDealPage({
         </div>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">{deal.companyProfile.clientName}</p>
       </div>
+
+      {/* F6b.2 (image28): interest has been registered and staff have not yet
+          granted access. Saying so is the honest answer to "why can I not see
+          more?" — and it is also the client's own requested behaviour: detail
+          stays restricted until access is granted. */}
+      {journey && accessState({ engagementStage: journey.own.stage, status: journey.own.status }) === "interest_received" && (
+        <div
+          data-testid="interest-received-banner"
+          className="rounded-md border border-[var(--border-subtle)] bg-[var(--t-tag-bg-amber)] px-4 py-3 text-sm text-[var(--t-tag-text-amber)]"
+        >
+          <span className="font-semibold">Interest received</span> — the Noblestride deal team is reviewing your
+          request. Detailed information unlocks once access is granted and your NDA is in place.
+          {ndaStatus === "None" && (
+            <>
+              {" "}
+              <Link href="/portal/investor/nda" className="font-medium underline">
+                Sign the Noblestride NDA
+              </Link>{" "}
+              to save a step.
+            </>
+          )}
+        </div>
+      )}
 
       {ndaStatus === "None" && (
         <div

@@ -11,6 +11,7 @@ import { recordMilestone, unrecordMilestone } from "@/server/services/milestones
 import { InvestorInput, ClientInput, MandateInput, TransactionInput, AdvisoryInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, WebsiteIntakeInput, LogClientMessageInput, InvestorUpdateSubmitInput, InvestorCommunicationInput, InvestorFlagInput, OutreachDraftsInput, PartnerSelfUpdateInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor, markInvestorCriteriaVerified } from "@/server/services/investors";
 import { recordOpenNda, recordClosedNda, countersignUploadedNda, requestNdaSignature } from "@/server/services/nda";
+import { grantDealAccess } from "@/server/services/deal-access";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
 import { createMandate, updateMandate, deleteMandate, acceptIntakeMandate, deprioritizeIntakeMandate, rerunQualification } from "@/server/services/mandates";
 import { setAdvisoryStage, createAdvisory, updateAdvisory, deleteAdvisory } from "@/server/services/advisory";
@@ -306,6 +307,21 @@ builder.mutationFields((t) => ({
       assertCan(ctx.actor, "Investors", "U");
       await countersignUploadedNda(String(args.documentId), ctx.actor);
       return prisma.document.findUniqueOrThrow({ where: { id: String(args.documentId) } });
+    },
+  }),
+  // F6b.2 (image28): unlock the deal for an investor who registered interest.
+  // The NDA guard is NOT bypassed — grantDealAccess rides updateEngagement, and
+  // NdaGuardError reaches the client with its own message (mask-error.ts).
+  grantDealAccess: t.prismaField({
+    type: "Engagement", nullable: false,
+    args: { engagementId: t.arg.id({ required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      const engagementId = String(args.engagementId);
+      await assertCanUpdateOwnScoped(ctx.actor, "Engagements", () =>
+        prisma.engagement.findUnique({ where: { id: engagementId }, select: { ownerId: true } }),
+      );
+      await grantDealAccess(engagementId, ctx.actor);
+      return prisma.engagement.findUniqueOrThrow({ where: { id: engagementId } });
     },
   }),
   requestNdaSignature: t.prismaField({

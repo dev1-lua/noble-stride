@@ -10,7 +10,8 @@ import { listServiceProviders } from "@/server/services/service-providers";
 import { resolveDealWorkflow } from "@/server/services/workflow";
 import { relationOptions } from "@/server/services/relation-options";
 import { DealWorkflowCard } from "@/components/crm/deal-workflow";
-import { DDTrack } from "@prisma/client";
+import { DDTrack, type EngagementStage, type EngagementStatus } from "@prisma/client";
+import { accessState } from "@/server/domain/access-state";
 import { DDTracksPanel, type DDTrackRow } from "@/components/crm/dd-tracks-panel";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/format";
@@ -527,7 +528,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
             <p className="text-sm text-[var(--text-tertiary)]">No investor engagements recorded.</p>
           ) : (
             <ul className="divide-y divide-[var(--border-subtle)]">
-              {txn.engagements.map((eng: { id: string; investor: { id: string; name: string }; status: string; notes?: string | null }) => (
+              {txn.engagements.map((eng: { id: string; investor: { id: string; name: string }; status: EngagementStatus; engagementStage: EngagementStage; notes?: string | null }) => (
                 <li key={eng.id} className="py-3 flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <Avatar name={eng.investor.name} size="sm" />
@@ -544,6 +545,17 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
+                    {/* F6b.2: this investor asked for access and nobody has
+                        granted it yet — the one thing a deal lead scanning this
+                        list needs to notice. */}
+                    {accessState(eng) === "interest_received" && (
+                      <span
+                        data-testid={`awaiting-access-${eng.id}`}
+                        className="rounded-full bg-[var(--t-tag-bg-amber)] px-2 py-0.5 text-xs font-medium text-[var(--t-tag-text-amber)]"
+                      >
+                        Awaiting access grant
+                      </span>
+                    )}
                     <Chip value={eng.status} group="EngagementStatus" />
                     <Link
                       href={`/engagement/${eng.id}`}

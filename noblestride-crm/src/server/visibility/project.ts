@@ -8,6 +8,7 @@ import type {
   DocumentStatus,
   DocumentType,
   EngagementStage,
+  EngagementStatus,
   Geography,
   ImpactFlag,
   Instrument,
@@ -371,6 +372,8 @@ export function projectDealForInvestor(
 export interface OwnEngagementInput {
   transactionId: string;
   engagementStage: EngagementStage;
+  /** The investor's OWN relationship status — see ProjectedOwnEngagement.status. */
+  status: EngagementStatus;
   lastContact?: Date | null;
   termSheetIssued?: boolean;
   termSheetDate?: Date | null;
@@ -393,6 +396,15 @@ export interface OwnMilestoneInput {
 export interface ProjectedOwnEngagement {
   dealId: string;
   stage: EngagementStage;
+  /**
+   * F6b.2: the investor's own relationship status on this deal
+   * (NotContacted | Contacted | InConversation | Interested | Passed |
+   * Committed). Needed to distinguish "we sent you this" from "you asked for
+   * access and we are reviewing it" — the stage alone cannot say which.
+   * It is the fund's own position, not internal feedback, probability, notes,
+   * amounts or another investor's data, so the hard rules are untouched.
+   */
+  status: EngagementStatus;
   lastContact: Date | null;
   termSheetIssued: boolean;
   termSheetDate: Date | null;
@@ -402,7 +414,7 @@ export interface ProjectedOwnEngagement {
 
 /**
  * Project an investor's OWN engagement on a deal (their own journey only).
- * Output contains ONLY: dealId, stage, lastContact, termSheetIssued,
+ * Output contains ONLY: dealId, stage, status, lastContact, termSheetIssued,
  * termSheetDate, milestoneKeys. Never feedback/probability/notes/amounts/
  * owner or other-investor data.
  */
@@ -417,6 +429,7 @@ export function projectOwnEngagement(
   return {
     dealId: engagement.transactionId,
     stage: engagement.engagementStage,
+    status: engagement.status,
     lastContact: engagement.lastContact ?? null,
     termSheetIssued: engagement.termSheetIssued ?? false,
     termSheetDate: engagement.termSheetDate ?? null,

@@ -28,6 +28,7 @@ function makeOwnEngagement(overrides: Partial<OwnEngagementInput> = {}): OwnEnga
   return {
     transactionId: "txn-1",
     engagementStage: "DueDiligence",
+    status: "Interested",
     lastContact: new Date("2026-06-01T00:00:00Z"),
     termSheetIssued: true,
     termSheetDate: new Date("2026-06-15T00:00:00Z"),
@@ -53,11 +54,15 @@ describe("projectOwnEngagement — allowlisted own-journey fields", () => {
       "lastContact",
       "milestoneKeys",
       "stage",
+      "status",
       "termSheetDate",
       "termSheetIssued",
     ]);
     expect(p.dealId).toBe("txn-1");
     expect(p.stage).toBe("DueDiligence");
+    // F6b.2: the fund's own relationship status rides along, so the portal can
+    // tell "shared with you" apart from "you asked for access".
+    expect(p.status).toBe("Interested");
     expect(p.lastContact).toEqual(new Date("2026-06-01T00:00:00Z"));
     expect(p.termSheetIssued).toBe(true);
     expect(p.termSheetDate).toEqual(new Date("2026-06-15T00:00:00Z"));
@@ -65,7 +70,7 @@ describe("projectOwnEngagement — allowlisted own-journey fields", () => {
 
   it("defaults optional own fields to null/false", () => {
     const p = projectOwnEngagement(
-      { transactionId: "txn-9", engagementStage: "Shared" },
+      { transactionId: "txn-9", engagementStage: "Shared", status: "NotContacted" },
       [],
     );
     expect(p.lastContact).toBeNull();
