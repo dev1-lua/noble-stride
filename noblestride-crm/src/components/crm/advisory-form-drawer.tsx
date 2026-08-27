@@ -64,9 +64,9 @@ triggerLabel?: string;
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
           <RelationSelect label="Client" required value={v.clientId as string} onChange={(x) => f.setValue("clientId", x)} options={clients} error={f.errors.clientId} placeholder="Select client…" />
           {/* F4.2.1: what kind of advisory work this is (image17). */}
-          <SelectField label="Classification" value={v.classification as string} onChange={(x) => f.setValue("classification", x)} options={options("AdvisoryClassification")} placeholder="Unset" />
+          <SelectField label="Classification" value={v.classification as string} onChange={(x) => f.setValue("classification", x)} options={options("AdvisoryClassification")} placeholder="Unset" clearable />
           <SelectField label="Pipeline status" value={v.stage as string} onChange={(x) => f.setValue("stage", x)} options={options("AdvisoryStage")} />
-          <RelationSelect label="Workflow template" value={(v.workflowTemplateId as string) ?? ""} onChange={(x) => f.setValue("workflowTemplateId", x)} options={workflowTemplates} placeholder="Default template" />
+          <RelationSelect label="Workflow template" value={(v.workflowTemplateId as string) ?? ""} onChange={(x) => f.setValue("workflowTemplateId", x)} options={workflowTemplates} placeholder="Default template" clearable />
           <RelationSelect label="Deal Lead" value={v.leadId as string} onChange={(x) => f.setValue("leadId", x)} options={users} placeholder="Select lead…" />
           <MultiSelectField label="Deal Assists" value={v.assistIds as string[]} onChange={(x) => f.setValue("assistIds", x)} options={users} />
           <MultiSelectField label="Sector" value={v.sector as string[]} onChange={(x) => f.setValue("sector", x)} options={options("Sector")} />

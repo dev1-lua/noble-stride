@@ -96,6 +96,10 @@ export function RestageSelect({ kind, id, currentStage, stageOptions }: RestageS
   return (
     <div className="space-y-1">
       <Select
+        // Explicit id: Select otherwise derives one from the label
+        // ("pipeline-status"), which would collide with the #pipeline-status
+        // section anchor the Deal Workflow step links point at.
+        id="pipeline-status-select"
         label="Pipeline status"
         options={stageOptions}
         value={stage}

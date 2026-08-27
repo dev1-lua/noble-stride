@@ -223,7 +223,10 @@ export function MultiSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
-        aria-label={!label ? aria["aria-label"] : undefined}
+        // A visible `label` renders as a <span> (not a <label for>), so it is
+        // NOT programmatically associated with this button. Always expose an
+        // accessible name: the explicit aria-label wins, else the visible label.
+        aria-label={aria["aria-label"] ?? label}
         className={cn(
           "flex h-8 w-full items-center justify-between gap-2 rounded border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 text-sm",
           "focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)]",

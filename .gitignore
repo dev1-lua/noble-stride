@@ -32,3 +32,18 @@ docs/VERCEL-AGENT-DEPLOYMENT-2026-07-14.md
 *.png
 # Exception: the intake-wizard warning must stay visible in the repo (2026-07-20)
 !TODO-UPDATE-INTAKE-WIZARD.md
+
+# Aug-2026 feedback work: keep repo docs, agent guides, e2e assets tracked (2026-08-27)
+!noblestride-crm/docs/**
+!noblestride-crm/docs/**/*.md
+!noblestride-crm/docs/**/*.png
+!*/AGENT-GUIDE.md
+!*/README.md
+!noblestride-crm/e2e/**
+buffer.txt
+
+# Playwright
+noblestride-crm/test-results/
+noblestride-crm/playwright-report/
+noblestride-crm/blob-report/
+noblestride-crm/e2e/.auth/

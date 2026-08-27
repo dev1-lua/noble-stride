@@ -75,7 +75,7 @@ triggerLabel?: string;
           <RelationSelect label="Client" required value={v.clientId as string} onChange={(x) => f.setValue("clientId", x)} options={clients} error={f.errors.clientId} placeholder="Select client…" />
           <RelationSelect label="Mandate" value={v.mandateId as string} onChange={(x) => f.setValue("mandateId", x)} options={mandates} placeholder="Select mandate…" />
           <SelectField label="Pipeline status" value={v.stage as string} onChange={(x) => f.setValue("stage", x)} options={options("TransactionStage")} />
-          <RelationSelect label="Workflow template" value={(v.workflowTemplateId as string) ?? ""} onChange={(x) => f.setValue("workflowTemplateId", x)} options={workflowTemplates} placeholder="Default template" />
+          <RelationSelect label="Workflow template" value={(v.workflowTemplateId as string) ?? ""} onChange={(x) => f.setValue("workflowTemplateId", x)} options={workflowTemplates} placeholder="Default template" clearable />
           <RelationSelect label="Deal Lead" value={v.ownerId as string} onChange={(x) => f.setValue("ownerId", x)} options={users} placeholder="Select lead…" />
           <MultiSelectField label="Deal Assists" value={v.assistIds as string[]} onChange={(x) => f.setValue("assistIds", x)} options={users} />
           <RelationSelect label="Referred By (Consultant/Partner)" value={v.referredById as string} onChange={(x) => f.setValue("referredById", x)} options={partners} placeholder="Select partner…" />

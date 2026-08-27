@@ -18,6 +18,12 @@ export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectE
   placeholder?: string;
   /** Error message rendered below the select */
   error?: string;
+  /**
+   * Make the placeholder option selectable, so a value can be cleared back to
+   * "" (the drawers' `clearableFields` then send an explicit null). Off by
+   * default: for a required relation the placeholder must stay unselectable.
+   */
+  clearable?: boolean;
 }
 
 /**
@@ -26,7 +32,7 @@ export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectE
  * `onChange` receives the string value directly (not a SyntheticEvent).
  */
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ options, value, onChange, label, placeholder, error, className, id, ...props }, ref) => {
+  ({ options, value, onChange, label, placeholder, error, className, id, clearable, ...props }, ref) => {
     const selectId = id ?? label?.toLowerCase().replace(/\s+/g, "-");
     return (
       <div className="flex flex-col gap-1">
@@ -55,7 +61,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           {...props}
         >
           {placeholder && (
-            <option value="" disabled>
+            <option value="" disabled={!clearable}>
               {placeholder}
             </option>
           )}
