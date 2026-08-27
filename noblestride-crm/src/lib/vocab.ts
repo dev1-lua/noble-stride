@@ -128,6 +128,9 @@ export const LABELS: Record<string, Record<string, string>> = {
     SocialMedia: "Social media (LinkedIn / WhatsApp)",
     InternalBusinessDev: "Internal business development",
     Other: "Other",
+    // §2b G4 — the sources named in the client's step-1 diagram (image32).
+    DeskResearch: "Desk research",
+    ExistingNetwork: "Existing network",
   },
   DocStatus: {
     NotSent: "Not Sent",
@@ -194,6 +197,7 @@ export const LABELS: Record<string, Record<string, string>> = {
     NDA: "NDA", EngagementContract: "Engagement Contract", FeeShareAgreement: "Fee-Share Agreement", Teaser: "Teaser", IM: "Information Memorandum",
     FinancialModel: "Financial Model", Valuation: "Valuation", PitchDeck: "Pitch Deck", AuditedAccounts: "Audited Accounts",
     CR12: "CR12", TermSheet: "Term Sheet", LoanAgreement: "Loan Agreement", SPA: "SPA", SHA: "SHA", BusinessPlan: "Business Plan", Other: "Other",
+    InvestmentCriteria: "Investment Criteria",
   },
   DocumentAccessLevel: { Internal: "Internal", ClientShared: "Client-Shared", InvestorShared: "Investor-Shared", VDR: "VDR" },
   DocumentStatus: { Draft: "Draft", UnderReview: "Under Review", Approved: "Approved", Shared: "Shared", Executed: "Executed" },

@@ -17,6 +17,7 @@
     "seed": "tsx prisma/seed.ts",
     "seed:workflow": "tsx scripts/seed-workflow-defaults.ts",
     "db:fix-checksums": "tsx scripts/fix-prisma-migration-checksums.ts",
+    "db:backfill-approved-at": "tsx scripts/backfill-investor-approved-at.ts",
     "db:cleanup-prefixed": "tsx scripts/cleanup-prefixed-test-data.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

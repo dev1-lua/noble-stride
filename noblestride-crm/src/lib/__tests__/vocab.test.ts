@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   EngagementStage, InvestorEngagementClassification, Sector, InvestorType,
-  WorkflowPhase, DealKind, AdvisoryClassification,
+  WorkflowPhase, DealKind, AdvisoryClassification, Source, DocumentType,
 } from "@prisma/client";
 import { LABELS } from "@/lib/vocab";
 
@@ -33,5 +33,15 @@ describe("new controlled vocabularies", () => {
     for (const v of Object.values(AdvisoryClassification)) expect(LABELS.AdvisoryClassification[v]).toBeTruthy();
     expect(LABELS.AdvisoryClassification.BusinessPlanPitchDeck).toBe("Business Plan / Pitch Deck");
     expect(LABELS.AdvisoryClassification.DueDiligence).toBe("Due Diligence");
+  });
+  it("labels every Source and DocumentType value", () => {
+    for (const v of Object.values(Source)) expect(LABELS.Source[v]).toBeTruthy();
+    for (const v of Object.values(DocumentType)) expect(LABELS.DocumentType[v]).toBeTruthy();
+  });
+  it("adds the diagram step-1 sources (G4)", () => {
+    expect(Object.values(Source)).toContain("DeskResearch");
+    expect(Object.values(Source)).toContain("ExistingNetwork");
+    expect(LABELS.Source.DeskResearch).toBe("Desk research");
+    expect(LABELS.Source.ExistingNetwork).toBe("Existing network");
   });
 });

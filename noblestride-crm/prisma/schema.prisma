@@ -172,6 +172,9 @@ enum Source {
   SocialMedia
   InternalBusinessDev
   Other
+  /// §2b G4 — the sources named in the client's step-1 diagram (image32).
+  DeskResearch
+  ExistingNetwork
 }
 
 enum DocStatus {
@@ -594,6 +597,7 @@ model User {
   conversationMessages    ConversationMessage[]     @relation("MessageSenderUser")
   completedStageStates        DealStageState[]        @relation("DealStageStateCompletedBy")
   addedEngagementParticipants EngagementParticipant[] @relation("EngagementParticipantAddedBy")
+  accessGrantedEngagements    Engagement[]            @relation("EngagementAccessGrantedBy")
 }
 
 model Person {
@@ -629,6 +633,7 @@ model Person {
   proposedChanges InvestorProposedChange[]
   conversationMessages ConversationMessage[] @relation("MessageSenderPerson")
   engagementParticipations EngagementParticipant[]
+  uploadedDocuments        Document[]            @relation("DocumentUploadedByPerson")
 
   @@index([investorId])
   @@index([clientId])
@@ -666,6 +671,8 @@ model Investor {
   emailVerifiedAt          DateTime?
   phoneVerifiedAt          DateTime?
   registeredAt             DateTime?
+  /// F3.3 — when Noblestride approved this investor's onboarding ("date onboarded").
+  approvedAt               DateTime?
   openNdaSignedAt          DateTime?
   shareholdingPreference   String?
   minRevenue               Decimal?  @db.Decimal(20, 2)
@@ -716,6 +723,7 @@ model Investor {
   @@index([status])
   @@index([engagementClassification])
   @@index([onboardingStatus])
+  @@index([approvedAt])
 }
 
 // BlockedRegistration — email domains/addresses barred from self-registration.
@@ -1019,6 +1027,12 @@ model Engagement {
   interestLevel      InterestLevel?
   ndaType            NdaType?
   ndaSignedAt        DateTime?
+  /// F6b.2 — when staff granted this investor access to the deal detail. Set by
+  /// grantDealAccess, which rides updateEngagement -> NDASigned so the NDA guard
+  /// in src/server/domain/nda-guard.ts is never bypassed.
+  accessGrantedAt    DateTime?
+  accessGrantedById  String?
+  accessGrantedBy    User?               @relation("EngagementAccessGrantedBy", fields: [accessGrantedById], references: [id], onDelete: SetNull)
   termSheetIssued    Boolean             @default(false)
   termSheetDate      DateTime?
   totalAmount        Decimal?            @db.Decimal(20, 2)
@@ -1050,6 +1064,7 @@ model Engagement {
   @@index([status])
   @@index([investorId])
   @@index([engagementStage])
+  @@index([accessGrantedById])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1283,6 +1298,10 @@ model Document {
   uploadedById  String?
   uploadedBy    User?               @relation("DocumentUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
   uploadedAt    DateTime            @default(now())
+  /// F3.1/F2.4: uploads that came from an external portal/applicant Person
+  /// (staff uploads keep using uploadedById -> User).
+  uploadedByPersonId String?
+  uploadedByPerson   Person?         @relation("DocumentUploadedByPerson", fields: [uploadedByPersonId], references: [id], onDelete: SetNull)
   // Review chain (workflow doc Stage 2): peer review -> MD approval -> client review
   reviewerId       String?
   reviewer         User?     @relation("DocumentReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
@@ -1316,6 +1335,7 @@ model Document {
   @@index([investorId])
   @@index([folderId])
   @@index([isCurrent])
+  @@index([uploadedByPersonId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1378,7 +1398,10 @@ model DocumentAccessLog {
 
 model StageChange {
   id            String       @id @default(cuid())
-  field         String       // "stage" | "dealStatus" | "engagementStage" | "dealMilestone" | "name" | "registrationNo" | "primaryContact"
+  /// See StageChangeField in src/server/services/stage-history.ts:
+  /// "stage" | "dealStatus" | "engagementStage" | "dealMilestone" | "name"
+  /// | "registrationNo" | "primaryContact" | "workflowStep" | "email"
+  field         String
   fromValue     String?
   toValue       String
   changedAt     DateTime     @default(now())
@@ -1551,6 +1574,9 @@ model AuthAccount {
   failedLogins Int           @default(0)
   lockedUntil  DateTime?
   lastLoginAt  DateTime?
+  /// F3.6 self-service email change: the address awaiting VERIFY_EMAIL confirmation.
+  pendingEmail            String?
+  pendingEmailRequestedAt DateTime?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -1605,6 +1631,23 @@ model AuthOtpChallenge {
 }
 
 /// Public web-chat status OTP (spec 2026-07-14). Mirrors AuthOtpChallenge but keyed to a matched Person, not an AuthAccount.
+/// Public application-status OTP (F2.4 / §2b G1). Keyed to a raw email — the
+/// caller is anonymous and no Client/Person match is required to issue a code,
+/// so nothing here may leak whether an application exists.
+model ApplicantOtpChallenge {
+  id          String    @id @default(cuid())
+  email       String // normalized lowercase
+  codeHash    String // sha256 hex of the 6-digit code; raw code never stored
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+  @@index([email, createdAt])
+}
+
 model ClientOtpChallenge {
   id          String    @id @default(cuid())
   clientId    String
@@ -1667,6 +1710,11 @@ model ESignEnvelope {
   status        String   @default("sent") // sent | delivered | completed | declined | voided
   signerEmail   String
   signerName    String
+  /// F3.2 click-wrap: NDA template version, signer IP, and the drawn/typed/uploaded
+  /// signature as a PNG data URL. All null for DocuSign-provider envelopes.
+  templateVersion String?
+  signedIp        String?
+  signatureImage  String?
   investorId    String?
   investor      Investor?    @relation(fields: [investorId], references: [id], onDelete: SetNull)
   engagementId  String?

@@ -36,7 +36,16 @@ export type NotificationKind =
   | "milestone_update"
   // Two-way conversation threads (action points 2026-07)
   | "investor_message"
-  | "message_reply";
+  | "message_reply"
+  // Aug-2026 feedback (WS-B): onboarding, NDA, deal access, participants, email
+  | "nda_uploaded"
+  | "nda_signed"
+  | "criteria_uploaded"
+  | "deal_access_granted"
+  | "participant_added"
+  | "email_changed"
+  | "applicant_document_uploaded"
+  | "partner_access_requested";
 
 export interface NotifyInput {
   kind: NotificationKind;
