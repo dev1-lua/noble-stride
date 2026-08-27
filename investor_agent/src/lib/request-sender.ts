@@ -1,4 +1,4 @@
-import { Lua } from "lua-cli";
+import { Lua, env } from "lua-cli";
 
 /**
  * Normalize any `From` value to a bare, comparable email address.
@@ -66,15 +66,49 @@ export function verifiedSender(): string | undefined {
 }
 
 /**
+ * Where an investor should go when this channel cannot identify them (A5 /
+ * image21). Read lazily so the value comes from the environment the agent is
+ * actually running in, and falls back to the known production host rather than
+ * ever handing a visitor a blank link.
+ */
+export function portalUrl(): string {
+  try {
+    const raw = env("PORTAL_URL");
+    if (typeof raw === "string" && raw.trim()) return raw.trim().replace(/\/+$/, "");
+  } catch {
+    /* env unavailable outside a runtime */
+  }
+  return "https://noble-stride.vercel.app/portal/investor";
+}
+
+/**
  * Typed refusal returned by identity-sensitive tools when there is no
  * transport-verified sender (any non-email channel). The message is
  * model-facing steering; the correspondence skill tells the persona how to
  * phrase this to the visitor.
+ *
+ * A5 / image21: a bare refusal on web chat was the client's complaint. The
+ * message now EXPLAINS why the channel cannot identify anybody and gives the
+ * two ways forward: the portal, and emailing from the registered address.
+ *
+ * `message` is a getter on purpose. Every call site spreads this object
+ * (`{ ...CHANNEL_UNVERIFIED }`), and spreading evaluates a getter, so the
+ * environment is read at the moment of the refusal rather than at import time.
+ *
+ * The portal URL is deliberately inside the MESSAGE and not a `portalUrl` field:
+ * `express_deal_interest` returns `portalUrl: null` on a refusal because the
+ * skill forbids sending a link it did not mint, and a spread field here would
+ * silently overwrite that null with a generic link.
  */
 export const CHANNEL_UNVERIFIED = {
   matched: false as const,
   refusal: "channel_unverified" as const,
-  message:
-    "Sender identity can't be verified on this channel, so no profile or record can be looked up, confirmed, or updated here. " +
-    "Ask the sender to email Noblestride Investor Relations from their registered address; do not retry this tool in this conversation.",
+  get message(): string {
+    return (
+      "Sender identity can't be verified on this channel, so no profile or record can be looked up, confirmed, or updated here. " +
+      `Explain why to the visitor rather than refusing flatly, and give them both routes: their secure investor portal at ${portalUrl()}, ` +
+      "where they can sign in and see their own opportunities, or emailing Noblestride Investor Relations from their registered address. " +
+      "Do not retry this tool in this conversation."
+    );
+  },
 };
