@@ -15,6 +15,51 @@ export type GateOutcome = "proceed" | "verify" | "partner" | "logout";
 export const LOGOUT_INTENT =
   /^\s*(log\s?out|sign\s?out|exit staff mode|end staff (mode|session)|reset to partner mode|reset (my )?verification)\s*[.!]?\s*$/i;
 
+// Strips everything that isn't a letter, digit, or whitespace, replacing each run
+// with a single space so word boundaries survive (e.g. "Passphrase:" -> "passphrase ").
+const PUNCT_RUN = /[^\p{L}\p{N}\s]+/gu;
+
+/**
+ * Lowercase, strip punctuation (boundary-preserving), collapse whitespace. Applied
+ * identically to both the configured passphrase and the incoming message so that
+ * any punctuation embedded in either side cancels out rather than causing a
+ * false mismatch.
+ */
+export function normalizeForMatch(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(PUNCT_RUN, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * True when the normalized passphrase appears anywhere in the normalized message as a
+ * contiguous, word-boundary-aligned run — tolerant of greetings, labels, quotes,
+ * punctuation, and case, but NOT of partial or fuzzy matches of the passphrase itself:
+ * "secrets" does not match "secret", and only half of a multi-word passphrase does not
+ * match either. Both sides go through the same normalization, so the comparison is
+ * always apples-to-apples.
+ */
+export function containsPassphrase(message: string, passphrase: string): boolean {
+  const normPass = normalizeForMatch(passphrase);
+  if (!normPass) return false;
+  const normMsg = normalizeForMatch(message);
+  return ` ${normMsg} `.includes(` ${normPass} `);
+}
+
+// B4: a TEAM_PASSPHRASE that normalizes to empty (all punctuation/whitespace, e.g. "!!!"
+// or "   ") must be treated the same as an unset passphrase — this dual-audience gate has
+// no separate "unconfigured" outcome, so its existing missing-passphrase behaviour is to
+// fall through to "partner" mode, and an empty-normalizing passphrase must fail closed to
+// that same "partner" outcome rather than ever verifying anyone as staff. A real passphrase
+// needs at least one alphanumeric token to survive normalization; containsPassphrase
+// already refuses to match an empty-normalized passphrase, but the explicit check here
+// keeps that guarantee visible and consistent with the other two gated packages.
+function isConfiguredPassphrase(passphrase: string | undefined): passphrase is string {
+  return !!passphrase && normalizeForMatch(passphrase).length > 0;
+}
+
 export function gateDecision(
   verified: boolean,
   lastText: string | undefined,
@@ -24,7 +69,7 @@ export function gateDecision(
     if (lastText && LOGOUT_INTENT.test(lastText)) return "logout";
     return "proceed";
   }
-  if (passphrase && lastText !== undefined && lastText.trim() === passphrase) return "verify";
+  if (isConfiguredPassphrase(passphrase) && lastText !== undefined && containsPassphrase(lastText, passphrase)) return "verify";
   return "partner";
 }
 

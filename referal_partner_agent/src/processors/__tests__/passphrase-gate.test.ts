@@ -7,10 +7,26 @@ describe("gateDecision", () => {
     expect(gateDecision(true, undefined, "secret")).toBe("proceed");
   });
 
-  it("correct passphrase (trimmed, case-sensitive) verifies as staff", () => {
+  // The server-side gate matches the passphrase case-insensitively and tolerantly
+  // of punctuation and surrounding words. Anything that is not the passphrase
+  // still falls through to partner mode rather than being blocked.
+  it("matches the passphrase tolerantly of case, punctuation and surrounding words", () => {
     expect(gateDecision(false, "  secret ", "secret")).toBe("verify");
-    // wrong case is NOT the passphrase → falls through to partner mode (not blocked)
-    expect(gateDecision(false, "Secret", "secret")).toBe("partner");
+    expect(gateDecision(false, "Secret", "secret")).toBe("verify");
+    expect(gateDecision(false, "the passphrase is Secret.", "secret")).toBe("verify");
+  });
+
+  it("a partial or near-miss passphrase falls through to partner mode", () => {
+    expect(gateDecision(false, "secrets", "secret")).toBe("partner");
+    expect(gateDecision(false, "open", "open sesame")).toBe("partner");
+    expect(gateDecision(false, "open sesame", "open sesame")).toBe("verify");
+  });
+
+  // An unusable passphrase must never verify anyone as staff; it fails closed to
+  // partner mode, which is this agent's unprivileged default.
+  it("a punctuation-only passphrase never verifies staff", () => {
+    expect(gateDecision(false, "!!!", "!!!")).toBe("partner");
+    expect(gateDecision(false, "anything", "   ")).toBe("partner");
   });
 
   it("a non-staff message proceeds in partner mode (never hard-blocked)", () => {
