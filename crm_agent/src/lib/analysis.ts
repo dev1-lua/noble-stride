@@ -153,6 +153,73 @@ export function rosterByStage(
   }));
 }
 
+// ── Engagement freshness (Task 2: list_deal_interest) ──────────────────────
+// Mirrors the CRM's own thresholds for "is this engagement going cold"
+// (noblestride-crm src/server/domain/comm-timeline.ts:56-69 `contactFreshness`,
+// STALE_CONTACT_WARN_DAYS=7 / STALE_CONTACT_ALERT_DAYS=14) — same day boundaries.
+// NOTE: this only measures recency of a touch on EITHER side (a staff outbound
+// bump counts same as an investor reply) — it is a contact-recency signal, not
+// proof the investor themselves is engaging. Callers should not overclaim it.
+
+export const ENGAGEMENT_ACTIVE_DAYS = 7;
+export const ENGAGEMENT_COOLING_DAYS = 14;
+
+export type EngagementActivity = "active" | "cooling" | "dormant" | "never_contacted";
+
+export function engagementActivity(lastTouch: string | null, now: Date = new Date()): EngagementActivity {
+  if (!lastTouch) return "never_contacted";
+  const t = new Date(lastTouch).getTime();
+  if (Number.isNaN(t)) return "never_contacted";
+  const days = Math.floor((now.getTime() - t) / DAY_MS);
+  if (days < ENGAGEMENT_ACTIVE_DAYS) return "active";
+  if (days < ENGAGEMENT_COOLING_DAYS) return "cooling";
+  return "dormant";
+}
+
+/**
+ * The more recent of two ISO timestamps, either of which may be missing or
+ * unparseable. Used to combine `engagement.lastContact` with
+ * `engagement.conversation.lastMessageAt` into a single "last touch" signal.
+ */
+export function mostRecentTouch(a: string | null | undefined, b: string | null | undefined): string | null {
+  const ta = a ? new Date(a).getTime() : NaN;
+  const tb = b ? new Date(b).getTime() : NaN;
+  if (Number.isNaN(ta) && Number.isNaN(tb)) return null;
+  if (Number.isNaN(ta)) return b as string;
+  if (Number.isNaN(tb)) return a as string;
+  return ta >= tb ? (a as string) : (b as string);
+}
+
+// Port of noblestride-crm src/lib/milestones.ts STAGE_MILESTONES (lines 49-77),
+// narrowed to the one fact list_deal_interest needs: which EngagementStage
+// values, on their own, imply ExpressionOfInterest is already effectively done
+// (mirrors effectiveMilestones(stage, recorded), lines 80-85). "Declined" is
+// deliberately excluded: the CRM's own table gives it `[]` ("whatever was
+// individually recorded stands; stage implies nothing further").
+//
+// This matters because the CRM's own interest-recording flows (portal
+// `expressInterest`, the investor email agent) only ever bump engagement
+// STATUS — neither ever writes an EngagementMilestone row for
+// ExpressionOfInterest, and both refuse to bump status once it is already past
+// Contacted. So an investor already at, say, DueDiligence who re-affirms
+// interest will never get an explicit EOI milestone row; gating on the
+// milestone alone would wrongly show them as not-yet-interested.
+const EOI_IMPLIED_STAGES: ReadonlySet<string> = new Set([
+  "Meeting", "InfoRequest", "IMShared", "VDRAccess", "DueDiligence", "TermSheet", "Offer", "Invested",
+]);
+
+/**
+ * Mirrors the CRM's effectiveMilestones(stage, recorded), narrowed to asking
+ * one question: has ExpressionOfInterest effectively happened? True if an EOI
+ * milestone was individually recorded (any stage, including Declined — a
+ * recorded milestone always stands), OR the engagement's stage alone implies
+ * it (see EOI_IMPLIED_STAGES).
+ */
+export function hasExpressedInterestViaStage(engagementStage: string | null | undefined, milestoneKeys: string[]): boolean {
+  if (milestoneKeys.includes("ExpressionOfInterest")) return true;
+  return !!engagementStage && EOI_IMPLIED_STAGES.has(engagementStage);
+}
+
 export function analyzePipeline(columns: Array<{ stage: string; label: string; items: AnalysisPipelineItem[] }>, now: Date = new Date()): PipelineAnalysis {
   const metrics: PipelineMetric[] = [];
   const aging: PipelineAnalysis["aging"] = [];

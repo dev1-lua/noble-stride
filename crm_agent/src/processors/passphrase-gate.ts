@@ -22,6 +22,39 @@ export interface GateState {
 const EMAIL_LIKE = /^\S+@\S+\.\S+$/;
 const EMAIL_TOKEN = /\S+@\S+\.\S+/; // first email-like token anywhere in the message
 
+// Strips everything that isn't a letter, digit, or whitespace, replacing each run
+// with a single space so word boundaries survive (e.g. "Passphrase:" -> "passphrase ").
+const PUNCT_RUN = /[^\p{L}\p{N}\s]+/gu;
+
+/**
+ * Lowercase, strip punctuation (boundary-preserving), collapse whitespace. Applied
+ * identically to both the configured passphrase and the incoming message so that
+ * any punctuation embedded in either side cancels out rather than causing a
+ * false mismatch.
+ */
+export function normalizeForMatch(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(PUNCT_RUN, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * True when the normalized passphrase appears anywhere in the normalized message as a
+ * contiguous, word-boundary-aligned run — tolerant of greetings, labels, quotes,
+ * punctuation, and case, but NOT of partial or fuzzy matches of the passphrase itself:
+ * "secrets" does not match "secret", and only half of a multi-word passphrase does not
+ * match either. Both sides go through the same normalization, so the comparison is
+ * always apples-to-apples.
+ */
+export function containsPassphrase(message: string, passphrase: string): boolean {
+  const normPass = normalizeForMatch(passphrase);
+  if (!normPass) return false;
+  const normMsg = normalizeForMatch(message);
+  return ` ${normMsg} `.includes(` ${normPass} `);
+}
+
 // 2026-07-21 QA (cross-cutting): verification used to be permanent — no expiry, no logout.
 // A verified user can now end their staff session explicitly. Deliberately strict: the
 // WHOLE message must be a logout phrase, so "how do I log out of the CRM?" never
@@ -30,6 +63,15 @@ export const LOGOUT_INTENT = /^\s*(log\s?out|sign\s?out|exit staff mode|end staf
 
 // Split a reply into its email token (if any) and the remaining text, so a
 // single message can carry both the passphrase and the CRM email.
+//
+// B5: the configured TEAM_PASSPHRASE itself must never contain an email-like
+// token. extractCredentials pulls the FIRST email-shaped substring out of
+// whatever text it's given — if the passphrase were, say, "verify jane@x.co",
+// checking a reply against it would let extractCredentials capture
+// "jane@x.co" as though the SENDER had supplied it, silently identifying the
+// message as coming from an arbitrary staff email. Passphrases are an
+// operator-configured secret (env var), not user input, so this is enforced
+// by convention/comment rather than a runtime check.
 export function extractCredentials(text: string): { email: string | null; rest: string } {
   const match = text.match(EMAIL_TOKEN);
   if (!match || match.index === undefined) return { email: null, rest: text.trim() };
@@ -50,17 +92,27 @@ export function extractCredentials(text: string): { email: string | null; rest: 
  *     supplied), we need the user's CRM email once before they can act on
  *     the CRM's behalf.
  */
+// B4: a TEAM_PASSPHRASE that normalizes to empty (all punctuation/whitespace, e.g.
+// "!!!" or "   ") must fail closed exactly like an unset passphrase — normalizeForMatch
+// would otherwise reduce it to "", which containsPassphrase already refuses to match
+// against, but gateDecision must ALSO route it to "unconfigured" (not an endless
+// "challenge") so the misconfiguration is surfaced honestly instead of looking like a
+// live, just-never-guessable passphrase. A real passphrase needs at least one
+// alphanumeric token to survive normalization.
+function isConfiguredPassphrase(passphrase: string | undefined): passphrase is string {
+  return !!passphrase && normalizeForMatch(passphrase).length > 0;
+}
+
 export function gateDecision(
   state: GateState,
   lastText: string | undefined,
   passphrase: string | undefined,
 ): GateOutcome {
   if (!state.verified) {
-    if (!passphrase) return "unconfigured";
+    if (!isConfiguredPassphrase(passphrase)) return "unconfigured";
     if (lastText === undefined) return "challenge";
-    const { email, rest } = extractCredentials(lastText);
-    const normalized = passphrase.trim();
-    if (rest === normalized || lastText.trim() === normalized) {
+    if (containsPassphrase(lastText, passphrase)) {
+      const { email } = extractCredentials(lastText);
       return email ? "verify_and_identify" : "verify";
     }
     return "challenge";
@@ -73,14 +125,20 @@ export function gateDecision(
 }
 
 const CHALLENGE =
-  "This assistant is for Noblestride staff only. Please reply with the team passphrase AND your CRM email together in one message (e.g. `<passphrase> you@noblestride.capital`).";
+  "This assistant is for Noblestride staff only. Reply with your work email and the team passphrase — you can include them in one message.";
+// B3: passphrase-only verification (no email in the same message) used to invite the
+// user straight into CRM questions ("Ask me to summarize...") even though the very next
+// turn demands a work email before anything actually proceeds (see the "ask_email"
+// outcome below) — a dead-end that reads as a broken bot. Ask for the email here
+// instead; the fully-verified welcomes (identifyOk / verifyAndIdentifyOk below, used
+// once staffEmail is also known) are unchanged.
 const WELCOME =
-  "✅ You're verified. Ask me to summarize any client, investor, mandate, transaction, engagement, or partner — or ask \"what moved this week?\" for a pipeline digest.";
+  "✅ Passphrase verified. To finish signing in, I also need your work email — what is it?";
 const UNCONFIGURED = "The assistant isn't fully configured yet (missing team passphrase). Please contact the Noblestride admin.";
 const ASK_EMAIL =
   "✅ Passphrase accepted. To act on your behalf in the CRM I also need your CRM email — what is it?";
 const IDENTIFY_FAIL =
-  "That email doesn't match an active CRM user — please check the spelling (it must be your CRM login email).";
+  "That email isn't on the staff list — check for typos (it must match your CRM login email).";
 const IDENTIFY_ERROR = "I can't verify your email right now — please try again shortly.";
 const LOGGED_OUT =
   "✅ You've been signed out of staff mode. To use the assistant again, send the team passphrase and your CRM email together in one message.";

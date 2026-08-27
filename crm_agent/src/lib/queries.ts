@@ -176,6 +176,68 @@ export const DOCUMENT_ARG: Partial<Record<RecordType, string>> = {
   transaction: "transactionId",
 };
 
+// ─── summarize_investor_document (Task 5) ───────────────────────────────────
+// A whitelisted, extraction-only surface: documentAgentText is the ONLY
+// place crmAgent ever reads a document's file contents (DOCUMENTS_QUERY
+// above stays metadata-only). List an investor's own documents to resolve
+// a named or "latest" pick, then fetch that one document's extracted text.
+
+// createdSource is selected and filtered client-side (kept to "API" only) so
+// this tool can only ever pick a document the investor uploaded through
+// their own portal — never a staff- or agent-filed document on the same
+// investor record (C1/I1).
+export const LIST_INVESTOR_DOCUMENTS = /* GraphQL */ `
+  query AgentInvestorDocuments($investorId: ID!) {
+    documents(investorId: $investorId) {
+      id
+      name
+      type
+      uploadedAt
+      isCurrent
+      createdSource
+    }
+  }
+`;
+
+export const DOCUMENT_AGENT_TEXT = /* GraphQL */ `
+  query AgentDocumentText($id: ID!) {
+    documentAgentText(id: $id) {
+      name
+      mimeType
+      text
+      truncated
+    }
+  }
+`;
+
+/** Stated CRM criteria for an investor — the fields a document is checked against. */
+export const INVESTOR_CRITERIA = /* GraphQL */ `
+  query AgentInvestorCriteria($id: ID!) {
+    investor(id: $id) {
+      name
+      sectorFocus
+      geographicFocus
+      instruments
+      investmentStages
+      ticketMin
+      ticketMax
+      currency
+      ticketBands {
+        min
+        max
+        currency
+        note
+      }
+      minRevenue
+      minEbitda
+      minLoanBook
+      targetIrr
+      esgFocus
+      investmentMandate
+    }
+  }
+`;
+
 // ─── crmAgent write surface (Task 9/10) ─────────────────────────────────────
 // Two-phase prepare/confirm write mutations. Never expose raw record fields
 // back to the model beyond the operator-facing preview/summary text.
@@ -205,6 +267,24 @@ export const AGENT_CANCEL_WRITE = /* GraphQL */ `
   mutation AgentCancelWrite($writeToken: String!, $actorEmail: String!) {
     agentCancelWrite(writeToken: $writeToken, actorEmail: $actorEmail) {
       ok
+    }
+  }
+`;
+
+/** Per-deal investor interest snapshot (Task 2 `list_deal_interest`): every
+ * engagement's status/stage/milestones on one transaction. Deliberately does
+ * NOT select `activities` (unbounded relation) — this tool only needs status,
+ * freshness, and milestone facts, all already on the Engagement type. */
+export const AGENT_DEAL_INTEREST = /* GraphQL */ `
+  query AgentDealInterest($id: ID!) {
+    transaction(id: $id) {
+      id name stage
+      engagements {
+        status engagementStage interestLevel lastContact updatedAt
+        investor { id name investorType }
+        conversation { status lastMessageAt }
+        milestones { key completedAt }
+      }
     }
   }
 `;

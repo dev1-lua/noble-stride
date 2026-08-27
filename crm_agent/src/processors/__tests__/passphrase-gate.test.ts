@@ -14,9 +14,29 @@ describe("gateDecision", () => {
     );
   });
 
-  it("correct passphrase (trimmed, case-sensitive) verifies", () => {
+  // The server-side gate (v1.0.11) matches the passphrase case-insensitively and
+  // tolerantly of punctuation and surrounding words, so a staff member typing
+  // "Passphrase: Secret!" is not turned away over a capital letter. What it will
+  // NOT do is match a partial or fuzzy version of the phrase itself.
+  it("matches the passphrase tolerantly of case, punctuation and surrounding words", () => {
     expect(gateDecision({ verified: false }, "  secret ", "secret")).toBe("verify");
-    expect(gateDecision({ verified: false }, "Secret", "secret")).toBe("challenge");
+    expect(gateDecision({ verified: false }, "Secret", "secret")).toBe("verify");
+    expect(gateDecision({ verified: false }, "Passphrase: Secret!", "secret")).toBe("verify");
+    expect(gateDecision({ verified: false }, "hi, the passphrase is secret", "secret")).toBe("verify");
+  });
+
+  it("does not accept a partial or near-miss passphrase", () => {
+    expect(gateDecision({ verified: false }, "secrets", "secret")).toBe("challenge");
+    expect(gateDecision({ verified: false }, "sec", "secret")).toBe("challenge");
+    expect(gateDecision({ verified: false }, "open", "open sesame")).toBe("challenge");
+    expect(gateDecision({ verified: false }, "open sesame", "open sesame")).toBe("verify");
+  });
+
+  // A passphrase of nothing but punctuation normalizes to empty, which must fail
+  // closed like an unset one rather than looking like a live, unguessable secret.
+  it("treats a punctuation-only passphrase as unconfigured", () => {
+    expect(gateDecision({ verified: false }, "!!!", "!!!")).toBe("unconfigured");
+    expect(gateDecision({ verified: false }, "anything", "   ")).toBe("unconfigured");
   });
 
   it("anything else is challenged", () => {
@@ -144,7 +164,7 @@ describe("runGate", () => {
     const result = await runGate(deps, { verified: true }, "unknown@noblestride.com", "u1");
     expect(deps.updateUser).not.toHaveBeenCalled();
     expect(result.action).toBe("block");
-    if (result.action === "block") expect(result.response).toMatch(/doesn't match an active CRM user/i);
+    if (result.action === "block") expect(result.response).toMatch(/isn't on the staff list/i);
   });
 
   it("try_identify: CRM transport failure blocks with a retry message and no update", async () => {
@@ -175,7 +195,7 @@ describe("runGate", () => {
     expect(deps.updateUser).toHaveBeenCalledWith({ verified: true });
     expect(deps.updateUser).not.toHaveBeenCalledWith(expect.objectContaining({ staffEmail: expect.anything() }));
     expect(result.action).toBe("block");
-    if (result.action === "block") expect(result.response).toMatch(/doesn't match an active CRM user/i);
+    if (result.action === "block") expect(result.response).toMatch(/isn't on the staff list/i);
   });
 
   it("verify_and_identify: CRM transport failure still verifies but blocks with IDENTIFY_ERROR", async () => {
