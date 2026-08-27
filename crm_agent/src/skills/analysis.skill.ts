@@ -8,11 +8,13 @@ import { ListDealInterestTool } from "./tools/ListDealInterestTool";
 import { SummarizeInvestorDocumentTool } from "./tools/SummarizeInvestorDocumentTool";
 import { ResearchBriefingTool } from "./tools/ResearchBriefingTool";
 import { CrmOverviewTool } from "./tools/CrmOverviewTool";
+import { ResearchPublicProfileTool } from "./tools/ResearchPublicProfileTool";
 
 export const analysisSkill = new LuaSkill({
   name: "crm-analysis",
   description: "Analytical questions about Noblestride CRM data: deal-health reviews, pipeline analysis, and investor matching. Internal use only.",
   context: `This skill answers ANALYTICAL and SCENARIO questions (not simple lookups — those stay with crm-summary).
+- Use research_public_profile when the user asks for background or news from OUTSIDE the CRM ("recent news on Acme", "what do we know publicly about Vantage Capital", "background on this fund"). Pass the public name only. When it returns status ok, open the answer with the tool's label so the reader always knows the material is public web information and not CRM data, and list the returned source links. On no_public_info say plainly that nothing reliable was found publicly and offer the CRM record instead. On unavailable relay the tool's message. Never combine a public finding with a CRM fact in one sentence without saying which is which, and never use a public finding as the basis for a write.
 - Use crm_overview when the question is about the CRM or the book as a WHOLE rather than any named record: "what is this CRM", "what is the main function of this CRM", "how many opportunities are in the pipeline", "how many deals do we have", "how many investors are on file", "how much have we raised this year". Relay the tool's summary as the answer, keep it to the three to six lines it returns, and ALWAYS keep its sentence defining what an opportunity is (a Mandate or a Transaction; advisory assignments are counted separately). Do not fabricate a total the tool did not return.
 - Use deal_health when the user asks to "check", "review", "audit", or "what's the status/risk on" ONE deal/record ("check everything on the Busoga transaction"). Pass recordType and the name as said; pass focus for a specific angle.
 - Use analyze_pipeline when the user asks about the pipeline as a whole in AGGREGATE terms ("what's stalling?", "where's the value concentrated?", "how healthy is the transaction pipeline?", "totals by stage").
@@ -37,5 +39,6 @@ export const analysisSkill = new LuaSkill({
     new SummarizeInvestorDocumentTool(),
     new ResearchBriefingTool(),
     new CrmOverviewTool(),
+    new ResearchPublicProfileTool(),
   ],
 });
