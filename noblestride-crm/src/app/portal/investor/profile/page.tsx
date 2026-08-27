@@ -93,7 +93,7 @@ function Textarea({
 export default async function FundProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; error?: string; denied?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; denied?: string; notice?: string }>;
 }) {
   const vp = await getViewpoint();
   if (!vp) redirect("/login");
@@ -104,7 +104,7 @@ export default async function FundProfilePage({
   const membership = await getPortalMembership();
   const canEdit = membership?.portalRole === "Editor";
 
-  const { saved, error, denied } = await searchParams;
+  const { saved, error, denied, notice } = await searchParams;
   const investor = await prisma.investor.findUniqueOrThrow({
     where: { id: vp.recordId },
     include: {
@@ -145,6 +145,32 @@ export default async function FundProfilePage({
       {saved && (
         <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] px-5 py-3 text-sm font-medium text-[var(--t-tag-text-emerald)]">
           Profile saved. Your deal matching preferences are now up to date.
+        </div>
+      )}
+
+      {/* F3.6: a login email only moves once the new address proves it receives
+          mail, and one member may never move another member's login address. */}
+      {notice === "email-change-requested" && (
+        <div
+          className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] px-5 py-3 text-sm font-medium text-[var(--t-tag-text-emerald)]"
+          data-testid="email-change-requested"
+        >
+          Check your new inbox for a confirmation link. Until you confirm it, keep signing in with
+          your current email.
+        </div>
+      )}
+
+      {error === "email-owned" && (
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-amber)] px-5 py-3 text-sm font-medium text-[var(--t-tag-text-amber)]">
+          That colleague&apos;s sign-in email can only be changed by Noblestride — ask us to update
+          it. Their other details saved normally.
+        </div>
+      )}
+
+      {error === "email-change" && (
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-amber)] px-5 py-3 text-sm font-medium text-[var(--t-tag-text-amber)]">
+          We couldn&apos;t start that email change. Use an official company address that isn&apos;t
+          already in use, or ask Noblestride to change it for you.
         </div>
       )}
 

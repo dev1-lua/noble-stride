@@ -11,6 +11,7 @@ import {
   suspendInvestorAccountAction,
   reactivateInvestorAccountAction,
   generateInvestorResetLinkAction,
+  changeInvestorAccountEmailAction,
   type UserActionState,
 } from "./account-actions";
 
@@ -61,6 +62,52 @@ function ResetLinkBlock({ state }: { state: UserActionState }) {
         {state.resetLink}
       </code>
     </>
+  );
+}
+
+/**
+ * F3.6 (image11/12): move the address this person signs in with. Applies
+ * immediately — an admin is doing this for someone they have already
+ * identified — and ends every session on the account.
+ */
+function ChangeEmailForm({
+  investorId,
+  accountId,
+  currentEmail,
+}: {
+  investorId: string;
+  accountId: string;
+  currentEmail: string;
+}) {
+  const [state, submitAction, isPending] = useActionState(changeInvestorAccountEmailAction, initialState);
+  return (
+    <form action={submitAction} className="flex flex-col items-start gap-1" data-testid="change-email-form">
+      <input type="hidden" name="investorId" value={investorId} />
+      <input type="hidden" name="accountId" value={accountId} />
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          name="email"
+          type="email"
+          required
+          defaultValue=""
+          placeholder={currentEmail}
+          aria-label="New sign-in email"
+          className="w-64 rounded border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+        />
+        <button type="submit" disabled={isPending} className={buttonClass}>
+          {isPending ? "Changing…" : "Change email"}
+        </button>
+      </div>
+      <ErrorLine state={state} />
+      {state.notice && (
+        <p className="mt-1 text-xs text-[var(--text-secondary)]" data-testid="email-changed">
+          {state.notice}
+        </p>
+      )}
+      <p className="text-[10px] text-[var(--text-tertiary)]">
+        Signs the member out everywhere and notifies both addresses.
+      </p>
+    </form>
   );
 }
 
@@ -156,6 +203,10 @@ function AccountRow({ investorId, account }: { investorId: string; account: Inve
           )}
           <ResetLinkForm investorId={investorId} accountId={account.id} />
         </div>
+      )}
+
+      {account.status !== "PENDING" && (
+        <ChangeEmailForm investorId={investorId} accountId={account.id} currentEmail={account.email} />
       )}
     </div>
   );

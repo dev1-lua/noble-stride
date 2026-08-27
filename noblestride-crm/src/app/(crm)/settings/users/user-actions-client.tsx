@@ -14,6 +14,7 @@ import {
   reactivateAccountAction,
   changeRoleAction,
   generateResetLinkAction,
+  changeUserEmailAction,
   type UserActionState,
 } from "./actions";
 
@@ -172,6 +173,35 @@ function ResetLinkForm({ accountId }: { accountId: string }) {
   );
 }
 
+/** F3.6: move the address this account signs in with (staff-initiated, immediate). */
+function ChangeEmailForm({ accountId, currentEmail }: { accountId: string; currentEmail: string }) {
+  const [state, submitAction, isPending] = useActionState(changeUserEmailAction, initialState);
+  return (
+    <form action={submitAction} className="flex flex-col items-start gap-1" data-testid="change-email-form">
+      <input type="hidden" name="accountId" value={accountId} />
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          name="email"
+          type="email"
+          required
+          placeholder={currentEmail}
+          aria-label="New sign-in email"
+          className="w-56 rounded border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+        />
+        <button type="submit" disabled={isPending} className={buttonClass}>
+          {isPending ? "Changing…" : "Change email"}
+        </button>
+      </div>
+      <ErrorLine state={state} />
+      {state.notice && (
+        <p className="mt-1 text-xs text-[var(--text-secondary)]" data-testid="email-changed">
+          {state.notice}
+        </p>
+      )}
+    </form>
+  );
+}
+
 export function UserActionsClient({ account, mode }: { account: AccountRow; mode: "pending" | "active" }) {
   if (mode === "pending") {
     return (
@@ -195,6 +225,7 @@ export function UserActionsClient({ account, mode }: { account: AccountRow; mode
         <SuspendForm accountId={account.id} />
       )}
       <ResetLinkForm accountId={account.id} />
+      <ChangeEmailForm accountId={account.id} currentEmail={account.email} />
     </div>
   );
 }

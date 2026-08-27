@@ -13,6 +13,8 @@ import { CrudError } from "./crud";
 import { recordStageChange } from "./stage-history";
 import { personCreateSchema, personUpdateSchema } from "@/lib/schemas/person";
 import type { Actor } from "@/graphql/context";
+import { normalizeEmail } from "@/server/auth/guardrails";
+import { changeAccountEmailByStaff, EmailChangeError } from "@/server/auth/change-email";
 
 const PARENT_FIELDS = ["clientId", "investorId", "partnerId"] as const;
 type ParentField = (typeof PARENT_FIELDS)[number];
@@ -64,7 +66,7 @@ export async function createPerson(raw: unknown, actor: Actor = { type: "HUMAN" 
 
 export async function updatePerson(id: string, raw: unknown, actor: Actor = { type: "HUMAN" }) {
   const input = personUpdateSchema.parse(raw);
-  const existing = await prisma.person.findUnique({ where: { id } });
+  const existing = await prisma.person.findUnique({ where: { id }, include: { authAccount: true } });
   if (!existing) throw new CrudError("Contact not found");
   const merged: ParentLinks = {
     clientId: "clientId" in input ? input.clientId : existing.clientId,
@@ -74,8 +76,33 @@ export async function updatePerson(id: string, raw: unknown, actor: Actor = { ty
   if (!hasParent(merged)) {
     throw new CrudError("A contact must remain linked to a client, investor, or partner.");
   }
+  // F3.6 (image11/12): if this contact can sign in, the email on their account
+  // has to move with the contact record — otherwise the login address silently
+  // goes stale. changeAccountEmailByStaff owns that write (it also updates
+  // Person.email, records the audit rows and ends their sessions), so `email` is
+  // dropped from the person update below rather than written twice.
+  const emailChanged =
+    typeof input.email === "string" &&
+    input.email.trim().length > 0 &&
+    normalizeEmail(input.email) !== normalizeEmail(existing.email ?? "");
+  const accountId = existing.authAccount?.id;
+  // Omit `email` from the person update when the service above owns that write.
+  const data =
+    emailChanged && accountId
+      ? Object.fromEntries(Object.entries(input).filter(([k]) => k !== "email"))
+      : input;
+
+  if (emailChanged && accountId) {
+    try {
+      await changeAccountEmailByStaff(accountId, input.email as string, actor);
+    } catch (err) {
+      if (err instanceof EmailChangeError) throw new CrudError(err.message);
+      throw err;
+    }
+  }
+
   return prisma.$transaction(async (tx) => {
-    const updated = await tx.person.update({ where: { id }, data: input });
+    const updated = await tx.person.update({ where: { id }, data });
     if (input.isPrimaryContact) await reassignPrimary(tx, merged, updated, actor);
     return updated;
   });

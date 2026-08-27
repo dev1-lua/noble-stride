@@ -12,6 +12,7 @@ import {
   suspendPartnerAccountAction,
   reactivatePartnerAccountAction,
   partnerResetLinkAction,
+  changePartnerAccountEmailAction,
   type PartnerAccessState,
 } from "./partner-access-actions";
 
@@ -75,6 +76,42 @@ function Feedback({ state }: { state: PartnerAccessState }) {
         </p>
       )}
     </>
+  );
+}
+
+/** F3.6: move the address this partner contact signs in with. */
+function ChangeEmailForm({
+  partnerId,
+  accountId,
+  currentEmail,
+}: {
+  partnerId: string;
+  accountId: string;
+  currentEmail: string;
+}) {
+  const [state, submitAction, isPending] = useActionState(changePartnerAccountEmailAction, initialState);
+  return (
+    <form action={submitAction} className="flex flex-col items-start gap-1" data-testid="change-email-form">
+      <input type="hidden" name="partnerId" value={partnerId} />
+      <input type="hidden" name="accountId" value={accountId} />
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          name="email"
+          type="email"
+          required
+          placeholder={currentEmail}
+          aria-label="New sign-in email"
+          className="w-64 rounded border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+        />
+        <button type="submit" disabled={isPending} className={buttonClass}>
+          {isPending ? "Changing…" : "Change email"}
+        </button>
+      </div>
+      <Feedback state={state} />
+      <p className="text-[10px] text-[var(--text-tertiary)]">
+        Signs the contact out everywhere and notifies both addresses.
+      </p>
+    </form>
   );
 }
 
@@ -251,6 +288,7 @@ function AccountRow({ partnerId, account }: { partnerId: string; account: Partne
           <ResendForm partnerId={partnerId} personId={account.personId} />
         )}
       </div>
+      <ChangeEmailForm partnerId={partnerId} accountId={account.accountId} currentEmail={account.email} />
     </div>
   );
 }

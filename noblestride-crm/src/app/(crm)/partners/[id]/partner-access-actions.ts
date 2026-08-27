@@ -12,6 +12,7 @@ import { requireRealAdmin } from "@/server/auth/require-real-admin";
 import { suspendAccount, reactivateAccount, AuthFlowError } from "@/server/auth/accounts";
 import { issueStaffResetLink } from "@/server/auth/reset";
 import { createPartnerInvite, resendPartnerInvite, PartnerInviteError } from "@/server/auth/partner-invites";
+import { changeAccountEmailByStaff, EmailChangeError } from "@/server/auth/change-email";
 import { prisma } from "@/lib/db";
 
 export interface PartnerAccessState {
@@ -50,6 +51,7 @@ async function run(
     revalidatePath(`/partners/${partnerId}`);
     return result ?? {};
   } catch (err) {
+    if (err instanceof EmailChangeError) return { error: err.message };
     if (err instanceof PartnerInviteError) return { error: err.message };
     if (err instanceof AuthFlowError) return { error: err.message };
     if (err instanceof Error && err.message === "Not authorized") return { error: "Not authorized." };
@@ -137,5 +139,29 @@ export async function partnerResetLinkAction(
     await requireAccountBelongsToPartner(accountId, partnerId);
     const { url, emailSent } = await issueStaffResetLink(accountId, await baseUrl());
     return { resetLink: url, emailSent };
+  });
+}
+
+/** F3.6: move the sign-in email on a partner-portal account. */
+export async function changePartnerAccountEmailAction(
+  _p: PartnerAccessState,
+  formData: FormData,
+): Promise<PartnerAccessState> {
+  const partnerId = String(formData.get("partnerId"));
+  const accountId = String(formData.get("accountId"));
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { error: "Enter the new email address." };
+  return run(partnerId, async (adminId) => {
+    await requireAccountBelongsToPartner(accountId, partnerId);
+    const res = await changeAccountEmailByStaff(accountId, email, {
+      type: "HUMAN",
+      authenticated: true,
+      userId: adminId,
+    });
+    return {
+      notice:
+        `Sign-in email changed to ${res.newEmail}. Sessions were signed out` +
+        `${res.noticeSent.new ? " and both addresses were notified." : "; we couldn't email the notices."}`,
+    };
   });
 }
