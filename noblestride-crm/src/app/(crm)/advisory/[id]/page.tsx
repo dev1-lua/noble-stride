@@ -12,7 +12,7 @@ import { resolveDealWorkflow } from "@/server/services/workflow";
 import { DealWorkflowCard } from "@/components/crm/deal-workflow";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge } from "@/components/ui";
 import { formatDate } from "@/lib/format";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, balanceDue } from "@/lib/money";
 import { label, options } from "@/lib/vocab";
 import { RestageSelect } from "@/components/crm/restage-select";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
@@ -54,6 +54,8 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
     stage: a.stage ?? "",
     dealStatus: a.dealStatus ?? "",
     feeAmount: a.feeAmount == null ? undefined : Number(a.feeAmount),
+    feePaidAmount: a.feePaidAmount == null ? undefined : Number(a.feePaidAmount),
+    classification: a.classification ?? "",
     sector: (a.sector ?? []) as string[],
     country: a.country ?? "",
     source: a.source ?? "",
@@ -97,6 +99,7 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
             <h1 className="text-2xl font-bold text-[var(--text-primary)] leading-tight">{clientName}</h1>
             <Chip value={a.stage} group="AdvisoryStage" />
             {a.dealStatus && <Chip value={a.dealStatus} group="DealStatus" />}
+            {a.classification && <Chip value={a.classification} group="AdvisoryClassification" />}
           </div>
           {a.name && a.name !== clientName && (
             <p className="mt-1 text-sm text-[var(--text-tertiary)]">{a.name}</p>
@@ -173,10 +176,39 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
                 <dd className="mt-1 text-sm text-[var(--text-primary)]">{a.country ?? "—"}</dd>
               </div>
 
+              {/* F4.2.1: classification + fee paid / balance due (image17/18). */}
+              <div>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Classification</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">
+                  {a.classification ? label("AdvisoryClassification", a.classification) : "—"}
+                </dd>
+              </div>
+
               <div>
                 <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Fee</dt>
-                <dd className="mt-1 text-sm text-[var(--text-primary)]">
+                <dd className="mt-1 text-sm text-[var(--text-primary)]" data-testid="advisory-fee">
                   {a.feeAmount != null ? `${formatMoney(Number(a.feeAmount))} ${a.currency}` : "—"}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Fee Paid</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]" data-testid="advisory-fee-paid">
+                  {a.feePaidAmount != null ? formatMoney(Number(a.feePaidAmount)) : "—"}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Balance Due</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]" data-testid="advisory-fee-balance">
+                  {(() => {
+                    const b = balanceDue(
+                      a.feeAmount == null ? null : Number(a.feeAmount),
+                      a.feePaidAmount == null ? null : Number(a.feePaidAmount),
+                    );
+                    if (b == null) return "—";
+                    return <span className={b > 0 ? "font-semibold text-rose-600" : "font-semibold"}>{formatMoney(b)}</span>;
+                  })()}
                 </dd>
               </div>
 
