@@ -4,7 +4,7 @@
 
 import { cache } from "react";
 import { cookies } from "next/headers";
-import type { AuthAccount, Investor, Person, User } from "@prisma/client";
+import type { AuthAccount, Investor, Partner, Person, User } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { validateSessionToken } from "./session";
 import { SESSION_COOKIE } from "./session-cookie";
@@ -13,7 +13,7 @@ import type { Viewpoint } from "@/lib/viewpoint";
 export type CurrentAuth = {
   account: AuthAccount;
   user: User | null;
-  person: (Person & { investor: Investor | null }) | null;
+  person: (Person & { investor: Investor | null; partner: Partner | null }) | null;
 };
 
 export const getCurrentAuth = cache(async (): Promise<CurrentAuth | null> => {
@@ -25,7 +25,11 @@ export const getCurrentAuth = cache(async (): Promise<CurrentAuth | null> => {
   const [user, person] = await Promise.all([
     account.userId ? prisma.user.findUnique({ where: { id: account.userId } }) : null,
     account.personId
-      ? prisma.person.findUnique({ where: { id: account.personId }, include: { investor: true } })
+      ? prisma.person.findUnique({
+          where: { id: account.personId },
+          // F5.6: partner accounts resolve their viewpoint from person.partnerId.
+          include: { investor: true, partner: true },
+        })
       : null,
   ]);
   return { account, user, person };
@@ -39,6 +43,12 @@ export async function resolveViewpointFor(auth: CurrentAuth | null): Promise<Vie
     const investorId = auth.person?.investorId;
     if (!investorId) return null; // orphaned account — treat as signed out
     return { role: "investor", recordId: investorId };
+  }
+
+  if (auth.account.kind === "PARTNER") {
+    const partnerId = auth.person?.partnerId;
+    if (!partnerId) return null; // orphaned account — treat as signed out
+    return { role: "partner", recordId: partnerId };
   }
 
   // INTERNAL

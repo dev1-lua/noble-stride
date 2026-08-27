@@ -495,6 +495,8 @@ export interface PartnerInput {
 }
 
 export interface ReferredMandateInput {
+  /** Needed only to de-duplicate transaction referrals against this mandate. */
+  id?: string;
   name: string;
   stage: MandateStage;
   dealSize?: DecimalLike | null;
@@ -503,6 +505,22 @@ export interface ReferredMandateInput {
   // Task 8: the mandate's linked transaction(s) carry the fee-execution status —
   // only the first is used (mirrors deals-queue's linkedCounterpartId convention).
   transactions?: { partnerFeeStatus?: PartnerFeeStatus | null }[];
+}
+
+/**
+ * A Transaction credited directly to the partner (Transaction.referredById),
+ * as opposed to one reached through a referred Mandate (F5.6).
+ */
+export interface ReferredTransactionInput {
+  id?: string;
+  name: string;
+  stage: TransactionStage;
+  dealSize?: DecimalLike | null;
+  currency?: string;
+  client?: { name: string } | null;
+  /** When this mandate was also referred by the partner, the row is dropped. */
+  mandateId?: string | null;
+  partnerFeeStatus?: PartnerFeeStatus | null;
 }
 
 export interface ProjectedPartnerView {
@@ -526,6 +544,22 @@ export interface ProjectedPartnerView {
     // feedbackNotes — that field is internal-only and never projected here).
     partnerFeeStatusValue: PartnerFeeStatus | null;
   }[];
+  /**
+   * F5.6: transactions credited to the partner directly. Kept as its own list
+   * rather than merged into referredDeals, because a Transaction carries
+   * TransactionStage while referredDeals is MandateStage-typed and drives the
+   * mandate-stage funnel — merging the two would mean mislabelling one of them.
+   */
+  referredTransactions: {
+    transactionName: string;
+    clientName: string | null;
+    stage: TransactionStage;
+    dealSize: number | null;
+    currency: string;
+    converted: boolean;
+    feeSharingStatus: string;
+    partnerFeeStatusValue: PartnerFeeStatus | null;
+  }[];
 }
 
 /**
@@ -537,10 +571,17 @@ export interface ProjectedPartnerView {
 export function projectForPartner(
   partner: PartnerInput,
   referredMandates: ReferredMandateInput[],
+  referredTransactions: ReferredTransactionInput[] = [],
 ): ProjectedPartnerView {
   const feeSharingStatus = partner.feeSharingAgreement
     ? (partner.feeSharingTerms ?? "Agreed")
     : "None";
+
+  // A transaction under a mandate this partner already sees would otherwise be
+  // reported twice — once as the mandate, once as the transaction.
+  const reportedMandateIds = new Set(
+    referredMandates.map((m) => m.id).filter((id): id is string => Boolean(id)),
+  );
 
   return {
     profile: {
@@ -561,5 +602,17 @@ export function projectForPartner(
       feeSharingStatus,
       partnerFeeStatusValue: mandate.transactions?.[0]?.partnerFeeStatus ?? null,
     })),
+    referredTransactions: referredTransactions
+      .filter((txn) => !(txn.mandateId && reportedMandateIds.has(txn.mandateId)))
+      .map((txn) => ({
+        transactionName: txn.name,
+        clientName: txn.client?.name ?? null,
+        stage: txn.stage,
+        dealSize: toNum(txn.dealSize),
+        currency: txn.currency ?? "USD",
+        converted: txn.stage === "ClosedWon",
+        feeSharingStatus,
+        partnerFeeStatusValue: txn.partnerFeeStatus ?? null,
+      })),
   };
 }

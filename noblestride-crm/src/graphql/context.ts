@@ -115,7 +115,11 @@ export async function createContext(request: Request): Promise<GraphQLContext> {
       const [user, person] = await Promise.all([
         account.userId ? prisma.user.findUnique({ where: { id: account.userId } }) : null,
         account.personId
-          ? prisma.person.findUnique({ where: { id: account.personId }, include: { investor: true } })
+          ? prisma.person.findUnique({
+              where: { id: account.personId },
+              // F5.6: PARTNER accounts resolve their viewpoint from person.partnerId.
+              include: { investor: true, partner: true },
+            })
           : null,
       ]);
       const current: CurrentAuth = { account, user, person };

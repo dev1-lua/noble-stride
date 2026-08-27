@@ -10,7 +10,7 @@
 
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
-import type { PortalMemberRole } from "@prisma/client";
+import type { AccountKind, PortalMemberRole } from "@prisma/client";
 import { PHONE_MESSAGE, PHONE_PATTERN } from "@/lib/schemas/phone";
 import { classifyEmailForSignup, normalizeEmail } from "./guardrails";
 import { hashPassword } from "./password";
@@ -365,24 +365,48 @@ export async function setThreadAccess(
 export type InvitePeek = {
   accountId: string;
   email: string;
-  investorName: string;
+  /** Which kind of portal this invite opens — INVESTOR or PARTNER (F5.6). */
+  kind: AccountKind;
+  /** The inviting organisation: the fund for investors, the firm for partners. */
+  orgName: string;
   orgApproved: boolean;
 };
 
-/** Look at a link without consuming it. Null = invalid/expired/used/revoked. */
+/**
+ * Look at a link without consuming it. Null = invalid/expired/used/revoked.
+ *
+ * Redemption is generalised on `account.kind` (F5.6) so partner contacts use
+ * the same /invite landing page. Partners have no onboarding gate — there is no
+ * `Investor.onboardingStatus` equivalent — so `orgApproved` for them means only
+ * that the partner record is not Inactive.
+ */
 export async function peekInviteToken(raw: string): Promise<InvitePeek | null> {
   const row = await prisma.authToken.findUnique({
     where: { tokenHash: hashToken(raw) },
-    include: { account: { include: { person: { include: { investor: true } } } } },
+    include: { account: { include: { person: { include: { investor: true, partner: true } } } } },
   });
   if (!row || row.purpose !== "INVITE" || row.usedAt || row.expiresAt.getTime() <= Date.now()) return null;
   if (row.account.status === "SUSPENDED") return null; // revoked/removed
+
+  if (row.account.kind === "PARTNER") {
+    const partner = row.account.person?.partner;
+    if (!partner) return null;
+    return {
+      accountId: row.account.id,
+      email: row.account.email,
+      kind: "PARTNER",
+      orgName: partner.name,
+      orgApproved: partner.status !== "Inactive",
+    };
+  }
+
   const investor = row.account.person?.investor;
   if (!investor) return null;
   return {
     accountId: row.account.id,
     email: row.account.email,
-    investorName: investor.name,
+    kind: row.account.kind,
+    orgName: investor.name,
     orgApproved:
       investor.onboardingStatus === "Approved" &&
       !(BLOCKED_CLASSIFICATIONS as readonly string[]).includes(investor.engagementClassification),

@@ -268,7 +268,10 @@ export async function loadPartnerPortalData(
           transactions: { select: { partnerFeeStatus: true }, take: 1 },
         },
       },
+      // F5.6: a partner can also be credited on a Transaction directly. Without
+      // this those referrals never reached the portal at all.
+      referredTransactions: { include: { client: true } },
     },
   });
-  return projectForPartner(partner, partner.referredMandates);
+  return projectForPartner(partner, partner.referredMandates, partner.referredTransactions);
 }

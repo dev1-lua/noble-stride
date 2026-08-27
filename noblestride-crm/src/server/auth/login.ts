@@ -9,6 +9,29 @@ import { createSession } from "./session";
 import { logAuthEvent } from "./audit";
 import { twoFactorEnabled } from "./mailer";
 import { OtpDeliveryError, issueLoginOtp, signPending, verifyTrust } from "./two-factor";
+import { resolveViewpointFor, type CurrentAuth } from "./current";
+import { viewpointHome } from "@/lib/viewpoint";
+
+/**
+ * Landing route for a freshly authenticated account (F5.6). Resolved through
+ * the same `resolveViewpointFor` the rest of the app uses, rather than a
+ * kind-based ternary — otherwise every new account kind (PARTNER here) silently
+ * lands on the investor portal. `getCurrentAuth` can't be used: the session
+ * cookie is not set yet at this point in the request.
+ */
+async function homeForAccount(account: CurrentAuth["account"]): Promise<string | null> {
+  const [user, person] = await Promise.all([
+    account.userId ? prisma.user.findUnique({ where: { id: account.userId } }) : null,
+    account.personId
+      ? prisma.person.findUnique({
+          where: { id: account.personId },
+          include: { investor: true, partner: true },
+        })
+      : null,
+  ]);
+  const vp = await resolveViewpointFor({ account, user, person });
+  return vp ? viewpointHome(vp) : null;
+}
 
 const MAX_FAILURES = 10;
 const LOCK_MS = 15 * 60 * 1000;
@@ -84,5 +107,8 @@ export async function loginWithPassword(
     data: { failedLogins: 0, lockedUntil: null, lastLoginAt: new Date() },
   });
   await logAuthEvent(`Auth: login success — ${email}`);
-  return { ok: true, token, expiresAt, home: account.kind === "INTERNAL" ? "/dashboard" : "/portal/investor" };
+  // An account whose viewpoint no longer resolves (deactivated User, orphaned
+  // Person) is bounced back to /login rather than dropped on a page it cannot read.
+  const home = (await homeForAccount(account)) ?? "/login";
+  return { ok: true, token, expiresAt, home };
 }

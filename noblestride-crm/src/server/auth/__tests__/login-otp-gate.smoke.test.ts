@@ -25,11 +25,19 @@ d("loginWithPassword — 2FA gate (RESEND_API_KEY on/off)", () => {
   // afterEach restores it correctly instead of accidentally deleting a key
   // that other test files (e.g. login.smoke.test.ts) rely on being present.
   let prevResendKey: string | undefined;
+  // F5.6: `home` is now resolved through resolveViewpointFor, so an INVESTOR
+  // account needs its Person -> Investor link to land anywhere but /login.
+  // That is the shape of a real investor login, so the fixture builds it.
+  let investorId: string;
 
   beforeAll(async () => {
     if (!process.env.AUTH_SECRET) process.env.AUTH_SECRET = "zz-test-2fa-gate-secret-do-not-use-in-prod";
-    await import("@/lib/db");
+    const { prisma } = await import("@/lib/db");
     prevResendKey = process.env.RESEND_API_KEY;
+    const investor = await prisma.investor.create({
+      data: { name: `ZZ 2FA Gate Fund ${SUFFIX}`, investorType: "PrivateEquity", onboardingStatus: "Approved" },
+    });
+    investorId = investor.id;
   });
 
   afterEach(() => {
@@ -40,6 +48,8 @@ d("loginWithPassword — 2FA gate (RESEND_API_KEY on/off)", () => {
   afterAll(async () => {
     const { prisma } = await import("@/lib/db");
     await prisma.authAccount.deleteMany({ where: { email: { startsWith: "zz-test-2fa-gate" } } });
+    await prisma.person.deleteMany({ where: { email: { startsWith: "zz-test-2fa-gate" } } });
+    await prisma.investor.deleteMany({ where: { id: investorId } });
     process.env.AUTH_SECRET = PREV_AUTH_SECRET;
   });
 
@@ -51,8 +61,14 @@ d("loginWithPassword — 2FA gate (RESEND_API_KEY on/off)", () => {
     const { hashPassword } = await import("../password");
     const { loginWithPassword } = await import("../login");
     delete process.env.RESEND_API_KEY;
+    const person = await prisma.person.create({
+      data: { firstName: "Gate", lastName: "Off", email: EMAIL_GATE_OFF, investorId },
+    });
     await prisma.authAccount.create({
-      data: { email: EMAIL_GATE_OFF, passwordHash: await hashPassword(PASSWORD), kind: "INVESTOR", status: "ACTIVE" },
+      data: {
+        email: EMAIL_GATE_OFF, passwordHash: await hashPassword(PASSWORD),
+        kind: "INVESTOR", status: "ACTIVE", personId: person.id,
+      },
     });
 
     const res = await loginWithPassword(EMAIL_GATE_OFF, PASSWORD);
@@ -69,8 +85,14 @@ d("loginWithPassword — 2FA gate (RESEND_API_KEY on/off)", () => {
     const { prisma } = await import("@/lib/db");
     const { hashPassword } = await import("../password");
     const { loginWithPassword } = await import("../login");
+    const person = await prisma.person.create({
+      data: { firstName: "Gate", lastName: "On", email: EMAIL_GATE_ON, investorId },
+    });
     await prisma.authAccount.create({
-      data: { email: EMAIL_GATE_ON, passwordHash: await hashPassword(PASSWORD), kind: "INVESTOR", status: "ACTIVE" },
+      data: {
+        email: EMAIL_GATE_ON, passwordHash: await hashPassword(PASSWORD),
+        kind: "INVESTOR", status: "ACTIVE", personId: person.id,
+      },
     });
 
     const res = await loginWithPassword(EMAIL_GATE_ON, PASSWORD);
