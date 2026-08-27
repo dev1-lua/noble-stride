@@ -1,6 +1,14 @@
 import { PreProcessor, Data, env } from "lua-cli";
 import { crmClientFromEnv } from "../lib/crm-client";
 import { RESOLVE_STAFF_USER } from "../lib/queries";
+import {
+  HELP_REPLY,
+  HINT_EMAIL_NO_PASSPHRASE,
+  WELCOME_GUIDE,
+  currentPassphraseVersion,
+  isHelpRequest,
+  isVerifiedForVersion,
+} from "../lib/onboarding";
 
 export const STAFF_COLLECTION = "staff_users";
 
@@ -9,6 +17,9 @@ export type GateOutcome =
   | "verify"
   | "verify_and_identify"
   | "challenge"
+  // F5.1: the two shapes that used to get the identical staff-only challenge.
+  | "help"
+  | "hint_missing_passphrase"
   | "unconfigured"
   | "ask_email"
   | "try_identify"
@@ -17,6 +28,8 @@ export type GateOutcome =
 export interface GateState {
   verified: boolean;
   staffEmail?: string;
+  /** G5: which generation of TEAM_PASSPHRASE this verification was granted under. */
+  passphraseVersion?: string;
 }
 
 const EMAIL_LIKE = /^\S+@\S+\.\S+$/;
@@ -107,14 +120,30 @@ export function gateDecision(
   state: GateState,
   lastText: string | undefined,
   passphrase: string | undefined,
+  passphraseVersion?: string,
 ): GateOutcome {
-  if (!state.verified) {
+  const version = currentPassphraseVersion(passphraseVersion);
+  // G5: a rotated passphrase must re-challenge sessions verified under the old
+  // one. Without this, rotating TEAM_PASSPHRASE protected nobody who had
+  // already verified.
+  const stillVerified = isVerifiedForVersion(state.verified, state.passphraseVersion, version);
+
+  if (!stillVerified) {
     if (!isConfiguredPassphrase(passphrase)) return "unconfigured";
     if (lastText === undefined) return "challenge";
     if (containsPassphrase(lastText, passphrase)) {
       const { email } = extractCredentials(lastText);
       return email ? "verify_and_identify" : "verify";
     }
+    // F5.1: answer the question before enforcing the gate. Someone asking how
+    // this works has not failed a security check; they have asked a fair
+    // question, and repeating the challenge at them is what the client's
+    // screenshots show going wrong five times in a row.
+    if (isHelpRequest(lastText)) return "help";
+    // An email with no passphrase is a near-miss, not a stranger. Acknowledge
+    // the address so the person can see it was read, and say what is missing.
+    const { email } = extractCredentials(lastText);
+    if (email) return "hint_missing_passphrase";
     return "challenge";
   }
   if (lastText && LOGOUT_INTENT.test(lastText)) return "logout";
@@ -125,7 +154,9 @@ export function gateDecision(
 }
 
 const CHALLENGE =
-  "This assistant is for Noblestride staff only. Reply with your work email and the team passphrase — you can include them in one message.";
+  `This assistant is for Noblestride staff only.
+Reply with the team passphrase and your CRM login email in one message, for example: openSesame you@noblestride.capital
+Reply "help" if you would like to know what this assistant does and where the passphrase comes from.`;
 // B3: passphrase-only verification (no email in the same message) used to invite the
 // user straight into CRM questions ("Ask me to summarize...") even though the very next
 // turn demands a work email before anything actually proceeds (see the "ask_email"
@@ -133,27 +164,15 @@ const CHALLENGE =
 // instead; the fully-verified welcomes (identifyOk / verifyAndIdentifyOk below, used
 // once staffEmail is also known) are unchanged.
 const WELCOME =
-  "✅ Passphrase verified. To finish signing in, I also need your work email — what is it?";
+  "Passphrase verified. To finish signing in I also need your CRM login email. What is it?";
 const UNCONFIGURED = "The assistant isn't fully configured yet (missing team passphrase). Please contact the Noblestride admin.";
 const ASK_EMAIL =
-  "✅ Passphrase accepted. To act on your behalf in the CRM I also need your CRM email — what is it?";
+  "Passphrase accepted. To act on your behalf in the CRM I also need your CRM login email. What is it?";
 const IDENTIFY_FAIL =
-  "That email isn't on the staff list — check for typos (it must match your CRM login email).";
-const IDENTIFY_ERROR = "I can't verify your email right now — please try again shortly.";
+  "I could not match that email. Please check it for typos: it has to be the email you log in to the CRM with.";
+const IDENTIFY_ERROR = "I cannot check your email right now. Please try again shortly.";
 const LOGGED_OUT =
-  "✅ You've been signed out of staff mode. To use the assistant again, send the team passphrase and your CRM email together in one message.";
-const identifyOk = (firstName: string) => {
-  const name = firstName.trim();
-  return name
-    ? `✅ Thanks ${name} — you're set. Ask me for summaries, digests, or tell me what to update in the CRM.`
-    : `✅ You're set. Ask me for summaries, digests, or tell me what to update in the CRM.`;
-};
-const verifyAndIdentifyOk = (firstName: string) => {
-  const name = firstName.trim();
-  return name
-    ? `✅ Verified! Welcome, ${name} — ask me for summaries, digests, or tell me what to update in the CRM.`
-    : `✅ Verified! Ask me for summaries, digests, or tell me what to update in the CRM.`;
-};
+  "You have been signed out of staff mode. To use the assistant again, send the team passphrase and your CRM login email together in one message.";
 
 export interface StaffResolution {
   ok: boolean;
@@ -167,13 +186,17 @@ export type GateResult = { action: "proceed" } | { action: "block"; response: st
 export interface GateDeps {
   data: { get: typeof Data.get; create: typeof Data.create };
   passphrase: string | undefined;
+  /** G5: PASSPHRASE_VERSION; absent or blank means generation "1". */
+  passphraseVersion?: string;
   resolveStaff: ResolveStaffFn;
   updateUser: (patch: Record<string, unknown>) => Promise<unknown>;
 }
 
 /** Marks the user verified and registers them in staff_users once (shared by "verify" and "verify_and_identify"). */
 async function markVerified(deps: GateDeps, userId: string | undefined): Promise<void> {
-  await deps.updateUser({ verified: true });
+  // The generation is stamped alongside the flag, so a later rotation can tell
+  // this session apart from one granted under the new phrase.
+  await deps.updateUser({ verified: true, passphraseVersion: currentPassphraseVersion(deps.passphraseVersion) });
   if (userId) {
     const existing = await deps.data.get(STAFF_COLLECTION, { userId: { $eq: userId } }, 1, 1);
     if (existing.data.length === 0) await deps.data.create(STAFF_COLLECTION, { userId });
@@ -190,7 +213,7 @@ export async function runGate(
   lastText: string | undefined,
   userId: string | undefined,
 ): Promise<GateResult> {
-  const outcome = gateDecision(state, lastText, deps.passphrase);
+  const outcome = gateDecision(state, lastText, deps.passphrase, deps.passphraseVersion);
 
   switch (outcome) {
     case "proceed":
@@ -198,6 +221,13 @@ export async function runGate(
     case "verify": {
       await markVerified(deps, userId);
       return { action: "block", response: WELCOME };
+    }
+    case "help":
+      // Nothing is written: asking for help neither verifies nor penalises.
+      return { action: "block", response: HELP_REPLY };
+    case "hint_missing_passphrase": {
+      const { email } = extractCredentials(lastText!);
+      return { action: "block", response: HINT_EMAIL_NO_PASSPHRASE(email!.trim()) };
     }
     case "verify_and_identify": {
       await markVerified(deps, userId);
@@ -209,13 +239,13 @@ export async function runGate(
           return { action: "block", response: IDENTIFY_FAIL };
         }
         await deps.updateUser({ staffEmail: resolvedEmail, staffName: result.firstName });
-        return { action: "block", response: verifyAndIdentifyOk(result.firstName ?? "") };
+        return { action: "block", response: WELCOME_GUIDE(result.firstName ?? "") };
       } catch {
         return { action: "block", response: IDENTIFY_ERROR };
       }
     }
     case "logout": {
-      await deps.updateUser({ verified: false, staffEmail: null, staffName: null });
+      await deps.updateUser({ verified: false, staffEmail: null, staffName: null, passphraseVersion: null });
       return { action: "block", response: LOGGED_OUT };
     }
     case "unconfigured":
@@ -230,7 +260,7 @@ export async function runGate(
           return { action: "block", response: IDENTIFY_FAIL };
         }
         await deps.updateUser({ staffEmail: email, staffName: result.firstName });
-        return { action: "block", response: identifyOk(result.firstName ?? "") };
+        return { action: "block", response: WELCOME_GUIDE(result.firstName ?? "") };
       } catch {
         return { action: "block", response: IDENTIFY_ERROR };
       }
@@ -256,6 +286,8 @@ export const passphraseGate = new PreProcessor({
     const state: GateState = {
       verified: userData.verified === true,
       staffEmail: typeof userData.staffEmail === "string" ? userData.staffEmail : undefined,
+      passphraseVersion:
+        typeof userData.passphraseVersion === "string" ? userData.passphraseVersion : undefined,
     };
     const lastText = [...messages].reverse().find((m) => m.type === "text") as { text: string } | undefined;
     const userId = user._luaProfile?.userId;
@@ -264,6 +296,7 @@ export const passphraseGate = new PreProcessor({
       {
         data: { get: Data.get, create: Data.create },
         passphrase: env("TEAM_PASSPHRASE"),
+        passphraseVersion: env("PASSPHRASE_VERSION"),
         resolveStaff: defaultResolveStaff,
         updateUser: (patch) => user.update(patch),
       },

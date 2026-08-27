@@ -1,5 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
-import { gateDecision, runGate, extractCredentials, STAFF_COLLECTION, type GateDeps } from "../passphrase-gate";
+import {
+  gateDecision,
+  runGate,
+  extractCredentials,
+  STAFF_COLLECTION,
+  type GateDeps,
+  type GateState,
+} from "../passphrase-gate";
 
 const PASS = "secret";
 const unverifiedState = { verified: false };
@@ -113,7 +120,7 @@ describe("runGate", () => {
   it("on correct passphrase, verifies the user and registers them once in staff_users", async () => {
     const deps = fakeDeps();
     const result = await runGate(deps, { verified: false }, "secret", "u1");
-    expect(deps.updateUser).toHaveBeenCalledWith({ verified: true });
+    expect(deps.updateUser).toHaveBeenCalledWith({ verified: true, passphraseVersion: "1" });
     expect(deps.data.create).toHaveBeenCalledWith(STAFF_COLLECTION, { userId: "u1" });
     expect(result.action).toBe("block");
     if (result.action === "block") expect(result.response).toMatch(/verified/i);
@@ -135,7 +142,7 @@ describe("runGate", () => {
     const result = await runGate(deps, { verified: true, staffEmail: "evans@noblestride.com" }, "log out", "u1");
     expect(result.action).toBe("block");
     if (result.action === "block") expect(result.response).toMatch(/signed out/i);
-    expect(deps.updateUser).toHaveBeenCalledWith({ verified: false, staffEmail: null, staffName: null });
+    expect(deps.updateUser).toHaveBeenCalledWith({ verified: false, staffEmail: null, staffName: null, passphraseVersion: null });
   });
 
   it("asks a verified-but-unidentified user for their CRM email", async () => {
@@ -144,7 +151,7 @@ describe("runGate", () => {
     expect(result.action).toBe("block");
     if (result.action === "block") {
       expect(result.response).toBe(
-        "✅ Passphrase accepted. To act on your behalf in the CRM I also need your CRM email — what is it?",
+        "Passphrase accepted. To act on your behalf in the CRM I also need your CRM login email. What is it?",
       );
     }
     expect(deps.resolveStaff).not.toHaveBeenCalled();
@@ -164,7 +171,7 @@ describe("runGate", () => {
     const result = await runGate(deps, { verified: true }, "unknown@noblestride.com", "u1");
     expect(deps.updateUser).not.toHaveBeenCalled();
     expect(result.action).toBe("block");
-    if (result.action === "block") expect(result.response).toMatch(/isn't on the staff list/i);
+    if (result.action === "block") expect(result.response).toMatch(/could not match that email/i);
   });
 
   it("try_identify: CRM transport failure blocks with a retry message and no update", async () => {
@@ -172,13 +179,13 @@ describe("runGate", () => {
     const result = await runGate(deps, { verified: true }, "evans@noblestride.com", "u1");
     expect(deps.updateUser).not.toHaveBeenCalled();
     expect(result.action).toBe("block");
-    if (result.action === "block") expect(result.response).toMatch(/can't verify your email right now/i);
+    if (result.action === "block") expect(result.response).toMatch(/cannot check your email right now/i);
   });
 
   it("verify_and_identify: resolveStaff success verifies, stores staffEmail/staffName, and welcomes in one message", async () => {
     const deps = fakeDeps({ resolveStaff: vi.fn(async () => ({ ok: true, firstName: "Jane" })) });
     const result = await runGate(deps, { verified: false }, `${PASS} jane@noblestride.capital`, "u1");
-    expect(deps.updateUser).toHaveBeenCalledWith({ verified: true });
+    expect(deps.updateUser).toHaveBeenCalledWith({ verified: true, passphraseVersion: "1" });
     expect(deps.data.create).toHaveBeenCalledWith(STAFF_COLLECTION, { userId: "u1" });
     expect(deps.resolveStaff).toHaveBeenCalledWith("jane@noblestride.capital");
     expect(deps.updateUser).toHaveBeenCalledWith({ staffEmail: "jane@noblestride.capital", staffName: "Jane" });
@@ -192,18 +199,18 @@ describe("runGate", () => {
   it("verify_and_identify: resolveStaff ok:false still verifies but blocks with IDENTIFY_FAIL", async () => {
     const deps = fakeDeps({ resolveStaff: vi.fn(async () => ({ ok: false, firstName: null })) });
     const result = await runGate(deps, { verified: false }, `${PASS} unknown@noblestride.capital`, "u1");
-    expect(deps.updateUser).toHaveBeenCalledWith({ verified: true });
+    expect(deps.updateUser).toHaveBeenCalledWith({ verified: true, passphraseVersion: "1" });
     expect(deps.updateUser).not.toHaveBeenCalledWith(expect.objectContaining({ staffEmail: expect.anything() }));
     expect(result.action).toBe("block");
-    if (result.action === "block") expect(result.response).toMatch(/isn't on the staff list/i);
+    if (result.action === "block") expect(result.response).toMatch(/could not match that email/i);
   });
 
   it("verify_and_identify: CRM transport failure still verifies but blocks with IDENTIFY_ERROR", async () => {
     const deps = fakeDeps({ resolveStaff: vi.fn(async () => { throw new Error("network down"); }) });
     const result = await runGate(deps, { verified: false }, `${PASS} jane@noblestride.capital`, "u1");
-    expect(deps.updateUser).toHaveBeenCalledWith({ verified: true });
+    expect(deps.updateUser).toHaveBeenCalledWith({ verified: true, passphraseVersion: "1" });
     expect(result.action).toBe("block");
-    if (result.action === "block") expect(result.response).toMatch(/can't verify your email right now/i);
+    if (result.action === "block") expect(result.response).toMatch(/cannot check your email right now/i);
   });
 });
 
@@ -217,11 +224,21 @@ describe("combined passphrase + email", () => {
   it("still verifies passphrase-only reply and then asks for email", () => {
     expect(gateDecision(unverifiedState, PASS, PASS)).toBe("verify");
   });
-  it("rejects email-only reply (no passphrase)", () => {
-    expect(gateDecision(unverifiedState, "jane@noblestride.capital", PASS)).toBe("challenge");
+  // F5.1: an email with no passphrase is a near-miss, not a stranger. It does
+  // NOT verify anyone; it gets an acknowledgement plus what is still needed,
+  // instead of the identical challenge the client saw five times.
+  it("answers an email-only reply with the missing-passphrase hint, not the challenge", () => {
+    expect(gateDecision(unverifiedState, "jane@noblestride.capital", PASS)).toBe("hint_missing_passphrase");
+    expect(gateDecision(unverifiedState, "nope jane@noblestride.capital", PASS)).toBe("hint_missing_passphrase");
   });
-  it("rejects wrong passphrase even with a valid email", () => {
-    expect(gateDecision(unverifiedState, "nope jane@noblestride.capital", PASS)).toBe("challenge");
+
+  it("still refuses to verify on a wrong passphrase, with or without an email", () => {
+    for (const text of ["nope jane@noblestride.capital", "nope", "jane@noblestride.capital"]) {
+      const outcome = gateDecision(unverifiedState, text, PASS);
+      expect(outcome).not.toBe("verify");
+      expect(outcome).not.toBe("verify_and_identify");
+      expect(outcome).not.toBe("proceed");
+    }
   });
 });
 
@@ -234,5 +251,142 @@ describe("extractCredentials", () => {
   });
   it("returns null email when none present", () => {
     expect(extractCredentials("just words")).toEqual({ email: null, rest: "just words" });
+  });
+});
+
+// ── F5.1: the loop the client screenshotted five times ──────────────────────
+//
+// image19/image20: a first-time user asks how the assistant works and gets the
+// staff-only challenge back, over and over. These tests are the regression: the
+// gate must answer the question, and must acknowledge an email that arrives
+// without the passphrase, without ever letting either past the gate.
+describe("first contact no longer loops (F5.1)", () => {
+  const unverified: GateState = { verified: false };
+
+  it("answers the exact questions from the feedback screenshots", async () => {
+    for (const question of [
+      "How does this work?",
+      "What can you do?",
+      "Whats a pass phrase and hwo is it set out",
+      "help",
+      "who are you",
+    ]) {
+      expect(gateDecision(unverified, question, PASS), question).toBe("help");
+      const deps = fakeDeps();
+      const result = await runGate(deps, unverified, question, "u1");
+      expect(result.action).toBe("block");
+      if (result.action === "block") {
+        // The reply explains the assistant AND where the passphrase comes from.
+        expect(result.response).toContain("Noblestride CRM assistant");
+        expect(result.response).toContain("TEAM_PASSPHRASE");
+        expect(result.response).not.toContain("staff only.");
+      }
+      // Asking for help neither verifies nor records anything.
+      expect(deps.updateUser).not.toHaveBeenCalled();
+      expect(deps.data.create).not.toHaveBeenCalled();
+      expect(deps.resolveStaff).not.toHaveBeenCalled();
+    }
+  });
+
+  it("the client's own test message gets an answer, not a challenge", async () => {
+    // "whats the main function of this CRM solomon@noblestride.capital" —
+    // a help question with an email attached. The help branch wins, and the
+    // reply must not confirm anything about that address.
+    const message = "whats the main function of this CRM solomon@noblestride.capital";
+    expect(gateDecision(unverified, message, PASS)).toBe("help");
+    const result = await runGate(fakeDeps(), unverified, message, "u1");
+    if (result.action === "block") {
+      expect(result.response).not.toContain("solomon@noblestride.capital");
+    }
+  });
+
+  it("an email without the passphrase is acknowledged, not stonewalled", async () => {
+    const deps = fakeDeps();
+    const result = await runGate(deps, unverified, "solomon@noblestride.capital", "u1");
+    expect(result.action).toBe("block");
+    if (result.action === "block") {
+      expect(result.response).toContain("solomon@noblestride.capital");
+      expect(result.response.toLowerCase()).toContain("passphrase");
+    }
+    // Echoing the address must not verify the person or look it up in the CRM.
+    expect(deps.updateUser).not.toHaveBeenCalled();
+    expect(deps.resolveStaff).not.toHaveBeenCalled();
+  });
+
+  it("no help reply ever opens the gate", async () => {
+    for (const question of ["help", "how does this work", "who are you"]) {
+      const result = await runGate(fakeDeps(), unverified, question, "u1");
+      expect(result.action).toBe("block");
+    }
+  });
+});
+
+// G5: rotating TEAM_PASSPHRASE used to protect nobody — anyone already verified
+// stayed verified forever. Bumping PASSPHRASE_VERSION alongside it re-challenges.
+describe("passphrase rotation (G5)", () => {
+  it("keeps sessions verified under the current generation", () => {
+    expect(gateDecision({ verified: true, passphraseVersion: "2" }, "anything", PASS, "2")).toBe("ask_email");
+  });
+
+  it("re-challenges a session verified under an older generation", () => {
+    expect(gateDecision({ verified: true, passphraseVersion: "1" }, "anything", PASS, "2")).toBe("challenge");
+  });
+
+  it("treats a session from before versioning existed as generation 1", () => {
+    expect(gateDecision({ verified: true }, "anything", PASS, undefined)).toBe("ask_email");
+    expect(gateDecision({ verified: true }, "anything", PASS, "1")).toBe("ask_email");
+    expect(gateDecision({ verified: true }, "anything", PASS, "2")).toBe("challenge");
+  });
+
+  it("stamps the generation when it verifies someone", async () => {
+    const deps = fakeDeps({ passphraseVersion: "3" });
+    await runGate(deps, { verified: false }, PASS, "u1");
+    expect(deps.updateUser).toHaveBeenCalledWith({ verified: true, passphraseVersion: "3" });
+  });
+});
+
+// Block replies short-circuit the pipeline, so format-normalizer never sees
+// them. Anything with an emoji or a typographic dash reaches the user as-is.
+describe("every block reply is emoji free and dash free", () => {
+  const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{2705}]/u;
+  const TYPO_DASH = /[‒–—―]/;
+
+  it("across every outcome the gate can return", async () => {
+    const cases: Array<[GateState, string | undefined, GateDeps]> = [
+      [{ verified: false }, "hello there", fakeDeps()],
+      [{ verified: false }, "help", fakeDeps()],
+      [{ verified: false }, "jane@noblestride.capital", fakeDeps()],
+      [{ verified: false }, PASS, fakeDeps()],
+      [{ verified: false }, "anything", fakeDeps({ passphrase: undefined })],
+      [{ verified: true }, "anything", fakeDeps()],
+      [{ verified: true }, "log out", fakeDeps()],
+      [
+        { verified: true },
+        "unknown@noblestride.capital",
+        fakeDeps({ resolveStaff: vi.fn(async () => ({ ok: false, firstName: null })) }),
+      ],
+      [
+        { verified: true },
+        "boom@noblestride.capital",
+        fakeDeps({
+          resolveStaff: vi.fn(async () => {
+            throw new Error("network down");
+          }),
+        }),
+      ],
+      [
+        { verified: false },
+        `${PASS} jane@noblestride.capital`,
+        fakeDeps({ resolveStaff: vi.fn(async () => ({ ok: true, firstName: "Jane" })) }),
+      ],
+    ];
+
+    for (const [state, text, deps] of cases) {
+      const result = await runGate(deps, state, text, "u1");
+      if (result.action === "block") {
+        expect(result.response, result.response).not.toMatch(EMOJI);
+        expect(result.response, result.response).not.toMatch(TYPO_DASH);
+      }
+    }
   });
 });

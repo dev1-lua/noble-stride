@@ -5,9 +5,6 @@ skills:
   - name: referral-partner-tracker
     skillId: 6f891030-581a-411d-b2aa-88fc4bd871d3
     version: 1.0.10
-  - name: partner-self-service
-    skillId: 2d2cfa4b-522f-455f-89a9-056ab1249810
-    version: 1.0.8
 webhooks: []
 jobs:
   - jobId: 40cfd53d-8660-44a2-976c-8eb456257190

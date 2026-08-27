@@ -1,13 +1,32 @@
 import { PreProcessor, Data, env } from "lua-cli";
+import {
+  HELP_REPLY,
+  HINT_EMAIL_NO_PASSPHRASE,
+  WELCOME_GUIDE,
+  currentPassphraseVersion,
+  isHelpRequest,
+  isVerifiedForVersion,
+} from "../lib/onboarding";
 
 export const STAFF_COLLECTION = "staff_users";
 
-// Dual-audience gate (SOW §7.2). Staff unlock the full staff toolset with the
-// team passphrase; everyone else proceeds in PARTNER mode so referral partners can
-// reach the token-scoped partner-self-service tools on the same channel. Security
-// is not weakened: every STAFF tool self-authorizes via staffRefusal (lib/staff-mode)
-// and refuses a non-staff caller, and partner tools are scoped by a verified token.
-export type GateOutcome = "proceed" | "verify" | "partner" | "logout";
+// STAFF-ONLY gate (F5.6 / image23: "drop the partner usage; partners log in to
+// the portal for deal status"). This used to be a dual-audience gate that passed
+// every unverified visitor through in "partner mode" so they could reach
+// token-scoped self-service tools. That surface is gone, so the gate is now a
+// hard block — and, because a block is only fair if it is explicable, it also
+// answers help questions and tells a partner where they should actually go.
+//
+// `staffRefusal` (lib/staff-mode) stays on every staff tool as defence in depth:
+// the gate is the door, not the only lock.
+export type GateOutcome =
+  | "proceed"
+  | "verify"
+  | "challenge"
+  | "help"
+  | "hint_missing_passphrase"
+  | "unconfigured"
+  | "logout";
 
 // 2026-07-21 QA (cross-cutting): staff verification used to be permanent — no way back to
 // partner mode after an accidental verification. Deliberately strict: the WHOLE message must
@@ -60,56 +79,88 @@ function isConfiguredPassphrase(passphrase: string | undefined): passphrase is s
   return !!passphrase && normalizeForMatch(passphrase).length > 0;
 }
 
+const EMAIL_TOKEN = /\S+@\S+\.\S+/;
+
 export function gateDecision(
   verified: boolean,
   lastText: string | undefined,
   passphrase: string | undefined,
+  passphraseVersion?: string,
+  storedVersion?: string,
 ): GateOutcome {
-  if (verified) {
+  const version = currentPassphraseVersion(passphraseVersion);
+  // G5: rotating TEAM_PASSPHRASE re-challenges sessions verified under the old one.
+  if (isVerifiedForVersion(verified, storedVersion, version)) {
     if (lastText && LOGOUT_INTENT.test(lastText)) return "logout";
     return "proceed";
   }
-  if (isConfiguredPassphrase(passphrase) && lastText !== undefined && containsPassphrase(lastText, passphrase)) return "verify";
-  return "partner";
+  if (!isConfiguredPassphrase(passphrase)) return "unconfigured";
+  if (lastText !== undefined && containsPassphrase(lastText, passphrase)) return "verify";
+  if (isHelpRequest(lastText)) return "help";
+  if (lastText !== undefined && EMAIL_TOKEN.test(lastText)) return "hint_missing_passphrase";
+  return "challenge";
 }
 
+// Emoji- and dash-free: a block reply short-circuits the pipeline, so
+// format-normalizer never runs on any of these strings.
 const LOGGED_OUT =
-  "✅ You've been signed out of staff mode and are back in partner self-service mode. To unlock staff tools again, send the team passphrase.";
+  "You are signed out of staff mode. To use the assistant again, send the team passphrase.";
 
-const WELCOME =
-  "✅ You're verified as staff. Ask me about any referral partner — who introduced which deal, where each referred deal stands, which introductions converted, and what fees are due. I can also record confirmed introductions, partner updates, partner-to-deal links, and fee statuses, and issue a partner an access code for self-service.";
+const CHALLENGE = `This assistant is for Noblestride staff only. Send the team passphrase as your next message to continue.
+If you are a Noblestride referral partner, this assistant is not the right place: log in to the Noblestride partner portal to see the status of the deals you introduced, or contact your Noblestride representative.
+Reply "help" and I will explain what I do and what a passphrase is.`;
+
+const UNCONFIGURED =
+  "This assistant is not fully configured yet: no team passphrase has been set. Please contact the Noblestride admin.";
 
 export const passphraseGate = new PreProcessor({
   name: "passphrase-gate",
   description:
-    "Verifies Noblestride staff via the team passphrase (unlocking staff tools); everyone else proceeds in partner self-service mode, where only token-scoped own-record tools work.",
+    "Blocks every message until the user proves staff membership with the team passphrase. Referral partners are directed to the Noblestride partner portal instead (F5.6).",
   priority: 10,
   execute: async (user, messages, _channel) => {
-    const verified = (user.data as Record<string, unknown> | undefined)?.verified === true;
+    const userData = (user.data as Record<string, unknown> | undefined) ?? {};
+    const verified = userData.verified === true;
+    const storedVersion =
+      typeof userData.passphraseVersion === "string" ? userData.passphraseVersion : undefined;
+    const staffName = typeof userData.staffName === "string" ? userData.staffName : "";
     const lastText = [...messages].reverse().find((m) => m.type === "text") as { text: string } | undefined;
-    const outcome = gateDecision(verified, lastText?.text, env("TEAM_PASSPHRASE"));
+    const version = currentPassphraseVersion(env("PASSPHRASE_VERSION"));
+    const outcome = gateDecision(
+      verified,
+      lastText?.text,
+      env("TEAM_PASSPHRASE"),
+      env("PASSPHRASE_VERSION"),
+      storedVersion,
+    );
 
     switch (outcome) {
+      case "proceed":
+        return { action: "proceed" };
       case "verify": {
-        await user.update({ verified: true });
+        await user.update({ verified: true, passphraseVersion: version });
         const userId = user._luaProfile?.userId;
         if (userId) {
           const existing = await Data.get(STAFF_COLLECTION, { userId: { $eq: userId } }, 1, 1);
           if (existing.data.length === 0) await Data.create(STAFF_COLLECTION, { userId });
         }
-        return { action: "block", response: WELCOME };
+        return { action: "block", response: WELCOME_GUIDE(staffName) };
+      }
+      case "help":
+        return { action: "block", response: HELP_REPLY };
+      case "hint_missing_passphrase": {
+        const email = lastText!.text.match(EMAIL_TOKEN)![0];
+        return { action: "block", response: HINT_EMAIL_NO_PASSPHRASE(email) };
       }
       case "logout": {
-        await user.update({ verified: false });
+        await user.update({ verified: false, passphraseVersion: null });
         return { action: "block", response: LOGGED_OUT };
       }
-      case "proceed":
-      case "partner":
+      case "unconfigured":
+        return { action: "block", response: UNCONFIGURED };
+      case "challenge":
       default:
-        // Staff (proceed) get the full toolset; partner-mode visitors get a warm
-        // reply and only the token-scoped partner-self-service tools succeed —
-        // every staff tool self-authorizes via staffRefusal inside its execute.
-        return { action: "proceed" };
+        return { action: "block", response: CHALLENGE };
     }
   },
 });

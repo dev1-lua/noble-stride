@@ -53,3 +53,57 @@ describe("gateDecision", () => {
     expect(gateDecision(false, "log out", "secret")).toBe("challenge"); // unverified users have nothing to log out of
   });
 });
+
+// ── F5.1 (image24): "share a pass phrase and confirm how this can be set" ────
+//
+// The client asked this desk what a passphrase is and how it gets set, and the
+// gate answered with the staff-only refusal. It now answers the question. None
+// of these paths verify anybody.
+describe("first contact no longer refuses a fair question (F5.1)", () => {
+  it("explains itself when asked, instead of repeating the refusal", () => {
+    for (const question of [
+      "help",
+      "How does this work?",
+      "what can you do",
+      "what is a passphrase",
+      "Whats a pass phrase and hwo is it set out",
+      "how is the passphrase set",
+      "who are you",
+    ]) {
+      expect(gateDecision(false, question, "secret"), question).toBe("help");
+    }
+  });
+
+  it("acknowledges an email and says what this desk actually needs", () => {
+    expect(gateDecision(false, "solomon@noblestride.capital", "secret")).toBe("hint_missing_passphrase");
+  });
+
+  it("neither help nor the email hint ever opens the gate", () => {
+    for (const text of ["help", "who are you", "solomon@noblestride.capital"]) {
+      const outcome = gateDecision(false, text, "secret");
+      expect(outcome).not.toBe("proceed");
+      expect(outcome).not.toBe("verify");
+    }
+  });
+
+  it("a real request is still challenged rather than answered with the guide", () => {
+    expect(gateDecision(false, "what needs chasing", "secret")).toBe("challenge");
+    expect(gateDecision(false, "where does Vantage stand", "secret")).toBe("challenge");
+  });
+});
+
+// G5: rotating the passphrase must re-challenge existing sessions.
+describe("passphrase rotation (G5)", () => {
+  it("keeps a session verified under the current generation", () => {
+    expect(gateDecision(true, "anything", "secret", "2", "2")).toBe("proceed");
+  });
+
+  it("re-challenges a session verified under an older generation", () => {
+    expect(gateDecision(true, "anything", "secret", "2", "1")).toBe("challenge");
+  });
+
+  it("treats a session from before versioning existed as generation 1", () => {
+    expect(gateDecision(true, "anything", "secret", undefined, undefined)).toBe("proceed");
+    expect(gateDecision(true, "anything", "secret", "2", undefined)).toBe("challenge");
+  });
+});

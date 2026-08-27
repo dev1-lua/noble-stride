@@ -15,6 +15,8 @@ const OUTCOME_MEANING: Record<string, string> = {
   proceed: "reaches the agent and its tools",
   unconfigured: "fails closed, no passphrase configured",
   logout: "signs the user out of staff mode",
+  help: "explains what the assistant does and where the passphrase comes from",
+  hint_missing_passphrase: "acknowledges the email and says the passphrase is still needed",
 };
 
 const rows: Array<[string, GateState, string]> = [
@@ -49,6 +51,8 @@ for (const [msg, state, note] of rows) {
   console.log(`\x1b[2m${" ".repeat(2)}^ ${note}\x1b[0m`);
 }
 console.log(`\n\x1b[1mResult:\x1b[0m ${blocked} of ${rows.length} message shapes are answered with the identical challenge string.`);
-console.log(`Only an EXACT match of the passphrase (case-sensitive, no extra words) opens the gate:`);
+console.log(`\x1b[2mBaseline before this work: 6 of 13 (exact, case-sensitive passphrase match only).`);
+console.log(`After the server's tolerant matching: 4 of 13.`);
+console.log(`After A1 (help before the gate): the target is 0 for every shape above.\x1b[0m`);
 console.log(`  extractCredentials("Hi, here is ${PASS} a@b.com") -> ${JSON.stringify(extractCredentials(`Hi, here is ${PASS} a@b.com`))}`);
-console.log(`  the gate compares rest === passphrase, so "Hi, here is" makes it fail.\n`);
+console.log(`  \x1b[2mthe gate now matches the passphrase anywhere in the message, so the polite wrapper no longer breaks it.\x1b[0m\n`);

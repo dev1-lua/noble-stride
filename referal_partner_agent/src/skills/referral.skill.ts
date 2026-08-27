@@ -10,7 +10,6 @@ import { CreateReferredMandateTool } from "./tools/CreateReferredMandateTool";
 import { LinkPartnerToDealTool } from "./tools/LinkPartnerToDealTool";
 import { UpdatePartnerTool } from "./tools/UpdatePartnerTool";
 import { UpdateFeeStatusTool } from "./tools/UpdateFeeStatusTool";
-import { IssuePartnerAccessCodeTool } from "./tools/IssuePartnerAccessCodeTool";
 import { ListGreylistedInvestorsTool } from "./tools/ListGreylistedInvestorsTool";
 
 export const referralSkill = new LuaSkill({
@@ -27,7 +26,7 @@ Routing:
 - partner_performance for conversion numbers and the partner leaderboard ("which partner brings the best deals?").
 - summarize_record for a general briefing on any single client, investor, mandate, transaction, engagement, or partner.
 - record_introduction / create_referred_mandate / link_partner_to_deal / update_partner / update_fee_status for writes — see the write protocol below.
-- issue_partner_access_code when staff want to let a partner self-serve: it returns a one-time code to hand to the partner out-of-band (they then verify on the partner self-service surface to view/update their own details). Every tool here is staff-only; if one returns status "staff_only", the caller isn't a verified staff member — do not retry.
+- Partner self service was retired (F5.6 / image23): partners no longer use this assistant. If staff ask how a partner can see their own deals, say the partner logs in to the Noblestride partner portal; there is no access code to issue from here. Every tool here is staff-only; if one returns status "staff_only", the caller isn't a verified staff member — do not retry.
 - list_greylisted_investors (staff-only) when staff ask which investors are greylisted or excluded. Pass includeExcluded:true to also include Excluded. Relay names with deep links; if empty, say none are currently classified that way.
 
 Introductions (default path — hard rule):
@@ -79,7 +78,6 @@ Never expose raw record ids; refer to records by name and share the deep links t
     new LinkPartnerToDealTool(),
     new UpdatePartnerTool(),
     new UpdateFeeStatusTool(),
-    new IssuePartnerAccessCodeTool(),
     new ListGreylistedInvestorsTool(),
   ],
 });

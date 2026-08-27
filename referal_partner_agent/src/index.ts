@@ -1,6 +1,5 @@
 import { LuaAgent } from "lua-cli";
 import { referralSkill } from "./skills/referral.skill";
-import { partnerSelfServiceSkill } from "./skills/partner-selfservice.skill";
 import { stageWatchJob } from "./jobs/stage-watch.job";
 import { passphraseGate } from "./processors/passphrase-gate";
 import { formatNormalizer } from "./processors/format-normalizer";
@@ -12,7 +11,7 @@ const agent = new LuaAgent({
   name: "Referal_partner_tracking_agent",
   persona: REFERRAL_PARTNER_PERSONA,
   model: "anthropic/claude-sonnet-5",
-  skills: [referralSkill, partnerSelfServiceSkill],
+  skills: [referralSkill],
   jobs: [stageWatchJob],
   preProcessors: [passphraseGate],
   postProcessors: [formatNormalizer],

@@ -9,12 +9,24 @@ describe("REFERRAL_PARTNER_PERSONA", () => {
     expect(p).not.toContain("briefing style");
   });
 
-  it("frames the two verified audiences (staff + partner) and stays injection-resistant", () => {
+  // F5.6 / image23: the client asked us to drop partner usage from this agent.
+  // It is now staff-only, and it must say where a partner should actually go.
+  it("is staff only, and sends partners to the portal", () => {
     const p = REFERRAL_PARTNER_PERSONA.toLowerCase();
     expect(p).toContain("team passphrase"); // staff verification
-    expect(p).toContain("access code"); // partner verification
-    expect(p).toContain("own record"); // partner sees only their own data
+    expect(p).toContain("staff only");
+    expect(p).toContain("partner portal");
+    expect(p).toContain("do not use this assistant");
     expect(p).toContain("instructions to follow");
+  });
+
+  it("no longer advertises partner self service", () => {
+    const p = REFERRAL_PARTNER_PERSONA.toLowerCase();
+    expect(p).not.toContain("two audiences");
+    expect(p).not.toContain("self-service desk");
+    // The one surviving mention of an access code says there is no longer one
+    // to issue, which is the fact staff need rather than an offer.
+    expect(p).toContain("no access code to issue");
   });
 
   it("keeps the confirmed-gate write protocol", () => {
