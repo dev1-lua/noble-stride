@@ -90,6 +90,9 @@ d("investorEngagedDealsByEmail (DB)", () => {
     const deal = deals[0];
     expect(deal.dealId).toBe(transactionId);
     expect(deal.codename).toBe(dealCodename(transactionId));
+    // Both selected by the deployed investor agent's get_engaged_deals tool.
+    expect(deal.engagementId).toMatch(/^\S+$/);
+    expect(deal.stagePhrase).toBe("in due diligence");
     // The real deal name must never reach an email-channel agent.
     expect(JSON.stringify(deals)).not.toContain(DEAL_NAME);
     expect(deal.stage).toBe("DueDiligence");
@@ -127,5 +130,20 @@ d("investorEngagedDealsByEmail (DB)", () => {
     });
     expect(await investorEngagedDealsByEmail(orphanEmail)).toEqual([]);
     await prisma.person.delete({ where: { id: person.id } });
+  });
+});
+
+// The investor agent (deployed) sends `investorEmail` and selects engagementId,
+// codename, status and stagePhrase. If that contract drifts, the agent silently
+// stops being able to answer "what deal am I looking at" — so pin it here.
+d("investorEngagedDeals — the deployed agent's contract", () => {
+  it("every stage has a plain phrase, so no enum name can reach an investor", async () => {
+    const { investorEngagedDealsByEmail } = await import("../investor-agent");
+    const { EngagementStage } = await import("@prisma/client");
+    const deals = await investorEngagedDealsByEmail(EMAIL);
+    for (const deal of deals) {
+      expect(deal.stagePhrase.length).toBeGreaterThan(3);
+      expect(Object.values(EngagementStage)).not.toContain(deal.stagePhrase);
+    }
   });
 });

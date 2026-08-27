@@ -1086,9 +1086,11 @@ export const InvestorEngagedDealRef = builder
   .objectRef<import("@/server/services/investor-agent").AgentEngagedDeal>("InvestorEngagedDeal")
   .implement({
     fields: (t) => ({
+      engagementId: t.exposeID("engagementId"),
       dealId: t.exposeID("dealId"),
       codename: t.exposeString("codename"),
       stage: t.field({ type: EngagementStageEnum, resolve: (d) => d.stage }),
+      stagePhrase: t.exposeString("stagePhrase"),
       status: t.field({ type: EngagementStatusEnum, resolve: (d) => d.status }),
       sector: t.exposeStringList("sector"),
       countries: t.exposeStringList("countries"),

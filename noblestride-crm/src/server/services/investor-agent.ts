@@ -612,10 +612,21 @@ export async function rejectProposedChange(id: string, actor: Actor): Promise<{ 
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface AgentEngagedDeal {
+  /**
+   * The engagement's own id. The deployed investor agent selects this rather
+   * than dealId, and it is the safer identifier to hand an email agent: it means
+   * nothing outside the CRM and cannot be pasted into a portal URL.
+   */
+  engagementId: string;
   dealId: string;
   codename: string;
   stage: EngagementStage;
   status: EngagementStatus;
+  /**
+   * The stage as a phrase the agent can drop into a sentence ("currently in due
+   * diligence"), so it never has to translate an internal enum for an investor.
+   */
+  stagePhrase: string;
   sector: string[];
   countries: string[];
   targetRaise: number | null;
@@ -623,6 +634,25 @@ export interface AgentEngagedDeal {
   lastContact: Date | null;
   portalUrl: string;
 }
+
+/**
+ * Enum → plain phrase for the investor agent's replies. Keyed by the enum so a
+ * new stage forces a decision here instead of leaking "IMShared" into an email.
+ */
+const STAGE_PHRASE: Record<EngagementStage, string> = {
+  Shared: "shared with you for an initial look",
+  TeaserSent: "at the teaser stage",
+  NDASigned: "cleared for detailed information now that the NDA is signed",
+  IMShared: "at the information-memorandum stage",
+  VDRAccess: "open for data-room review",
+  Meeting: "in discussion with the deal team",
+  InfoRequest: "in discussion, with an outstanding information request",
+  DueDiligence: "in due diligence",
+  TermSheet: "at the term-sheet stage",
+  Offer: "at the offer stage",
+  Invested: "closed, with your investment completed",
+  Declined: "closed on your side",
+};
 
 export async function investorEngagedDealsByEmail(email: string): Promise<AgentEngagedDeal[]> {
   const normalised = email?.trim().toLowerCase();
@@ -659,9 +689,11 @@ export async function investorEngagedDealsByEmail(email: string): Promise<AgentE
   });
 
   return engagements.map((e) => ({
+    engagementId: e.id,
     dealId: e.transaction.id,
     codename: dealCodename(e.transaction.id),
     stage: e.engagementStage,
+    stagePhrase: STAGE_PHRASE[e.engagementStage],
     status: e.status,
     sector: [...new Set([...(e.transaction.sector ?? []), ...(e.transaction.client?.sector ?? [])])],
     countries: e.transaction.client?.countries ?? [],

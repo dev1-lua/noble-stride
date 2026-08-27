@@ -775,10 +775,13 @@ builder.queryFields((t) => ({
   investorEngagedDeals: t.field({
     type: [InvestorEngagedDealRef],
     nullable: false,
-    args: { email: t.arg.string({ required: true }) },
+    // `investorEmail`, not `email`: this is the argument name the DEPLOYED
+    // investor agent's get_engaged_deals tool sends. The agent contract is live,
+    // so the CRM follows it rather than the other way round.
+    args: { investorEmail: t.arg.string({ required: true }) },
     resolve: (_root, args, ctx) => {
       assertAutomation(ctx.actor);
-      return investorEngagedDealsByEmail(args.email);
+      return investorEngagedDealsByEmail(args.investorEmail);
     },
   }),
   // Investor Agent: the investor's OWN whitelisted profile (spec §7.2 "own profile").
