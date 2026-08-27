@@ -102,6 +102,10 @@ export const ClientInput = builder.inputType("ClientInput", {
     pitchDeckUrl: t.string({ required: false }),
     // Spec-gap: company profile fields (spec §3.1/§3.2)
     codename: t.string({ required: false }),
+    // Aug-2026 feedback: project codename + women/youth-led booleans
+    projectCodename: t.string({ required: false }),
+    womenLed: t.boolean({ required: false }),
+    youthLed: t.boolean({ required: false }),
     registrationNo: t.string({ required: false }),
     hqCountry: t.string({ required: false }),
     businessModel: t.string({ required: false }),

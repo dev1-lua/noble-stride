@@ -20,7 +20,14 @@ export const clientCreateSchema = z.object({
   source: z.nativeEnum(Source).optional(),
   pitchDeckUrl: z.string().trim().optional(),
   // Spec-gap: company profile fields (spec §3.1/§3.2)
+  // `codename` stays for API back-compat (schemas.test.ts pins it); the form
+  // now writes `projectCodename` and the service mirrors the pair.
   codename: z.string().trim().optional(),
+  // Aug-2026 feedback: project codename + women/youth-led as first-class flags
+  // (they used to be derived from `impactFlags`, which is also kept).
+  projectCodename: z.string().trim().optional(),
+  womenLed: z.boolean().optional(),
+  youthLed: z.boolean().optional(),
   registrationNo: z.string().trim().optional(),
   hqCountry: z.string().trim().optional(),
   businessModel: z.string().trim().optional(),

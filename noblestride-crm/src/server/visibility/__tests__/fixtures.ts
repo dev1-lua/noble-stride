@@ -56,6 +56,10 @@ export function makeDealFixture(): DealInput {
       revenueForecast: 12_500_000,
       profitability: "Profitable",
       impactFlags: ["WomenLed"],
+      // Aug-2026 feedback: real columns alongside the legacy impactFlags list.
+      projectCodename: null,
+      womenLed: true,
+      youthLed: false,
       // fullFinancials group — loaded but never projected:
       ebitda: 1_500_000,
       netProfit: 1_000_000,

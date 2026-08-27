@@ -46,3 +46,39 @@ describe("applyTableFilters", () => {
     expect(applyTableFilters(rows, "", {}, searchText, filters)).toHaveLength(3);
   });
 });
+
+describe("applyTableFilters — getAll (multi-valued rows)", () => {
+  type Client = { name: string; hqCountry: string | null; countries: string[] };
+  const clients: Client[] = [
+    { name: "Acme", hqCountry: "Kenya", countries: ["EastAfrica"] },
+    { name: "Bolt", hqCountry: "Uganda", countries: [] },
+    { name: "Cee", hqCountry: null, countries: ["WestAfrica", "EastAfrica"] },
+  ];
+  const search = (c: Client) => [c.name];
+  const filters = [
+    {
+      key: "country",
+      label: "Country",
+      options: [],
+      get: (c: Client) => c.hqCountry ?? "",
+      getAll: (c: Client) => [c.hqCountry, ...c.countries].filter((v): v is string => Boolean(v)),
+    },
+  ];
+
+  it("matches when ANY of the row's values is selected", () => {
+    const out = applyTableFilters(clients, "", { country: ["EastAfrica"] }, search, filters);
+    expect(out.map((c) => c.name)).toEqual(["Acme", "Cee"]);
+  });
+  it("still matches the primary value", () => {
+    expect(applyTableFilters(clients, "", { country: ["Uganda"] }, search, filters).map((c) => c.name)).toEqual(["Bolt"]);
+  });
+  it("a row with no values matches nothing once the filter is set", () => {
+    const noneRow: Client[] = [{ name: "Empty", hqCountry: null, countries: [] }];
+    expect(applyTableFilters(noneRow, "", { country: ["Kenya"] }, search, filters)).toHaveLength(0);
+    expect(applyTableFilters(noneRow, "", {}, search, filters)).toHaveLength(1);
+  });
+  it("getAll takes precedence over get", () => {
+    const out = applyTableFilters(clients, "", { country: ["WestAfrica"] }, search, filters);
+    expect(out.map((c) => c.name)).toEqual(["Cee"]);
+  });
+});

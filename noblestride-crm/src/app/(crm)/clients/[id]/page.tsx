@@ -83,6 +83,9 @@ export default async function ClientDetailPage({ params }: PageProps) {
     pitchDeckUrl: c.pitchDeckUrl ?? "",
     // Spec-gap: company profile fields (spec §3.1/§3.2)
     codename: c.codename ?? "",
+    projectCodename: c.projectCodename ?? c.codename ?? "",
+    womenLed: c.womenLed ?? impactFlags.includes("WomenLed"),
+    youthLed: c.youthLed ?? impactFlags.includes("YouthLed"),
     status: c.status ?? "",
     registrationNo: c.registrationNo ?? "",
     hqCountry: c.hqCountry ?? "",
@@ -158,7 +161,11 @@ export default async function ClientDetailPage({ params }: PageProps) {
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold text-[var(--text-primary)] leading-tight">{client.name}</h1>
             {c.status && <Chip value={c.status} group="ClientStatus" />}
-            {c.codename && <span className="text-sm text-[var(--text-tertiary)]">&ldquo;{c.codename}&rdquo;</span>}
+            {(c.projectCodename ?? c.codename) && (
+              <span className="text-sm text-[var(--text-tertiary)]" data-testid="client-codename">
+                &ldquo;{c.projectCodename ?? c.codename}&rdquo;
+              </span>
+            )}
             {sectors.map((s: string) => (
               <Chip key={s} value={s} group="Sector" />
             ))}

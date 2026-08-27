@@ -107,6 +107,14 @@ export interface DealClientInput {
   profitability?: Profitability | null;
   /** §3.1 impact flags — projected as booleans in companyProfile, visible at all tiers. */
   impactFlags?: ImpactFlag[];
+  /**
+   * Aug-2026 feedback: the client's own project codename is preferred over the
+   * derived `dealCodename(id)` when masking, and women/youth-led are now real
+   * columns (still OR-ed with the legacy impactFlags list).
+   */
+  projectCodename?: string | null;
+  womenLed?: boolean | null;
+  youthLed?: boolean | null;
   contacts?: PersonInput[];
   // Present on loaded records but NEVER projected at any tier (they belong to
   // the fullFinancials group, which stays internal for now):
@@ -288,7 +296,10 @@ export function projectDealForInvestor(
   const revenueForecast = client?.revenueForecast ?? null;
 
   const masked = tier === "PRE_INTEREST";
-  const displayName = masked ? dealCodename(deal.id) : deal.name;
+  // Prefer the client's own project codename when masking (a blank/whitespace
+  // one falls back to the deterministic per-deal codename).
+  const ownCodename = client?.projectCodename?.trim();
+  const displayName = masked ? (ownCodename || dealCodename(deal.id)) : deal.name;
 
   return {
     id: deal.id,
@@ -302,8 +313,8 @@ export function projectDealForInvestor(
       hqCity: client?.hqCity ?? null,
       countries: client?.countries ?? [],
       yearFounded: client?.yearFounded ?? null,
-      womenLed: (client?.impactFlags ?? []).includes("WomenLed"),
-      youthLed: (client?.impactFlags ?? []).includes("YouthLed"),
+      womenLed: Boolean(client?.womenLed) || (client?.impactFlags ?? []).includes("WomenLed"),
+      youthLed: Boolean(client?.youthLed) || (client?.impactFlags ?? []).includes("YouthLed"),
     },
     dealTypeTicket: {
       dealType: deal.dealType ?? null,
