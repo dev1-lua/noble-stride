@@ -9,7 +9,8 @@
  *   - the WorkflowTemplate at DEFAULT_WORKFLOW_TEMPLATE_ID (name kept in sync;
  *     `isDefault` is only ever set true on first create, and only if no OTHER
  *     template is already marked default — it never flips an existing row)
- *   - each of the 13 DEFAULT_WORKFLOW_STEPS, keyed by (templateId, key)
+ *   - each of the 13 DEFAULT_WORKFLOW_STEPS, keyed by (templateId, key),
+ *     CREATE-ONLY (`update: {}`) — admins edit templates in Settings → Workflows
  *   - each APP_SETTING_DEFS entry, CREATE-ONLY (`update: {}`) — never
  *     overwrites a value an admin has already changed, and never touches an
  *     existing row's `updatedAt`
@@ -64,13 +65,10 @@ export async function seedWorkflowDefaults(prisma: PrismaClient) {
         order: step.order,
         appliesTo: step.appliesTo,
       },
-      update: {
-        title: step.title,
-        phase: step.phase,
-        description: step.description,
-        order: step.order,
-        appliesTo: step.appliesTo,
-      },
+      // CREATE-ONLY: admins edit templates (titles, order, phase, appliesTo)
+      // under Settings → Workflows, so re-running the seed must never clobber
+      // those edits. Missing steps are re-created; existing ones are left alone.
+      update: {},
     });
   }
 
