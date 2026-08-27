@@ -8,7 +8,7 @@ test.describe.configure({ mode: "serial" });
 
 const MANDATE = `/mandates/${IDS.mandate}`;
 
-test.describe("retainer paid and balance", () => {
+test.describe("F4.3.1 — retainer amount, amount paid and the pending balance", () => {
   test("the deal summary shows amount, paid and balance", async ({ page }) => {
     await page.goto(MANDATE);
     await expect(page.getByTestId("retainer-amount")).toContainText("$50K");

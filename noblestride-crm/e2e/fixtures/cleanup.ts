@@ -13,40 +13,48 @@ import { IDS, EMAILS } from "./seed";
 const prisma = new PrismaClient();
 
 export async function cleanupE2E(): Promise<void> {
-  const dealIds = [IDS.mandate, IDS.transaction, IDS.advisory, IDS.applicantMandate, IDS.acceptedApplicantMandate];
+  const dealIds = [
+    IDS.mandate,
+    IDS.transaction,
+    IDS.offMandateTransaction,
+    IDS.advisory,
+    IDS.applicantMandate,
+    IDS.acceptedApplicantMandate,
+  ];
   const clientIds = [
     IDS.clientKenya,
     IDS.clientUganda,
     // F2.1 website-application fixtures.
     IDS.applicantClient,
     IDS.acceptedApplicantClient,
+    IDS.offMandateClient,
   ];
 
   // Workflow progress + audit trails first.
   await prisma.dealStageState.deleteMany({ where: { dealId: { in: dealIds } } });
   await prisma.stageChange.deleteMany({
-    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }, { investorId: IDS.investor }] },
+    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: { in: [IDS.transaction, IDS.offMandateTransaction] } }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }, { investorId: IDS.investor }] },
   });
   await prisma.activity.deleteMany({
-    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }, { investorId: IDS.investor }, { engagementId: IDS.engagement }] },
+    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: { in: [IDS.transaction, IDS.offMandateTransaction] } }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }, { investorId: IDS.investor }, { engagementId: IDS.engagement }] },
   });
   await prisma.document.deleteMany({
-    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }, { investorId: { in: [IDS.investor, IDS.pendingInvestor] } }] },
+    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: { in: [IDS.transaction, IDS.offMandateTransaction] } }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }, { investorId: { in: [IDS.investor, IDS.pendingInvestor] } }] },
   });
   await prisma.task.deleteMany({
-    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }] },
+    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: { in: [IDS.transaction, IDS.offMandateTransaction] } }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }] },
   });
   await prisma.folder.deleteMany({
-    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }] },
+    where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: { in: [IDS.transaction, IDS.offMandateTransaction] } }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }] },
   });
   await prisma.engagementParticipant.deleteMany({
     where: { OR: [{ engagementId: IDS.engagement }, { engagement: { investorId: IDS.investor } }] },
   });
-  await prisma.outreachDraft.deleteMany({ where: { OR: [{ transactionId: IDS.transaction }, { investorId: IDS.investor }] } });
+  await prisma.outreachDraft.deleteMany({ where: { OR: [{ transactionId: { in: [IDS.transaction, IDS.offMandateTransaction] } }, { investorId: IDS.investor }] } });
   await prisma.engagement.deleteMany({ where: { OR: [{ id: IDS.engagement }, { investorId: IDS.investor }] } });
 
   // Deals, then their clients.
-  await prisma.transaction.deleteMany({ where: { OR: [{ id: IDS.transaction }, { clientId: { in: clientIds } }] } });
+  await prisma.transaction.deleteMany({ where: { OR: [{ id: { in: [IDS.transaction, IDS.offMandateTransaction] } }, { clientId: { in: clientIds } }] } });
   await prisma.advisoryEngagement.deleteMany({ where: { OR: [{ id: IDS.advisory }, { clientId: { in: clientIds } }] } });
   await prisma.mandate.deleteMany({
     where: { OR: [{ id: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { clientId: { in: clientIds } }] },
@@ -91,12 +99,23 @@ export async function cleanupE2E(): Promise<void> {
   // writes would survive the investor as orphans. Delete them first.
   await prisma.eSignEnvelope.deleteMany({ where: { investorId: { in: [IDS.investor, IDS.pendingInvestor] } } });
   await prisma.investor.deleteMany({ where: { id: { in: [IDS.investor, IDS.pendingInvestor] } } });
+  // F5.6 partner fixtures. The referral link must be cleared before the partner
+  // row goes (Mandate.referredById), and the mandate itself is already gone.
+  await prisma.mandate.updateMany({ where: { referredById: IDS.partner }, data: { referredById: null } });
+  await prisma.transaction.updateMany({ where: { referredById: IDS.partner }, data: { referredById: null } });
+  await prisma.person.deleteMany({ where: { partnerId: IDS.partner } });
+  await prisma.partner.deleteMany({ where: { id: IDS.partner } });
   await prisma.client.deleteMany({ where: { id: { in: clientIds } } });
   await prisma.notification.deleteMany({ where: { userId: { in: [IDS.adminUser, IDS.memberUser] } } });
   // Fixtures notify REAL admins (nda_signed, criteria_uploaded, …). Those rows
   // name the zz- fixture in their title, which is what makes them removable
   // without touching anything belonging to the real data.
   await prisma.notification.deleteMany({ where: { title: { contains: "zz-" } } });
+  // G1: OTP challenges the /apply/status spec raises, including the ones for the
+  // deliberately-unknown address it uses to prove the page is no existence oracle.
+  await prisma.applicantOtpChallenge.deleteMany({
+    where: { OR: [{ email: { startsWith: "zz-" } }, { email: { endsWith: "@e2e-applicant.test" } }] },
+  });
   await prisma.user.deleteMany({ where: { email: { in: [EMAILS.admin, EMAILS.member] } } });
 
   // Restore the AppSetting defaults the app-settings spec toggles.

@@ -37,7 +37,7 @@ test.beforeAll(async () => {
   }
 });
 
-test.describe("workflow template settings", () => {
+test.describe("F4.1 text 3 — stages are customisable and new templates can be created per deal", () => {
   test("the default template is badged and cannot be deleted", async ({ page }) => {
     await page.goto("/settings/workflows");
     await expect(page.getByRole("heading", { name: "Workflow templates" })).toBeVisible();

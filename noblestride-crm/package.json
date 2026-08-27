@@ -26,7 +26,8 @@
     "e2e:cleanup": "tsx e2e/fixtures/cleanup.ts",
     "import:real": "python3 scripts/parse-real-data.py && tsx scripts/import-real-data.ts",
     "codegen": "graphql-codegen --config codegen.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test:e2e:watch": "E2E_HEADED=1 playwright test --project=chromium"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

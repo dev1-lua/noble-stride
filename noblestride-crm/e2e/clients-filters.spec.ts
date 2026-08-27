@@ -7,7 +7,7 @@ import { IDS } from "./fixtures/seed";
 
 test.describe.configure({ mode: "serial" });
 
-test.describe("clients list filters", () => {
+test.describe("F2.2 / F6.1 — clients newest-first, filterable by date created, country, sector and revenue", () => {
   test("lists newest first with Country and Created columns", async ({ page }) => {
     await page.goto("/clients");
     await expect(page.locator("body")).toContainText("newest first");

@@ -11,7 +11,7 @@ const ADVISORY = `/advisory/${IDS.advisory}`;
 
 test.describe.configure({ mode: "serial" });
 
-test.describe("deal workflow card", () => {
+test.describe("F4.1.1–F4.1.3 / G2 / G8 — the deal workflow is defined, evidence-driven and movable", () => {
   test("mandate shows the default template, three phases and evidence-derived steps", async ({ page }) => {
     await page.goto(MANDATE);
     const card = page.getByTestId("deal-workflow");

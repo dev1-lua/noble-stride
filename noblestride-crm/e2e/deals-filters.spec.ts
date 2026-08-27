@@ -5,7 +5,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe.configure({ mode: "serial" });
 
-test.describe("deals filter bar", () => {
+test.describe("F4.1.4 — the deals filter bar is simple and clean, with the rest behind More filters", () => {
   test("only the primary controls are on the bar; the rest live behind More filters", async ({ page }) => {
     await page.goto("/deals");
     await expect(page.getByTestId("deals-search")).toBeVisible();

@@ -8,7 +8,7 @@ test.describe.configure({ mode: "serial" });
 
 const ADVISORY = `/advisory/${IDS.advisory}`;
 
-test.describe("advisory classification and fee", () => {
+test.describe("F4.2.1 — advisory work is classified (Financial Model, Valuation, Business Plan…) with fee paid and balance", () => {
   test("the detail page shows the classification chip, fee, paid and balance", async ({ page }) => {
     await page.goto(ADVISORY);
     await expect(page.locator("body")).toContainText("Valuation");

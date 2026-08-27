@@ -6,7 +6,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe.configure({ mode: "serial" });
 
-test.describe("app settings", () => {
+test.describe("image30 / G3 — an admin decides what the investor portal shows", () => {
   test("shows the three switches at their seeded values", async ({ page }) => {
     await page.goto("/settings/app");
     await expect(page.getByRole("heading", { name: "App settings" })).toBeVisible();

@@ -19,6 +19,12 @@ export const INVESTOR = {
   password: E2E_PASSWORD,
 };
 
+/** The seeded partner-portal contact (F5.6). */
+export const PARTNER = {
+  email: "zz-e2e-partner@e2e.noblestride.test",
+  password: E2E_PASSWORD,
+};
+
 export const adminStorageState = "e2e/.auth/admin.json";
 
 /**

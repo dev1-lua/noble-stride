@@ -30,6 +30,13 @@ export const IDS = {
   // without (image31: "the members need to be onboarded for this to happen").
   investorColleague: "zze2einvcolleague000001",
   investorNoAccount: "zze2einvnoaccount000001",
+  // F5.6: a partner with a real portal login, and the deal they referred.
+  partner: "zze2epartner000000000001",
+  partnerPerson: "zze2epartnerperson000001",
+  // F6b.1: a live deal deliberately OUTSIDE the investor's mandate, so "browse
+  // all" has something to show that discovery would have hidden.
+  offMandateClient: "zze2eoffmandclient000001",
+  offMandateTransaction: "zze2eoffmandtxn000000001",
   engagement: "zze2eengagement000000001",
   // F2.1/F2.3: a website application, so the Applications queue and the
   // applicant block on the mandate page have something real to show. The
@@ -51,6 +58,7 @@ export const EMAILS = {
   member: "zz-e2e-member@e2e.noblestride.test",
   investor: "zz-e2e-investor@e2e.noblestride.test",
   investorColleague: "zz-e2e-colleague@e2e.noblestride.test",
+  partner: "zz-e2e-partner@e2e.noblestride.test",
 } as const;
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
@@ -132,6 +140,45 @@ export async function seedE2E(): Promise<void> {
       source: "Referral",
     },
   });
+
+  // ── partner with a portal login (F5.6) ───────────────────────────────────
+  await prisma.partner.upsert({
+    where: { id: IDS.partner },
+    update: {},
+    create: {
+      id: IDS.partner,
+      name: "zz-E2E Partner",
+      advisorType: "TransactionAdvisor",
+      feeSharingAgreement: true,
+      feeSharingTerms: "25% of the advisory success fee on referred mandates.",
+      partnerAgreementStatus: "Signed",
+    },
+  });
+  await prisma.person.upsert({
+    where: { id: IDS.partnerPerson },
+    update: {},
+    create: {
+      id: IDS.partnerPerson,
+      firstName: "zz-E2E",
+      lastName: "Partner Contact",
+      email: EMAILS.partner,
+      partnerId: IDS.partner,
+      isPrimaryContact: true,
+    },
+  });
+  await prisma.authAccount.upsert({
+    where: { email: EMAILS.partner },
+    update: { status: "ACTIVE", passwordHash, kind: "PARTNER", personId: IDS.partnerPerson },
+    create: {
+      email: EMAILS.partner,
+      kind: "PARTNER",
+      status: "ACTIVE",
+      passwordHash,
+      personId: IDS.partnerPerson,
+    },
+  });
+  // The referral link the partner portal reports on.
+  await prisma.mandate.update({ where: { id: IDS.mandate }, data: { referredById: IDS.partner } });
 
   // ── website applications (F2.1/F2.3) ─────────────────────────────────────
   // One awaiting review with a full applicant contact, one already accepted, so
@@ -220,6 +267,40 @@ export async function seedE2E(): Promise<void> {
       targetRaise: 5_000_000,
       successFeeAmount: 100_000,
       sector: ["Agribusiness"],
+    },
+  });
+
+  // ── F6b.1: a live deal the investor's mandate does NOT match ─────────────
+  // Manufacturing / West Africa against a fund focused on Agribusiness in East
+  // Africa. Before the F6b.1 widening this deal was invisible to the investor;
+  // it is what makes "Browse all" demonstrably different from "Matches my
+  // mandate".
+  await prisma.client.upsert({
+    where: { id: IDS.offMandateClient },
+    update: {},
+    create: {
+      id: IDS.offMandateClient,
+      name: "zz-E2E Offmandate Client",
+      sector: ["Manufacturing"],
+      hqCountry: "Ghana",
+      countries: ["WestAfrica"],
+      revenueLastYear: 9_000_000,
+      projectCodename: "zz-Project Tamarind",
+      codename: "zz-Project Tamarind",
+      status: "Active",
+    },
+  });
+  await prisma.transaction.upsert({
+    where: { id: IDS.offMandateTransaction },
+    update: {},
+    create: {
+      id: IDS.offMandateTransaction,
+      name: "zz-E2E Offmandate Transaction",
+      clientId: IDS.offMandateClient,
+      ownerId: admin.id,
+      stage: "InvestorOutreach",
+      targetRaise: 12_000_000,
+      sector: ["Manufacturing"],
     },
   });
 
