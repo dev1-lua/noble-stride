@@ -118,6 +118,11 @@ export interface InvestorPipelineItem {
    */
   dealStatus: DealStatus;
   transactionStage: TransactionStage;
+  /**
+   * F6b.4: the signed-in person is a participant on this engagement. False when
+   * no personId was supplied — the flag is a UI hint, never an access decision.
+   */
+  isParticipant: boolean;
 }
 
 /**
@@ -129,13 +134,42 @@ export interface InvestorPipelineItem {
  * Never contains: feedback, probability, notes, disbursement amounts,
  * owner/team identities, or other investors' data.
  */
+export interface InvestorPipelineOptions {
+  /** The signed-in Person, for participation-aware views (F6b.4). */
+  personId?: string;
+  /** Keep only deals this person follows — as a participant, or as the fund's primary contact. */
+  onlyMine?: boolean;
+}
+
 export async function loadInvestorPipeline(
   prisma: PrismaClient,
   investorId: string,
+  opts: InvestorPipelineOptions = {},
 ): Promise<InvestorPipelineItem[]> {
   const investor = await prisma.investor.findUniqueOrThrow({ where: { id: investorId } });
   if (isOnboardingBlocked(investor.onboardingStatus)) return [];
   if (isBlockedClassification(investor.engagementClassification)) return [];
+
+  // F6b.4: which of this fund's deals the signed-in person follows. The primary
+  // contact follows everything by definition — they are the fund's point of
+  // contact, so "only deals I follow" must not hide the fund's own pipeline
+  // from them.
+  let followedIds: Set<string> | null = null;
+  let isPrimaryContact = false;
+  if (opts.personId) {
+    const [rows, person] = await Promise.all([
+      prisma.engagementParticipant.findMany({
+        where: { personId: opts.personId },
+        select: { engagementId: true },
+      }),
+      prisma.person.findUnique({
+        where: { id: opts.personId },
+        select: { isPrimaryContact: true },
+      }),
+    ]);
+    followedIds = new Set(rows.map((r) => r.engagementId));
+    isPrimaryContact = Boolean(person?.isPrimaryContact);
+  }
 
   const engagements = await prisma.engagement.findMany({
     where: { investorId },
@@ -150,6 +184,7 @@ export async function loadInvestorPipeline(
 
   const items: InvestorPipelineItem[] = [];
   for (const engagement of engagements) {
+    if (opts.onlyMine && !isPrimaryContact && !followedIds?.has(engagement.id)) continue;
     const tier = investorTier(investor, engagement);
     const dealTier: Tier = tier === "NONE" ? "PRE_INTEREST" : tier;
     const deal = projectDealForInvestor(engagement.transaction, dealTier, {
@@ -164,6 +199,7 @@ export async function loadInvestorPipeline(
       milestoneDates,
       dealStatus: engagement.transaction.dealStatus,
       transactionStage: engagement.transaction.stage,
+      isParticipant: followedIds?.has(engagement.id) ?? false,
     });
   }
 
@@ -182,8 +218,9 @@ export async function loadOwnEngagementForDeal(
   prisma: PrismaClient,
   investorId: string,
   dealId: string,
+  opts: InvestorPipelineOptions = {},
 ): Promise<InvestorPipelineItem | null> {
-  const items = await loadInvestorPipeline(prisma, investorId);
+  const items = await loadInvestorPipeline(prisma, investorId, { ...opts, onlyMine: false });
   return items.find((item) => item.deal.id === dealId) ?? null;
 }
 

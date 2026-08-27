@@ -26,6 +26,10 @@ export const IDS = {
   advisory: "zze2eadvisory000000000001",
   investor: "zze2einvestor000000000001",
   investorPerson: "zze2einvestorperson00001",
+  // F6b.4: one colleague WITH portal access (addable as a participant) and one
+  // without (image31: "the members need to be onboarded for this to happen").
+  investorColleague: "zze2einvcolleague000001",
+  investorNoAccount: "zze2einvnoaccount000001",
   engagement: "zze2eengagement000000001",
   // F2.1/F2.3: a website application, so the Applications queue and the
   // applicant block on the mandate page have something real to show. The
@@ -46,6 +50,7 @@ export const EMAILS = {
   admin: "zz-e2e-admin@e2e.noblestride.test",
   member: "zz-e2e-member@e2e.noblestride.test",
   investor: "zz-e2e-investor@e2e.noblestride.test",
+  investorColleague: "zz-e2e-colleague@e2e.noblestride.test",
 } as const;
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
@@ -300,6 +305,43 @@ export async function seedE2E(): Promise<void> {
     where: { email: EMAILS.investor },
     update: { status: "ACTIVE", passwordHash, kind: "INVESTOR", personId: IDS.investorPerson },
     create: { email: EMAILS.investor, kind: "INVESTOR", status: "ACTIVE", passwordHash, personId: IDS.investorPerson },
+  });
+
+  // F6b.4 fixtures: an onboarded colleague, and one who was never invited.
+  await prisma.person.upsert({
+    where: { id: IDS.investorColleague },
+    update: {},
+    create: {
+      id: IDS.investorColleague,
+      firstName: "zz-E2E",
+      lastName: "Colleague",
+      email: EMAILS.investorColleague,
+      investorId: IDS.investor,
+      portalRole: "Viewer",
+    },
+  });
+  await prisma.authAccount.upsert({
+    where: { email: EMAILS.investorColleague },
+    update: { status: "ACTIVE", passwordHash, kind: "INVESTOR", personId: IDS.investorColleague },
+    create: {
+      email: EMAILS.investorColleague,
+      kind: "INVESTOR",
+      status: "ACTIVE",
+      passwordHash,
+      personId: IDS.investorColleague,
+    },
+  });
+  await prisma.person.upsert({
+    where: { id: IDS.investorNoAccount },
+    update: {},
+    create: {
+      id: IDS.investorNoAccount,
+      firstName: "zz-E2E",
+      lastName: "Not Onboarded",
+      email: "zz-e2e-not-onboarded@e2e.noblestride.test",
+      investorId: IDS.investor,
+      portalRole: "Viewer",
+    },
   });
   await prisma.engagement.upsert({
     where: { id: IDS.engagement },

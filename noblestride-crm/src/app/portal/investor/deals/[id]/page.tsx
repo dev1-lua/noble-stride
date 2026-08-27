@@ -18,6 +18,8 @@ import { portalDealStatus, type PortalDealStatus } from "@/server/domain/deal-st
 import { getBoolSetting } from "@/server/services/app-settings";
 import { CONVERSATION_STATUS_LABELS, CONVERSATION_STATUS_CLASSES } from "@/lib/conversation-status";
 import { expressInterest, requestNextStep, declineDeal, postThreadMessage } from "./actions";
+import { ParticipantsCard } from "./participants-card";
+import { listParticipants, eligibleParticipants } from "@/server/services/engagement-participants";
 
 export const dynamic = "force-dynamic";
 
@@ -79,14 +81,20 @@ export default async function InvestorDealPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ interest?: string; request?: string; message?: string; denied?: string }>;
+  searchParams: Promise<{
+    interest?: string;
+    request?: string;
+    message?: string;
+    denied?: string;
+    participant?: string;
+  }>;
 }) {
   const vp = await getViewpoint();
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
   const { id } = await params;
-  const { interest, request, message: messageSent, denied } = await searchParams;
+  const { interest, request, message: messageSent, denied, participant } = await searchParams;
   const { deals } = await loadInvestorPortalData(prisma, vp.recordId);
   const deal = deals.find((d) => d.id === id);
   if (!deal) notFound();
@@ -126,6 +134,12 @@ export default async function InvestorDealPage({
         engagementStage: journey.own.stage,
       })
     : null;
+
+  // F6b.4 (image31): the fund's own roster on this deal. Only meaningful once
+  // they actually have an engagement on it.
+  const [participants, eligible] = engagement
+    ? await Promise.all([listParticipants(engagement.id), eligibleParticipants(engagement.id, vp.recordId)])
+    : [[], []];
 
   const fin = deal.financialsSummary;
 
@@ -410,6 +424,16 @@ export default async function InvestorDealPage({
           </CardBody>
         </Card>
       ) : null}
+
+      {engagement && (
+        <ParticipantsCard
+          dealId={deal.id}
+          participants={participants}
+          eligible={eligible}
+          canEdit={caps.canEdit}
+          notice={participant}
+        />
+      )}
 
       {denied && (
         <p className="rounded-md bg-[var(--t-tag-bg-amber)] px-3 py-2 text-sm font-medium text-[var(--t-tag-text-amber)]">

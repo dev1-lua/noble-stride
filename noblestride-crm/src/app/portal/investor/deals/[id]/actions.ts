@@ -21,6 +21,11 @@ import { ensureInvestorDealFolder } from "@/server/services/folders";
 import { nextStepLabel } from "@/lib/next-step";
 import { rateLimit } from "@/server/auth/rate-limit";
 import { safeReturnTo } from "./return-to";
+import {
+  addParticipant,
+  removeParticipant,
+  ParticipantError,
+} from "@/server/services/engagement-participants";
 
 async function throttlePortalAction(fallbackPath: string): Promise<void> {
   const hdrs = await headers();
@@ -321,4 +326,92 @@ export async function postThreadMessage(formData: FormData): Promise<void> {
 
   revalidatePath(`/portal/investor/deals/${dealId}`);
   redirect(`/portal/investor/deals/${dealId}?message=sent`);
+}
+
+/**
+ * F6b.4 (image31): add an onboarded colleague to a deal. Authorised exactly the
+ * way expressInterest is — the investor id comes from the viewpoint cookie, and
+ * the deal must already be in this fund's projected set.
+ */
+export async function addParticipantAction(formData: FormData): Promise<void> {
+  const vp = await getViewpoint();
+  if (!vp) redirect("/login");
+  if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
+  const investorId = vp.recordId as string;
+
+  const dealIdRaw = formData.get("dealId");
+  if (typeof dealIdRaw !== "string" || dealIdRaw.length === 0) redirect("/portal/investor");
+  const dealId = dealIdRaw as string;
+  const dealPath = `/portal/investor/deals/${dealId}`;
+
+  const member = await requirePortalEditor(dealPath);
+  await throttlePortalAction(dealPath);
+
+  const personId = String(formData.get("personId") ?? "");
+  if (!personId) redirect(`${dealPath}?participant=missing`);
+
+  const { deals } = await loadInvestorPortalData(prisma, investorId);
+  if (!deals.find((d) => d.id === dealId)) notFound();
+
+  const engagement = await prisma.engagement.findUnique({
+    where: { transactionId_investorId: { transactionId: dealId, investorId } },
+    select: { id: true },
+  });
+  if (!engagement) redirect(`${dealPath}?participant=no-engagement`);
+
+  try {
+    await addParticipant({
+      engagementId: engagement.id,
+      personId,
+      investorId,
+      addedByPersonId: member.personId,
+      // EngagementParticipant.addedById points at User; a portal add has none.
+      addedByUserId: null,
+    });
+  } catch (err) {
+    if (err instanceof ParticipantError) redirect(`${dealPath}?participant=not-onboarded`);
+    throw err;
+  }
+
+  revalidatePath(dealPath);
+  revalidatePath("/portal/investor/pipeline");
+  redirect(`${dealPath}?participant=added`);
+}
+
+export async function removeParticipantAction(formData: FormData): Promise<void> {
+  const vp = await getViewpoint();
+  if (!vp) redirect("/login");
+  if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
+  const investorId = vp.recordId as string;
+
+  const dealIdRaw = formData.get("dealId");
+  if (typeof dealIdRaw !== "string" || dealIdRaw.length === 0) redirect("/portal/investor");
+  const dealId = dealIdRaw as string;
+  const dealPath = `/portal/investor/deals/${dealId}`;
+
+  await requirePortalEditor(dealPath);
+  await throttlePortalAction(dealPath);
+
+  const personId = String(formData.get("personId") ?? "");
+  if (!personId) redirect(dealPath);
+
+  const { deals } = await loadInvestorPortalData(prisma, investorId);
+  if (!deals.find((d) => d.id === dealId)) notFound();
+
+  const engagement = await prisma.engagement.findUnique({
+    where: { transactionId_investorId: { transactionId: dealId, investorId } },
+    select: { id: true },
+  });
+  if (!engagement) redirect(dealPath);
+
+  try {
+    await removeParticipant({ engagementId: engagement.id, personId, investorId });
+  } catch (err) {
+    if (err instanceof ParticipantError) redirect(`${dealPath}?participant=primary`);
+    throw err;
+  }
+
+  revalidatePath(dealPath);
+  revalidatePath("/portal/investor/pipeline");
+  redirect(`${dealPath}?participant=removed`);
 }

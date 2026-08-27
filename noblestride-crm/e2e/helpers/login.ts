@@ -21,6 +21,18 @@ export const INVESTOR = {
 
 export const adminStorageState = "e2e/.auth/admin.json";
 
+/**
+ * A saved investor-portal session, written once by globalSetup.
+ *
+ * Specs use this instead of logging in per context because `/login` is
+ * rate-limited to 20 attempts per 10 minutes per IP, and the whole suite runs
+ * from 127.0.0.1 — a spec that opens a fresh context per step burns through the
+ * bucket and then fails with the generic "locked" message, which reads like a
+ * product bug. Exactly one spec (nda-clickwrap) still logs in for real, because
+ * signing in is part of what it demonstrates.
+ */
+export const investorStorageState = "e2e/.auth/investor.json";
+
 /** Specs that sign in as somebody else must start from a clean context. */
 export const EMPTY_STORAGE = { cookies: [], origins: [] };
 

@@ -11,7 +11,7 @@
 // even when it is enabled.
 import { test, expect } from "@playwright/test";
 import { PrismaClient } from "@prisma/client";
-import { INVESTOR, EMPTY_STORAGE, loginAs } from "./helpers/login";
+import { investorStorageState } from "./helpers/login";
 import { IDS } from "./fixtures/seed";
 
 const prisma = new PrismaClient();
@@ -35,9 +35,8 @@ test.describe("F6b.3 / G3 — the investor sees a deal status, not a 15-step che
   });
 
   test("by default: a status chip and the conversation, no milestone list", async ({ browser }) => {
-    const context = await browser.newContext({ storageState: EMPTY_STORAGE });
+    const context = await browser.newContext({ storageState: investorStorageState });
     const page = await context.newPage();
-    await loginAs(page, INVESTOR);
 
     await test.step("the deal page shows one word for where the deal stands", async () => {
       await page.goto(`/portal/investor/deals/${IDS.transaction}`);
@@ -76,9 +75,8 @@ test.describe("F6b.3 / G3 — the investor sees a deal status, not a 15-step che
     });
 
     await test.step("the fund now sees 14 milestones — never 15", async () => {
-      const context = await browser.newContext({ storageState: EMPTY_STORAGE });
+      const context = await browser.newContext({ storageState: investorStorageState });
       const investorPage = await context.newPage();
-      await loginAs(investorPage, INVESTOR);
       await investorPage.goto(`/portal/investor/deals/${IDS.transaction}`);
       const list = investorPage.getByTestId("deal-milestones");
       await expect(list).toBeVisible();
@@ -101,9 +99,8 @@ test.describe("F6b.3 / G3 — the investor sees a deal status, not a 15-step che
   });
 
   test("image30: no finance tiles by default — an onboarding checklist instead", async ({ browser, page }) => {
-    const context = await browser.newContext({ storageState: EMPTY_STORAGE });
+    const context = await browser.newContext({ storageState: investorStorageState });
     const investorPage = await context.newPage();
-    await loginAs(investorPage, INVESTOR);
 
     await test.step("the dashboard leads with what the fund still owes us", async () => {
       await investorPage.goto("/portal/investor/dashboard");

@@ -14,6 +14,8 @@ import { formatDate, daysAgoLabel } from "@/lib/format";
 import { RecordClosedNdaButton } from "@/components/crm/nda-actions";
 import { GrantDealAccessButton } from "@/components/crm/grant-deal-access-button";
 import { accessState } from "@/server/domain/access-state";
+import { ParticipantsCard } from "@/components/crm/participants-card";
+import { listParticipants } from "@/server/services/engagement-participants";
 import { SendEsignButton } from "@/components/crm/send-esign-button";
 import { ScheduleTeamsButton } from "@/components/crm/schedule-teams-button";
 import { isConfigured } from "@/server/integrations/config";
@@ -59,6 +61,8 @@ export default async function EngagementDetailPage({ params }: PageProps) {
     engagementStage: engagement.engagementStage,
     status: engagement.status,
   });
+  // F6b.4: the fund's own roster on this deal, read-only for staff.
+  const participants = await listParticipants(engagement.id);
   const esignSignerName = esignContact ? [esignContact.firstName, esignContact.lastName].filter(Boolean).join(" ") : "";
 
   // Teams call attendees (Task 15): every investor contact with an email on
@@ -324,6 +328,8 @@ export default async function EngagementDetailPage({ params }: PageProps) {
           </p>
         </CardBody>
       </Card>
+
+      <ParticipantsCard participants={participants} />
 
       <MilestoneChecklist engagementId={engagement.id} items={milestoneItems} />
 

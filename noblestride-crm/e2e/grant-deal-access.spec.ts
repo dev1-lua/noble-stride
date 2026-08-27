@@ -8,7 +8,7 @@
 // click-wrap NDA from F3.2 the unblocker rather than a weakened guard.
 import { test, expect } from "@playwright/test";
 import { PrismaClient } from "@prisma/client";
-import { INVESTOR, EMPTY_STORAGE, loginAs } from "./helpers/login";
+import { investorStorageState } from "./helpers/login";
 import { IDS } from "./fixtures/seed";
 
 const prisma = new PrismaClient();
@@ -46,9 +46,8 @@ test.describe("F6b.2 — deal detail stays restricted until interest is register
   });
 
   test("the investor is told their interest is being reviewed, not left guessing", async ({ browser }) => {
-    const context = await browser.newContext({ storageState: EMPTY_STORAGE });
+    const context = await browser.newContext({ storageState: investorStorageState });
     const page = await context.newPage();
-    await loginAs(page, INVESTOR);
 
     await test.step("the pipeline row reads 'Awaiting access'", async () => {
       await page.goto("/portal/investor/pipeline");
@@ -100,9 +99,8 @@ test.describe("F6b.2 — deal detail stays restricted until interest is register
     await resetToInterestReceived();
 
     await test.step("the fund signs the Noblestride NDA in its portal", async () => {
-      const context = await browser.newContext({ storageState: EMPTY_STORAGE });
+      const context = await browser.newContext({ storageState: investorStorageState });
       const investorPage = await context.newPage();
-      await loginAs(investorPage, INVESTOR);
       await investorPage.goto("/portal/investor/nda");
       const canvas = investorPage.getByTestId("sig-canvas");
       await canvas.scrollIntoViewIfNeeded();
@@ -128,9 +126,8 @@ test.describe("F6b.2 — deal detail stays restricted until interest is register
     });
 
     await test.step("the investor's portal now says Access granted and shows real figures", async () => {
-      const context = await browser.newContext({ storageState: EMPTY_STORAGE });
+      const context = await browser.newContext({ storageState: investorStorageState });
       const investorPage = await context.newPage();
-      await loginAs(investorPage, INVESTOR);
 
       await investorPage.goto("/portal/investor/pipeline");
       await expect(investorPage.getByTestId(`pipeline-status-${IDS.transaction}`)).toHaveText("Access granted");

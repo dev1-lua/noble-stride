@@ -13,6 +13,7 @@ import { MilestoneStepper } from "@/components/portal/milestone-stepper";
 import { Card, CardBody } from "@/components/ui/card";
 import { portalStatusLabel, type PortalDealStatusLabel } from "@/server/domain/access-state";
 import { getBoolSetting } from "@/server/services/app-settings";
+import { getPortalMembership } from "@/server/auth/portal-authz";
 
 export const dynamic = "force-dynamic";
 
@@ -37,14 +38,21 @@ const STATUS_TONE: Record<PortalDealStatusLabel, string> = {
 export default async function InvestorPipelinePage({
   searchParams,
 }: {
-  searchParams: Promise<{ declined?: string }>;
+  searchParams: Promise<{ declined?: string; mine?: string }>;
 }) {
   const vp = await getViewpoint();
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
-  const { declined: justDeclined } = await searchParams;
-  const items = await loadInvestorPipeline(prisma, vp.recordId);
+  const { declined: justDeclined, mine } = await searchParams;
+  // F6b.4 (image31): "Only deals I follow" — participants plus, by definition,
+  // the fund's primary contact.
+  const membership = await getPortalMembership();
+  const onlyMine = mine === "1";
+  const items = await loadInvestorPipeline(prisma, vp.recordId, {
+    personId: membership?.personId,
+    onlyMine,
+  });
   // F6b.3 / G3: the milestone stepper is opt-in per org; the status chip above
   // is what every fund sees by default.
   const showMilestones = await getBoolSetting("portal.deal.milestones");
@@ -60,6 +68,31 @@ export default async function InvestorPipelinePage({
         </p>
       </div>
 
+      <div className="flex gap-1.5" role="tablist" aria-label="Pipeline view">
+        {(
+          [
+            { href: "/portal/investor/pipeline", label: "All our deals", active: !onlyMine, id: "all" },
+            { href: "/portal/investor/pipeline?mine=1", label: "Only deals I follow", active: onlyMine, id: "mine" },
+          ] as const
+        ).map((tab) => (
+          <Link
+            key={tab.id}
+            href={tab.href}
+            role="tab"
+            aria-selected={tab.active}
+            data-testid={`pipeline-tab-${tab.id}`}
+            className={
+              "rounded-md px-3 py-1.5 text-xs font-medium " +
+              (tab.active
+                ? "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]"
+                : "border border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)]")
+            }
+          >
+            {tab.label}
+          </Link>
+        ))}
+      </div>
+
       {justDeclined && (
         <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-gray)] px-4 py-3 text-sm text-[var(--t-tag-text-gray)]">
           You&apos;ve withdrawn from the deal. It stays in your history below; the Noblestride team
@@ -70,9 +103,13 @@ export default async function InvestorPipelinePage({
       {items.length === 0 ? (
         <Card>
           <CardBody className="px-6 py-16 text-center">
-            <p className="text-sm font-medium text-[var(--text-secondary)]">No active engagements yet.</p>
+            <p className="text-sm font-medium text-[var(--text-secondary)]">
+              {onlyMine ? "You are not following any deals yet." : "No active engagements yet."}
+            </p>
             <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-              Express interest on an opportunity to start your journey.
+              {onlyMine
+                ? "An editor on your team can add you as a participant on a deal."
+                : "Express interest on an opportunity to start your journey."}
             </p>
             <Link
               href="/portal/investor"
@@ -84,7 +121,7 @@ export default async function InvestorPipelinePage({
         </Card>
       ) : (
         <div className="space-y-4">
-          {items.map(({ deal, own }) => {
+          {items.map(({ deal, own, isParticipant }) => {
             const declined = own.stage === "Declined";
             const statusLabel = portalStatusLabel({ stage: own.stage, status: own.status });
             return (
@@ -116,6 +153,14 @@ export default async function InvestorPipelinePage({
                   >
                     {statusLabel}
                   </span>
+                  {isParticipant && (
+                    <span
+                      data-testid="participant-chip"
+                      className="rounded-full bg-[var(--t-tag-bg-sky)] px-2.5 py-0.5 text-xs font-medium text-[var(--t-tag-text-sky)]"
+                    >
+                      I follow this
+                    </span>
+                  )}
                 </div>
 
                 {showMilestones && (

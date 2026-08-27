@@ -7,7 +7,7 @@
 // staff side: the fund's own paper is countersigned from the investor page.
 import { test, expect } from "@playwright/test";
 import { PrismaClient } from "@prisma/client";
-import { INVESTOR, EMPTY_STORAGE, adminStorageState, loginAs } from "./helpers/login";
+import { INVESTOR, EMPTY_STORAGE, adminStorageState, investorStorageState, loginAs } from "./helpers/login";
 import { IDS } from "./fixtures/seed";
 
 const prisma = new PrismaClient();
@@ -111,9 +111,10 @@ test.describe("F3.2 — investor NDA: sign the Noblestride NDA, or upload your o
     await resetNda();
 
     await test.step("the fund sends its own agreement for sign-off", async () => {
-      const context = await browser.newContext({ storageState: EMPTY_STORAGE });
+      // Saved session, not a fresh login: /login is rate-limited per IP and the
+      // one live sign-in this suite needs is narrated in the test above.
+      const context = await browser.newContext({ storageState: investorStorageState });
       const investorPage = await context.newPage();
-      await loginAs(investorPage, INVESTOR);
       await investorPage.goto("/portal/investor/nda");
       await investorPage.getByTestId("own-nda-file").setInputFiles({
         name: "zz-e2e-own-nda.pdf",

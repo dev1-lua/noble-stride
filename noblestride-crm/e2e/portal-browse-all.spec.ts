@@ -6,7 +6,7 @@
 // so an investor could not even see — let alone act on — the rest of the market.
 import { test, expect } from "@playwright/test";
 import { PrismaClient } from "@prisma/client";
-import { INVESTOR, EMPTY_STORAGE, loginAs } from "./helpers/login";
+import { investorStorageState } from "./helpers/login";
 import { IDS } from "./fixtures/seed";
 
 const prisma = new PrismaClient();
@@ -20,9 +20,8 @@ test.describe("F6b.1 — the investor sees every live opportunity and can regist
   });
 
   test("browse all vs matches my mandate, and express interest from a card", async ({ browser }) => {
-    const context = await browser.newContext({ storageState: EMPTY_STORAGE });
+    const context = await browser.newContext({ storageState: investorStorageState });
     const page = await context.newPage();
-    await loginAs(page, INVESTOR);
 
     let browseCount = 0;
     let matchCount = 0;

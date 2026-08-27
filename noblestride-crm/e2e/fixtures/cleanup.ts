@@ -39,7 +39,9 @@ export async function cleanupE2E(): Promise<void> {
   await prisma.folder.deleteMany({
     where: { OR: [{ mandateId: { in: [IDS.mandate, IDS.applicantMandate, IDS.acceptedApplicantMandate] } }, { transactionId: IDS.transaction }, { advisoryId: IDS.advisory }, { clientId: { in: clientIds } }] },
   });
-  await prisma.engagementParticipant.deleteMany({ where: { engagementId: IDS.engagement } });
+  await prisma.engagementParticipant.deleteMany({
+    where: { OR: [{ engagementId: IDS.engagement }, { engagement: { investorId: IDS.investor } }] },
+  });
   await prisma.outreachDraft.deleteMany({ where: { OR: [{ transactionId: IDS.transaction }, { investorId: IDS.investor }] } });
   await prisma.engagement.deleteMany({ where: { OR: [{ id: IDS.engagement }, { investorId: IDS.investor }] } });
 
@@ -70,10 +72,13 @@ export async function cleanupE2E(): Promise<void> {
   await prisma.authToken.deleteMany({ where: { account: { email: { in: emails } } } });
   await prisma.authSession.deleteMany({ where: { account: { email: { in: emails } } } });
   await prisma.authAccount.deleteMany({ where: { email: { in: emails } } });
+  await prisma.authAccount.deleteMany({ where: { email: { endsWith: "@e2e.noblestride.test" } } });
   await prisma.person.deleteMany({
     where: {
       OR: [
         { id: IDS.investorPerson },
+        { id: IDS.investorColleague },
+        { id: IDS.investorNoAccount },
         { investorId: IDS.investor },
         { id: IDS.applicantPerson },
         { id: IDS.pendingInvestorPerson },
