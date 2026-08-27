@@ -114,6 +114,22 @@ export const EXPRESS_DEAL_INTEREST = /* GraphQL */ `
   }
 `;
 
+// B2: read-only deal-awareness lookup (pinned contract). Unlike EXPRESS_DEAL_INTEREST
+// (a mutation that records interest and mints a one-time portal login link), this is a
+// plain query — it answers "what deal am I on" without recording anything or granting
+// portal access. Keyed on investorEmail (the transport-verified sender), matching the
+// pattern of INVESTOR_SELF_VIEW above.
+export const INVESTOR_ENGAGED_DEALS = /* GraphQL */ `
+  query InvestorEngagedDeals($investorEmail: String!) {
+    investorEngagedDeals(investorEmail: $investorEmail) {
+      engagementId
+      codename
+      status
+      stagePhrase
+    }
+  }
+`;
+
 export const SAVE_DRAFTS = /* GraphQL */ `
   mutation SaveOutreachDrafts($input: OutreachDraftsInput!) {
     saveOutreachDrafts(input: $input) {
