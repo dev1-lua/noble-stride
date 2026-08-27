@@ -41,6 +41,26 @@ describe("projectDealForInvestor — tier gating (§5.2)", () => {
     }
   });
 
+  // F6b.1: the flag is a LABEL, not a gate. It must default off and must never
+  // change which fields the projector emits.
+  describe("matchesMandate flag", () => {
+    it("defaults to false when the caller says nothing", () => {
+      expect(projectDealForInvestor(makeDealFixture(), "PRE_INTEREST")?.matchesMandate).toBe(false);
+    });
+
+    it("carries the caller's answer through", () => {
+      expect(
+        projectDealForInvestor(makeDealFixture(), "PRE_INTEREST", { matchesMandate: true })?.matchesMandate,
+      ).toBe(true);
+    });
+
+    it("changes nothing else about the projection", () => {
+      const off = projectDealForInvestor(makeDealFixture(), "AFTER_NDA", { matchesMandate: false });
+      const on = projectDealForInvestor(makeDealFixture(), "AFTER_NDA", { matchesMandate: true });
+      expect({ ...on, matchesMandate: false }).toEqual(off);
+    });
+  });
+
   describe("teaser masking (PRE_INTEREST only)", () => {
     it("masks the deal name with a deterministic codename", () => {
       const p = projectDealForInvestor(makeDealFixture(), "PRE_INTEREST");

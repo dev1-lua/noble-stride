@@ -72,13 +72,19 @@ export async function loadInvestorPortalData(
   const projected: ProjectedDeal[] = [];
   for (const deal of deals) {
     const engagement = engagementByTxn.get(deal.id) ?? null;
-    // Engaged deals are always candidates (tier gates them); otherwise the
-    // deal must match the investor's discovery filters.
-    if (!engagement && !discoverableIds.has(deal.id)) continue;
+    // F6b.1 (image27): every LIVE deal is a candidate now — the client asked
+    // that investors see all deals and register interest anywhere, not only on
+    // the ones discovery matched. Discovery still decides the "matches your
+    // mandate" label. What gates access is unchanged: investorTier returns NONE
+    // for a blocked or unapproved investor and projectDealForInvestor returns
+    // null, so those investors still see nothing at all.
     // §11.1 interactive filters narrow the candidate set, never widen it.
     if (!filteredIds.has(deal.id)) continue;
+    const matchesMandate = discoverableIds.has(deal.id);
+    if (filters.match && !matchesMandate) continue;
     const projection = projectDealForInvestor(deal, investorTier(investor, engagement), {
       ndaSatisfied: ndaSatisfied(investor, engagement),
+      matchesMandate,
     });
     if (projection) projected.push(projection);
   }

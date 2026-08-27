@@ -201,6 +201,13 @@ export interface ProjectedDeal {
     profitability: Profitability | null;
   };
   matchingMandateStatus: MandateStage | null;
+  /**
+   * F6b.1: true when this deal is one the investor's own mandate (sector /
+   * geography / ticket focus) matches. Every live deal is now browsable, so
+   * this is what distinguishes "for you" from "everything else". Defaults to
+   * false — a quiet default, never a claim we have not checked.
+   */
+  matchesMandate: boolean;
   documents: ProjectedDocument[];
   /** Client-side contacts — DD tier only, otherwise null. */
   advisorClientContacts: ProjectedContact[] | null;
@@ -266,6 +273,8 @@ function projectDocuments(
 export interface ProjectDealOptions {
   /** Open NDA on the investor, or a Closed NDA on THIS deal's engagement. */
   ndaSatisfied?: boolean;
+  /** F6b.1: does this deal match the investor's mandate? Purely a label. */
+  matchesMandate?: boolean;
 }
 
 /**
@@ -336,6 +345,7 @@ export function projectDealForInvestor(
           profitability: client?.profitability ?? null,
         },
     matchingMandateStatus: deal.mandate?.stage ?? null,
+    matchesMandate: opts.matchesMandate ?? false,
     documents: projectDocuments(deal.documents ?? [], tier, ndaSatisfied, displayName),
     advisorClientContacts: isFieldVisible("advisorClientContacts", tier)
       ? (client?.contacts ?? []).map((c) => ({

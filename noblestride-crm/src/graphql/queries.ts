@@ -32,6 +32,7 @@ import {
   ClientStatusPayloadRef,
   PartnerSelfPayloadRef,
   InvestorIdentityRef,
+  InvestorEngagedDealRef,
   InvestorSelfViewRef,
   AgentInvestorMatchRef,
   TeaserContextRef,
@@ -81,6 +82,7 @@ import { partnerSelfView } from "@/server/services/partner-self";
 import { resolveStaffUserSummary } from "@/server/services/agent-delegation";
 import {
   investorByEmail,
+  investorEngagedDealsByEmail,
   investorSelfView,
   matchInvestorsForTransaction,
   transactionTeaserContext,
@@ -765,6 +767,18 @@ builder.queryFields((t) => ({
     resolve: (_root, args, ctx) => {
       assertAutomation(ctx.actor);
       return investorByEmail(args.email);
+    },
+  }),
+  // Investor Agent `my_deals` (F6b.1 / image21): the deals this address is
+  // actually engaged on, each with its stage — codenames only, and [] for an
+  // unknown address so it cannot be used as an existence oracle.
+  investorEngagedDeals: t.field({
+    type: [InvestorEngagedDealRef],
+    nullable: false,
+    args: { email: t.arg.string({ required: true }) },
+    resolve: (_root, args, ctx) => {
+      assertAutomation(ctx.actor);
+      return investorEngagedDealsByEmail(args.email);
     },
   }),
   // Investor Agent: the investor's OWN whitelisted profile (spec §7.2 "own profile").

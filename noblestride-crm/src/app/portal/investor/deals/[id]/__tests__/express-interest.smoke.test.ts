@@ -40,6 +40,11 @@ vi.mock("next/navigation", () => ({
   },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: () => undefined }));
+// expressInterest now throttles like the other portal actions (F6b.1: per-card
+// forms widen the surface), which means it reads request headers.
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers({ "x-forwarded-for": "203.0.113.1" }),
+}));
 
 import { expressInterest } from "../actions";
 

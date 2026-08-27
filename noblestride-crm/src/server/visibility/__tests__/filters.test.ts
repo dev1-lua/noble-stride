@@ -86,6 +86,14 @@ describe("parseOpportunityFilters — defensive", () => {
     ).toEqual({ womenLed: true });
   });
 
+  // F6b.1: ?match=1 is the "Matches my mandate" tab. Parsed here, applied
+  // after projection in load.ts.
+  it("parses the mandate-match tab flag", () => {
+    expect(parseOpportunityFilters({ match: "1" })).toEqual({ match: true });
+    expect(parseOpportunityFilters({ match: "0" })).toEqual({});
+    expect(parseOpportunityFilters({ match: "true" })).toEqual({});
+  });
+
   it("parses valid params", () => {
     expect(parseOpportunityFilters({ sector: "Agribusiness", ticketMax: "5000000" })).toEqual({
       sector: ["Agribusiness"],

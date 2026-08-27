@@ -1080,6 +1080,25 @@ export const DealInterestAckRef = builder.objectRef<DealInterestAckData>("DealIn
   }),
 });
 
+// F6b.1 / WS-C `my_deals` (image21: "will the agent know which deal I am talking
+// about?"). Codename, never the real deal name — the agent works over email.
+export const InvestorEngagedDealRef = builder
+  .objectRef<import("@/server/services/investor-agent").AgentEngagedDeal>("InvestorEngagedDeal")
+  .implement({
+    fields: (t) => ({
+      dealId: t.exposeID("dealId"),
+      codename: t.exposeString("codename"),
+      stage: t.field({ type: EngagementStageEnum, resolve: (d) => d.stage }),
+      status: t.field({ type: EngagementStatusEnum, resolve: (d) => d.status }),
+      sector: t.exposeStringList("sector"),
+      countries: t.exposeStringList("countries"),
+      targetRaise: t.exposeFloat("targetRaise", { nullable: true }),
+      currency: t.exposeString("currency"),
+      lastContact: t.field({ type: "DateTime", nullable: true, resolve: (d) => d.lastContact }),
+      portalUrl: t.exposeString("portalUrl"),
+    }),
+  });
+
 export const OutreachDraftRef = builder.prismaObject("OutreachDraft", {
   fields: (t) => ({
     id: t.exposeID("id"),

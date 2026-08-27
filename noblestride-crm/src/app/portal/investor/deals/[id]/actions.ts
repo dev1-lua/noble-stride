@@ -20,6 +20,7 @@ import { requirePortalEditor, requireThreadParticipation } from "@/server/auth/p
 import { ensureInvestorDealFolder } from "@/server/services/folders";
 import { nextStepLabel } from "@/lib/next-step";
 import { rateLimit } from "@/server/auth/rate-limit";
+import { safeReturnTo } from "./return-to";
 
 async function throttlePortalAction(fallbackPath: string): Promise<void> {
   const hdrs = await headers();
@@ -41,6 +42,11 @@ export async function expressInterest(formData: FormData): Promise<void> {
   const dealIdRaw = formData.get("dealId");
   if (typeof dealIdRaw !== "string" || dealIdRaw.length === 0) redirect("/portal/investor");
   const dealId = dealIdRaw as string;
+
+  const returnTo = safeReturnTo(formData.get("returnTo"), dealId);
+  // The other three portal actions already throttle; per-card forms widen the
+  // surface, so this closes the gap.
+  await throttlePortalAction(returnTo);
 
   const messageRaw = formData.get("message");
   const message = typeof messageRaw === "string" ? messageRaw.trim() : "";
@@ -126,7 +132,8 @@ export async function expressInterest(formData: FormData): Promise<void> {
   // (c) Refresh the portal views that render this journey.
   revalidatePath(`/portal/investor/deals/${dealId}`);
   revalidatePath("/portal/investor/pipeline");
-  redirect(`/portal/investor/deals/${dealId}?interest=sent`);
+  revalidatePath("/portal/investor");
+  redirect(`${returnTo}?interest=sent`);
 }
 
 /**

@@ -24,6 +24,13 @@ export interface OpportunityFilters {
   netProfitMax?: number;
   womenLed?: boolean;
   youthLed?: boolean;
+  /**
+   * F6b.1: narrow to deals that match the investor's own mandate. It cannot be
+   * evaluated here — applyOpportunityFilters runs on RAW deals, and "matches my
+   * mandate" is a property of the projection — so load.ts applies it after
+   * projecting. Parsed here so all opportunity filters have one home.
+   */
+  match?: boolean;
 }
 
 export function applyOpportunityFilters<T extends DealInput>(deals: T[], f: OpportunityFilters): T[] {
@@ -107,5 +114,6 @@ export function parseOpportunityFilters(params: RawParams): OpportunityFilters {
   if (netProfitMax != null) f.netProfitMax = netProfitMax;
   if (first(params.womenLed) === "1") f.womenLed = true;
   if (first(params.youthLed) === "1") f.youthLed = true;
+  if (first(params.match) === "1") f.match = true;
   return f;
 }

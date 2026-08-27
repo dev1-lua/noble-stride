@@ -17,7 +17,7 @@ import { updateInvestor } from "./investors";
 import { updatePerson } from "./persons";
 import { assertCan } from "@/server/rbac/enforce";
 import type { Actor } from "@/graphql/context";
-import type { InteractionType } from "@prisma/client";
+import type { EngagementStage, EngagementStatus, InteractionType } from "@prisma/client";
 
 function personName(p: { firstName: string; lastName: string | null }): string {
   return [p.firstName, p.lastName].filter(Boolean).join(" ");
@@ -596,4 +596,78 @@ export async function rejectProposedChange(id: string, actor: Actor): Promise<{ 
     data: { status: "Rejected", reviewedById: actor.userId ?? null, reviewedAt: new Date() },
   });
   return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// investorEngagedDealsByEmail — WS-C `my_deals`. The client's question on
+// image21 was "will the agent know which deal I am talking about?"; this is the
+// answer: given the address the investor is writing from, the deals they are
+// actually on, with the stage each one has reached.
+//
+// Two rules carried over from expressDealInterestFromAgent, both deliberate:
+//   * the deal is named by its CODENAME, never the real transaction name — the
+//     agent talks over email, which is exactly where masking must hold;
+//   * an unknown address returns [], never an error, so the query cannot be
+//     used as an oracle for "is this person one of your investors?".
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface AgentEngagedDeal {
+  dealId: string;
+  codename: string;
+  stage: EngagementStage;
+  status: EngagementStatus;
+  sector: string[];
+  countries: string[];
+  targetRaise: number | null;
+  currency: string;
+  lastContact: Date | null;
+  portalUrl: string;
+}
+
+export async function investorEngagedDealsByEmail(email: string): Promise<AgentEngagedDeal[]> {
+  const normalised = email?.trim().toLowerCase();
+  if (!normalised) return [];
+
+  const person = await prisma.person.findFirst({
+    where: { email: { equals: normalised, mode: "insensitive" }, investorId: { not: null } },
+    select: { investorId: true },
+  });
+  if (!person?.investorId) return [];
+
+  const engagements = await prisma.engagement.findMany({
+    where: {
+      investorId: person.investorId,
+      // my_deals covers the whole journey, not just the outreach window — the
+      // investor asking "where are my deals?" means every deal they are on.
+      // Declined is theirs too, but they have withdrawn from it.
+      engagementStage: { not: "Declined" },
+      transaction: { stage: { notIn: ["ClosedWon", "ClosedLost"] } },
+    },
+    include: {
+      transaction: {
+        select: {
+          id: true,
+          sector: true,
+          targetRaise: true,
+          currency: true,
+          client: { select: { sector: true, countries: true } },
+        },
+      },
+    },
+    // nulls:"last" in both directions — Postgres puts NULLs first on DESC.
+    orderBy: { lastContact: { sort: "desc", nulls: "last" } },
+  });
+
+  return engagements.map((e) => ({
+    dealId: e.transaction.id,
+    codename: dealCodename(e.transaction.id),
+    stage: e.engagementStage,
+    status: e.status,
+    sector: [...new Set([...(e.transaction.sector ?? []), ...(e.transaction.client?.sector ?? [])])],
+    countries: e.transaction.client?.countries ?? [],
+    targetRaise: e.transaction.targetRaise == null ? null : Number(e.transaction.targetRaise),
+    currency: e.transaction.currency ?? "USD",
+    lastContact: e.lastContact,
+    portalUrl: `${appBaseUrl()}/portal/investor/deals/${e.transaction.id}`,
+  }));
 }
