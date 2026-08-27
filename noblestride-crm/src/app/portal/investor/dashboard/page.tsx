@@ -12,6 +12,7 @@ import { formatMoney } from "@/lib/money";
 import { StatCard } from "@/components/ui/stat-card";
 import { getBoolSetting } from "@/server/services/app-settings";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
+import { OnboardingStepper, type OnboardingStep } from "@/components/portal/onboarding-stepper";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,71 @@ export default async function InvestorDashboardPage() {
     loadInvestorDashboard(prisma, vp.recordId),
     getBoolSetting("portal.dashboard.financeTiles", false),
   ]);
+
+  // §2c: when the finance tiles are hidden — the default — the fund's home is
+  // a checklist of what it still owes us, the way Aika's is. Every outstanding
+  // step links to the page that completes it, so onboarding needs no emails.
+  const onboarding: OnboardingStep[] | null = showFinance
+    ? null
+    : await (async (): Promise<OnboardingStep[]> => {
+        const investor = await prisma.investor.findUniqueOrThrow({
+          where: { id: vp.recordId as string },
+          select: {
+            onboardingStatus: true,
+            ndaStatus: true,
+            sectorFocus: true,
+            geographicFocus: true,
+            ticketMin: true,
+          },
+        });
+        const criteria = await prisma.document.count({
+          where: {
+            investorId: vp.recordId as string,
+            type: "InvestmentCriteria",
+            isCurrent: true,
+          },
+        });
+        const profileComplete =
+          investor.sectorFocus.length > 0 && investor.geographicFocus.length > 0 && investor.ticketMin != null;
+        return [
+          {
+            key: "account",
+            label: "Account created",
+            done: true,
+            href: "/portal/investor",
+            hint: "",
+          },
+          {
+            key: "profile",
+            label: "Fund profile",
+            done: profileComplete,
+            href: "/portal/investor/profile",
+            hint: "Sectors, geographies and ticket size — this is what we match opportunities against.",
+          },
+          {
+            key: "nda",
+            label: "NDA signed",
+            done: investor.ndaStatus !== "None",
+            href: "/portal/investor/nda",
+            hint: "Sign the Noblestride NDA, or upload your own, to unlock detailed deal information.",
+          },
+          {
+            key: "criteria",
+            label: "Investment criteria uploaded",
+            done: criteria > 0,
+            href: "/portal/investor/profile#documents",
+            hint: "Optional — a one-page mandate summary helps us shortlist better.",
+          },
+          {
+            key: "approved",
+            label: "Approved by Noblestride",
+            done: investor.onboardingStatus === "Approved",
+            href: "/portal/investor",
+            hint: "We are reviewing your registration. Nothing further is needed from you.",
+            waiting: true,
+          },
+        ];
+      })();
 
   // Render stages in vocab order (loader returns insertion order).
   const stageOrder = Object.keys(LABELS.EngagementStage);
@@ -67,6 +133,8 @@ export default async function InvestorDashboardPage() {
           <StatCard key={k.label} label={k.label} value={k.value} icon={k.icon} />
         ))}
       </div>
+
+      {onboarding && <OnboardingStepper steps={onboarding} />}
 
       {/* Own pipeline by stage */}
       <Card>

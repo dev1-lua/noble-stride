@@ -8,10 +8,11 @@ import { prisma } from "@/lib/db";
 import { loadInvestorPipeline } from "@/server/visibility";
 import { getViewpoint } from "@/server/viewpoint";
 import { label } from "@/lib/vocab";
-import { MILESTONE_ORDER } from "@/lib/milestones";
+import { INVESTOR_VISIBLE_MILESTONES } from "@/lib/milestones";
 import { MilestoneStepper } from "@/components/portal/milestone-stepper";
 import { Card, CardBody } from "@/components/ui/card";
 import { portalStatusLabel, type PortalDealStatusLabel } from "@/server/domain/access-state";
+import { getBoolSetting } from "@/server/services/app-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -44,14 +45,18 @@ export default async function InvestorPipelinePage({
 
   const { declined: justDeclined } = await searchParams;
   const items = await loadInvestorPipeline(prisma, vp.recordId);
+  // F6b.3 / G3: the milestone stepper is opt-in per org; the status chip above
+  // is what every fund sees by default.
+  const showMilestones = await getBoolSetting("portal.deal.milestones");
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">My Pipeline</h1>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-          Your fund&apos;s progress on each opportunity — the {MILESTONE_ORDER.length}-step
-          Noblestride investment cycle from teaser review to completion.
+          {showMilestones
+            ? `Your fund's progress on each opportunity — the ${INVESTOR_VISIBLE_MILESTONES.length}-step Noblestride investment cycle from teaser review to completion.`
+            : "Where your fund stands on each opportunity. Open a deal to talk to the Noblestride team about it."}
         </p>
       </div>
 
@@ -113,17 +118,21 @@ export default async function InvestorPipelinePage({
                   </span>
                 </div>
 
-                <div className="mt-4">
-                  <MilestoneStepper completedKeys={own.milestoneKeys} muted={declined} />
-                </div>
+                {showMilestones && (
+                  <div className="mt-4" data-testid={`pipeline-stepper-${deal.id}`}>
+                    <MilestoneStepper completedKeys={own.milestoneKeys} muted={declined} />
+                  </div>
+                )}
 
                 <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-[var(--text-tertiary)]">
-                  <span>
-                    <span className="font-semibold text-[var(--text-secondary)]">
-                      {own.milestoneKeys.length} of {MILESTONE_ORDER.length}
-                    </span>{" "}
-                    milestones
-                  </span>
+                  {showMilestones && (
+                    <span>
+                      <span className="font-semibold text-[var(--text-secondary)]">
+                        {own.milestoneKeys.length} of {INVESTOR_VISIBLE_MILESTONES.length}
+                      </span>{" "}
+                      milestones
+                    </span>
+                  )}
                   <span>
                     Last contact:{" "}
                     {own.lastContact ? DATE_FMT.format(own.lastContact) : "—"}

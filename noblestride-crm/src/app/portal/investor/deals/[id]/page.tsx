@@ -7,13 +7,15 @@ import { loadInvestorPortalData, loadOwnEngagementForDeal } from "@/server/visib
 import { getViewpoint } from "@/server/viewpoint";
 import { label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
-import { MILESTONE_ORDER, MILESTONE_LABELS } from "@/lib/milestones";
+import { INVESTOR_VISIBLE_MILESTONES, MILESTONE_LABELS } from "@/lib/milestones";
 import { nextStepLabel } from "@/lib/next-step";
 import { TierBadge } from "@/components/portal/tier-badge";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { getThreadForEngagement } from "@/server/services/conversations";
 import { getPortalMembership, capabilitiesOf } from "@/server/auth/portal-authz";
 import { accessState } from "@/server/domain/access-state";
+import { portalDealStatus, type PortalDealStatus } from "@/server/domain/deal-status";
+import { getBoolSetting } from "@/server/services/app-settings";
 import { CONVERSATION_STATUS_LABELS, CONVERSATION_STATUS_CLASSES } from "@/lib/conversation-status";
 import { expressInterest, requestNextStep, declineDeal, postThreadMessage } from "./actions";
 
@@ -31,6 +33,13 @@ const MSG_DATE_FMT = new Intl.DateTimeFormat("en-GB", {
   hour: "2-digit",
   minute: "2-digit",
 });
+
+// F6b.3 / G3: three states, deliberately coarse — see domain/deal-status.ts.
+const DEAL_STATUS_TONE: Record<PortalDealStatus, string> = {
+  Open: "bg-[var(--t-tag-bg-sky)] text-[var(--t-tag-text-sky)]",
+  "In progress": "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]",
+  Closed: "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",
+};
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return (
@@ -104,6 +113,19 @@ export default async function InvestorDealPage({
   const ndaStatus = (
     await prisma.investor.findUnique({ where: { id: vp.recordId }, select: { ndaStatus: true } })
   )?.ndaStatus;
+
+  // F6b.3 as amended by G3 (image29): by default the investor gets ONE word for
+  // where the deal stands plus the comment thread. The 14-step checklist is
+  // opt-in per org, because the client's own note was that it "might need to be
+  // removed from the investor".
+  const showMilestones = await getBoolSetting("portal.deal.milestones");
+  const dealStatus: PortalDealStatus | null = journey
+    ? portalDealStatus({
+        dealStatus: journey.dealStatus,
+        transactionStage: journey.transactionStage,
+        engagementStage: journey.own.stage,
+      })
+    : null;
 
   const fin = deal.financialsSummary;
 
@@ -293,40 +315,63 @@ export default async function InvestorDealPage({
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-                Your Progress on This Deal
+                Your Position on This Deal
               </h2>
-              <span className="text-xs text-[var(--text-tertiary)]">
-                <span className="font-semibold text-[var(--text-secondary)]">
-                  {journey.own.milestoneKeys.length} of {MILESTONE_ORDER.length}
-                </span>{" "}
-                milestones · {label("EngagementStage", journey.own.stage)}
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  data-testid="deal-status-chip"
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${DEAL_STATUS_TONE[dealStatus ?? "Open"]}`}
+                >
+                  {dealStatus}
+                </span>
+                {showMilestones && (
+                  <span className="text-xs text-[var(--text-tertiary)]">
+                    <span className="font-semibold text-[var(--text-secondary)]">
+                      {journey.own.milestoneKeys.length} of {INVESTOR_VISIBLE_MILESTONES.length}
+                    </span>{" "}
+                    milestones
+                  </span>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardBody>
-            <ol className="divide-y divide-[var(--border-subtle)]">
-              {MILESTONE_ORDER.map((key) => {
-                const done = journey.own.milestoneKeys.includes(key);
-                const date = journey.milestoneDates[key];
-                return (
-                  <li key={key} className="flex items-center gap-3 py-2">
-                    <CheckIcon done={done} />
-                    <span
-                      className={`text-sm ${done ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
-                    >
-                      {MILESTONE_LABELS[key]}
-                    </span>
-                    {done && date && (
-                      <span className="ml-auto text-xs text-[var(--text-tertiary)]">{DATE_FMT.format(date)}</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
+            {showMilestones && (
+              <ol className="divide-y divide-[var(--border-subtle)]" data-testid="deal-milestones">
+                {INVESTOR_VISIBLE_MILESTONES.map((key) => {
+                  const done = journey.own.milestoneKeys.includes(key);
+                  const date = journey.milestoneDates[key];
+                  return (
+                    <li key={key} className="flex items-center gap-3 py-2">
+                      <CheckIcon done={done} />
+                      <span
+                        className={`text-sm ${done ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
+                      >
+                        {MILESTONE_LABELS[key]}
+                      </span>
+                      {done && date && (
+                        <span className="ml-auto text-xs text-[var(--text-tertiary)]">{DATE_FMT.format(date)}</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+            {!showMilestones && (
+              <p className="text-sm text-[var(--text-secondary)]">
+                {dealStatus === "Closed"
+                  ? "This opportunity is closed. Your history stays available here."
+                  : dealStatus === "In progress"
+                    ? "You have access to this deal and the process is under way. Ask the deal team anything in the conversation below."
+                    : "This opportunity is open. Register your interest or ask the deal team a question in the conversation below."}
+              </p>
+            )}
             {(() => {
               const step = nextStepLabel(journey.own.stage);
               return (
-                <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--border-subtle)] pt-4">
+                <div
+                  className={`flex flex-wrap items-center gap-3 ${showMilestones ? "mt-4 border-t border-[var(--border-subtle)] pt-4" : "mt-4"}`}
+                >
                   {request && (
                     <p className="w-full rounded-md bg-[var(--t-tag-bg-emerald)] px-3 py-2 text-sm font-medium text-[var(--t-tag-text-emerald)]">
                       Request sent — the deal team will follow up.

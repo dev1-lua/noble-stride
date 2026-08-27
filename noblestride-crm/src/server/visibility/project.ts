@@ -23,7 +23,7 @@ import type {
   Sector,
   TransactionStage,
 } from "@prisma/client";
-import { effectiveMilestones, MILESTONE_ORDER } from "@/lib/milestones";
+import { effectiveMilestones, INVESTOR_VISIBLE_MILESTONES } from "@/lib/milestones";
 import type { Tier } from "./tiers";
 import { isBlockedClassification, isOnboardingBlocked } from "./tiers";
 import { fieldAccess, isFieldVisible } from "./matrix";
@@ -408,7 +408,7 @@ export interface ProjectedOwnEngagement {
   lastContact: Date | null;
   termSheetIssued: boolean;
   termSheetDate: Date | null;
-  /** Completed milestones (stage-implied ∪ recorded), in MILESTONE_ORDER. */
+  /** Completed milestones (stage-implied ∪ recorded), in INVESTOR_VISIBLE_MILESTONES order. */
   milestoneKeys: MilestoneKey[];
 }
 
@@ -433,7 +433,11 @@ export function projectOwnEngagement(
     lastContact: engagement.lastContact ?? null,
     termSheetIssued: engagement.termSheetIssued ?? false,
     termSheetDate: engagement.termSheetDate ?? null,
-    milestoneKeys: MILESTONE_ORDER.filter((k) => done.has(k)),
+    // F6b.3 / image29: the success fee is between Noblestride and its client,
+    // so the key never crosses the projection boundary — even when the
+    // milestone checklist setting is switched on. Defence in depth: the UI
+    // gate is the second layer, not the only one.
+    milestoneKeys: INVESTOR_VISIBLE_MILESTONES.filter((k) => done.has(k)),
   };
 }
 

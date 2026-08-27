@@ -7,6 +7,7 @@ import type {
   InvestorEngagementClassification,
   MilestoneKey,
   PrismaClient,
+  DealStatus,
   TransactionStage,
 } from "@prisma/client";
 import { ndaSatisfied } from "@/server/domain/nda-guard";
@@ -109,6 +110,14 @@ export interface InvestorPipelineItem {
   /** completedAt for individually recorded milestone rows (own journey);
    *  stage-implied milestones have no date. Never includes milestone notes. */
   milestoneDates: Partial<Record<MilestoneKey, Date>>;
+  /**
+   * F6b.3 / G3: the two raw fields `portalDealStatus` needs to derive the
+   * one-word Open / In progress / Closed chip. Kept HERE rather than on
+   * `ProjectedDeal`, which is the external contract shared with the browse
+   * grid and the agent — a deal's internal status has no business there.
+   */
+  dealStatus: DealStatus;
+  transactionStage: TransactionStage;
 }
 
 /**
@@ -153,6 +162,8 @@ export async function loadInvestorPipeline(
       deal,
       own: projectOwnEngagement(engagement, engagement.milestones),
       milestoneDates,
+      dealStatus: engagement.transaction.dealStatus,
+      transactionStage: engagement.transaction.stage,
     });
   }
 
