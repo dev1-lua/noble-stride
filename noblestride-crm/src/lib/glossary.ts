@@ -2,6 +2,8 @@
 // Noblestride vocabulary. Pure data + lookup, no React/UI here (see
 // components/ui/help-hint.tsx for the popover that renders these).
 
+import { DEFAULT_WORKFLOW_STEPS } from "@/server/domain/workflow-default";
+
 export interface GlossaryEntry {
   term: string;
   definition: string;
@@ -94,87 +96,22 @@ export function define(term: string): string | undefined {
   return BY_TERM.get(term.toLowerCase());
 }
 
-// ─── Journey step help (Task 18) ───────────────────────────────────────────────
-// One-line descriptions for the 17-step deal journey (spec §4.1's "Derived
-// from" column), for the topbar Help panel's "How a deal flows" section.
-//
-// IMPORTANT: `title` below MUST stay verbatim-identical, in order, to
-// `JOURNEY_TITLES` in src/server/domain/journey.ts — that's the single source
-// of truth for the journey spine. See src/lib/__tests__/journey-step-help.test.ts,
-// which asserts the two lists match so they can never silently diverge.
+// ─── Workflow step help (Aug-2026 feedback) ──────────────────────────────────
+// One-line descriptions of the DEFAULT workflow template's 13 steps, for the
+// topbar Help panel's "How a deal flows" section. Derived from the single
+// source of truth (src/server/domain/workflow-default.ts) so it can never
+// drift from what the seed writes; see src/lib/__tests__/workflow-step-help.test.ts.
 
-export interface JourneyStepHelp {
+export interface WorkflowStepHelp {
+  key: string;
   title: string;
+  phase: string;
   description: string;
 }
 
-export const JOURNEY_STEP_HELP: JourneyStepHelp[] = [
-  {
-    title: "Sourcing & origination",
-    description: "A mandate is opened — where the lead came from, and who referred it, if anyone.",
-  },
-  {
-    title: "Introductory engagement",
-    description: "The first meeting or call with the client to scope the opportunity.",
-  },
-  {
-    title: "NDA",
-    description: "A non-disclosure agreement is signed with the client before deeper diligence begins.",
-  },
-  {
-    title: "Data collection & screening",
-    description: "The client's information is gathered and the mandate is screened for qualification.",
-  },
-  {
-    title: "Internal review & approval",
-    description: "Noblestride reviews the opportunity internally before committing to a pitch or proposal.",
-  },
-  {
-    title: "Engagement contract & retainer",
-    description: "The engagement contract is signed and the commencement retainer is paid.",
-  },
-  {
-    title: "VDR setup",
-    description: "A virtual data room is set up for the transaction so documents can be shared with investors.",
-  },
-  {
-    title: "Financial analysis",
-    description: "A financial model and/or valuation is prepared for the deal.",
-  },
-  {
-    title: "Investor documentation",
-    description: "The teaser and Information Memorandum are prepared for investor distribution.",
-  },
-  {
-    title: "Investor shortlisting",
-    description: "Investors are identified and added to the transaction as outreach targets.",
-  },
-  {
-    title: "Outreach & engagement",
-    description: "Shortlisted investors are contacted and the teaser or IM is shared with them.",
-  },
-  {
-    title: "Offers & negotiation",
-    description: "Interested investors submit term sheets or offers, and terms are negotiated.",
-  },
-  {
-    title: "Due diligence",
-    description: "The chosen investor(s) carry out detailed financial, legal, tax, commercial and ESG diligence.",
-  },
-  {
-    title: "Structuring & documentation",
-    description: "The deal is structured and the definitive documents (SPA, SHA, or loan agreement) are drafted.",
-  },
-  {
-    title: "Financial close & disbursement",
-    description: "The transaction closes and investor funds are disbursed.",
-  },
-  {
-    title: "Success fee & closure",
-    description: "Noblestride's success fee is invoiced and paid, closing out the transaction.",
-  },
-  {
-    title: "Post-transaction monitoring",
-    description: "Ongoing, informal check-ins with the client after close — tracked manually, not derived from data.",
-  },
-];
+export const WORKFLOW_STEP_HELP: WorkflowStepHelp[] = DEFAULT_WORKFLOW_STEPS.map((s) => ({
+  key: s.key,
+  title: s.title,
+  phase: s.phase,
+  description: s.description ?? "",
+}));

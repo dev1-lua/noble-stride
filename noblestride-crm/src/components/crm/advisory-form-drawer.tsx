@@ -13,17 +13,19 @@ const CREATE = `mutation CreateAdvisory($input: AdvisoryInput!) { createAdvisory
 const UPDATE = `mutation UpdateAdvisory($id: ID!, $input: AdvisoryInput!) { updateAdvisory(id: $id, input: $input) { id } }`;
 
 const EMPTY: Record<string, unknown> = {
+  workflowTemplateId: "",
   name: "", clientId: "", leadId: "", assistIds: [], stage: "", dealStatus: "",
   feeAmount: undefined, currency: "", sector: [], country: "", source: "",
   dateOpened: "", nextAction: "", notes: "", priority: "",
 };
 
-export function AdvisoryFormDrawer({ mode, initial, clients, users, triggerLabel }: {
+export function AdvisoryFormDrawer({ mode, initial, clients, users, workflowTemplates = [], triggerLabel }: {
   mode: "create" | "edit";
   initial?: Record<string, unknown> & { id?: string };
   clients: SelectOption[];
   users: SelectOption[];
-  triggerLabel?: string;
+    workflowTemplates?: SelectOption[];
+triggerLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const f = useEntityForm({
@@ -34,7 +36,7 @@ export function AdvisoryFormDrawer({ mode, initial, clients, users, triggerLabel
     onSuccess: () => setOpen(false),
     // Priority is clearable back to unset via a blank selection (same
     // convention as the mandate drawer's clearableFields opt-in).
-    clearableFields: ["priority"],
+    clearableFields: ["priority", "workflowTemplateId"],
   });
   const v = f.values;
   const lockDateOpened = mode === "edit" && Boolean(initial?.dateOpened);
@@ -59,7 +61,8 @@ export function AdvisoryFormDrawer({ mode, initial, clients, users, triggerLabel
         <div className="space-y-4">
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
           <RelationSelect label="Client" required value={v.clientId as string} onChange={(x) => f.setValue("clientId", x)} options={clients} error={f.errors.clientId} placeholder="Select client…" />
-          <SelectField label="Stage" value={v.stage as string} onChange={(x) => f.setValue("stage", x)} options={options("AdvisoryStage")} />
+          <SelectField label="Pipeline status" value={v.stage as string} onChange={(x) => f.setValue("stage", x)} options={options("AdvisoryStage")} />
+          <RelationSelect label="Workflow template" value={(v.workflowTemplateId as string) ?? ""} onChange={(x) => f.setValue("workflowTemplateId", x)} options={workflowTemplates} placeholder="Default template" />
           <RelationSelect label="Deal Lead" value={v.leadId as string} onChange={(x) => f.setValue("leadId", x)} options={users} placeholder="Select lead…" />
           <MultiSelectField label="Deal Assists" value={v.assistIds as string[]} onChange={(x) => f.setValue("assistIds", x)} options={users} />
           <MultiSelectField label="Sector" value={v.sector as string[]} onChange={(x) => f.setValue("sector", x)} options={options("Sector")} />

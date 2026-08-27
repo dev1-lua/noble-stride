@@ -263,7 +263,7 @@ export const STAGE_HELP: Record<"MandateStage" | "TransactionStage" | "AdvisoryS
     PitchPresentation: "We've pitched our services to the prospective client",
     Proposal: "Our engagement proposal is with the client",
     Negotiation: "Terms of the engagement are being negotiated",
-    Signed: "The engagement contract is signed — the mandate is live",
+    Signed: "Signed — engagement agreement executed; from here the opportunity is a deal. Progress through the deal is tracked in the Deal Workflow.",
     Lost: "The prospective client did not proceed with Noblestride",
   },
   TransactionStage: {

@@ -49,7 +49,7 @@ export const DEAL_COLUMNS: { key: string; label: string; default: boolean }[] = 
   { key: "name", label: "Project", default: true },
   { key: "company", label: "Company", default: true },
   { key: "type", label: "Type", default: true },
-  { key: "stage", label: "Stage", default: true },
+  { key: "stage", label: "Pipeline status", default: true },
   { key: "status", label: "Status", default: true },
   { key: "milestone", label: "Milestone", default: true },
   { key: "sector", label: "Sector", default: true },

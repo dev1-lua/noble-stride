@@ -13,6 +13,7 @@ const CREATE = `mutation CreateMandate($input: MandateInput!) { createMandate(in
 const UPDATE = `mutation UpdateMandate($id: ID!, $input: MandateInput!) { updateMandate(id: $id, input: $input) { id } }`;
 
 const EMPTY: Record<string, unknown> = {
+  workflowTemplateId: "",
   name: "", clientId: "", leadId: "", assistIds: [], referredById: "", dealStatus: "", dealSize: undefined, currency: "",
   sector: [], country: "", source: "", dateOpened: "", ndaStatus: "", ndaSentDate: "", ndaSignedDate: "",
   eaStatus: "", eaSentDate: "", eaSignedDate: "", nextAction: "", notes: "",
@@ -32,13 +33,14 @@ const REFERRAL_QUALIFIED_OPTIONS = [
   { value: "false", label: "Not qualified" },
 ];
 
-export function MandateFormDrawer({ mode, initial, clients, users, partners, triggerLabel }: {
+export function MandateFormDrawer({ mode, initial, clients, users, partners, workflowTemplates = [], triggerLabel }: {
   mode: "create" | "edit";
   initial?: Record<string, unknown> & { id?: string };
   clients: SelectOption[];
   users: SelectOption[];
   partners: SelectOption[];
-  triggerLabel?: string;
+    workflowTemplates?: SelectOption[];
+triggerLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const f = useEntityForm({
@@ -50,7 +52,7 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
     // Reviewer finding: these Task 8 fields must be clearable back to unset
     // via a blank selection, unlike this app's default "blank = leave
     // unchanged" convention for optional fields.
-    clearableFields: ["priority", "referralQualified"],
+    clearableFields: ["priority", "referralQualified", "workflowTemplateId"],
   });
   const v = f.values;
   const lockDateOpened = mode === "edit" && Boolean(initial?.dateOpened);
@@ -75,7 +77,8 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
         <div className="space-y-4">
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
           <RelationSelect label="Client" required value={v.clientId as string} onChange={(x) => f.setValue("clientId", x)} options={clients} error={f.errors.clientId} placeholder="Select client…" />
-          <SelectField label="Stage" value={v.stage as string} onChange={(x) => f.setValue("stage", x)} options={options("MandateStage")} />
+          <SelectField label="Pipeline status" value={v.stage as string} onChange={(x) => f.setValue("stage", x)} options={options("MandateStage")} />
+          <RelationSelect label="Workflow template" value={(v.workflowTemplateId as string) ?? ""} onChange={(x) => f.setValue("workflowTemplateId", x)} options={workflowTemplates} placeholder="Default template" />
           <RelationSelect label="Deal Lead" value={v.leadId as string} onChange={(x) => f.setValue("leadId", x)} options={users} placeholder="Select lead…" />
           <MultiSelectField label="Deal Assists" value={v.assistIds as string[]} onChange={(x) => f.setValue("assistIds", x)} options={users} />
           <RelationSelect label="Referred By" value={v.referredById as string} onChange={(x) => f.setValue("referredById", x)} options={partners} placeholder="Select partner…" />

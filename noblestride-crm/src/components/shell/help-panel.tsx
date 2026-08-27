@@ -4,9 +4,9 @@
 // slide-over Drawer (the same Drawer component the CRM form drawers use — see
 // src/components/ui/drawer.tsx / engagement-form-drawer.tsx), so Topbar only
 // needs to render <HelpPanel/>. Three sections:
-//   1. "How a deal flows" — the 17-step journey (JOURNEY_STEP_HELP), whose
-//      titles are kept in lockstep with journey.ts's JOURNEY_TITLES (see
-//      src/lib/glossary.ts and src/lib/__tests__/journey-step-help.test.ts).
+//   1. "How a deal flows" — the 13 default workflow steps (WORKFLOW_STEP_HELP,
+//      derived from src/server/domain/workflow-default.ts; see
+//      src/lib/__tests__/workflow-step-help.test.ts).
 //   2. "Glossary" — every GLOSSARY entry.
 //   3. "More" — a link to the access matrix and a note about the full
 //      walkthrough (no external link needed).
@@ -20,7 +20,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { HelpCircle } from "lucide-react";
 import { Drawer } from "@/components/ui/drawer";
-import { GLOSSARY, JOURNEY_STEP_HELP } from "@/lib/glossary";
+import { GLOSSARY, WORKFLOW_STEP_HELP } from "@/lib/glossary";
 
 function HelpPanelInner() {
   const searchParams = useSearchParams();
@@ -67,14 +67,22 @@ function HelpPanelInner() {
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
               How a deal flows
             </h3>
+            <p className="mb-3 text-xs leading-relaxed text-[var(--text-secondary)]">
+              The 13 default workflow steps (Qualify → Prepare → Execute). Each deal page shows its own Deal
+              Workflow card; most steps complete from real records, the rest are marked done by the team.
+              Admins edit templates under Settings → Workflows. The &ldquo;Pipeline status&rdquo; dropdown is a
+              separate, short status list.
+            </p>
             <ol className="flex flex-col gap-3">
-              {JOURNEY_STEP_HELP.map((step, i) => (
-                <li key={step.title} className="flex gap-3">
+              {WORKFLOW_STEP_HELP.map((step, i) => (
+                <li key={step.key} className="flex gap-3">
                   <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[var(--bg-tertiary)] text-[10px] font-semibold text-[var(--text-secondary)]">
                     {i + 1}
                   </span>
                   <div>
-                    <p className="text-xs font-semibold text-[var(--text-primary)]">{step.title}</p>
+                    <p className="text-xs font-semibold text-[var(--text-primary)]">
+                      {step.title} <span className="font-normal text-[var(--text-tertiary)]">· {step.phase}</span>
+                    </p>
                     <p className="text-xs leading-relaxed text-[var(--text-secondary)]">{step.description}</p>
                   </div>
                 </li>
