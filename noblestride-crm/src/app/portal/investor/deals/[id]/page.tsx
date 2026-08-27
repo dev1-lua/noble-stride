@@ -97,6 +97,13 @@ export default async function InvestorDealPage({
     : null;
   const thread = engagement ? await getThreadForEngagement(engagement.id) : null;
 
+  // F3.2 / D2: the client expected deal detail to unmask as soon as interest is
+  // registered. SOW §06 forbids that without an NDA, so instead of weakening
+  // the guard we put the NDA one click away from the deal the fund is looking at.
+  const ndaStatus = (
+    await prisma.investor.findUnique({ where: { id: vp.recordId }, select: { ndaStatus: true } })
+  )?.ndaStatus;
+
   const fin = deal.financialsSummary;
 
   return (
@@ -111,6 +118,22 @@ export default async function InvestorDealPage({
         </div>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">{deal.companyProfile.clientName}</p>
       </div>
+
+      {ndaStatus === "None" && (
+        <div
+          data-testid="nda-prompt"
+          className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-secondary)]"
+        >
+          Detailed information is shared after an NDA is signed.{" "}
+          <Link
+            href="/portal/investor/nda"
+            className="font-medium text-[var(--accent-hover)] hover:underline"
+            data-testid="nda-prompt-link"
+          >
+            Sign the Noblestride NDA →
+          </Link>
+        </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>

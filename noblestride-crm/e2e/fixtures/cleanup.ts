@@ -82,9 +82,16 @@ export async function cleanupE2E(): Promise<void> {
       ],
     },
   });
+  // F3.2: ESignEnvelope.investorId is SetNull, so the envelopes the NDA spec
+  // writes would survive the investor as orphans. Delete them first.
+  await prisma.eSignEnvelope.deleteMany({ where: { investorId: { in: [IDS.investor, IDS.pendingInvestor] } } });
   await prisma.investor.deleteMany({ where: { id: { in: [IDS.investor, IDS.pendingInvestor] } } });
   await prisma.client.deleteMany({ where: { id: { in: clientIds } } });
   await prisma.notification.deleteMany({ where: { userId: { in: [IDS.adminUser, IDS.memberUser] } } });
+  // Fixtures notify REAL admins (nda_signed, criteria_uploaded, …). Those rows
+  // name the zz- fixture in their title, which is what makes them removable
+  // without touching anything belonging to the real data.
+  await prisma.notification.deleteMany({ where: { title: { contains: "zz-" } } });
   await prisma.user.deleteMany({ where: { email: { in: [EMAILS.admin, EMAILS.member] } } });
 
   // Restore the AppSetting defaults the app-settings spec toggles.

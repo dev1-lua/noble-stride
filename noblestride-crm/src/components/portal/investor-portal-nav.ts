@@ -28,6 +28,12 @@ export const INVESTOR_NAV = [
     subtitle: "Preferences that drive deal matching",
   },
   {
+    href: "/portal/investor/nda",
+    label: "NDA",
+    title: "NDA",
+    subtitle: "Confidentiality agreement with Noblestride",
+  },
+  {
     href: "/portal/investor/team",
     label: "Team",
     title: "Team",

@@ -10,7 +10,7 @@ import { createEngagement, updateEngagement } from "@/server/services/engagement
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
 import { InvestorInput, ClientInput, MandateInput, TransactionInput, AdvisoryInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, WebsiteIntakeInput, LogClientMessageInput, InvestorUpdateSubmitInput, InvestorCommunicationInput, InvestorFlagInput, OutreachDraftsInput, PartnerSelfUpdateInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor, markInvestorCriteriaVerified } from "@/server/services/investors";
-import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
+import { recordOpenNda, recordClosedNda, countersignUploadedNda, requestNdaSignature } from "@/server/services/nda";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
 import { createMandate, updateMandate, deleteMandate, acceptIntakeMandate, deprioritizeIntakeMandate, rerunQualification } from "@/server/services/mandates";
 import { setAdvisoryStage, createAdvisory, updateAdvisory, deleteAdvisory } from "@/server/services/advisory";
@@ -293,6 +293,27 @@ builder.mutationFields((t) => ({
     resolve: async (_q, _r, args, ctx) => {
       assertCan(ctx.actor, "Engagements", "U");
       return recordClosedNda(String(args.engagementId), ctx.actor);
+    },
+  }),
+
+  // F3.2: staff side of the self-service NDA flows. Countersigning a fund's own
+  // paper lands in exactly the same investor state as recordOpenNda; requesting
+  // a signature only nudges — it changes no NDA state at all.
+  countersignUploadedNda: t.prismaField({
+    type: "Document", nullable: false,
+    args: { documentId: t.arg.id({ required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      assertCan(ctx.actor, "Investors", "U");
+      await countersignUploadedNda(String(args.documentId), ctx.actor);
+      return prisma.document.findUniqueOrThrow({ where: { id: String(args.documentId) } });
+    },
+  }),
+  requestNdaSignature: t.prismaField({
+    type: "Investor", nullable: false,
+    args: { investorId: t.arg.id({ required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      assertCan(ctx.actor, "Investors", "U");
+      return requestNdaSignature(String(args.investorId), ctx.actor);
     },
   }),
 
