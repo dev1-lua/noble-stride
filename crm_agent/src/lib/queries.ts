@@ -303,3 +303,27 @@ export const LIST_INVESTORS = /* GraphQL */ `
     }
   }
 `;
+
+// A3 / F5.3 (image20): org-level counts behind crm_overview. Copied
+// field-for-field from the query the tracker already runs successfully
+// (investor-tracker-agent DASHBOARD_SNAPSHOT), minus the trend, plus
+// investorsCount.
+//
+// PipelineOverview exposes ONLY the two stage arrays — its service also computes
+// mandatesActive/transactionsActive, but those are not on the GraphQL type — so
+// the active subset comes from dashboardStats instead.
+export const CRM_OVERVIEW = /* GraphQL */ `
+  query AgentCrmOverview {
+    dashboardStats {
+      activeMandates { value delta }
+      activeTransactions { value delta }
+      investorsEngagedQtr { value delta }
+      capitalRaisedYtd { value delta }
+    }
+    pipelineOverview {
+      mandatesByStage { stage label count }
+      transactionsByStage { stage label count }
+    }
+    investorsCount
+  }
+`;
