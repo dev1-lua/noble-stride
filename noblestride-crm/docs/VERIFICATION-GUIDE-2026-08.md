@@ -298,9 +298,10 @@ Sign in as `zz-e2e-investor@e2e.noblestride.test`.
 |---|---|
 | As the investor, open that deal | A banner: **Interest received** — the team is reviewing your request |
 | Look at the figures | Ranges, not exact numbers |
-| Check My Pipeline | The row reads **Awaiting access** |
+| Check My Pipeline | The row reads **Awaiting access** (the row's wording only ever moves forward: Shared with you → Awaiting access → Access granted → Information shared → In discussion → Closed) |
 | As staff, open the engagement | A **Deal access** field showing "Awaiting access grant", and a **Grant deal access** button |
 | Click it while the fund has no NDA | **Refused**, with copy telling you to ask them to sign the NDA in their portal |
+| Try it on a deal the fund **withdrew** from | No button at all — an explanation that they withdrew, and that the engagement must be moved off Declined first. Granting access must never quietly un-decline somebody |
 | Have the fund sign the NDA (4.2), then click again | Access granted; the engagement moves to NDA Signed |
 | Back in the portal | The row reads **Access granted**, the banner is gone, and figures are exact |
 
@@ -327,7 +328,7 @@ one click away from the deal — that is the whole point of 4.2.
 | Step | Expected |
 |---|---|
 | As the investor Editor, open a deal you have an engagement on | A **Participants** card: "They must already have portal access" |
-| Open the colleague dropdown | Only colleagues who already have a portal login. `zz-E2E Not Onboarded` is **absent** |
+| Open the colleague dropdown | Only colleagues who already have a portal login. `zz-E2E Not Onboarded` is **absent**, and so is your primary contact — they follow every deal already, and adding them would create a row that cannot be removed |
 | Add the colleague | They appear in the list; staff see them on the engagement page |
 | Try to remove your fund's primary contact | Refused — the primary contact always follows the deal |
 | Open My Pipeline | An **Only deals I follow** tab, and an **I follow this** chip |
@@ -415,6 +416,7 @@ warning 1 above. A completed run is committed at
 | `summarize the client <a real client>` | A briefing, one field per line, with a link |
 | `recent news on Equity Group Holdings` | Sourced findings under **"Public information (web), not from the CRM"** |
 | `research Project Ivory Oryx` | **Refused** — a codename must not go into a public search — and asks for the public company name |
+| `recent news on 3M` or `Project Finance Advisors` | These are real companies and are **researched normally**. An early version of the guard refused both |
 
 **Investor tracker (image24)** — same first-contact behaviour, and `Whats a pass phrase and hwo is it set
 out` (the client's own wording, misspellings included) gets the explanation. It verifies on the passphrase
