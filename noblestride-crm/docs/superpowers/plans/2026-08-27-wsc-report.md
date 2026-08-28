@@ -10,8 +10,8 @@ that matters more than anything in the plan.
 
 | Agent | tests | tsc | `lua sync --check` |
 |---|---|---|---|
-| crm_agent | **185** | clean | 0 source drift (staged ahead of active, see below) |
-| investor-tracker-agent | **185** | clean | 0 source drift |
+| crm_agent | **189** | clean | 0 source drift (staged ahead of active, see below) |
+| investor-tracker-agent | **189** | clean | 0 source drift |
 | referal_partner_agent | **132** | clean | 0 source drift |
 | investor_agent | **166** | clean | 0 source drift |
 | client_agent | **76** | clean | 0 source drift |
@@ -141,6 +141,12 @@ here)" — correct shape, correct definition, production numbers (see the sandbo
 - **Nothing confidential leaves.** `isConfidentialLeak` refuses a codename or a money amount **before** the
   network call. The outbound prompt names the entity and nothing else — no CRM vocabulary, no mention of
   Noblestride, because the query itself is what leaves.
+- **Nothing confidential leaves — without refusing real companies.** The branch review caught the first
+  version being too blunt: the codename pattern carried an `i` flag, which defeated the capitalisation that
+  makes it a codename matcher, so "Project Finance Advisors" was refused; and the amount pattern matched any
+  digits before a scale suffix, so "3M" counted as an amount and a real company became unresearchable. The
+  codename check is now case-sensitive with a short allow-list of ordinary business words, and an amount
+  needs a currency or two digits before a bare "m".
 - **Nothing comes back unlabelled.** Every result carries "Public information (web), not from the CRM", and
   a brief with **no sources** is reported as `no_public_info` rather than passed on: unsourced prose is the
   model's prior, which is exactly what this must not deliver as public fact.

@@ -10,7 +10,7 @@ shipped, how it was verified, and what is deliberately still open.
 | Command | Result |
 |---|---|
 | `npx tsc --noEmit` | clean |
-| `npx vitest run` (env exported) | **204 files / 1395 tests, 0 failures** |
+| `npx vitest run` (env exported) | **204 files / 1404 tests, 0 failures** |
 | `npx eslint .` | 21 errors / 12 warnings — the untouched baseline, unchanged |
 | `npx playwright test` | **65 / 65**, run twice consecutively |
 | `npx prisma migrate status` | 42 migrations, "Database schema is up to date!" |
@@ -193,17 +193,29 @@ filter and the intake form's source select pick them up automatically. Commit `c
 4. **The signature pad sits below a 28 rem agreement**, so on a laptop a signer must scroll to find
    it. Noted as a UX follow-up; the spec scrolls it into view.
 
+## The branch review
+
+Seven findings, all verified and fixed in `f837f32`, each with a regression test: boolean portal filters
+were silently dropped on a tab switch (`String(true)` vs the parser's `"1"`); `ClosedReopened` was treated as
+closed although it is active everywhere else; the portal status chip could move BACKWARDS when the IM was
+shared; `investorEngagedDealsByEmail` had no onboarding or classification gate, so a greylisted or
+still-pending investor could email the agent for their deals; granting access could silently un-decline a
+withdrawn investor; the Add-a-colleague dropdown pre-selected the one person who could never be removed; and
+the public-research guard refused real companies ("3M", "Project Finance Advisors"). Details in that commit.
+
+Items 2 and 3 below were the two open items carried INTO the review and are fixed in `be30405`.
+
 ## Open items, carried to the branch review and the verification guide
 
 1. **G6 / D6 — the "Live Tracker deal template"** (image27) does not exist in the repo. The investor
    teaser keeps the interim fields `projectDealForInvestor` already produces (codename, sector,
    countries, deal type, instrument, target raise, banded financials, mandate status). Re-map once
    the client supplies the template.
-2. `priority`, `referralQualified` and `partnerFeeStatus` are declared in the drawers'
-   `clearableFields` but never pass the `clearable` prop, so they cannot be cleared from the UI
-   (pre-existing, found in WS-A).
-3. `src/app/api/documents/route.ts` still advertises the shared 50 MB `MAX_FILE_BYTES`, which the
-   16 MB proxy ceiling does not make true.
+2. ~~`priority`, `referralQualified` and `partnerFeeStatus` declared clearable but never passing the
+   `clearable` prop~~ — **fixed** in `be30405`.
+3. ~~The staff upload route advertising 50 MB against a 16 MB proxy ceiling~~ — **fixed** in `be30405`:
+   the shared ceiling is 16 MB, a test reads the number out of `next.config.ts` so the two cannot drift, and
+   the route gained the Content-Length pre-check and 413.
 4. `src/components/crm/engagement-stage-board.tsx` is **dead code** — nothing imports it. The F6b.2
    "Awaiting access grant" chip therefore went on the transaction page's engagements list, which is
    the surface that actually renders.
