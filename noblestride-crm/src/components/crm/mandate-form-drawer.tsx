@@ -8,16 +8,19 @@ import { TextField, TextAreaField, MoneyField, SelectField, RelationSelect, Mult
 import { useEntityForm } from "@/components/ui/use-entity-form";
 import { mandateCreateSchema, mandateUpdateSchema } from "@/lib/schemas/mandate";
 import { options } from "@/lib/vocab";
+import { balanceDue, formatMoney } from "@/lib/money";
 
 const CREATE = `mutation CreateMandate($input: MandateInput!) { createMandate(input: $input) { id } }`;
 const UPDATE = `mutation UpdateMandate($id: ID!, $input: MandateInput!) { updateMandate(id: $id, input: $input) { id } }`;
 
 const EMPTY: Record<string, unknown> = {
+  workflowTemplateId: "",
   name: "", clientId: "", leadId: "", assistIds: [], referredById: "", dealStatus: "", dealSize: undefined, currency: "",
   sector: [], country: "", source: "", dateOpened: "", ndaStatus: "", ndaSentDate: "", ndaSignedDate: "",
   eaStatus: "", eaSentDate: "", eaSignedDate: "", nextAction: "", notes: "",
   // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
-  retainerAmount: undefined, retainerInvoicedDate: "", retainerPaidDate: "",
+  retainerAmount: undefined, retainerPaidAmount: undefined,
+  retainerInvoicedDate: "", retainerPaidDate: "",
   priority: "", referralQualified: undefined,
   stage: "", qualificationVerdict: "",
 };
@@ -32,13 +35,14 @@ const REFERRAL_QUALIFIED_OPTIONS = [
   { value: "false", label: "Not qualified" },
 ];
 
-export function MandateFormDrawer({ mode, initial, clients, users, partners, triggerLabel }: {
+export function MandateFormDrawer({ mode, initial, clients, users, partners, workflowTemplates = [], triggerLabel }: {
   mode: "create" | "edit";
   initial?: Record<string, unknown> & { id?: string };
   clients: SelectOption[];
   users: SelectOption[];
   partners: SelectOption[];
-  triggerLabel?: string;
+    workflowTemplates?: SelectOption[];
+triggerLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const f = useEntityForm({
@@ -50,7 +54,7 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
     // Reviewer finding: these Task 8 fields must be clearable back to unset
     // via a blank selection, unlike this app's default "blank = leave
     // unchanged" convention for optional fields.
-    clearableFields: ["priority", "referralQualified"],
+    clearableFields: ["priority", "referralQualified", "workflowTemplateId"],
   });
   const v = f.values;
   const lockDateOpened = mode === "edit" && Boolean(initial?.dateOpened);
@@ -75,7 +79,8 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
         <div className="space-y-4">
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
           <RelationSelect label="Client" required value={v.clientId as string} onChange={(x) => f.setValue("clientId", x)} options={clients} error={f.errors.clientId} placeholder="Select client…" />
-          <SelectField label="Stage" value={v.stage as string} onChange={(x) => f.setValue("stage", x)} options={options("MandateStage")} />
+          <SelectField label="Pipeline status" value={v.stage as string} onChange={(x) => f.setValue("stage", x)} options={options("MandateStage")} />
+          <RelationSelect label="Workflow template" value={(v.workflowTemplateId as string) ?? ""} onChange={(x) => f.setValue("workflowTemplateId", x)} options={workflowTemplates} placeholder="Default template" clearable />
           <RelationSelect label="Deal Lead" value={v.leadId as string} onChange={(x) => f.setValue("leadId", x)} options={users} placeholder="Select lead…" />
           <MultiSelectField label="Deal Assists" value={v.assistIds as string[]} onChange={(x) => f.setValue("assistIds", x)} options={users} />
           <RelationSelect label="Referred By" value={v.referredById as string} onChange={(x) => f.setValue("referredById", x)} options={partners} placeholder="Select partner…" />
@@ -86,6 +91,7 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
               onChange={(x) => f.setValue("referralQualified", x === "" ? "" : x === "true")}
               options={REFERRAL_QUALIFIED_OPTIONS}
               placeholder="Unset"
+              clearable
             />
           )}
           <MultiSelectField label="Sector" value={v.sector as string[]} onChange={(x) => f.setValue("sector", x)} options={options("Sector")} />
@@ -96,7 +102,7 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
           <TextField label="Country" value={v.country as string} onChange={(x) => f.setValue("country", x)} />
           <div className="grid grid-cols-2 gap-3">
             <SelectField label="Deal Status" value={v.dealStatus as string} onChange={(x) => f.setValue("dealStatus", x)} options={options("DealStatus")} />
-            <SelectField label="Priority" value={v.priority as string} onChange={(x) => f.setValue("priority", x)} options={options("Priority")} />
+            <SelectField label="Priority" value={v.priority as string} onChange={(x) => f.setValue("priority", x)} options={options("Priority")} placeholder="Unset" clearable />
           </div>
           <DateField label="Date Opened" value={v.dateOpened as string} onChange={(x) => f.setValue("dateOpened", x)} disabled={lockDateOpened} />
           {(lockDateOpened || lockSource) && (
@@ -124,7 +130,20 @@ export function MandateFormDrawer({ mode, initial, clients, users, partners, tri
           <TextField label="Next Action" value={v.nextAction as string} onChange={(x) => f.setValue("nextAction", x)} />
           <TextField label="Qualification Verdict" value={v.qualificationVerdict as string} onChange={(x) => f.setValue("qualificationVerdict", x)} />
           <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Retainer</p>
-          <MoneyField label="Retainer Amount" value={v.retainerAmount as number} onChange={(x) => f.setValue("retainerAmount", x)} />
+          {/* F4.3.1: amount, amount paid, derived balance (image18). */}
+          <div className="grid grid-cols-2 gap-3">
+            <MoneyField label="Retainer Amount" value={v.retainerAmount as number} onChange={(x) => f.setValue("retainerAmount", x)} />
+            <MoneyField label="Retainer Paid" value={v.retainerPaidAmount as number} onChange={(x) => f.setValue("retainerPaidAmount", x)} />
+          </div>
+          <p className="text-xs text-[var(--text-tertiary)]">
+            Balance due:{" "}
+            <span className="font-semibold text-[var(--text-secondary)]">
+              {(() => {
+                const b = balanceDue(v.retainerAmount as number | null, v.retainerPaidAmount as number | null);
+                return b == null ? "—" : formatMoney(b);
+              })()}
+            </span>
+          </p>
           <div className="grid grid-cols-2 gap-3">
             <DateField label="Retainer Invoiced" value={v.retainerInvoicedDate as string} onChange={(x) => f.setValue("retainerInvoicedDate", x)} />
             <DateField label="Retainer Paid" value={v.retainerPaidDate as string} onChange={(x) => f.setValue("retainerPaidDate", x)} />

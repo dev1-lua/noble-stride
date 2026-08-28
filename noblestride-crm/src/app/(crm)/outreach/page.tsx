@@ -14,9 +14,13 @@ export const dynamic = "force-dynamic";
 // caps per invocation as a backstop).
 export const maxDuration = 60;
 
-export default async function OutreachPage() {
+export default async function OutreachPage({ searchParams }: { searchParams: Promise<{ deal?: string }> }) {
   const lens = await getOrgLens();
-  const drafts = await listOutreachQueue();
+  const { deal } = await searchParams;
+  const all = await listOutreachQueue();
+  // Deep link from a deal's workflow card (Investor Outreach step): ?deal=<transactionId>
+  const drafts = deal ? all.filter((d) => d.transactionId === deal) : all;
+  const dealName = deal ? drafts[0]?.transactionName ?? null : null;
 
   const rows: DraftRowData[] = drafts.map((d) => ({
     id: d.id,
@@ -43,6 +47,12 @@ export default async function OutreachPage() {
           Drafts prepared by the investor agent. The deal owner (or an admin) reviews, edits and releases every
           email — nothing sends automatically.
         </p>
+        {deal ? (
+          <p className="mt-2 text-sm text-[var(--text-secondary)]" data-testid="outreach-deal-filter">
+            Showing drafts for {dealName ?? "one deal"} only ·{" "}
+            <a href="/outreach" className="font-medium text-[var(--accent)] hover:underline">Show all</a>
+          </p>
+        ) : null}
       </div>
       <OutreachBoard rows={rows} currentUserId={lens.userId} />
     </div>

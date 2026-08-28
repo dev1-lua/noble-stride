@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { label } from "@/lib/vocab";
+import { balanceDue } from "@/lib/money";
 import { daysInStage } from "@/server/domain/metrics";
 import {
   type DealsQuerySpec, type DealKind, type DealsGroupBy, TICKET_BANDS,
@@ -42,6 +43,14 @@ export interface DealRow {
   priorityLabel: string;
   // Task 12: originating source (e.g. "Website" for public-intake mandates)
   sourceValue: string | null;
+  // Aug-2026 feedback F4.2.1/F4.3.1: advisory classification + fee/retainer
+  // payment state. feeTotal is the deal's own fee (mandate retainer, advisory
+  // fee, transaction success fee); balance = feeTotal - paidAmount.
+  classificationValue: string | null;
+  classificationLabel: string;
+  feeTotal: number | null;
+  paidAmount: number | null;
+  balance: number | null;
 }
 
 // Rank for priority sort — unset sorts lowest ("asc" surfaces it first).
@@ -89,6 +98,15 @@ async function loadRows(): Promise<DealRow[]> {
     priorityValue: m.priority ?? null,
     priorityLabel: m.priority ? label("Priority", m.priority) : "",
     sourceValue: m.source ?? null,
+    // F4.3.1: the mandate's fee is its retainer.
+    classificationValue: null,
+    classificationLabel: "",
+    feeTotal: m.retainerAmount != null ? Number(m.retainerAmount) : null,
+    paidAmount: m.retainerPaidAmount != null ? Number(m.retainerPaidAmount) : null,
+    balance: balanceDue(
+      m.retainerAmount != null ? Number(m.retainerAmount) : null,
+      m.retainerPaidAmount != null ? Number(m.retainerPaidAmount) : null,
+    ),
   }));
 
   const tRows: DealRow[] = transactions.map((t) => ({
@@ -125,6 +143,16 @@ async function loadRows(): Promise<DealRow[]> {
     priorityLabel: t.priority ? label("Priority", t.priority) : "",
     // Transaction has no `source` field (only Client/Mandate do) — never matches a source filter.
     sourceValue: null,
+    // F4.3.1: a transaction's fee is its success fee. There is no paid-amount
+    // column on Transaction (dump parity), so a successFeePaidDate reads as
+    // paid in full and anything else as nothing paid yet.
+    classificationValue: null,
+    classificationLabel: "",
+    feeTotal: t.successFeeAmount != null ? Number(t.successFeeAmount) : null,
+    paidAmount:
+      t.successFeeAmount == null ? null : t.successFeePaidDate != null ? Number(t.successFeeAmount) : 0,
+    balance:
+      t.successFeeAmount == null ? null : t.successFeePaidDate != null ? 0 : Number(t.successFeeAmount),
   }));
 
   const aRows: DealRow[] = advisory.map((a) => ({
@@ -157,6 +185,15 @@ async function loadRows(): Promise<DealRow[]> {
     priorityValue: a.priority ?? null,
     priorityLabel: a.priority ? label("Priority", a.priority) : "",
     sourceValue: a.source ?? null,
+    // F4.2.1: advisory work type + fee payment state.
+    classificationValue: a.classification ?? null,
+    classificationLabel: a.classification ? label("AdvisoryClassification", a.classification) : "",
+    feeTotal: a.feeAmount != null ? Number(a.feeAmount) : null,
+    paidAmount: a.feePaidAmount != null ? Number(a.feePaidAmount) : null,
+    balance: balanceDue(
+      a.feeAmount != null ? Number(a.feeAmount) : null,
+      a.feePaidAmount != null ? Number(a.feePaidAmount) : null,
+    ),
   }));
 
   return [...mRows, ...tRows, ...aRows];
@@ -173,6 +210,7 @@ function matches(r: DealRow, spec: DealsQuerySpec): boolean {
   if (spec.priority.length > 0 && (r.priorityValue == null || !spec.priority.includes(r.priorityValue))) return false;
   if (spec.source.length > 0 && (r.sourceValue == null || !spec.source.includes(r.sourceValue))) return false;
   if (spec.financing.length > 0 && (r.financingValue == null || !spec.financing.includes(r.financingValue))) return false;
+  if (spec.classification.length > 0 && (r.classificationValue == null || !spec.classification.includes(r.classificationValue))) return false;
   // Active-as-of drilldown: open by `activeAsOf` and not yet closed by then.
   // (ISO strings compare chronologically since all are UTC toISOString().)
   if (spec.activeAsOf) {
@@ -212,6 +250,8 @@ function sortValue(r: DealRow, key: DealsQuerySpec["sort"]): string | number {
     case "daysInStage": return r.daysInStage;
     case "dateOnboarded": return r.dateOnboarded ?? "";
     case "priority": return r.priorityValue ? (PRIORITY_RANK[r.priorityValue] ?? 0) : 0;
+    // Rows with nothing owed (or no fee recorded) sort below any real balance.
+    case "balance": return r.balance ?? -1;
   }
 }
 
@@ -266,7 +306,7 @@ export async function countsBy(spec: DealsQuerySpec, dimension: DealsGroupBy) {
   return [...map.values()].sort((a, b) => b.count - a.count);
 }
 
-const CSV_HEADERS = ["Project", "Company", "Type", "Stage", "Status", "Milestone", "Deal type", "Ticket (USD)", "Sector", "Country", "Lead", "Assists", "Date onboarded", "Days in stage", "Priority"];
+const CSV_HEADERS = ["Project", "Company", "Type", "Pipeline status", "Status", "Milestone", "Deal type", "Ticket (USD)", "Sector", "Country", "Lead", "Assists", "Date onboarded", "Days in stage", "Priority", "Classification", "Paid (USD)", "Balance (USD)"];
 
 export async function dealsCsvRows(spec: DealsQuerySpec): Promise<string[][]> {
   const all = applySort((await loadRows()).filter((r) => matches(r, spec)), spec);
@@ -275,6 +315,9 @@ export async function dealsCsvRows(spec: DealsQuerySpec): Promise<string[][]> {
     r.dealTypeLabel, r.ticket != null ? String(r.ticket) : "", r.sectors.map((s) => label("Sector", s)).join("; "),
     r.country ?? "", r.leadName ?? "", r.assistNames.join("; "), r.dateOnboarded ? r.dateOnboarded.slice(0, 10) : "", String(r.daysInStage),
     r.priorityLabel,
+    r.classificationLabel,
+    r.paidAmount != null ? String(r.paidAmount) : "",
+    r.balance != null ? String(r.balance) : "",
   ]);
   return [CSV_HEADERS, ...body];
 }

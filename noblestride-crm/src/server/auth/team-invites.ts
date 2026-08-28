@@ -1,13 +1,16 @@
 // Team-member invites (spec 2026-07-19): share-link provisioning for investor
-// org members. No email delivery — createTeamInvite returns the raw link
-// token exactly once and the inviter shares it out-of-band. The invited email
-// is bound server-side (token → account → person.email), never in the URL,
-// and verified at the /invite landing gate. Accounts are created with an
-// unusable password hash so nothing can log in before redemption.
+// org members. Aug-2026 feedback F3.5 ("are team members notified/invited?"):
+// the link is now EMAILED as well as returned. Delivery is best-effort and
+// post-commit — a mail failure must never roll back an invite that exists, so
+// every issuing function reports `emailSent` and the UI falls back to
+// copy-this-link when it is false. The invited email is bound server-side
+// (token → account → person.email), never in the URL, and verified at the
+// /invite landing gate. Accounts are created with an unusable password hash so
+// nothing can log in before redemption.
 
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
-import type { PortalMemberRole } from "@prisma/client";
+import type { AccountKind, PortalMemberRole } from "@prisma/client";
 import { PHONE_MESSAGE, PHONE_PATTERN } from "@/lib/schemas/phone";
 import { classifyEmailForSignup, normalizeEmail } from "./guardrails";
 import { hashPassword } from "./password";
@@ -16,10 +19,14 @@ import { hashToken, invalidateAllSessions } from "./session";
 import { consumeAuthToken, createAuthToken } from "./tokens";
 import { logAuthEvent } from "./audit";
 import { isUniqueViolation } from "./accounts";
+import { sendInviteEmail } from "./auth-mail";
 
 export class TeamInviteError extends Error {}
 
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+/** What an issued invite reports back: the link token, and whether mail went out. */
+export type InviteIssued = { rawToken: string; emailSent: boolean; email: string };
 
 // One message for every "email unavailable" case (taken anywhere, internal
 // domain, greylisted) — never reveals what the email is attached to.
@@ -32,7 +39,7 @@ export async function unusablePasswordHash(): Promise<string> {
   return hashPassword(randomBytes(32).toString("base64url"));
 }
 
-async function assertEmailInvitable(
+export async function assertEmailInvitable(
   email: string,
   opts?: { excludePersonId?: string; investorId?: string },
 ): Promise<void> {
@@ -69,7 +76,9 @@ export async function createTeamInvite(input: {
   invitedByLabel: string;
   /** Seat role (action points 2026-07 item 3). Defaults to view-only. */
   portalRole?: PortalMemberRole;
-}): Promise<{ personId: string; rawToken: string }> {
+  /** Absolute origin the /invite link is built against. */
+  baseUrl: string;
+}): Promise<{ personId: string } & InviteIssued> {
   if (input.phone && !PHONE_PATTERN.test(input.phone)) {
     throw new TeamInviteError(PHONE_MESSAGE);
   }
@@ -79,7 +88,7 @@ export async function createTeamInvite(input: {
 
   const investor = await prisma.investor.findUniqueOrThrow({
     where: { id: input.investorId },
-    select: { onboardingStatus: true, engagementClassification: true },
+    select: { name: true, onboardingStatus: true, engagementClassification: true },
   });
   if ((BLOCKED_CLASSIFICATIONS as readonly string[]).includes(investor.engagementClassification)) {
     throw new TeamInviteError("Team invitations are not available for this account.");
@@ -130,8 +139,36 @@ export async function createTeamInvite(input: {
   }
 
   const rawToken = await createAuthToken(created.accountId, "INVITE", INVITE_TTL_MS);
-  await logAuthEvent(`Auth: team invite created for ${email}`, undefined, { investorId: input.investorId });
-  return { personId: created.personId, rawToken };
+  const { sent } = await sendInviteEmail({
+    to: email,
+    inviteUrl: `${input.baseUrl}/invite/${rawToken}`,
+    orgName: investor.name,
+    invitedByLabel: input.invitedByLabel,
+  });
+  await logAuthEvent(
+    `Auth: team invite created for ${email} (email ${sent ? "sent" : "not sent"})`,
+    undefined,
+    { investorId: input.investorId },
+  );
+  return { personId: created.personId, rawToken, emailSent: sent, email };
+}
+
+/** Mint a fresh INVITE link for an account and email it. Shared by resend/first-invite. */
+async function issueInviteLink(
+  accountId: string,
+  email: string,
+  orgName: string,
+  invitedByLabel: string,
+  baseUrl: string,
+): Promise<InviteIssued> {
+  const rawToken = await createAuthToken(accountId, "INVITE", INVITE_TTL_MS);
+  const { sent } = await sendInviteEmail({
+    to: email,
+    inviteUrl: `${baseUrl}/invite/${rawToken}`,
+    orgName,
+    invitedByLabel,
+  });
+  return { rawToken, emailSent: sent, email };
 }
 
 /** Load a person, scoped to the investor — the caller's org boundary. */
@@ -143,7 +180,12 @@ async function memberOf(personId: string, investorId: string) {
 }
 
 /** Fresh link for an existing member; outstanding INVITE links are invalidated. */
-export async function resendTeamInvite(personId: string, investorId: string): Promise<string> {
+export async function resendTeamInvite(
+  personId: string,
+  investorId: string,
+  baseUrl: string,
+  invitedByLabel = "Your colleague",
+): Promise<InviteIssued> {
   const person = await memberOf(personId, investorId);
   if (!person?.authAccount) throw new TeamInviteError("No invite exists for this contact.");
   if (person.authAccount.lastLoginAt) {
@@ -156,7 +198,7 @@ export async function resendTeamInvite(personId: string, investorId: string): Pr
     throw new TeamInviteError("This member's access was removed — use Invite to re-add them.");
   }
   const investor = await prisma.investor.findUniqueOrThrow({
-    where: { id: investorId }, select: { engagementClassification: true },
+    where: { id: investorId }, select: { name: true, engagementClassification: true },
   });
   if ((BLOCKED_CLASSIFICATIONS as readonly string[]).includes(investor.engagementClassification)) {
     throw new TeamInviteError("Team invitations are not available for this account.");
@@ -164,7 +206,13 @@ export async function resendTeamInvite(personId: string, investorId: string): Pr
   await prisma.authToken.deleteMany({
     where: { accountId: person.authAccount.id, purpose: "INVITE", usedAt: null },
   });
-  return createAuthToken(person.authAccount.id, "INVITE", INVITE_TTL_MS);
+  return issueInviteLink(
+    person.authAccount.id,
+    person.authAccount.email,
+    investor.name,
+    invitedByLabel,
+    baseUrl,
+  );
 }
 
 /** First link for a staff-created contact (Person without an account). */
@@ -172,10 +220,11 @@ export async function inviteExistingContact(
   personId: string,
   investorId: string,
   invitedByLabel: string,
-): Promise<string> {
+  baseUrl: string,
+): Promise<InviteIssued> {
   const person = await memberOf(personId, investorId);
   if (!person) throw new TeamInviteError("Contact not found.");
-  if (person.authAccount) return resendTeamInvite(personId, investorId);
+  if (person.authAccount) return resendTeamInvite(personId, investorId, baseUrl, invitedByLabel);
   if (!person.email) throw new TeamInviteError("Add an email to this contact first — ask Noblestride to update it.");
   const email = normalizeEmail(person.email);
   // The Person itself owns this email — exclude self from the duplicate scan
@@ -184,7 +233,7 @@ export async function inviteExistingContact(
 
   const investor = await prisma.investor.findUniqueOrThrow({
     where: { id: investorId },
-    select: { onboardingStatus: true, engagementClassification: true },
+    select: { name: true, onboardingStatus: true, engagementClassification: true },
   });
   if ((BLOCKED_CLASSIFICATIONS as readonly string[]).includes(investor.engagementClassification)) {
     throw new TeamInviteError("Team invitations are not available for this account.");
@@ -213,7 +262,7 @@ export async function inviteExistingContact(
       createdSource: "API",
     },
   });
-  return createAuthToken(account.id, "INVITE", INVITE_TTL_MS);
+  return issueInviteLink(account.id, email, investor.name, invitedByLabel, baseUrl);
 }
 
 /**
@@ -316,24 +365,48 @@ export async function setThreadAccess(
 export type InvitePeek = {
   accountId: string;
   email: string;
-  investorName: string;
+  /** Which kind of portal this invite opens — INVESTOR or PARTNER (F5.6). */
+  kind: AccountKind;
+  /** The inviting organisation: the fund for investors, the firm for partners. */
+  orgName: string;
   orgApproved: boolean;
 };
 
-/** Look at a link without consuming it. Null = invalid/expired/used/revoked. */
+/**
+ * Look at a link without consuming it. Null = invalid/expired/used/revoked.
+ *
+ * Redemption is generalised on `account.kind` (F5.6) so partner contacts use
+ * the same /invite landing page. Partners have no onboarding gate — there is no
+ * `Investor.onboardingStatus` equivalent — so `orgApproved` for them means only
+ * that the partner record is not Inactive.
+ */
 export async function peekInviteToken(raw: string): Promise<InvitePeek | null> {
   const row = await prisma.authToken.findUnique({
     where: { tokenHash: hashToken(raw) },
-    include: { account: { include: { person: { include: { investor: true } } } } },
+    include: { account: { include: { person: { include: { investor: true, partner: true } } } } },
   });
   if (!row || row.purpose !== "INVITE" || row.usedAt || row.expiresAt.getTime() <= Date.now()) return null;
   if (row.account.status === "SUSPENDED") return null; // revoked/removed
+
+  if (row.account.kind === "PARTNER") {
+    const partner = row.account.person?.partner;
+    if (!partner) return null;
+    return {
+      accountId: row.account.id,
+      email: row.account.email,
+      kind: "PARTNER",
+      orgName: partner.name,
+      orgApproved: partner.status !== "Inactive",
+    };
+  }
+
   const investor = row.account.person?.investor;
   if (!investor) return null;
   return {
     accountId: row.account.id,
     email: row.account.email,
-    investorName: investor.name,
+    kind: row.account.kind,
+    orgName: investor.name,
     orgApproved:
       investor.onboardingStatus === "Approved" &&
       !(BLOCKED_CLASSIFICATIONS as readonly string[]).includes(investor.engagementClassification),

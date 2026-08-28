@@ -1,7 +1,7 @@
 // GraphQL mutations for the Noblestride Capital CRM.
 // Thin resolvers — each is a one-line call to the matching service.
 
-import { builder, MandateStageEnum, TransactionStageEnum, AdvisoryStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum, ConversationStatusEnum, MilestoneKeyEnum, DDTrackEnum } from "./builder";
+import { builder, MandateStageEnum, TransactionStageEnum, AdvisoryStageEnum, InteractionTypeEnum, OnboardingStatusEnum, CommChannelEnum, CommDirectionEnum, ConversationStatusEnum, MilestoneKeyEnum, DDTrackEnum, DealKindEnum } from "./builder";
 import { postStaffReply, setConversationStatus } from "@/server/services/conversations";
 import { setMandateStage } from "@/server/services/mandates";
 import { setTransactionStage } from "@/server/services/transactions";
@@ -10,7 +10,8 @@ import { createEngagement, updateEngagement } from "@/server/services/engagement
 import { recordMilestone, unrecordMilestone } from "@/server/services/milestones-crud";
 import { InvestorInput, ClientInput, MandateInput, TransactionInput, AdvisoryInput, PartnerInput, EngagementInput, ServiceProviderInput, DocumentInput, TaskInput, LogActivityInput, PersonInput, MilestoneInput, DueDiligenceTrackInput, SendEsignInput, ScheduleMeetingInput, ClientIntakeInput, WebsiteIntakeInput, LogClientMessageInput, InvestorUpdateSubmitInput, InvestorCommunicationInput, InvestorFlagInput, OutreachDraftsInput, PartnerSelfUpdateInput } from "./inputs";
 import { createInvestor, updateInvestor, deleteInvestor, setOnboardingStatus, greylistInvestor, markInvestorCriteriaVerified } from "@/server/services/investors";
-import { recordOpenNda, recordClosedNda } from "@/server/services/nda";
+import { recordOpenNda, recordClosedNda, countersignUploadedNda, requestNdaSignature } from "@/server/services/nda";
+import { grantDealAccess } from "@/server/services/deal-access";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
 import { createMandate, updateMandate, deleteMandate, acceptIntakeMandate, deprioritizeIntakeMandate, rerunQualification } from "@/server/services/mandates";
 import { setAdvisoryStage, createAdvisory, updateAdvisory, deleteAdvisory } from "@/server/services/advisory";
@@ -22,7 +23,9 @@ import { createTask, updateTask, deleteTask } from "@/server/services/tasks";
 import { createPerson, updatePerson, deletePerson } from "@/server/services/persons";
 import { upsertDDTrack, deleteDDTrack } from "@/server/services/due-diligence";
 import { createSavedView, renameSavedView, deleteSavedView, type SavedViewConfig } from "@/server/services/saved-views";
-import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef, ClientOtpVerifyRef, AgentWritePreviewRef, AgentWriteResultRef, DraftsAckRef, DealInterestAckRef, PartnerAccessCodeRef, PartnerVerifyRef } from "./types";
+import { SavedViewRef, EsignEnvelopeResult, AgentAckRef, ClientMessageAckRef, ClientOtpVerifyRef, AgentWritePreviewRef, AgentWriteResultRef, DraftsAckRef, DealInterestAckRef, PartnerAccessCodeRef, PartnerVerifyRef, DealWorkflowRef } from "./types";
+import { setDealStageState, moveDealToWorkflowStep } from "@/server/services/workflow";
+import type { DealKindEnum as DealKindValue } from "@/server/domain/deal-kind";
 import { issuePartnerAccessCode, verifyPartnerAccessCode, submitPartnerSelfUpdate } from "@/server/services/partner-self";
 import { markNotificationsRead, markAllNotificationsRead } from "@/server/services/notifications";
 import { getOrgLens } from "@/server/rbac/context";
@@ -40,6 +43,28 @@ import { submitInvestorUpdate, logInvestorCommunication, flagInvestorForReview, 
 import { saveOutreachDrafts } from "@/server/services/outreach";
 import { InteractionType } from "@prisma/client";
 
+/**
+ * Workflow step writes reuse the deal's own update permission: an Admin, or a
+ * DealLead/TeamMember who owns the record (Mandate/Advisory `leadId`,
+ * Transaction `ownerId`) — exactly what updateMandate/updateTransaction/
+ * updateAdvisory enforce.
+ */
+async function assertCanEditWorkflow(actor: Parameters<typeof assertCanUpdateOwnScoped>[0], dealKind: DealKindValue, dealId: string) {
+  if (dealKind === "Mandate") {
+    await assertCanUpdateOwnScoped(actor, "Mandates", () =>
+      prisma.mandate.findUnique({ where: { id: dealId }, select: { leadId: true } }),
+    );
+  } else if (dealKind === "Transaction") {
+    await assertCanUpdateOwnScoped(actor, "Transactions", () =>
+      prisma.transaction.findUnique({ where: { id: dealId }, select: { ownerId: true } }),
+    );
+  } else {
+    await assertCanUpdateOwnScoped(actor, "Advisory", () =>
+      prisma.advisoryEngagement.findUnique({ where: { id: dealId }, select: { leadId: true } }),
+    );
+  }
+}
+
 builder.mutationFields((t) => ({
   // 1. updateMandateStage(id: ID!, stage: MandateStage!): Mandate
   updateMandateStage: t.prismaField({
@@ -54,6 +79,45 @@ builder.mutationFields((t) => ({
         prisma.mandate.findUnique({ where: { id: String(args.id) }, select: { leadId: true } }),
       );
       return setMandateStage(args.id, args.stage, ctx.actor);
+    },
+  }),
+
+  // 1b. Aug-2026 feedback F4.1.x / G2 — manual workflow step writes
+  setDealStageState: t.field({
+    type: DealWorkflowRef,
+    nullable: false,
+    args: {
+      dealKind: t.arg({ type: DealKindEnum, required: true }),
+      dealId: t.arg.id({ required: true }),
+      stepKey: t.arg.string({ required: true }),
+      done: t.arg.boolean({ required: true }),
+      note: t.arg.string({ required: false }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const dealId = String(args.dealId);
+      await assertCanEditWorkflow(ctx.actor, args.dealKind, dealId);
+      return setDealStageState(
+        { dealKind: args.dealKind, dealId, stepKey: args.stepKey, done: args.done, note: args.note ?? null },
+        ctx.actor,
+      );
+    },
+  }),
+  moveDealToWorkflowStep: t.field({
+    type: DealWorkflowRef,
+    nullable: false,
+    args: {
+      dealKind: t.arg({ type: DealKindEnum, required: true }),
+      dealId: t.arg.id({ required: true }),
+      stepKey: t.arg.string({ required: true }),
+      note: t.arg.string({ required: false }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const dealId = String(args.dealId);
+      await assertCanEditWorkflow(ctx.actor, args.dealKind, dealId);
+      return moveDealToWorkflowStep(
+        { dealKind: args.dealKind, dealId, stepKey: args.stepKey, note: args.note ?? null },
+        ctx.actor,
+      );
     },
   }),
 
@@ -230,6 +294,42 @@ builder.mutationFields((t) => ({
     resolve: async (_q, _r, args, ctx) => {
       assertCan(ctx.actor, "Engagements", "U");
       return recordClosedNda(String(args.engagementId), ctx.actor);
+    },
+  }),
+
+  // F3.2: staff side of the self-service NDA flows. Countersigning a fund's own
+  // paper lands in exactly the same investor state as recordOpenNda; requesting
+  // a signature only nudges — it changes no NDA state at all.
+  countersignUploadedNda: t.prismaField({
+    type: "Document", nullable: false,
+    args: { documentId: t.arg.id({ required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      assertCan(ctx.actor, "Investors", "U");
+      await countersignUploadedNda(String(args.documentId), ctx.actor);
+      return prisma.document.findUniqueOrThrow({ where: { id: String(args.documentId) } });
+    },
+  }),
+  // F6b.2 (image28): unlock the deal for an investor who registered interest.
+  // The NDA guard is NOT bypassed — grantDealAccess rides updateEngagement, and
+  // NdaGuardError reaches the client with its own message (mask-error.ts).
+  grantDealAccess: t.prismaField({
+    type: "Engagement", nullable: false,
+    args: { engagementId: t.arg.id({ required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      const engagementId = String(args.engagementId);
+      await assertCanUpdateOwnScoped(ctx.actor, "Engagements", () =>
+        prisma.engagement.findUnique({ where: { id: engagementId }, select: { ownerId: true } }),
+      );
+      await grantDealAccess(engagementId, ctx.actor);
+      return prisma.engagement.findUniqueOrThrow({ where: { id: engagementId } });
+    },
+  }),
+  requestNdaSignature: t.prismaField({
+    type: "Investor", nullable: false,
+    args: { investorId: t.arg.id({ required: true }) },
+    resolve: async (_q, _r, args, ctx) => {
+      assertCan(ctx.actor, "Investors", "U");
+      return requestNdaSignature(String(args.investorId), ctx.actor);
     },
   }),
 

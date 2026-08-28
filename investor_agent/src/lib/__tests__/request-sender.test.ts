@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // The bug this suite pins: production inbound `from` is the full RFC-5322 header
 // ("Display Name <email@host>"), but the self-view identity match needs a bare,
 // normalized email. parseEmailAddress is the single source of truth for that.
-import { parseEmailAddress } from "../request-sender";
+import { parseEmailAddress, CHANNEL_UNVERIFIED, portalUrl } from "../request-sender";
 
 describe("parseEmailAddress", () => {
   it("extracts the bare address from a display-name header", () => {
@@ -97,5 +97,36 @@ describe("verifiedSender", () => {
     const { verifiedSender } = await import("../request-sender");
     requestMock.webhook = { payload: { from: "jo@acme.fund" } };
     expect(verifiedSender()).toBeUndefined();
+  });
+});
+
+// A5 / image21: "will it know which deal I'm looking at… hard to test with
+// internal accounts." On web chat there is no verified sender, and the client's
+// complaint was that the refusal explained nothing. It now explains, and points
+// at the two routes that actually work.
+describe("CHANNEL_UNVERIFIED explains rather than refuses flatly", () => {
+  it("names the portal and the registered-address route", () => {
+    const { message } = CHANNEL_UNVERIFIED;
+    expect(message).toContain("portal");
+    expect(message).toContain("registered address");
+    expect(message.toLowerCase()).toContain("explain why");
+    expect(message).toContain("https://");
+  });
+
+  it("still tells the model not to retry the tool", () => {
+    expect(CHANNEL_UNVERIFIED.message.toLowerCase()).toContain("do not retry");
+  });
+
+  // The one-time deal link that express_deal_interest mints must never be
+  // replaced by a generic portal URL, so the refusal deliberately carries no
+  // portalUrl field of its own.
+  it("carries no portalUrl field that could overwrite a minted link", () => {
+    expect(Object.keys({ ...CHANNEL_UNVERIFIED })).not.toContain("portalUrl");
+    expect({ portalUrl: null, ...CHANNEL_UNVERIFIED }.portalUrl).toBeNull();
+  });
+
+  it("falls back to a real host when PORTAL_URL is unset", () => {
+    expect(portalUrl()).toMatch(/^https:\/\/\S+$/);
+    expect(portalUrl().endsWith("/")).toBe(false);
   });
 });

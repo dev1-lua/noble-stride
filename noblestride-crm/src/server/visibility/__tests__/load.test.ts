@@ -30,6 +30,17 @@ const discoveryDeal = {
   engagements: [],
 };
 
+// F6b.1: live, on no engagement, and deliberately OUTSIDE the investor's
+// sector focus — the case the old candidate filter dropped entirely.
+const offMandateDeal = {
+  ...makeDealFixture(),
+  id: "txn-3",
+  name: "Project Tamarind",
+  sector: ["Manufacturing" as const],
+  client: { ...makeDealFixture().client!, sector: ["Manufacturing" as const] },
+  engagements: [],
+};
+
 const investorFixture = {
   id: OWN_INVESTOR_ID,
   name: "Own Fund LP",
@@ -107,17 +118,63 @@ describe("loadInvestorPortalData", () => {
     expect(withNda.deals.find((d) => d.id === "txn-1")?.documents.some((d) => d.id === "doc-vdr")).toBe(true);
   });
 
-  it("declined engagement drops the deal", async () => {
+  // ── F6b.1 (image27): "the investor should see all the deals" ──────────────
+
+  it("includes live deals outside the investor's discovery match, flagged matchesMandate:false", async () => {
+    const prisma = stubPrisma({ investor: investorFixture, transactions: [engagedDeal, discoveryDeal, offMandateDeal] });
+    const { deals } = await loadInvestorPortalData(prisma, OWN_INVESTOR_ID);
+    expect(deals).toHaveLength(3);
+    const byId = new Map(deals.map((d) => [d.id, d]));
+    expect(byId.get("txn-3")?.tier).toBe("PRE_INTEREST");
+    expect(byId.get("txn-3")?.matchesMandate).toBe(false);
+    expect(byId.get("txn-1")?.matchesMandate).toBe(false); // engaged but off-focus
+  });
+
+  it("marks discovery hits matchesMandate:true", async () => {
+    const prisma = stubPrisma({ investor: investorFixture, transactions: [discoveryDeal, offMandateDeal] });
+    const { deals } = await loadInvestorPortalData(prisma, OWN_INVESTOR_ID);
+    expect(new Map(deals.map((d) => [d.id, d])).get("txn-2")?.matchesMandate).toBe(true);
+  });
+
+  it("still shows nothing for a blocked classification or an unapproved investor", async () => {
+    for (const patch of [{ engagementClassification: "Excluded" }, { onboardingStatus: "PendingReview" }]) {
+      const prisma = stubPrisma({
+        investor: { ...investorFixture, ...patch },
+        transactions: [engagedDeal, discoveryDeal, offMandateDeal],
+      });
+      expect((await loadInvestorPortalData(prisma, OWN_INVESTOR_ID)).deals).toEqual([]);
+    }
+  });
+
+  it("match:true narrows to mandate matches only", async () => {
+    const prisma = stubPrisma({ investor: investorFixture, transactions: [discoveryDeal, offMandateDeal] });
+    const { deals } = await loadInvestorPortalData(prisma, OWN_INVESTOR_ID, { match: true });
+    expect(deals.map((d) => d.id)).toEqual(["txn-2"]);
+  });
+
+  it("still keeps forbidden internal fields out of the widened set", async () => {
+    const prisma = stubPrisma({ investor: investorFixture, transactions: [engagedDeal, discoveryDeal, offMandateDeal] });
+    const json = JSON.stringify(await loadInvestorPortalData(prisma, OWN_INVESTOR_ID));
+    for (const forbidden of FORBIDDEN_STRINGS) expect(json).not.toContain(forbidden);
+  });
+
+  // Declining is the one stage the portal sets itself, and it is
+  // access-reducing: the declined deal disappears from the browse list. After
+  // F6b.1 the OTHER live deals stay browsable (that is the point of the
+  // change), so this asserts the declined deal specifically.
+  it("declined engagement drops that deal but not the rest of the market", async () => {
     const prisma = stubPrisma({
       investor: {
         ...investorFixture,
-        sectorFocus: ["Healthcare"], // discovery does not match either deal
+        sectorFocus: ["Healthcare"], // discovery matches neither deal
         engagements: [{ ...investorFixture.engagements[0], engagementStage: "Declined" }],
       },
       transactions: [engagedDeal, discoveryDeal],
     });
     const portal = await loadInvestorPortalData(prisma, OWN_INVESTOR_ID);
-    expect(portal.deals).toEqual([]);
+    expect(portal.deals.map((d) => d.id)).toEqual(["txn-2"]);
+    expect(portal.deals[0]?.tier).toBe("PRE_INTEREST");
+    expect(portal.deals[0]?.matchesMandate).toBe(false);
   });
 });
 

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { Avatar, Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
+import { formatDate } from "@/lib/format";
 
 type ClientRow = {
   id: string;
@@ -11,6 +12,9 @@ type ClientRow = {
   revenueLastYear: number | null;
   status: string;
   mandateCount: number;
+  // Aug-2026 feedback F2.2/F6.1
+  createdAt?: string;
+  hqCountry?: string | null;
 };
 
 export function ClientsTable({ clients }: { clients: ClientRow[] }) {
@@ -26,7 +30,7 @@ export function ClientsTable({ clients }: { clients: ClientRow[] }) {
       <Table>
         <THead>
           <Tr className="hover:bg-transparent">
-            <Th>Client</Th><Th>Status</Th><Th>Sector</Th><Th>Mandates</Th><Th>HQ City</Th><Th>Revenue (LY)</Th>
+            <Th>Client</Th><Th>Country</Th><Th>Created</Th><Th>Status</Th><Th>Sector</Th><Th>Mandates</Th><Th>HQ City</Th><Th>Revenue (LY)</Th>
           </Tr>
         </THead>
         <TBody>
@@ -37,6 +41,10 @@ export function ClientsTable({ clients }: { clients: ClientRow[] }) {
                   <Avatar name={c.name} size="sm" />
                   <span className="font-medium text-[var(--text-primary)] transition-colors group-hover:text-accent">{c.name}</span>
                 </Link>
+              </Td>
+              <Td className="text-[var(--text-secondary)]">{c.hqCountry ?? "—"}</Td>
+              <Td className="whitespace-nowrap text-[var(--text-secondary)]" data-testid="client-created">
+                {c.createdAt ? formatDate(c.createdAt) : "—"}
               </Td>
               <Td>{c.status ? <Chip value={c.status} group="ClientStatus" /> : "—"}</Td>
               <Td>

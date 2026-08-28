@@ -86,6 +86,42 @@ describe("parseOpportunityFilters — defensive", () => {
     ).toEqual({ womenLed: true });
   });
 
+  // F6b.1: ?match=1 is the "Matches my mandate" tab. Parsed here, applied
+  // after projection in load.ts.
+  it("parses the mandate-match tab flag", () => {
+    expect(parseOpportunityFilters({ match: "1" })).toEqual({ match: true });
+    expect(parseOpportunityFilters({ match: "0" })).toEqual({});
+    expect(parseOpportunityFilters({ match: "true" })).toEqual({});
+  });
+
+  // Reviewer finding: the portal's tab links re-serialized parsed filters, and
+  // String(true) === "true" — which this parser drops, so ticking Women-led and
+  // then switching tabs silently WIDENED the grid while the control still read as
+  // applied. The round-trip is pinned here so the serializer cannot drift again.
+  it("round-trips every filter shape through its own serialization", () => {
+    const filters = parseOpportunityFilters({
+      sector: "Agribusiness,Technology",
+      country: "EastAfrica",
+      ticketMin: "500000",
+      womenLed: "1",
+      youthLed: "1",
+      match: "1",
+    });
+    expect(filters.womenLed).toBe(true);
+    expect(filters.youthLed).toBe(true);
+
+    // Serialize the way the portal tabs do, then parse it back.
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value == null) continue;
+      if (Array.isArray(value)) params.set(key, value.join(","));
+      else if (typeof value === "boolean") {
+        if (value) params.set(key, "1");
+      } else params.set(key, String(value));
+    }
+    expect(parseOpportunityFilters(Object.fromEntries(params))).toEqual(filters);
+  });
+
   it("parses valid params", () => {
     expect(parseOpportunityFilters({ sector: "Agribusiness", ticketMax: "5000000" })).toEqual({
       sector: ["Agribusiness"],

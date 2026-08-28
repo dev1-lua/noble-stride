@@ -55,8 +55,13 @@ import {
   OrgRoleEnum,
   PriorityEnum,
   PartnerFeeStatusEnum,
+  WorkflowPhaseEnum,
+  DealKindEnum,
+  AdvisoryClassificationEnum,
 } from "./builder";
+import type { DealWorkflow, StepState } from "@/server/domain/workflow";
 import { daysInStage } from "@/server/domain/metrics";
+import { balanceDue } from "@/lib/money";
 import { ACTIVE_CONVERSATION_STATUSES } from "@/server/domain/types";
 import type { ClientStatusPayload } from "@/server/services/client-status";
 import type { PartnerSelfPayload, PartnerReferredDealView } from "@/server/services/partner-self";
@@ -246,6 +251,10 @@ export const ClientRef = builder.prismaObject("Client", {
     repaymentAbilityNotes: t.exposeString("repaymentAbilityNotes", { nullable: true }),
     pricingExpectations: t.exposeString("pricingExpectations", { nullable: true }),
     proposedTimeline: t.exposeString("proposedTimeline", { nullable: true }),
+    // Aug-2026 feedback: project codename (mirrors `codename` on write) + impact flags as booleans
+    projectCodename: t.exposeString("projectCodename", { nullable: true }),
+    womenLed: t.exposeBoolean("womenLed"),
+    youthLed: t.exposeBoolean("youthLed"),
     createdSource: t.field({ type: ActorSourceEnum, resolve: (r) => r.createdSource }),
     createdAt: t.field({ type: "DateTime", resolve: (c) => c.createdAt }),
     updatedAt: t.field({ type: "DateTime", resolve: (c) => c.updatedAt }),
@@ -289,6 +298,16 @@ export const MandateRef = builder.prismaObject("Mandate", {
     retainerAmount: t.float({ nullable: true, resolve: (m) => (m.retainerAmount == null ? null : Number(m.retainerAmount)) }),
     retainerInvoicedDate: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.retainerInvoicedDate }),
     retainerPaidDate: t.field({ type: "DateTime", nullable: true, resolve: (m) => m.retainerPaidDate }),
+    // Aug-2026 feedback F4.3.1: amount actually paid + derived balance due
+    retainerPaidAmount: t.float({ nullable: true, resolve: (m) => (m.retainerPaidAmount == null ? null : Number(m.retainerPaidAmount)) }),
+    retainerBalance: t.float({
+      nullable: true,
+      resolve: (m) =>
+        balanceDue(
+          m.retainerAmount == null ? null : Number(m.retainerAmount),
+          m.retainerPaidAmount == null ? null : Number(m.retainerPaidAmount),
+        ),
+    }),
     priority: t.field({ type: PriorityEnum, nullable: true, resolve: (m) => m.priority }),
     referralQualified: t.exposeBoolean("referralQualified", { nullable: true }),
     // Task 11/12: public-intake qualification verdict + reasons, reviewed here.
@@ -308,11 +327,13 @@ export const MandateRef = builder.prismaObject("Mandate", {
     clientId: t.exposeString("clientId"),
     leadId: t.exposeString("leadId", { nullable: true }),
     referredById: t.exposeString("referredById", { nullable: true }),
+    workflowTemplateId: t.exposeString("workflowTemplateId", { nullable: true }),
     // Relations
     client: t.relation("client"),
     lead: t.relation("lead", { nullable: true }),
     assists: t.relation("assists"),
     referredBy: t.relation("referredBy", { nullable: true }),
+    workflowTemplate: t.relation("workflowTemplate", { nullable: true }),
     transactions: t.relation("transactions"),
     activities: t.relation("activities"),
     stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
@@ -370,9 +391,11 @@ export const TransactionRef = builder.prismaObject("Transaction", {
     ownerId: t.exposeString("ownerId", { nullable: true }),
     assistantId: t.exposeString("assistantId", { nullable: true }),
     referredById: t.exposeString("referredById", { nullable: true }),
+    workflowTemplateId: t.exposeString("workflowTemplateId", { nullable: true }),
     // Relations
     client: t.relation("client"),
     mandate: t.relation("mandate", { nullable: true }),
+    workflowTemplate: t.relation("workflowTemplate", { nullable: true }),
     owner: t.relation("owner", { nullable: true }),
     assistant: t.relation("assistant", { nullable: true }),
     assists: t.relation("assists"),
@@ -405,6 +428,19 @@ export const AdvisoryEngagementRef = builder.prismaObject("AdvisoryEngagement", 
     dealStatus: t.field({ type: DealStatusEnum, resolve: (a) => a.dealStatus }),
     daysInStage: t.int({ resolve: (a) => daysInStage(a.stageEnteredAt) }),
     feeAmount: t.float({ nullable: true, resolve: (a) => (a.feeAmount == null ? null : Number(a.feeAmount)) }),
+    // Aug-2026 feedback F4.2.1: work-type classification + fee paid
+    classification: t.field({ type: AdvisoryClassificationEnum, nullable: true, resolve: (a) => a.classification }),
+    feePaidAmount: t.float({ nullable: true, resolve: (a) => (a.feePaidAmount == null ? null : Number(a.feePaidAmount)) }),
+    feeBalance: t.float({
+      nullable: true,
+      resolve: (a) =>
+        balanceDue(
+          a.feeAmount == null ? null : Number(a.feeAmount),
+          a.feePaidAmount == null ? null : Number(a.feePaidAmount),
+        ),
+    }),
+    workflowTemplateId: t.exposeString("workflowTemplateId", { nullable: true }),
+    workflowTemplate: t.relation("workflowTemplate", { nullable: true }),
     currency: t.exposeString("currency"),
     sector: t.field({ type: [SectorEnum], resolve: (a) => a.sector }),
     country: t.exposeString("country", { nullable: true }),
@@ -1044,6 +1080,27 @@ export const DealInterestAckRef = builder.objectRef<DealInterestAckData>("DealIn
   }),
 });
 
+// F6b.1 / WS-C `my_deals` (image21: "will the agent know which deal I am talking
+// about?"). Codename, never the real deal name — the agent works over email.
+export const InvestorEngagedDealRef = builder
+  .objectRef<import("@/server/services/investor-agent").AgentEngagedDeal>("InvestorEngagedDeal")
+  .implement({
+    fields: (t) => ({
+      engagementId: t.exposeID("engagementId"),
+      dealId: t.exposeID("dealId"),
+      codename: t.exposeString("codename"),
+      stage: t.field({ type: EngagementStageEnum, resolve: (d) => d.stage }),
+      stagePhrase: t.exposeString("stagePhrase"),
+      status: t.field({ type: EngagementStatusEnum, resolve: (d) => d.status }),
+      sector: t.exposeStringList("sector"),
+      countries: t.exposeStringList("countries"),
+      targetRaise: t.exposeFloat("targetRaise", { nullable: true }),
+      currency: t.exposeString("currency"),
+      lastContact: t.field({ type: "DateTime", nullable: true, resolve: (d) => d.lastContact }),
+      portalUrl: t.exposeString("portalUrl"),
+    }),
+  });
+
 export const OutreachDraftRef = builder.prismaObject("OutreachDraft", {
   fields: (t) => ({
     id: t.exposeID("id"),
@@ -1071,5 +1128,92 @@ export const DraftsAckRef = builder.objectRef<DraftsAckData>("DraftsAck").implem
     ok: t.exposeBoolean("ok"),
     created: t.exposeInt("created"),
     skipped: t.exposeInt("skipped"),
+  }),
+});
+
+// ─── Deal workflow (Aug-2026 feedback F4.1.x) ────────────────────────────────
+
+export const WorkflowStepRef = builder.prismaObject("WorkflowStep", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    templateId: t.exposeString("templateId"),
+    key: t.exposeString("key"),
+    title: t.exposeString("title"),
+    phase: t.field({ type: WorkflowPhaseEnum, resolve: (s) => s.phase }),
+    description: t.exposeString("description", { nullable: true }),
+    order: t.exposeInt("order"),
+    appliesTo: t.field({ type: [DealKindEnum], resolve: (s) => s.appliesTo }),
+  }),
+});
+
+export const WorkflowTemplateRef = builder.prismaObject("WorkflowTemplate", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    name: t.exposeString("name"),
+    isDefault: t.exposeBoolean("isDefault"),
+    createdAt: t.field({ type: "DateTime", resolve: (w) => w.createdAt }),
+    updatedAt: t.field({ type: "DateTime", resolve: (w) => w.updatedAt }),
+    steps: t.relation("steps", { query: { orderBy: { order: "asc" } } }),
+    stepCount: t.relationCount("steps"),
+  }),
+});
+
+export const DealStageStateRef = builder.prismaObject("DealStageState", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    dealKind: t.field({ type: DealKindEnum, resolve: (d) => d.dealKind }),
+    dealId: t.exposeString("dealId"),
+    stepKey: t.exposeString("stepKey"),
+    manualStatus: t.exposeString("manualStatus"),
+    note: t.exposeString("note", { nullable: true }),
+    completedAt: t.field({ type: "DateTime", nullable: true, resolve: (d) => d.completedAt }),
+    completedById: t.exposeString("completedById", { nullable: true }),
+    completedBy: t.relation("completedBy", { nullable: true }),
+    createdAt: t.field({ type: "DateTime", resolve: (d) => d.createdAt }),
+    updatedAt: t.field({ type: "DateTime", resolve: (d) => d.updatedAt }),
+  }),
+});
+
+// Domain-shaped: the resolved per-step state from src/server/domain/workflow.ts.
+export const WorkflowStepStateRef = builder.objectRef<StepState>("WorkflowStepState").implement({
+  fields: (t) => ({
+    key: t.exposeString("key", { nullable: false }),
+    title: t.exposeString("title", { nullable: false }),
+    phase: t.field({ type: WorkflowPhaseEnum, nullable: false, resolve: (s) => s.phase }),
+    order: t.exposeInt("order", { nullable: false }),
+    description: t.field({ type: "String", nullable: true, resolve: (s) => s.description }),
+    status: t.exposeString("status", { nullable: false }),
+    source: t.field({ type: "String", nullable: true, resolve: (s) => s.source }),
+    completedAt: t.field({ type: "DateTime", nullable: true, resolve: (s) => s.completedAt }),
+    completedById: t.field({ type: "String", nullable: true, resolve: (s) => s.completedById }),
+    completedByName: t.field({ type: "String", nullable: true, resolve: (s) => s.completedByName }),
+    note: t.field({ type: "String", nullable: true, resolve: (s) => s.note }),
+    evidenceLabel: t.field({ type: "String", nullable: true, resolve: (s) => s.evidenceLabel }),
+    href: t.field({ type: "String", nullable: true, resolve: (s) => s.href }),
+    hasEvidenceRule: t.exposeBoolean("hasEvidenceRule", { nullable: false }),
+    manualStatus: t.field({ type: "String", nullable: true, resolve: (s) => s.manualStatus }),
+  }),
+});
+
+const WorkflowPhaseGroupRef = builder.objectRef<DealWorkflow["phases"][number]>("WorkflowPhaseGroup").implement({
+  fields: (t) => ({
+    phase: t.field({ type: WorkflowPhaseEnum, nullable: false, resolve: (p) => p.phase }),
+    label: t.exposeString("label", { nullable: false }),
+    steps: t.field({ type: [WorkflowStepStateRef], nullable: false, resolve: (p) => p.steps }),
+  }),
+});
+
+export const DealWorkflowRef = builder.objectRef<DealWorkflow>("DealWorkflow").implement({
+  fields: (t) => ({
+    dealKind: t.field({ type: DealKindEnum, nullable: false, resolve: (w) => w.dealKind }),
+    dealId: t.exposeString("dealId", { nullable: false }),
+    templateId: t.exposeString("templateId", { nullable: false }),
+    templateName: t.exposeString("templateName", { nullable: false }),
+    isDefaultTemplate: t.exposeBoolean("isDefaultTemplate", { nullable: false }),
+    steps: t.field({ type: [WorkflowStepStateRef], nullable: false, resolve: (w) => w.steps }),
+    phases: t.field({ type: [WorkflowPhaseGroupRef], nullable: false, resolve: (w) => w.phases }),
+    done: t.exposeInt("done", { nullable: false }),
+    total: t.exposeInt("total", { nullable: false }),
+    current: t.field({ type: WorkflowStepStateRef, nullable: true, resolve: (w) => w.current }),
   }),
 });

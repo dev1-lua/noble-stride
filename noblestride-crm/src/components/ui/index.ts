@@ -15,6 +15,8 @@ export { Input } from "./input";
 export type { InputProps } from "./input";
 export { Select } from "./select";
 export type { SelectProps, SelectOption } from "./select";
+export { Popover } from "./popover";
+export type { PopoverProps } from "./popover";
 export { MultiSelect } from "./multi-select";
 export type { MultiSelectProps } from "./multi-select";
 export { HelpHint } from "./help-hint";

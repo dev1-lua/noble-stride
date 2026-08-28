@@ -7,10 +7,11 @@ import { getTransaction } from "@/server/services/transactions";
 import { listDocuments } from "@/server/services/documents";
 import { listDDTracks } from "@/server/services/due-diligence";
 import { listServiceProviders } from "@/server/services/service-providers";
-import { journeyForMandate } from "@/server/services/journey";
+import { resolveDealWorkflow } from "@/server/services/workflow";
 import { relationOptions } from "@/server/services/relation-options";
-import { DealJourney } from "@/components/crm/deal-journey";
-import { DDTrack } from "@prisma/client";
+import { DealWorkflowCard } from "@/components/crm/deal-workflow";
+import { DDTrack, type EngagementStage, type EngagementStatus } from "@prisma/client";
+import { accessState } from "@/server/domain/access-state";
 import { DDTracksPanel, type DDTrackRow } from "@/components/crm/dd-tracks-panel";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/format";
@@ -50,13 +51,13 @@ export default async function TransactionDetailPage({ params }: PageProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const txn = transaction as any;
 
-  const [rel, documents, ddTracks, serviceProviders, journeySteps] = await Promise.all([
+  const [rel, documents, ddTracks, serviceProviders, workflow] = await Promise.all([
     relationOptions(),
     listDocuments({ transactionId: id }),
     listDDTracks(id),
     listServiceProviders(),
-    // Skip entirely when this transaction has no linked mandate.
-    txn.mandateId ? journeyForMandate(txn.mandateId) : Promise.resolve(null),
+    // The transaction resolves its OWN workflow (independent of its mandate's).
+    resolveDealWorkflow("Transaction", id),
   ]);
 
   const toDate = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : "");
@@ -79,6 +80,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
     successFeeAmount: txn.successFeeAmount == null ? undefined : Number(txn.successFeeAmount),
     successFeeInvoicedDate: toDate(txn.successFeeInvoicedDate),
     successFeePaidDate: toDate(txn.successFeePaidDate),
+    workflowTemplateId: txn.workflowTemplateId ?? "",
     // Spec-gap: deal status/milestone/financing fields (spec §4.1/§4.3/§4.5/§4.7)
     dealStatus: txn.dealStatus ?? "",
     dealMilestone: txn.dealMilestone ?? "",
@@ -225,7 +227,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
             Export
           </Button>
           {mayEdit && (
-            <TransactionFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} mandates={rel.mandates} partners={rel.partners} serviceProviders={rel.serviceProviders} />
+            <TransactionFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} mandates={rel.mandates} partners={rel.partners} serviceProviders={rel.serviceProviders} workflowTemplates={rel.workflowTemplates} />
           )}
           {mayDelete && (
             <DeleteConfirm mutation={DELETE_TRANSACTION} recordId={txn.id} entityLabel="transaction" redirectTo="/transactions" />
@@ -233,15 +235,11 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Deal journey spine (Task 16) — scoped to this transaction's mandate;
-          renders nothing when the transaction has no linked mandate. */}
-      {journeySteps && (
-        <Card>
-          <CardHeader>
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Deal Journey</h2>
-          </CardHeader>
+      {/* Deal workflow (Aug-2026 feedback F4.1.x) — this transaction's own workflow. */}
+      {workflow && (
+        <Card id="deal-workflow">
           <CardBody>
-            <DealJourney steps={journeySteps} />
+            <DealWorkflowCard workflow={workflow} canEdit={mayEdit} />
           </CardBody>
         </Card>
       )}
@@ -250,12 +248,14 @@ export default async function TransactionDetailPage({ params }: PageProps) {
       <DealSummaryPanel {...dealSummary} />
 
       {/* Documents-by-stage panel (Task 14) */}
-      <DocumentsByStage {...docsByStage} />
+      <div id="documents-by-stage" className="scroll-mt-24">
+        <DocumentsByStage {...docsByStage} />
+      </div>
 
       {/* Restage control + key facts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Key facts */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 scroll-mt-24" id="deal-facts">
           <CardHeader>
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">Deal Facts</h2>
           </CardHeader>
@@ -415,7 +415,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
 
               {/* Success fee */}
               <div>
-                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Success Fee</dt>
+                <dt id="success-fee" className="scroll-mt-24 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Success Fee</dt>
                 <dd className="mt-1 text-sm font-bold text-[var(--text-primary)]">
                   {txn.successFeeAmount != null ? formatMoney(Number(txn.successFeeAmount)) : "—"}
                 </dd>
@@ -485,10 +485,10 @@ export default async function TransactionDetailPage({ params }: PageProps) {
           </CardBody>
         </Card>
 
-        {/* Restage panel */}
-        <Card>
+        {/* Pipeline-status panel (the enum stage; the Deal Workflow above tracks progress) */}
+        <Card id="pipeline-status" className="scroll-mt-24">
           <CardHeader>
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Stage</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Pipeline status</h2>
           </CardHeader>
           <CardBody>
             {mayEdit ? (
@@ -500,7 +500,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                   stageOptions={stageOptions}
                 />
                 <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-                  Changing stage immediately persists to the database and resets the stage timer.
+                  Changing the pipeline status persists immediately and resets the stage timer.
                 </p>
               </>
             ) : (
@@ -514,7 +514,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
       </div>
 
       {/* Engagements */}
-      <Card>
+      <Card id="engagements" className="scroll-mt-24">
         <CardHeader>
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Investor Engagements
@@ -528,7 +528,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
             <p className="text-sm text-[var(--text-tertiary)]">No investor engagements recorded.</p>
           ) : (
             <ul className="divide-y divide-[var(--border-subtle)]">
-              {txn.engagements.map((eng: { id: string; investor: { id: string; name: string }; status: string; notes?: string | null }) => (
+              {txn.engagements.map((eng: { id: string; investor: { id: string; name: string }; status: EngagementStatus; engagementStage: EngagementStage; notes?: string | null }) => (
                 <li key={eng.id} className="py-3 flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <Avatar name={eng.investor.name} size="sm" />
@@ -545,6 +545,17 @@ export default async function TransactionDetailPage({ params }: PageProps) {
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
+                    {/* F6b.2: this investor asked for access and nobody has
+                        granted it yet — the one thing a deal lead scanning this
+                        list needs to notice. */}
+                    {accessState(eng) === "interest_received" && (
+                      <span
+                        data-testid={`awaiting-access-${eng.id}`}
+                        className="rounded-full bg-[var(--t-tag-bg-amber)] px-2 py-0.5 text-xs font-medium text-[var(--t-tag-text-amber)]"
+                      >
+                        Awaiting access grant
+                      </span>
+                    )}
                     <Chip value={eng.status} group="EngagementStatus" />
                     <Link
                       href={`/engagement/${eng.id}`}
@@ -655,7 +666,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
       </Card>
 
       {/* Documents */}
-      <Card>
+      <Card id="documents" className="scroll-mt-24">
         <CardHeader>
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Documents
@@ -715,6 +726,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         }))}
       />
 
+      <div id="activity" className="scroll-mt-24">
       <ActivityTimeline
         activities={(txn.activities ?? []).map((a: { id: string; type: string; subject?: string | null; body?: string | null; occurredAt: Date; channel?: string | null; direction?: string | null; investorId?: string | null; mandateId?: string | null; tasks?: { id: string; title: string; status: string }[] }): ActivityTimelineItem => ({
           id: a.id,
@@ -729,6 +741,7 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         }))}
         taskOptions={{ mandates: rel.mandates, transactions: rel.transactions, investors: rel.investors, clients: rel.clients, users: rel.users }}
       />
+      </div>
     </div>
   );
 }

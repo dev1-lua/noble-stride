@@ -128,6 +128,9 @@ export const LABELS: Record<string, Record<string, string>> = {
     SocialMedia: "Social media (LinkedIn / WhatsApp)",
     InternalBusinessDev: "Internal business development",
     Other: "Other",
+    // §2b G4 — the sources named in the client's step-1 diagram (image32).
+    DeskResearch: "Desk research",
+    ExistingNetwork: "Existing network",
   },
   DocStatus: {
     NotSent: "Not Sent",
@@ -194,6 +197,7 @@ export const LABELS: Record<string, Record<string, string>> = {
     NDA: "NDA", EngagementContract: "Engagement Contract", FeeShareAgreement: "Fee-Share Agreement", Teaser: "Teaser", IM: "Information Memorandum",
     FinancialModel: "Financial Model", Valuation: "Valuation", PitchDeck: "Pitch Deck", AuditedAccounts: "Audited Accounts",
     CR12: "CR12", TermSheet: "Term Sheet", LoanAgreement: "Loan Agreement", SPA: "SPA", SHA: "SHA", BusinessPlan: "Business Plan", Other: "Other",
+    InvestmentCriteria: "Investment Criteria",
   },
   DocumentAccessLevel: { Internal: "Internal", ClientShared: "Client-Shared", InvestorShared: "Investor-Shared", VDR: "VDR" },
   DocumentStatus: { Draft: "Draft", UnderReview: "Under Review", Approved: "Approved", Shared: "Shared", Executed: "Executed" },
@@ -236,6 +240,17 @@ export const LABELS: Record<string, Record<string, string>> = {
   // Task 6: qualification/scoping gap fields
   Priority: { High: "High", Medium: "Medium", Low: "Low" },
   PartnerFeeStatus: { NotDue: "Not Due", Due: "Due", Invoiced: "Invoiced", Paid: "Paid" },
+  // Aug-2026 feedback: configurable deal workflow + advisory classification.
+  WorkflowPhase: { Qualify: "Qualify", Prepare: "Prepare", Execute: "Execute" },
+  DealKind: { Mandate: "Mandate", Transaction: "Transaction", Advisory: "Advisory" },
+  AdvisoryClassification: {
+    Valuation: "Valuation",
+    DueDiligence: "Due Diligence",
+    BusinessPlanPitchDeck: "Business Plan / Pitch Deck",
+    FinancialModel: "Financial Model",
+    AdvisorySupport: "Advisory Support",
+    Other: "Other",
+  },
 };
 
 // ── Stage tooltips (Wave 1 teaching layer) ──────────────────────────────────
@@ -252,7 +267,7 @@ export const STAGE_HELP: Record<"MandateStage" | "TransactionStage" | "AdvisoryS
     PitchPresentation: "We've pitched our services to the prospective client",
     Proposal: "Our engagement proposal is with the client",
     Negotiation: "Terms of the engagement are being negotiated",
-    Signed: "The engagement contract is signed — the mandate is live",
+    Signed: "Signed — engagement agreement executed; from here the opportunity is a deal. Progress through the deal is tracked in the Deal Workflow.",
     Lost: "The prospective client did not proceed with Noblestride",
   },
   TransactionStage: {

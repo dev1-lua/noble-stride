@@ -10,7 +10,9 @@ import { getViewpoint } from "@/server/viewpoint";
 import { LABELS, label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
 import { StatCard } from "@/components/ui/stat-card";
+import { getBoolSetting } from "@/server/services/app-settings";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
+import { OnboardingStepper, type OnboardingStep } from "@/components/portal/onboarding-stepper";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +21,79 @@ export default async function InvestorDashboardPage() {
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
-  const data = await loadInvestorDashboard(prisma, vp.recordId);
+  // image30 feedback: finance KPIs (Committed / Disbursed / Pending) and the
+  // disbursements-by-quarter table are hidden unless an admin turns on
+  // `portal.dashboard.financeTiles` under /settings/app. Values come from CRM
+  // Engagement records — investors never edit them.
+  const [data, showFinance] = await Promise.all([
+    loadInvestorDashboard(prisma, vp.recordId),
+    getBoolSetting("portal.dashboard.financeTiles", false),
+  ]);
+
+  // §2c: when the finance tiles are hidden — the default — the fund's home is
+  // a checklist of what it still owes us, the way Aika's is. Every outstanding
+  // step links to the page that completes it, so onboarding needs no emails.
+  const onboarding: OnboardingStep[] | null = showFinance
+    ? null
+    : await (async (): Promise<OnboardingStep[]> => {
+        const investor = await prisma.investor.findUniqueOrThrow({
+          where: { id: vp.recordId as string },
+          select: {
+            onboardingStatus: true,
+            ndaStatus: true,
+            sectorFocus: true,
+            geographicFocus: true,
+            ticketMin: true,
+          },
+        });
+        const criteria = await prisma.document.count({
+          where: {
+            investorId: vp.recordId as string,
+            type: "InvestmentCriteria",
+            isCurrent: true,
+          },
+        });
+        const profileComplete =
+          investor.sectorFocus.length > 0 && investor.geographicFocus.length > 0 && investor.ticketMin != null;
+        return [
+          {
+            key: "account",
+            label: "Account created",
+            done: true,
+            href: "/portal/investor",
+            hint: "",
+          },
+          {
+            key: "profile",
+            label: "Fund profile",
+            done: profileComplete,
+            href: "/portal/investor/profile",
+            hint: "Sectors, geographies and ticket size — this is what we match opportunities against.",
+          },
+          {
+            key: "nda",
+            label: "NDA signed",
+            done: investor.ndaStatus !== "None",
+            href: "/portal/investor/nda",
+            hint: "Sign the Noblestride NDA, or upload your own, to unlock detailed deal information.",
+          },
+          {
+            key: "criteria",
+            label: "Investment criteria uploaded",
+            done: criteria > 0,
+            href: "/portal/investor/profile#documents",
+            hint: "Optional — a one-page mandate summary helps us shortlist better.",
+          },
+          {
+            key: "approved",
+            label: "Approved by Noblestride",
+            done: investor.onboardingStatus === "Approved",
+            href: "/portal/investor",
+            hint: "We are reviewing your registration. Nothing further is needed from you.",
+            waiting: true,
+          },
+        ];
+      })();
 
   // Render stages in vocab order (loader returns insertion order).
   const stageOrder = Object.keys(LABELS.EngagementStage);
@@ -31,9 +105,13 @@ export default async function InvestorDashboardPage() {
   const kpis = [
     { label: "Matching opportunities", value: String(data.matchingOpportunities), icon: <Target className="h-4 w-4" /> },
     { label: "Deals engaged", value: String(data.engagedDeals), icon: <Handshake className="h-4 w-4" /> },
-    { label: "Committed", value: formatMoney(data.disbursement.committed) || "$0", icon: <Landmark className="h-4 w-4" /> },
-    { label: "Disbursed", value: formatMoney(data.disbursement.disbursed) || "$0", icon: <CheckCircle2 className="h-4 w-4" /> },
-    { label: "Pending", value: formatMoney(data.disbursement.pending) || "$0", icon: <Clock className="h-4 w-4" /> },
+    ...(showFinance
+      ? [
+          { label: "Committed", value: formatMoney(data.disbursement.committed) || "$0", icon: <Landmark className="h-4 w-4" /> },
+          { label: "Disbursed", value: formatMoney(data.disbursement.disbursed) || "$0", icon: <CheckCircle2 className="h-4 w-4" /> },
+          { label: "Pending", value: formatMoney(data.disbursement.pending) || "$0", icon: <Clock className="h-4 w-4" /> },
+        ]
+      : []),
   ];
 
   return (
@@ -47,11 +125,16 @@ export default async function InvestorDashboardPage() {
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div
+        data-testid="portal-kpis"
+        className={showFinance ? "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5" : "grid grid-cols-2 gap-4"}
+      >
         {kpis.map((k) => (
           <StatCard key={k.label} label={k.label} value={k.value} icon={k.icon} />
         ))}
       </div>
+
+      {onboarding && <OnboardingStepper steps={onboarding} />}
 
       {/* Own pipeline by stage */}
       <Card>
@@ -86,8 +169,9 @@ export default async function InvestorDashboardPage() {
         </CardBody>
       </Card>
 
-      {/* Own disbursements by quarter */}
-      <Card>
+      {/* Own disbursements by quarter — finance data, gated with the tiles */}
+      {showFinance && (
+      <Card data-testid="portal-disbursements">
         <CardHeader>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
             Your Disbursements by Quarter
@@ -122,6 +206,7 @@ export default async function InvestorDashboardPage() {
           )}
         </CardBody>
       </Card>
+      )}
     </div>
   );
 }

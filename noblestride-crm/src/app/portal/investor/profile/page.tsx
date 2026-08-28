@@ -12,6 +12,7 @@ import { options } from "@/lib/vocab";
 import { ContactEmailField } from "@/components/portal/contact-email-field";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { PHONE_MESSAGE } from "@/lib/schemas/phone";
+import { PortalDocumentsCard, type PortalDocumentSlot } from "./documents-card";
 import { saveFundProfile } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -93,7 +94,7 @@ function Textarea({
 export default async function FundProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; error?: string; denied?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; denied?: string; notice?: string }>;
 }) {
   const vp = await getViewpoint();
   if (!vp) redirect("/login");
@@ -104,7 +105,7 @@ export default async function FundProfilePage({
   const membership = await getPortalMembership();
   const canEdit = membership?.portalRole === "Editor";
 
-  const { saved, error, denied } = await searchParams;
+  const { saved, error, denied, notice } = await searchParams;
   const investor = await prisma.investor.findUniqueOrThrow({
     where: { id: vp.recordId },
     include: {
@@ -115,6 +116,41 @@ export default async function FundProfilePage({
       },
     },
   });
+  // F3.1/F3.2: the fund's own documents, so it can see what we hold and upload
+  // what we are missing without emailing anyone.
+  const portalDocuments = await prisma.document.findMany({
+    where: {
+      investorId: investor.id,
+      type: { in: ["InvestmentCriteria", "NDA"] },
+      isCurrent: true,
+    },
+    orderBy: { uploadedAt: "desc" },
+    select: { id: true, name: true, type: true, status: true, uploadedAt: true },
+  });
+  const documentSlots: PortalDocumentSlot[] = [
+    {
+      type: "InvestmentCriteria",
+      title: "Investment criteria",
+      description: "A one-page mandate summary helps us match you to the right opportunities.",
+      documents: [],
+    },
+    {
+      type: "NDA",
+      title: "Non-disclosure agreement",
+      description: "Required before any confidential deal information is shared.",
+      documents: [],
+    },
+  ];
+  for (const doc of portalDocuments) {
+    const slot = documentSlots.find((s) => s.type === doc.type);
+    slot?.documents.push({
+      id: doc.id,
+      name: doc.name,
+      status: doc.status,
+      uploadedAt: doc.uploadedAt.toISOString(),
+    });
+  }
+
   const contact = investor.contacts[0] ?? null;
   const contactName = contact ? [contact.firstName, contact.lastName ?? ""].join(" ").trim() : "";
 
@@ -145,6 +181,32 @@ export default async function FundProfilePage({
       {saved && (
         <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] px-5 py-3 text-sm font-medium text-[var(--t-tag-text-emerald)]">
           Profile saved. Your deal matching preferences are now up to date.
+        </div>
+      )}
+
+      {/* F3.6: a login email only moves once the new address proves it receives
+          mail, and one member may never move another member's login address. */}
+      {notice === "email-change-requested" && (
+        <div
+          className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-emerald)] px-5 py-3 text-sm font-medium text-[var(--t-tag-text-emerald)]"
+          data-testid="email-change-requested"
+        >
+          Check your new inbox for a confirmation link. Until you confirm it, keep signing in with
+          your current email.
+        </div>
+      )}
+
+      {error === "email-owned" && (
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-amber)] px-5 py-3 text-sm font-medium text-[var(--t-tag-text-amber)]">
+          That colleague&apos;s sign-in email can only be changed by Noblestride — ask us to update
+          it. Their other details saved normally.
+        </div>
+      )}
+
+      {error === "email-change" && (
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--t-tag-bg-amber)] px-5 py-3 text-sm font-medium text-[var(--t-tag-text-amber)]">
+          We couldn&apos;t start that email change. Use an official company address that isn&apos;t
+          already in use, or ask Noblestride to change it for you.
         </div>
       )}
 
@@ -332,6 +394,8 @@ export default async function FundProfilePage({
         )}
         </fieldset>
       </form>
+
+      <PortalDocumentsCard slots={documentSlots} canEdit={canEdit} />
     </div>
   );
 }

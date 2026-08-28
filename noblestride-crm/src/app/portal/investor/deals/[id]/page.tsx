@@ -7,14 +7,19 @@ import { loadInvestorPortalData, loadOwnEngagementForDeal } from "@/server/visib
 import { getViewpoint } from "@/server/viewpoint";
 import { label } from "@/lib/vocab";
 import { formatMoney } from "@/lib/money";
-import { MILESTONE_ORDER, MILESTONE_LABELS } from "@/lib/milestones";
+import { INVESTOR_VISIBLE_MILESTONES, MILESTONE_LABELS } from "@/lib/milestones";
 import { nextStepLabel } from "@/lib/next-step";
 import { TierBadge } from "@/components/portal/tier-badge";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { getThreadForEngagement } from "@/server/services/conversations";
 import { getPortalMembership, capabilitiesOf } from "@/server/auth/portal-authz";
+import { accessState } from "@/server/domain/access-state";
+import { portalDealStatus, type PortalDealStatus } from "@/server/domain/deal-status";
+import { getBoolSetting } from "@/server/services/app-settings";
 import { CONVERSATION_STATUS_LABELS, CONVERSATION_STATUS_CLASSES } from "@/lib/conversation-status";
 import { expressInterest, requestNextStep, declineDeal, postThreadMessage } from "./actions";
+import { ParticipantsCard } from "./participants-card";
+import { listParticipants, eligibleParticipants } from "@/server/services/engagement-participants";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +35,13 @@ const MSG_DATE_FMT = new Intl.DateTimeFormat("en-GB", {
   hour: "2-digit",
   minute: "2-digit",
 });
+
+// F6b.3 / G3: three states, deliberately coarse — see domain/deal-status.ts.
+const DEAL_STATUS_TONE: Record<PortalDealStatus, string> = {
+  Open: "bg-[var(--t-tag-bg-sky)] text-[var(--t-tag-text-sky)]",
+  "In progress": "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]",
+  Closed: "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",
+};
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return (
@@ -69,14 +81,20 @@ export default async function InvestorDealPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ interest?: string; request?: string; message?: string; denied?: string }>;
+  searchParams: Promise<{
+    interest?: string;
+    request?: string;
+    message?: string;
+    denied?: string;
+    participant?: string;
+  }>;
 }) {
   const vp = await getViewpoint();
   if (!vp) redirect("/login");
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
 
   const { id } = await params;
-  const { interest, request, message: messageSent, denied } = await searchParams;
+  const { interest, request, message: messageSent, denied, participant } = await searchParams;
   const { deals } = await loadInvestorPortalData(prisma, vp.recordId);
   const deal = deals.find((d) => d.id === id);
   if (!deal) notFound();
@@ -97,6 +115,32 @@ export default async function InvestorDealPage({
     : null;
   const thread = engagement ? await getThreadForEngagement(engagement.id) : null;
 
+  // F3.2 / D2: the client expected deal detail to unmask as soon as interest is
+  // registered. SOW §06 forbids that without an NDA, so instead of weakening
+  // the guard we put the NDA one click away from the deal the fund is looking at.
+  const ndaStatus = (
+    await prisma.investor.findUnique({ where: { id: vp.recordId }, select: { ndaStatus: true } })
+  )?.ndaStatus;
+
+  // F6b.3 as amended by G3 (image29): by default the investor gets ONE word for
+  // where the deal stands plus the comment thread. The 14-step checklist is
+  // opt-in per org, because the client's own note was that it "might need to be
+  // removed from the investor".
+  const showMilestones = await getBoolSetting("portal.deal.milestones");
+  const dealStatus: PortalDealStatus | null = journey
+    ? portalDealStatus({
+        dealStatus: journey.dealStatus,
+        transactionStage: journey.transactionStage,
+        engagementStage: journey.own.stage,
+      })
+    : null;
+
+  // F6b.4 (image31): the fund's own roster on this deal. Only meaningful once
+  // they actually have an engagement on it.
+  const [participants, eligible] = engagement
+    ? await Promise.all([listParticipants(engagement.id), eligibleParticipants(engagement.id, vp.recordId)])
+    : [[], []];
+
   const fin = deal.financialsSummary;
 
   return (
@@ -111,6 +155,45 @@ export default async function InvestorDealPage({
         </div>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">{deal.companyProfile.clientName}</p>
       </div>
+
+      {/* F6b.2 (image28): interest has been registered and staff have not yet
+          granted access. Saying so is the honest answer to "why can I not see
+          more?" — and it is also the client's own requested behaviour: detail
+          stays restricted until access is granted. */}
+      {journey && accessState({ engagementStage: journey.own.stage, status: journey.own.status }) === "interest_received" && (
+        <div
+          data-testid="interest-received-banner"
+          className="rounded-md border border-[var(--border-subtle)] bg-[var(--t-tag-bg-amber)] px-4 py-3 text-sm text-[var(--t-tag-text-amber)]"
+        >
+          <span className="font-semibold">Interest received</span> — the Noblestride deal team is reviewing your
+          request. Detailed information unlocks once access is granted and your NDA is in place.
+          {ndaStatus === "None" && (
+            <>
+              {" "}
+              <Link href="/portal/investor/nda" className="font-medium underline">
+                Sign the Noblestride NDA
+              </Link>{" "}
+              to save a step.
+            </>
+          )}
+        </div>
+      )}
+
+      {ndaStatus === "None" && (
+        <div
+          data-testid="nda-prompt"
+          className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-secondary)]"
+        >
+          Detailed information is shared after an NDA is signed.{" "}
+          <Link
+            href="/portal/investor/nda"
+            className="font-medium text-[var(--accent-hover)] hover:underline"
+            data-testid="nda-prompt-link"
+          >
+            Sign the Noblestride NDA →
+          </Link>
+        </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
@@ -246,40 +329,63 @@ export default async function InvestorDealPage({
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-                Your Progress on This Deal
+                Your Position on This Deal
               </h2>
-              <span className="text-xs text-[var(--text-tertiary)]">
-                <span className="font-semibold text-[var(--text-secondary)]">
-                  {journey.own.milestoneKeys.length} of {MILESTONE_ORDER.length}
-                </span>{" "}
-                milestones · {label("EngagementStage", journey.own.stage)}
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  data-testid="deal-status-chip"
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${DEAL_STATUS_TONE[dealStatus ?? "Open"]}`}
+                >
+                  {dealStatus}
+                </span>
+                {showMilestones && (
+                  <span className="text-xs text-[var(--text-tertiary)]">
+                    <span className="font-semibold text-[var(--text-secondary)]">
+                      {journey.own.milestoneKeys.length} of {INVESTOR_VISIBLE_MILESTONES.length}
+                    </span>{" "}
+                    milestones
+                  </span>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardBody>
-            <ol className="divide-y divide-[var(--border-subtle)]">
-              {MILESTONE_ORDER.map((key) => {
-                const done = journey.own.milestoneKeys.includes(key);
-                const date = journey.milestoneDates[key];
-                return (
-                  <li key={key} className="flex items-center gap-3 py-2">
-                    <CheckIcon done={done} />
-                    <span
-                      className={`text-sm ${done ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
-                    >
-                      {MILESTONE_LABELS[key]}
-                    </span>
-                    {done && date && (
-                      <span className="ml-auto text-xs text-[var(--text-tertiary)]">{DATE_FMT.format(date)}</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
+            {showMilestones && (
+              <ol className="divide-y divide-[var(--border-subtle)]" data-testid="deal-milestones">
+                {INVESTOR_VISIBLE_MILESTONES.map((key) => {
+                  const done = journey.own.milestoneKeys.includes(key);
+                  const date = journey.milestoneDates[key];
+                  return (
+                    <li key={key} className="flex items-center gap-3 py-2">
+                      <CheckIcon done={done} />
+                      <span
+                        className={`text-sm ${done ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
+                      >
+                        {MILESTONE_LABELS[key]}
+                      </span>
+                      {done && date && (
+                        <span className="ml-auto text-xs text-[var(--text-tertiary)]">{DATE_FMT.format(date)}</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+            {!showMilestones && (
+              <p className="text-sm text-[var(--text-secondary)]">
+                {dealStatus === "Closed"
+                  ? "This opportunity is closed. Your history stays available here."
+                  : dealStatus === "In progress"
+                    ? "You have access to this deal and the process is under way. Ask the deal team anything in the conversation below."
+                    : "This opportunity is open. Register your interest or ask the deal team a question in the conversation below."}
+              </p>
+            )}
             {(() => {
               const step = nextStepLabel(journey.own.stage);
               return (
-                <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--border-subtle)] pt-4">
+                <div
+                  className={`flex flex-wrap items-center gap-3 ${showMilestones ? "mt-4 border-t border-[var(--border-subtle)] pt-4" : "mt-4"}`}
+                >
                   {request && (
                     <p className="w-full rounded-md bg-[var(--t-tag-bg-emerald)] px-3 py-2 text-sm font-medium text-[var(--t-tag-text-emerald)]">
                       Request sent — the deal team will follow up.
@@ -318,6 +424,16 @@ export default async function InvestorDealPage({
           </CardBody>
         </Card>
       ) : null}
+
+      {engagement && (
+        <ParticipantsCard
+          dealId={deal.id}
+          participants={participants}
+          eligible={eligible}
+          canEdit={caps.canEdit}
+          notice={participant}
+        />
+      )}
 
       {denied && (
         <p className="rounded-md bg-[var(--t-tag-bg-amber)] px-3 py-2 text-sm font-medium text-[var(--t-tag-text-amber)]">

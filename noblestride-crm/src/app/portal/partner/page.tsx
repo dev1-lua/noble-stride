@@ -17,7 +17,7 @@ export default async function PartnerPortalPage() {
   if (vp.role !== "partner" || !vp.recordId) redirect("/dashboard");
 
   const view = await loadPartnerPortalData(prisma, vp.recordId);
-  const { profile, referredDeals } = view;
+  const { profile, referredDeals, referredTransactions } = view;
   const converted = referredDeals.filter((d) => d.converted).length;
   const funnel = referralFunnel(referredDeals);
   const stageRows = referralsByStage(
@@ -239,6 +239,58 @@ export default async function PartnerPortalPage() {
           </tbody>
         </table>
       </section>
+
+      {/* F5.6: transactions credited to this partner directly, rather than via a
+          referred mandate. Its own section because a transaction carries a
+          different stage vocabulary than a mandate — labelling one with the
+          other's stages would be wrong. Hidden entirely when there are none. */}
+      {referredTransactions.length > 0 && (
+        <section
+          className="overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)]"
+          data-testid="partner-referred-transactions"
+        >
+          <div className="border-b border-[var(--border-subtle)] px-4 py-3">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Referred transactions</h2>
+            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+              Live transactions credited to you directly.
+            </p>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                <th className="px-4 py-3">Transaction</th>
+                <th className="px-4 py-3">Client</th>
+                <th className="px-4 py-3">Stage</th>
+                <th className="px-4 py-3">Deal size</th>
+                <th className="px-4 py-3">Fee-sharing</th>
+                <th className="px-4 py-3">Fee status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {referredTransactions.map((d, i) => (
+                <tr key={i} className="border-b border-[var(--border-subtle)] last:border-0">
+                  <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">{d.transactionName}</td>
+                  <td className="px-4 py-2.5 text-[var(--text-secondary)]">{d.clientName ?? "—"}</td>
+                  <td className="px-4 py-2.5">
+                    <Chip value={d.stage} group="TransactionStage" />
+                  </td>
+                  <td className="px-4 py-2.5 text-[var(--text-secondary)]">
+                    {d.dealSize != null ? formatMoney(d.dealSize, d.currency) : "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-[var(--text-secondary)]">{d.feeSharingStatus}</td>
+                  <td className="px-4 py-2.5">
+                    {d.partnerFeeStatusValue ? (
+                      <Chip value={d.partnerFeeStatusValue} group="PartnerFeeStatus" />
+                    ) : (
+                      <span className="text-[var(--text-tertiary)]">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { describe, it, expect } from "vitest";
 import type { EngagementStage, MilestoneKey, PrismaClient } from "@prisma/client";
 import { projectOwnEngagement, type OwnEngagementInput } from "@/server/visibility/project";
 import { loadInvestorPipeline } from "@/server/visibility/load";
-import { STAGE_MILESTONES, MILESTONE_ORDER } from "@/lib/milestones";
+import { STAGE_MILESTONES, MILESTONE_ORDER, INVESTOR_VISIBLE_MILESTONES } from "@/lib/milestones";
 import {
   FORBIDDEN_STRINGS,
   INTERNAL_NOTE,
@@ -28,6 +28,7 @@ function makeOwnEngagement(overrides: Partial<OwnEngagementInput> = {}): OwnEnga
   return {
     transactionId: "txn-1",
     engagementStage: "DueDiligence",
+    status: "Interested",
     lastContact: new Date("2026-06-01T00:00:00Z"),
     termSheetIssued: true,
     termSheetDate: new Date("2026-06-15T00:00:00Z"),
@@ -53,11 +54,15 @@ describe("projectOwnEngagement — allowlisted own-journey fields", () => {
       "lastContact",
       "milestoneKeys",
       "stage",
+      "status",
       "termSheetDate",
       "termSheetIssued",
     ]);
     expect(p.dealId).toBe("txn-1");
     expect(p.stage).toBe("DueDiligence");
+    // F6b.2: the fund's own relationship status rides along, so the portal can
+    // tell "shared with you" apart from "you asked for access".
+    expect(p.status).toBe("Interested");
     expect(p.lastContact).toEqual(new Date("2026-06-01T00:00:00Z"));
     expect(p.termSheetIssued).toBe(true);
     expect(p.termSheetDate).toEqual(new Date("2026-06-15T00:00:00Z"));
@@ -65,7 +70,7 @@ describe("projectOwnEngagement — allowlisted own-journey fields", () => {
 
   it("defaults optional own fields to null/false", () => {
     const p = projectOwnEngagement(
-      { transactionId: "txn-9", engagementStage: "Shared" },
+      { transactionId: "txn-9", engagementStage: "Shared", status: "NotContacted" },
       [],
     );
     expect(p.lastContact).toBeNull();
@@ -237,5 +242,25 @@ describe("loadInvestorPipeline", () => {
     expect(json).not.toContain(String(SECRET_DISBURSED));
     expect(json).not.toContain(String(SECRET_PENDING));
     expect(json).not.toContain(SECRET_OWNER_ID);
+  });
+});
+
+// F6b.3 / image29: "the investor doesn't need to see the success fee status."
+describe("projectOwnEngagement — success fee is never projected", () => {
+  it("drops a recorded SuccessFeePaid milestone", () => {
+    const p = projectOwnEngagement(makeOwnEngagement({ engagementStage: "Invested" }), [
+      { key: "SuccessFeePaid" },
+    ]);
+    expect(p.milestoneKeys).not.toContain("SuccessFeePaid");
+  });
+
+  it("keeps the remaining keys in list order", () => {
+    const p = projectOwnEngagement(makeOwnEngagement({ engagementStage: "Invested" }), [
+      { key: "SuccessFeePaid" },
+      { key: "PreliminaryDD" },
+    ]);
+    const order = INVESTOR_VISIBLE_MILESTONES.filter((k) => p.milestoneKeys.includes(k));
+    expect(p.milestoneKeys).toEqual(order);
+    expect(p.milestoneKeys.length).toBeLessThanOrEqual(INVESTOR_VISIBLE_MILESTONES.length);
   });
 });

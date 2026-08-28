@@ -45,6 +45,8 @@ export const transactionCreateSchema = z.object({
   priority: z.nativeEnum(Priority).nullable().optional(),
   partnerFeeStatus: z.nativeEnum(PartnerFeeStatus).nullable().optional(),
   partnerFeeAmount: z.number().nonnegative().optional(),
+  // Aug-2026 feedback: per-deal workflow template; "" → null clears back to the org default.
+  workflowTemplateId: z.string().trim().nullable().optional(),
 });
 export const transactionUpdateSchema = transactionCreateSchema.partial();
 export type TransactionCreateInput = z.infer<typeof transactionCreateSchema>;

@@ -74,12 +74,12 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
     <Shell>
       <div className="text-center">
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">
-          {peek.investorName} has invited you to their Noblestride workspace
+          {peek.orgName} has invited you to their Noblestride workspace
         </h1>
         <p className="mt-2 text-sm text-[var(--text-tertiary)]">
-          Use this access to stay on top of what&apos;s happening on {peek.investorName}&apos;s end —
-          the deals they&apos;ve been shown, teasers shared with them, and the live status of every
-          ongoing engagement. Verify your email below to set up your access.
+          {peek.kind === "PARTNER"
+            ? `Use this access to follow the deals ${peek.orgName} has referred to Noblestride — where each one stands and what happens next. Verify your email below to set up your access.`
+            : `Use this access to stay on top of what's happening on ${peek.orgName}'s end — the deals they've been shown, teasers shared with them, and the live status of every ongoing engagement. Verify your email below to set up your access.`}
         </p>
       </div>
 
@@ -92,7 +92,9 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
       {!peek.orgApproved ? (
         <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-6 text-center">
           <p className="text-sm font-medium text-[var(--text-secondary)]">
-            Your organization&apos;s registration is still under review.
+            {peek.kind === "PARTNER"
+              ? "This partner account is not currently active."
+              : "Your organization's registration is still under review."}
           </p>
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             You&apos;ll be able to set up access once the Noblestride team approves it — keep this

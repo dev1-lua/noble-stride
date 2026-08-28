@@ -10,6 +10,7 @@ import { requirePortalEditor } from "@/server/auth/portal-authz";
 import { updateInvestor } from "@/server/services/investors";
 import type { InvestorUpdateInput } from "@/lib/schemas/investor";
 import { optionalPhone } from "@/lib/schemas/phone";
+import { requestEmailChangeSelfService, EmailChangeError } from "@/server/auth/change-email";
 
 function str(fd: FormData, key: string): string | undefined {
   const v = fd.get(key);
@@ -64,7 +65,7 @@ export async function saveFundProfile(formData: FormData): Promise<void> {
   if (vp.role !== "investor" || !vp.recordId) redirect("/dashboard");
   const investorId = vp.recordId as string;
   // Seat gate (action points 2026-07 item 3): profile edits are Editors-only.
-  await requirePortalEditor("/portal/investor/profile");
+  const member = await requirePortalEditor("/portal/investor/profile");
 
   // Validate the contact phone BEFORE any write — a bad phone must not leave
   // the §1–§7 fields below partially saved while the error banner implies
@@ -132,15 +133,59 @@ export async function saveFundProfile(formData: FormData): Promise<void> {
     }
 
     if (existing) {
+      // F3.6: the contact email on this form is a LOGIN email when the contact
+      // has an account, so it cannot just be overwritten here.
+      //
+      //  * Own record → self-service change: park the new address and email it a
+      //    confirmation link. Writing it straight through would lock the person
+      //    out of their own portal on a typo.
+      //  * A colleague who can sign in → refuse. One member must not be able to
+      //    move another member's login address; that is an account takeover.
+      //  * A colleague with no account → unchanged behaviour, it is just a
+      //    contact detail.
+      const accountOfExisting = await prisma.authAccount.findUnique({
+        where: { personId: existing.id },
+        select: { id: true, email: true },
+      });
+      const wantsEmailChange =
+        contactEmail !== undefined &&
+        !!contactEmail &&
+        !!accountOfExisting &&
+        contactEmail.trim().toLowerCase() !== accountOfExisting.email;
+
+      if (wantsEmailChange && existing.id !== member.personId) {
+        redirect("/portal/investor/profile?error=email-owned");
+      }
+
       await prisma.person.update({
         where: { id: existing.id },
         data: {
           ...nameData,
-          email: contactEmail !== undefined ? contactEmail || null : undefined,
+          // Held back while a confirmation is pending — confirmEmailChange
+          // writes Person.email itself once the new address is proven.
+          email: wantsEmailChange
+            ? undefined
+            : contactEmail !== undefined
+              ? contactEmail || null
+              : undefined,
           phone: contactPhone !== undefined ? contactPhone || null : undefined,
           isPrimaryContact: true,
         },
       });
+
+      if (wantsEmailChange && accountOfExisting) {
+        try {
+          await requestEmailChangeSelfService(accountOfExisting.id, contactEmail);
+        } catch (err) {
+          if (err instanceof EmailChangeError) {
+            console.error("[profile] email change refused:", err.message);
+            redirect("/portal/investor/profile?error=email-change");
+          }
+          throw err;
+        }
+        revalidatePath("/portal/investor/profile");
+        redirect("/portal/investor/profile?notice=email-change-requested");
+      }
     } else {
       await prisma.person.create({
         data: {

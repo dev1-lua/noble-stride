@@ -4,7 +4,7 @@
 // projects at PRE_INTEREST, so confidential fields are unreachable by construction.
 import { prisma } from "@/lib/db";
 import { CrudError } from "./crud";
-import { investorTier } from "@/server/visibility/tiers";
+import { investorTier, isBlockedClassification, isOnboardingBlocked } from "@/server/visibility/tiers";
 import {
   projectDealForInvestor,
   bandCurrency,
@@ -17,7 +17,7 @@ import { updateInvestor } from "./investors";
 import { updatePerson } from "./persons";
 import { assertCan } from "@/server/rbac/enforce";
 import type { Actor } from "@/graphql/context";
-import type { InteractionType } from "@prisma/client";
+import type { EngagementStage, EngagementStatus, InteractionType } from "@prisma/client";
 
 function personName(p: { firstName: string; lastName: string | null }): string {
   return [p.firstName, p.lastName].filter(Boolean).join(" ");
@@ -596,4 +596,124 @@ export async function rejectProposedChange(id: string, actor: Actor): Promise<{ 
     data: { status: "Rejected", reviewedById: actor.userId ?? null, reviewedAt: new Date() },
   });
   return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// investorEngagedDealsByEmail — WS-C `my_deals`. The client's question on
+// image21 was "will the agent know which deal I am talking about?"; this is the
+// answer: given the address the investor is writing from, the deals they are
+// actually on, with the stage each one has reached.
+//
+// Two rules carried over from expressDealInterestFromAgent, both deliberate:
+//   * the deal is named by its CODENAME, never the real transaction name — the
+//     agent talks over email, which is exactly where masking must hold;
+//   * an unknown address returns [], never an error, so the query cannot be
+//     used as an oracle for "is this person one of your investors?".
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface AgentEngagedDeal {
+  /**
+   * The engagement's own id. The deployed investor agent selects this rather
+   * than dealId, and it is the safer identifier to hand an email agent: it means
+   * nothing outside the CRM and cannot be pasted into a portal URL.
+   */
+  engagementId: string;
+  dealId: string;
+  codename: string;
+  stage: EngagementStage;
+  status: EngagementStatus;
+  /**
+   * The stage as a phrase the agent can drop into a sentence ("currently in due
+   * diligence"), so it never has to translate an internal enum for an investor.
+   */
+  stagePhrase: string;
+  sector: string[];
+  countries: string[];
+  targetRaise: number | null;
+  currency: string;
+  lastContact: Date | null;
+  portalUrl: string;
+}
+
+/**
+ * Enum → plain phrase for the investor agent's replies. Keyed by the enum so a
+ * new stage forces a decision here instead of leaking "IMShared" into an email.
+ */
+const STAGE_PHRASE: Record<EngagementStage, string> = {
+  Shared: "shared with you for an initial look",
+  TeaserSent: "at the teaser stage",
+  NDASigned: "cleared for detailed information now that the NDA is signed",
+  IMShared: "at the information-memorandum stage",
+  VDRAccess: "open for data-room review",
+  Meeting: "in discussion with the deal team",
+  InfoRequest: "in discussion, with an outstanding information request",
+  DueDiligence: "in due diligence",
+  TermSheet: "at the term-sheet stage",
+  Offer: "at the offer stage",
+  Invested: "closed, with your investment completed",
+  Declined: "closed on your side",
+};
+
+export async function investorEngagedDealsByEmail(email: string): Promise<AgentEngagedDeal[]> {
+  const normalised = email?.trim().toLowerCase();
+  if (!normalised) return [];
+
+  const person = await prisma.person.findFirst({
+    where: { email: { equals: normalised, mode: "insensitive" }, investorId: { not: null } },
+    select: { investorId: true },
+  });
+  if (!person?.investorId) return [];
+
+  // The same two gates every other investor read path applies (visibility/load.ts
+  // via investorTier). Without them an investor who is still PendingReview, or
+  // who has been Greylisted or Excluded, could email the agent and get their
+  // engaged deals back — codename, stage, sector, target raise and a portal deep
+  // link. Returns [] rather than an error, for the same reason an unknown address
+  // does: the caller must not be able to tell the two apart.
+  const investor = await prisma.investor.findUnique({
+    where: { id: person.investorId },
+    select: { onboardingStatus: true, engagementClassification: true },
+  });
+  if (!investor) return [];
+  if (isOnboardingBlocked(investor.onboardingStatus)) return [];
+  if (isBlockedClassification(investor.engagementClassification)) return [];
+
+  const engagements = await prisma.engagement.findMany({
+    where: {
+      investorId: person.investorId,
+      // my_deals covers the whole journey, not just the outreach window — the
+      // investor asking "where are my deals?" means every deal they are on.
+      // Declined is theirs too, but they have withdrawn from it.
+      engagementStage: { not: "Declined" },
+      transaction: { stage: { notIn: ["ClosedWon", "ClosedLost"] } },
+    },
+    include: {
+      transaction: {
+        select: {
+          id: true,
+          sector: true,
+          targetRaise: true,
+          currency: true,
+          client: { select: { sector: true, countries: true } },
+        },
+      },
+    },
+    // nulls:"last" in both directions — Postgres puts NULLs first on DESC.
+    orderBy: { lastContact: { sort: "desc", nulls: "last" } },
+  });
+
+  return engagements.map((e) => ({
+    engagementId: e.id,
+    dealId: e.transaction.id,
+    codename: dealCodename(e.transaction.id),
+    stage: e.engagementStage,
+    stagePhrase: STAGE_PHRASE[e.engagementStage],
+    status: e.status,
+    sector: [...new Set([...(e.transaction.sector ?? []), ...(e.transaction.client?.sector ?? [])])],
+    countries: e.transaction.client?.countries ?? [],
+    targetRaise: e.transaction.targetRaise == null ? null : Number(e.transaction.targetRaise),
+    currency: e.transaction.currency ?? "USD",
+    lastContact: e.lastContact,
+    portalUrl: `${appBaseUrl()}/portal/investor/deals/${e.transaction.id}`,
+  }));
 }

@@ -5,11 +5,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getClient } from "@/server/services/clients";
-import { journeyForMandate } from "@/server/services/journey";
+import { resolveDealWorkflow } from "@/server/services/workflow";
 import { relationOptions } from "@/server/services/relation-options";
 import { Chip, Card, CardHeader, CardBody, Avatar, Badge } from "@/components/ui";
-import { DealJourney } from "@/components/crm/deal-journey";
-import type { JourneyStep } from "@/server/domain/journey";
+import { DealWorkflowCard } from "@/components/crm/deal-workflow";
+import type { DealWorkflow } from "@/server/domain/workflow";
 import { formatMoney } from "@/lib/money";
 import { label } from "@/lib/vocab";
 import { ClientFormDrawer } from "@/components/crm/client-form-drawer";
@@ -38,14 +38,14 @@ export default async function ClientDetailPage({ params }: PageProps) {
 
   const rel = await relationOptions();
 
-  // Deal journey (Task 16) — one spine per mandate, most recent first.
+  // Deal workflow (Aug-2026 feedback) — one read-only card per mandate, most recent first.
   const sortedMandates = [...client.mandates].sort(
     (a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0)
   );
-  const journeyEntries = await Promise.all(
-    sortedMandates.map(async (m) => [m.id, await journeyForMandate(m.id)] as const)
+  const workflowEntries = await Promise.all(
+    sortedMandates.map(async (m) => [m.id, await resolveDealWorkflow("Mandate", m.id)] as const)
   );
-  const journeysByMandate = new Map<string, JourneyStep[] | null>(journeyEntries);
+  const workflowsByMandate = new Map<string, DealWorkflow | null>(workflowEntries);
 
   // Decimal → number conversions
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,6 +83,9 @@ export default async function ClientDetailPage({ params }: PageProps) {
     pitchDeckUrl: c.pitchDeckUrl ?? "",
     // Spec-gap: company profile fields (spec §3.1/§3.2)
     codename: c.codename ?? "",
+    projectCodename: c.projectCodename ?? c.codename ?? "",
+    womenLed: c.womenLed ?? impactFlags.includes("WomenLed"),
+    youthLed: c.youthLed ?? impactFlags.includes("YouthLed"),
     status: c.status ?? "",
     registrationNo: c.registrationNo ?? "",
     hqCountry: c.hqCountry ?? "",
@@ -158,7 +161,11 @@ export default async function ClientDetailPage({ params }: PageProps) {
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold text-[var(--text-primary)] leading-tight">{client.name}</h1>
             {c.status && <Chip value={c.status} group="ClientStatus" />}
-            {c.codename && <span className="text-sm text-[var(--text-tertiary)]">&ldquo;{c.codename}&rdquo;</span>}
+            {(c.projectCodename ?? c.codename) && (
+              <span className="text-sm text-[var(--text-tertiary)]" data-testid="client-codename">
+                &ldquo;{c.projectCodename ?? c.codename}&rdquo;
+              </span>
+            )}
             {sectors.map((s: string) => (
               <Chip key={s} value={s} group="Sector" />
             ))}
@@ -511,13 +518,13 @@ export default async function ClientDetailPage({ params }: PageProps) {
         parent={{ clientId: client.id }}
       />
 
-      {/* Deal journey (Task 16) — one spine per mandate; the most recent
+      {/* Deal workflow — one read-only card per mandate; the most recent
           mandate expanded, the rest behind a <details> collapse. Renders
-          nothing when the client has no mandates. */}
+          nothing when the client has no mandates. Edit from the mandate page. */}
       {sortedMandates.length > 0 && (
         <Card>
           <CardHeader>
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Deal Journey</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Deal workflow</h2>
           </CardHeader>
           <CardBody className="space-y-4">
             <div>
@@ -528,7 +535,9 @@ export default async function ClientDetailPage({ params }: PageProps) {
                 {sortedMandates[0].name}
               </Link>
               <div className="mt-3">
-                <DealJourney steps={journeysByMandate.get(sortedMandates[0].id)} />
+                {workflowsByMandate.get(sortedMandates[0].id) && (
+                  <DealWorkflowCard workflow={workflowsByMandate.get(sortedMandates[0].id)!} canEdit={false} />
+                )}
               </div>
             </div>
 
@@ -547,7 +556,9 @@ export default async function ClientDetailPage({ params }: PageProps) {
                         {m.name}
                       </Link>
                       <div className="mt-3">
-                        <DealJourney steps={journeysByMandate.get(m.id)} />
+                        {workflowsByMandate.get(m.id) && (
+                          <DealWorkflowCard workflow={workflowsByMandate.get(m.id)!} canEdit={false} />
+                        )}
                       </div>
                     </div>
                   ))}

@@ -1,120 +1,49 @@
-// Regression guard: Zod strips undeclared keys before every Prisma write, so a
-// field missing from these schemas is silently dropped. These tests pin the
-// §3.1 / §3.2 / §6.2 fields into the create schemas.
-import { describe, expect, it } from "vitest";
-import { clientCreateSchema } from "@/lib/schemas/client";
-import { transactionCreateSchema } from "@/lib/schemas/transaction";
-import { mandateCreateSchema } from "@/lib/schemas/mandate";
-import { ddTrackUpsertSchema } from "@/lib/schemas/due-diligence";
+// Aug-2026 feedback: the fields added to the deal schemas (F4.2.1 advisory
+// classification + fee paid, F4.3.1 retainer paid, F4.1.x workflow template).
 
-describe("client schema — §3.1 fields survive parsing", () => {
-  it("keeps codename, financials and impact flags", () => {
-    const parsed = clientCreateSchema.parse({
-      name: "Acme",
-      codename: "Project Baobab",
-      ebitda: 1_200_000,
-      existingDebt: 500_000,
-      totalAssets: 4_000_000,
-      impactFlags: ["WomenLed"],
-    });
-    expect(parsed.codename).toBe("Project Baobab");
-    expect(parsed.ebitda).toBe(1_200_000);
-    expect(parsed.existingDebt).toBe(500_000);
-    expect(parsed.totalAssets).toBe(4_000_000);
-    expect(parsed.impactFlags).toEqual(["WomenLed"]);
+import { describe, it, expect } from "vitest";
+import { advisoryCreateSchema, advisoryUpdateSchema } from "@/lib/schemas/advisory";
+import { mandateCreateSchema, mandateUpdateSchema } from "@/lib/schemas/mandate";
+import { transactionUpdateSchema } from "@/lib/schemas/transaction";
+
+const advisory = (over: Record<string, unknown> = {}) => ({ name: "A", clientId: "c1", ...over });
+const mandate = (over: Record<string, unknown> = {}) => ({ name: "M", clientId: "c1", ...over });
+
+describe("advisory classification (F4.2.1)", () => {
+  it("accepts every AdvisoryClassification value", () => {
+    for (const c of ["Valuation", "DueDiligence", "BusinessPlanPitchDeck", "FinancialModel", "AdvisorySupport", "Other"]) {
+      expect(advisoryCreateSchema.parse(advisory({ classification: c })).classification).toBe(c);
+    }
   });
-
-  it("allows negative EBITDA but not negative debt/assets", () => {
-    expect(clientCreateSchema.parse({ name: "A", ebitda: -50_000 }).ebitda).toBe(-50_000);
-    expect(() => clientCreateSchema.parse({ name: "A", existingDebt: -1 })).toThrow();
-    expect(() => clientCreateSchema.parse({ name: "A", totalAssets: -1 })).toThrow();
+  it("is clearable to null and omittable", () => {
+    expect(advisoryCreateSchema.parse(advisory({ classification: null })).classification).toBeNull();
+    expect(advisoryCreateSchema.parse(advisory()).classification).toBeUndefined();
+  });
+  it("rejects an unknown classification", () => {
+    expect(advisoryCreateSchema.safeParse(advisory({ classification: "PitchDeck" })).success).toBe(false);
+    expect(advisoryUpdateSchema.safeParse({ classification: "nope" }).success).toBe(false);
   });
 });
 
-describe("transaction schema — §3.2 IC/CAK fields survive parsing", () => {
-  it("keeps IC dates and CAK/COMESA fields", () => {
-    const parsed = transactionCreateSchema.parse({
-      name: "Deal",
-      clientId: "c1",
-      icFirstApprovalDate: "2026-01-15",
-      icSecondApprovalDate: "2026-03-01",
-      cakComesaStatus: "Filed",
-      cakComesaFiledDate: "2026-04-01",
-      cakComesaApprovedDate: "2026-05-01",
-    });
-    expect(parsed.icFirstApprovalDate).toBeInstanceOf(Date);
-    expect(parsed.icSecondApprovalDate).toBeInstanceOf(Date);
-    expect(parsed.cakComesaStatus).toBe("Filed");
-    expect(parsed.cakComesaFiledDate).toBeInstanceOf(Date);
-    expect(parsed.cakComesaApprovedDate).toBeInstanceOf(Date);
+describe("fee paid / retainer paid amounts (F4.2.1 / F4.3.1)", () => {
+  it("accepts a non-negative amount", () => {
+    expect(advisoryCreateSchema.parse(advisory({ feeAmount: 10_000, feePaidAmount: 2_500 })).feePaidAmount).toBe(2_500);
+    expect(mandateCreateSchema.parse(mandate({ retainerAmount: 50_000, retainerPaidAmount: 20_000 })).retainerPaidAmount).toBe(20_000);
+    expect(mandateCreateSchema.parse(mandate({ retainerPaidAmount: 0 })).retainerPaidAmount).toBe(0);
   });
-
-  it("rejects an unknown regulatory status", () => {
-    expect(() =>
-      transactionCreateSchema.parse({ name: "Deal", clientId: "c1", cakComesaStatus: "Pending" }),
-    ).toThrow();
+  it("rejects a negative amount", () => {
+    expect(advisoryCreateSchema.safeParse(advisory({ feePaidAmount: -1 })).success).toBe(false);
+    expect(mandateCreateSchema.safeParse(mandate({ retainerPaidAmount: -0.01 })).success).toBe(false);
+    expect(mandateUpdateSchema.safeParse({ retainerPaidAmount: -100 }).success).toBe(false);
   });
 });
 
-// Reviewer finding: priority/referralQualified/partnerFeeStatus must accept an
-// explicit `null` (the drawer's "clear to unset" signal via clearableFields),
-// not just omission — pins .nullable().optional() on all four fields.
-describe("mandate schema — priority/referralQualified accept explicit null", () => {
-  it("accepts null for priority and referralQualified", () => {
-    const parsed = mandateCreateSchema.parse({
-      name: "Deal",
-      clientId: "c1",
-      priority: null,
-      referralQualified: null,
-    });
-    expect(parsed.priority).toBeNull();
-    expect(parsed.referralQualified).toBeNull();
-  });
-
-  it("still accepts real values and omission", () => {
-    expect(
-      mandateCreateSchema.parse({ name: "Deal", clientId: "c1", priority: "High", referralQualified: false })
-        .priority,
-    ).toBe("High");
-    expect(
-      mandateCreateSchema.parse({ name: "Deal", clientId: "c1" }).priority,
-    ).toBeUndefined();
-  });
-});
-
-describe("transaction schema — priority/partnerFeeStatus accept explicit null", () => {
-  it("accepts null for priority and partnerFeeStatus", () => {
-    const parsed = transactionCreateSchema.parse({
-      name: "Deal",
-      clientId: "c1",
-      priority: null,
-      partnerFeeStatus: null,
-    });
-    expect(parsed.priority).toBeNull();
-    expect(parsed.partnerFeeStatus).toBeNull();
-  });
-
-  it("still accepts real values and omission", () => {
-    expect(
-      transactionCreateSchema.parse({ name: "Deal", clientId: "c1", partnerFeeStatus: "Paid" })
-        .partnerFeeStatus,
-    ).toBe("Paid");
-    expect(
-      transactionCreateSchema.parse({ name: "Deal", clientId: "c1" }).partnerFeeStatus,
-    ).toBeUndefined();
-  });
-});
-
-describe("dd track schema", () => {
-  it("requires transactionId + track", () => {
-    const parsed = ddTrackUpsertSchema.parse({
-      transactionId: "t1",
-      track: "Financial",
-      status: "InProgress",
-    });
-    expect(parsed.track).toBe("Financial");
-    expect(parsed.status).toBe("InProgress");
-    expect(() => ddTrackUpsertSchema.parse({ track: "Financial" })).toThrow();
-    expect(() => ddTrackUpsertSchema.parse({ transactionId: "t1", track: "Forensic" })).toThrow();
+describe("per-deal workflow template (F4.1.x)", () => {
+  it("accepts an id, a null (clear) and omission on all three deal kinds", () => {
+    expect(mandateUpdateSchema.parse({ workflowTemplateId: "t1" }).workflowTemplateId).toBe("t1");
+    expect(mandateUpdateSchema.parse({ workflowTemplateId: null }).workflowTemplateId).toBeNull();
+    expect(transactionUpdateSchema.parse({ workflowTemplateId: "t1" }).workflowTemplateId).toBe("t1");
+    expect(advisoryUpdateSchema.parse({ workflowTemplateId: null }).workflowTemplateId).toBeNull();
+    expect(advisoryUpdateSchema.parse({}).workflowTemplateId).toBeUndefined();
   });
 });

@@ -176,6 +176,68 @@ export const DOCUMENT_ARG: Partial<Record<RecordType, string>> = {
   transaction: "transactionId",
 };
 
+// ─── summarize_investor_document (Task 5) ───────────────────────────────────
+// A whitelisted, extraction-only surface: documentAgentText is the ONLY
+// place crmAgent ever reads a document's file contents (DOCUMENTS_QUERY
+// above stays metadata-only). List an investor's own documents to resolve
+// a named or "latest" pick, then fetch that one document's extracted text.
+
+// createdSource is selected and filtered client-side (kept to "API" only) so
+// this tool can only ever pick a document the investor uploaded through
+// their own portal — never a staff- or agent-filed document on the same
+// investor record (C1/I1).
+export const LIST_INVESTOR_DOCUMENTS = /* GraphQL */ `
+  query AgentInvestorDocuments($investorId: ID!) {
+    documents(investorId: $investorId) {
+      id
+      name
+      type
+      uploadedAt
+      isCurrent
+      createdSource
+    }
+  }
+`;
+
+export const DOCUMENT_AGENT_TEXT = /* GraphQL */ `
+  query AgentDocumentText($id: ID!) {
+    documentAgentText(id: $id) {
+      name
+      mimeType
+      text
+      truncated
+    }
+  }
+`;
+
+/** Stated CRM criteria for an investor — the fields a document is checked against. */
+export const INVESTOR_CRITERIA = /* GraphQL */ `
+  query AgentInvestorCriteria($id: ID!) {
+    investor(id: $id) {
+      name
+      sectorFocus
+      geographicFocus
+      instruments
+      investmentStages
+      ticketMin
+      ticketMax
+      currency
+      ticketBands {
+        min
+        max
+        currency
+        note
+      }
+      minRevenue
+      minEbitda
+      minLoanBook
+      targetIrr
+      esgFocus
+      investmentMandate
+    }
+  }
+`;
+
 // ─── crmAgent write surface (Task 9/10) ─────────────────────────────────────
 // Two-phase prepare/confirm write mutations. Never expose raw record fields
 // back to the model beyond the operator-facing preview/summary text.
@@ -209,6 +271,24 @@ export const AGENT_CANCEL_WRITE = /* GraphQL */ `
   }
 `;
 
+/** Per-deal investor interest snapshot (Task 2 `list_deal_interest`): every
+ * engagement's status/stage/milestones on one transaction. Deliberately does
+ * NOT select `activities` (unbounded relation) — this tool only needs status,
+ * freshness, and milestone facts, all already on the Engagement type. */
+export const AGENT_DEAL_INTEREST = /* GraphQL */ `
+  query AgentDealInterest($id: ID!) {
+    transaction(id: $id) {
+      id name stage
+      engagements {
+        status engagementStage interestLevel lastContact updatedAt
+        investor { id name investorType }
+        conversation { status lastMessageAt }
+        milestones { key completedAt }
+      }
+    }
+  }
+`;
+
 // Investor roster for classification lookups (e.g. greylisted/excluded). The
 // server filter has no engagementClassification arg, so the tool fetches a
 // bounded page and filters client-side. pageSize is generous because the
@@ -221,5 +301,29 @@ export const LIST_INVESTORS = /* GraphQL */ `
       engagementClassification
       investorType
     }
+  }
+`;
+
+// A3 / F5.3 (image20): org-level counts behind crm_overview. Copied
+// field-for-field from the query the tracker already runs successfully
+// (investor-tracker-agent DASHBOARD_SNAPSHOT), minus the trend, plus
+// investorsCount.
+//
+// PipelineOverview exposes ONLY the two stage arrays — its service also computes
+// mandatesActive/transactionsActive, but those are not on the GraphQL type — so
+// the active subset comes from dashboardStats instead.
+export const CRM_OVERVIEW = /* GraphQL */ `
+  query AgentCrmOverview {
+    dashboardStats {
+      activeMandates { value delta }
+      activeTransactions { value delta }
+      investorsEngagedQtr { value delta }
+      capitalRaisedYtd { value delta }
+    }
+    pipelineOverview {
+      mandatesByStage { stage label count }
+      transactionsByStage { stage label count }
+    }
+    investorsCount
   }
 `;

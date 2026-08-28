@@ -1,4 +1,4 @@
-import { LuaJob, Data, Channels } from "lua-cli";
+import { LuaJob, Data, Channels, type LuaQuery } from "lua-cli";
 import { crmClientFromEnv } from "../lib/crm-client";
 import { scanReferredDeals, type ReferredDeal } from "../lib/referral-scan";
 import { weekOf } from "../lib/format";
@@ -47,7 +47,10 @@ export interface StageWatchDeps {
   scan: () => Promise<ReferredDeal[]>;
   data: {
     create: (collection: string, data: Record<string, unknown>, searchText?: string) => Promise<unknown>;
-    get: (collection: string, filter?: Record<string, unknown>, page?: number, limit?: number) => Promise<{ data: SnapshotEntry[] }>;
+    // `LuaQuery` rather than Record<string, unknown>: lua-cli 3.27 narrowed the
+    // SDK's own filter type, and a wider annotation here no longer accepts
+    // Data.get. Tests pass a plain object literal, which still satisfies it.
+    get: (collection: string, filter?: LuaQuery, page?: number, limit?: number) => Promise<{ data: SnapshotEntry[] }>;
     update: (collection: string, entryId: string, data: Record<string, unknown>) => Promise<unknown>;
   };
   send: (userId: string, text: string) => Promise<unknown>;

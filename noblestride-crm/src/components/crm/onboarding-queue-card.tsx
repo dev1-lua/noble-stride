@@ -2,7 +2,7 @@
 // onboarding review. Inline Approve/Decline/Greylist per row (reuses
 // OnboardingActions) + a "View list" link to the shared review-queue page.
 import Link from "next/link";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Paperclip } from "lucide-react";
 import { OnboardingActions } from "@/components/crm/onboarding-actions";
 
 export interface PendingOnboardingDTO {
@@ -11,6 +11,8 @@ export interface PendingOnboardingDTO {
   registeredAt: string | null;
   contactName: string | null;
   contactEmail: string | null;
+  /** F3.1: the fund attached its investment criteria at registration. */
+  hasCriteria?: boolean;
 }
 
 export function OnboardingQueueCard({ investors }: { investors: PendingOnboardingDTO[] }) {
@@ -46,9 +48,21 @@ export function OnboardingQueueCard({ investors }: { investors: PendingOnboardin
           {investors.map((inv) => (
             <li key={inv.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <div className="min-w-0">
-                <Link href={`/investors/${inv.id}`} className="text-sm font-medium text-zinc-900 hover:text-accent">
-                  {inv.name}
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link href={`/investors/${inv.id}`} className="text-sm font-medium text-zinc-900 hover:text-accent">
+                    {inv.name}
+                  </Link>
+                  {inv.hasCriteria && (
+                    <Link
+                      href={`/investors/${inv.id}#documents`}
+                      data-testid="criteria-attached"
+                      className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 hover:bg-emerald-200"
+                    >
+                      <Paperclip className="h-3 w-3" />
+                      Criteria attached
+                    </Link>
+                  )}
+                </div>
                 <p className="truncate text-xs text-zinc-500">
                   {inv.contactName ? `${inv.contactName} · ` : ""}
                   {inv.contactEmail ?? "no contact email"}

@@ -1,0 +1,1506 @@
+WS-C sandbox QC — Thu Aug 27 22:41:34 IST 2026
+passphrase: noblestride2026
+staff email: evans@noblestride.capital
+
+===== 1. crm_agent (F5.1, F5.3, image19/20, A3, A4) =====
+
+--- [crm_agent/wsc-1787850694-crm] > log out
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 23 primitives (1 agent, 3 skills, 16 tools, 1 job, 1 preprocessor, 1 postprocessor) in 592ms
+🔄 Pushing skills to sandbox...✅ Pushed 3 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-crm
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-crm
+──────────────────────────────────────────────────
+
+This assistant is for Noblestride staff only.
+Reply with the team passphrase and your CRM login email in one message, for example: openSesame you@noblestride.capital
+Reply "help" if you would like to know what this assistant does and where the passphrase comes from.🚫 Message blocked: This assistant is for Noblestride staff only.
+Reply with the team passphrase and your CRM login email in one message, for example: openSesame you@noblestride.capital
+Reply "help" if you would like to know what this assistant does and where the passphrase comes from.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [crm_agent/wsc-1787850694-crm] > how does this work
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 23 primitives (1 agent, 3 skills, 16 tools, 1 job, 1 preprocessor, 1 postprocessor) in 596ms
+🔄 Pushing skills to sandbox...✅ Pushed 3 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-crm
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-crm
+──────────────────────────────────────────────────
+
+I am the Noblestride CRM assistant, an internal desk for the deal team.
+I can brief you on any client, investor, mandate, transaction, engagement or partner, read the pipeline as a whole, and propose CRM updates that you confirm before anything is written.
+Access is limited to Noblestride staff, so there is one verification step before I can answer.
+
+Once you are verified you can ask things like:
+1. What is the main function of this CRM?
+2. How many opportunities are in the pipeline?
+3. Summarize the Busoga transaction.
+
+A team passphrase is one shared secret that Noblestride sets for this assistant. It is not your CRM login password, and I never send it to you.
+A Noblestride admin sets it on the agent as the environment variable TEAM_PASSPHRASE and shares it with the deal team, so ask an admin or a colleague if you do not have it yet.
+To verify, send the passphrase and your CRM login email in one message, for example: openSesame you@noblestride.capital
+Say "log out" at any time to end your staff session.🚫 Message blocked: I am the Noblestride CRM assistant, an internal desk for the deal team.
+I can brief you on any client, investor, mandate, transaction, engagement or partner, read the pipeline as a whole, and propose CRM updates that you confirm before anything is written.
+Access is limited to Noblestride staff, so there is one verification step before I can answer.
+
+Once you are verified you can ask things like:
+1. What is the main function of this CRM?
+2. How many opportunities are in the pipeline?
+3. Summarize the Busoga transaction.
+
+A team passphrase is one shared secret that Noblestride sets for this assistant. It is not your CRM login password, and I never send it to you.
+A Noblestride admin sets it on the agent as the environment variable TEAM_PASSPHRASE and shares it with the deal team, so ask an admin or a colleague if you do not have it yet.
+To verify, send the passphrase and your CRM login email in one message, for example: openSesame you@noblestride.capital
+Say "log out" at any time to end your staff session.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [crm_agent/wsc-1787850694-crm] > whats the main function of this CRM evans@noblestride.capital
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 23 primitives (1 agent, 3 skills, 16 tools, 1 job, 1 preprocessor, 1 postprocessor) in 593ms
+🔄 Pushing skills to sandbox...✅ Pushed 3 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-crm
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-crm
+──────────────────────────────────────────────────
+
+I am the Noblestride CRM assistant, an internal desk for the deal team.
+I can brief you on any client, investor, mandate, transaction, engagement or partner, read the pipeline as a whole, and propose CRM updates that you confirm before anything is written.
+Access is limited to Noblestride staff, so there is one verification step before I can answer.
+
+Once you are verified you can ask things like:
+1. What is the main function of this CRM?
+2. How many opportunities are in the pipeline?
+3. Summarize the Busoga transaction.
+
+A team passphrase is one shared secret that Noblestride sets for this assistant. It is not your CRM login password, and I never send it to you.
+A Noblestride admin sets it on the agent as the environment variable TEAM_PASSPHRASE and shares it with the deal team, so ask an admin or a colleague if you do not have it yet.
+To verify, send the passphrase and your CRM login email in one message, for example: openSesame you@noblestride.capital
+Say "log out" at any time to end your staff session.🚫 Message blocked: I am the Noblestride CRM assistant, an internal desk for the deal team.
+I can brief you on any client, investor, mandate, transaction, engagement or partner, read the pipeline as a whole, and propose CRM updates that you confirm before anything is written.
+Access is limited to Noblestride staff, so there is one verification step before I can answer.
+
+Once you are verified you can ask things like:
+1. What is the main function of this CRM?
+2. How many opportunities are in the pipeline?
+3. Summarize the Busoga transaction.
+
+A team passphrase is one shared secret that Noblestride sets for this assistant. It is not your CRM login password, and I never send it to you.
+A Noblestride admin sets it on the agent as the environment variable TEAM_PASSPHRASE and shares it with the deal team, so ask an admin or a colleague if you do not have it yet.
+To verify, send the passphrase and your CRM login email in one message, for example: openSesame you@noblestride.capital
+Say "log out" at any time to end your staff session.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [crm_agent/wsc-1787850694-crm] > evans@noblestride.capital
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 23 primitives (1 agent, 3 skills, 16 tools, 1 job, 1 preprocessor, 1 postprocessor) in 614ms
+🔄 Pushing skills to sandbox...✅ Pushed 3 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-crm
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-crm
+──────────────────────────────────────────────────
+
+Thanks. I have your CRM email as evans@noblestride.capital, but I still need the team passphrase before I can answer.
+The passphrase is a shared secret a Noblestride admin sets for this assistant, and it is separate from your CRM login. Ask an admin or a colleague if you do not have it.
+Send it together with your email in one message, for example: openSesame evans@noblestride.capital
+Reply "help" if you would like the full explanation first.🚫 Message blocked: Thanks. I have your CRM email as evans@noblestride.capital, but I still need the team passphrase before I can answer.
+The passphrase is a shared secret a Noblestride admin sets for this assistant, and it is separate from your CRM login. Ask an admin or a colleague if you do not have it.
+Send it together with your email in one message, for example: openSesame evans@noblestride.capital
+Reply "help" if you would like the full explanation first.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [crm_agent/wsc-1787850694-crm] > noblestride2026 evans@noblestride.capital
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 23 primitives (1 agent, 3 skills, 16 tools, 1 job, 1 preprocessor, 1 postprocessor) in 598ms
+🔄 Pushing skills to sandbox...✅ Pushed 3 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-crm
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-crm
+──────────────────────────────────────────────────
+
+Verified. Welcome, Evans.
+Ask me for a briefing on any record by name, and I will pull its status, recent activity, open items and risks.
+Ask about the pipeline as a whole for totals, stalls and concentration, or tell me what to change and I will propose it first and write it only after your yes.
+
+Try one of these:
+1. What is the main function of this CRM?
+2. How many opportunities are in the pipeline?
+3. Which investors fit the Busoga transaction?🚫 Message blocked: Verified. Welcome, Evans.
+Ask me for a briefing on any record by name, and I will pull its status, recent activity, open items and risks.
+Ask about the pipeline as a whole for totals, stalls and concentration, or tell me what to change and I will propose it first and write it only after your yes.
+
+Try one of these:
+1. What is the main function of this CRM?
+2. How many opportunities are in the pipeline?
+3. Which investors fit the Busoga transaction?
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [crm_agent/wsc-1787850694-crm] > how many opportunities are in the pipeline
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 23 primitives (1 agent, 3 skills, 16 tools, 1 job, 1 preprocessor, 1 postprocessor) in 593ms
+🔄 Pushing skills to sandbox...✅ Pushed 3 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-crm
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-crm
+──────────────────────────────────────────────────
+
+Welcome, Shaurya. I'm the Noblestride CRM assistant, here to help you look up, analyse, and update deal records.
+
+There are **128 opportunities** in the pipeline: 113 mandates and 15 transactions (an opportunity is a Mandate or a Transaction; advisory assignments are tracked separately and not counted here).
+
+**Biggest stages (mandates):**
+- New Lead: 41
+- Negotiation: 24
+- Qualification: 17
+- Signed: 15
+- Proposal: 13
+
+For context: 97 investors are on file and USD 43,000,000 has been raised year to date. Full dashboard: https://noble-stride.vercel.app/dashboard
+
+- Ask for any record by name, like "summarize Acme Corp," and I'll bring back the full picture.
+- Ask an analysis question, like "what's stalling my pipeline?" and I'll flag risks and next steps.
+- Tell me what to change, like "move Acme to Negotiation," and I'll confirm before writing anything.
+
+
+--- [crm_agent/wsc-1787850694-crm] > what is the main function of this CRM
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 23 primitives (1 agent, 3 skills, 16 tools, 1 job, 1 preprocessor, 1 postprocessor) in 598ms
+🔄 Pushing skills to sandbox...✅ Pushed 3 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-crm
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-crm
+──────────────────────────────────────────────────
+
+This CRM's main function is Noblestride's single record for winning clients, running their fundraises, and managing investor relationships.
+
+Concretely, that breaks into three pieces:
+- **Mandates**: winning and setting up clients to advise
+- **Transactions**: running each client's capital raise
+- **Investor relationships**: tracking engagement across 97 investors on file, with 5 engaged this quarter
+
+If you want, I can pull the full pipeline breakdown or dig into any specific record.
+
+
+--- [crm_agent/wsc-1787850694-crm] > summarize the client A G Energies
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 23 primitives (1 agent, 3 skills, 16 tools, 1 job, 1 preprocessor, 1 postprocessor) in 591ms
+🔄 Pushing skills to sandbox...✅ Pushed 3 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-crm
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-crm
+──────────────────────────────────────────────────
+
+**A G Energies**
+
+**Status:** Prospect, Renewable Energy sector, East Africa
+
+**Open records:**
+- Transaction "bbbbbbbb" — Deal Preparation stage, target raise USD 909,090,909,090
+- Mandate "A G Energies – Advisory Mandate" — NewLead stage
+
+**Recent activity:** Mandate entered NewLead on Aug 4, 2026. Transaction entered Deal Preparation on Jun 23, 2026 (same day the client record was created).
+
+**Risks/stalls:** No PEP exposure, not government-owned. No explicit next steps recorded yet on either the mandate or transaction.
+
+Link: https://noble-stride.vercel.app/clients/cmqqcr3a4008642ctp30q3n16
+
+📝 [Post-processed response]:
+**A G Energies**
+
+**Status:** Prospect, Renewable Energy sector, East Africa
+
+**Open records:**
+- Transaction "bbbbbbbb", Deal Preparation stage, target raise USD 909,090,909,090
+- Mandate "A G Energies, Advisory Mandate", NewLead stage
+
+**Recent activity:** Mandate entered NewLead on Aug 4, 2026. Transaction entered Deal Preparation on Jun 23, 2026 (same day the client record was created).
+
+**Risks/stalls:** No PEP exposure, not government-owned. No explicit next steps recorded yet on either the mandate or transaction.
+
+Link: https://noble-stride.vercel.app/clients/cmqqcr3a4008642ctp30q3n16
+
+
+--- [crm_agent/wsc-1787850694-crm] > recent news on Equity Group Holdings
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 23 primitives (1 agent, 3 skills, 16 tools, 1 job, 1 preprocessor, 1 postprocessor) in 588ms
+🔄 Pushing skills to sandbox...✅ Pushed 3 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-crm
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-crm
+──────────────────────────────────────────────────
+
+**Public web information, not from the CRM:**
+
+Equity Group Holdings (EGHL), Kenya's largest financial services conglomerate in East/Central Africa, has posted strong recent results:
+
+- In H1 2026, the group reported a 32% jump in Profit After Tax to KSh45.5 billion, with pre-tax profit up 39% to KSh57.8 billion, and its balance sheet grew 20% to KSh2.16 trillion.
+- Asset quality improved, with the non-performing loan ratio declining to 9.5% in H1 2026 from 13.7% a year earlier.
+- Shareholders' funds rose 27% to KSh350 billion, and the group chose not to pay an interim H1 2026 dividend, signaling it's retaining capital for expansion.
+- Headcount grew to 14,265 after adding 410 employees in Q2 2026, mostly from DRC expansion.
+
+Sources: wikipedia.org, mystocks.co.ke, marketscreener.com, equitygroupholdings.com, capitalfm.africa (and a few others returned).
+
+Let me know if you'd also like me to check whether Equity Group Holdings has any CRM record on file.
+
+
+--- [crm_agent/wsc-1787850694-crm] > research Project Ivory Oryx
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 23 primitives (1 agent, 3 skills, 16 tools, 1 job, 1 preprocessor, 1 postprocessor) in 596ms
+🔄 Pushing skills to sandbox...✅ Pushed 3 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-crm
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-crm
+──────────────────────────────────────────────────
+
+I can't run a public web search on "Project Ivory Oryx" directly, since that's a deal codename, not a public company name, and codenames could reveal confidential deal info if searched externally.
+
+If you can tell me the actual public company name behind that codename, I'm happy to pull public background/news on it. Alternatively, I can look up the CRM record itself (mandate/transaction/client) if you want an internal summary — just say the word.
+
+📝 [Post-processed response]:
+I can't run a public web search on "Project Ivory Oryx" directly, since that's a deal codename, not a public company name, and codenames could reveal confidential deal info if searched externally.
+
+If you can tell me the actual public company name behind that codename, I'm happy to pull public background/news on it. Alternatively, I can look up the CRM record itself (mandate/transaction/client) if you want an internal summary, just say the word.
+
+
+--- [crm_agent/wsc-1787850694-crm] > log out
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 23 primitives (1 agent, 3 skills, 16 tools, 1 job, 1 preprocessor, 1 postprocessor) in 596ms
+🔄 Pushing skills to sandbox...✅ Pushed 3 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-crm
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-crm
+──────────────────────────────────────────────────
+
+You have been signed out of staff mode. To use the assistant again, send the team passphrase and your CRM login email together in one message.🚫 Message blocked: You have been signed out of staff mode. To use the assistant again, send the team passphrase and your CRM login email together in one message.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+===== 2. investor-tracker-agent (F5.1, image24, A4) =====
+
+--- [investor-tracker-agent/wsc-1787850694-trk] > log out
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 22 primitives (1 agent, 1 skill, 17 tools, 1 job, 1 preprocessor, 1 postprocessor) in 622ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-trk
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-trk
+──────────────────────────────────────────────────
+
+You have been signed out of staff mode. To use the assistant again, send the team passphrase.🚫 Message blocked: You have been signed out of staff mode. To use the assistant again, send the team passphrase.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [investor-tracker-agent/wsc-1787850694-trk] > How does this work?
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 22 primitives (1 agent, 1 skill, 17 tools, 1 job, 1 preprocessor, 1 postprocessor) in 618ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-trk
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-trk
+──────────────────────────────────────────────────
+
+I am the Noblestride Investor Tracker, an internal desk for the deal team.
+I follow every investor through every deal: engagement stage, milestones, NDAs, term sheets, due diligence and disbursement, and I can flag what has gone quiet.
+Access is limited to Noblestride staff, so there is one verification step before I can answer.
+
+Once you are verified you can ask things like:
+1. Where does Vantage stand on the Busoga deal?
+2. What needs chasing?
+3. Which investors fit the Busoga transaction?
+
+A team passphrase is one shared secret that Noblestride sets for this assistant. It is not your CRM login password, and I never send it to you.
+A Noblestride admin sets it on the agent as the environment variable TEAM_PASSPHRASE and shares it with the deal team, so ask an admin or a colleague if you do not have it yet.
+To verify, send the passphrase on its own as your next message. I do not need your email here.
+Say "log out" at any time to end your staff session.🚫 Message blocked: I am the Noblestride Investor Tracker, an internal desk for the deal team.
+I follow every investor through every deal: engagement stage, milestones, NDAs, term sheets, due diligence and disbursement, and I can flag what has gone quiet.
+Access is limited to Noblestride staff, so there is one verification step before I can answer.
+
+Once you are verified you can ask things like:
+1. Where does Vantage stand on the Busoga deal?
+2. What needs chasing?
+3. Which investors fit the Busoga transaction?
+
+A team passphrase is one shared secret that Noblestride sets for this assistant. It is not your CRM login password, and I never send it to you.
+A Noblestride admin sets it on the agent as the environment variable TEAM_PASSPHRASE and shares it with the deal team, so ask an admin or a colleague if you do not have it yet.
+To verify, send the passphrase on its own as your next message. I do not need your email here.
+Say "log out" at any time to end your staff session.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [investor-tracker-agent/wsc-1787850694-trk] > Whats a pass phrase and hwo is it set out
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 22 primitives (1 agent, 1 skill, 17 tools, 1 job, 1 preprocessor, 1 postprocessor) in 615ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-trk
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-trk
+──────────────────────────────────────────────────
+
+I am the Noblestride Investor Tracker, an internal desk for the deal team.
+I follow every investor through every deal: engagement stage, milestones, NDAs, term sheets, due diligence and disbursement, and I can flag what has gone quiet.
+Access is limited to Noblestride staff, so there is one verification step before I can answer.
+
+Once you are verified you can ask things like:
+1. Where does Vantage stand on the Busoga deal?
+2. What needs chasing?
+3. Which investors fit the Busoga transaction?
+
+A team passphrase is one shared secret that Noblestride sets for this assistant. It is not your CRM login password, and I never send it to you.
+A Noblestride admin sets it on the agent as the environment variable TEAM_PASSPHRASE and shares it with the deal team, so ask an admin or a colleague if you do not have it yet.
+To verify, send the passphrase on its own as your next message. I do not need your email here.
+Say "log out" at any time to end your staff session.🚫 Message blocked: I am the Noblestride Investor Tracker, an internal desk for the deal team.
+I follow every investor through every deal: engagement stage, milestones, NDAs, term sheets, due diligence and disbursement, and I can flag what has gone quiet.
+Access is limited to Noblestride staff, so there is one verification step before I can answer.
+
+Once you are verified you can ask things like:
+1. Where does Vantage stand on the Busoga deal?
+2. What needs chasing?
+3. Which investors fit the Busoga transaction?
+
+A team passphrase is one shared secret that Noblestride sets for this assistant. It is not your CRM login password, and I never send it to you.
+A Noblestride admin sets it on the agent as the environment variable TEAM_PASSPHRASE and shares it with the deal team, so ask an admin or a colleague if you do not have it yet.
+To verify, send the passphrase on its own as your next message. I do not need your email here.
+Say "log out" at any time to end your staff session.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [investor-tracker-agent/wsc-1787850694-trk] > evans@noblestride.capital
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 22 primitives (1 agent, 1 skill, 17 tools, 1 job, 1 preprocessor, 1 postprocessor) in 622ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-trk
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-trk
+──────────────────────────────────────────────────
+
+Thanks. I can see the address evans@noblestride.capital, but this desk verifies with the team passphrase rather than an email address.
+The passphrase is a shared secret a Noblestride admin sets for this assistant, and it is separate from your CRM login. Ask an admin or a colleague if you do not have it.
+Send the passphrase on its own as your next message.
+Reply "help" if you would like the full explanation first.🚫 Message blocked: Thanks. I can see the address evans@noblestride.capital, but this desk verifies with the team passphrase rather than an email address.
+The passphrase is a shared secret a Noblestride admin sets for this assistant, and it is separate from your CRM login. Ask an admin or a colleague if you do not have it.
+Send the passphrase on its own as your next message.
+Reply "help" if you would like the full explanation first.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [investor-tracker-agent/wsc-1787850694-trk] > noblestride2026
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 22 primitives (1 agent, 1 skill, 17 tools, 1 job, 1 preprocessor, 1 postprocessor) in 622ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-trk
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-trk
+──────────────────────────────────────────────────
+
+Verified. Welcome.
+Ask me where any investor stands on any deal, and I will give the stage, the last contact and what is outstanding.
+Ask what has stalled and needs chasing, or tell me a confirmed update and I will state exactly what changes and write it after your yes.
+
+Try one of these:
+1. Where does Vantage stand on the Busoga deal?
+2. What needs chasing?
+3. Give me the org KPI snapshot.🚫 Message blocked: Verified. Welcome.
+Ask me where any investor stands on any deal, and I will give the stage, the last contact and what is outstanding.
+Ask what has stalled and needs chasing, or tell me a confirmed update and I will state exactly what changes and write it after your yes.
+
+Try one of these:
+1. Where does Vantage stand on the Busoga deal?
+2. What needs chasing?
+3. Give me the org KPI snapshot.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [investor-tracker-agent/wsc-1787850694-trk] > what needs chasing?
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 22 primitives (1 agent, 1 skill, 17 tools, 1 job, 1 preprocessor, 1 postprocessor) in 619ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-trk
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-trk
+──────────────────────────────────────────────────
+
+33 flags across the pipeline. Here's what's worst:
+
+**Highest-priority (past Shared, further along and idle):**
+- **ABC** on **Dr Arunga's Eye Hospital – Series A**: stuck at Offer stage, idle 37 days (threshold is 7). This one's furthest along and most overdue relative to its stage. [Open](https://noble-stride.vercel.app/engagement/cmrn78ldl0001lb04oczsk94v)
+- **Luatest1** on **bbbb**: stuck at TermSheet, idle 31 days (threshold 14). [Open](https://noble-stride.vercel.app/engagement/cmrux337a0001jy04hna0uue0)
+- **ABC** on **bbbb**: stuck at VDRAccess, idle 42 days (threshold 21). [Open](https://noble-stride.vercel.app/engagement/cmrn6ztzk0001ky0415f8p5kg)
+
+**The bulk of the rest (30 engagements)** are all sitting at Shared (deal sent, no follow-up yet), all idle exactly 65 days, spread across:
+- Chipori Ltd (Sabor A' Mexico) – Series A: 5 investors
+- Mwendo delivery Limited – Acquisition Finance: 5 investors
+- Study Buddy – Series B: 5 investors
+- Akili Kids – Growth: 5 investors
+- Dr Arunga's Eye Hospital – Series A: 5 investors
+- Ewaka – Growth: 5 investors
+
+That pattern (identical 65-day idle time across six different deals) looks like a batch of outreach that went out together and never got a follow-up push, rather than six separate one-off misses.
+
+Want me to:
+- File follow-up tasks for the three top offenders (ABC/bbbb, ABC/Dr Arunga's, Luatest1/bbbb)?
+- Or see the full list of all 30 "Shared" stalled investors grouped by deal?
+
+📝 [Post-processed response]:
+33 flags across the pipeline. Here's what's worst:
+
+**Highest-priority (past Shared, further along and idle):**
+- **ABC** on **Dr Arunga's Eye Hospital, Series A**: stuck at Offer stage, idle 37 days (threshold is 7). This one's furthest along and most overdue relative to its stage. [Open](https://noble-stride.vercel.app/engagement/cmrn78ldl0001lb04oczsk94v)
+- **Luatest1** on **bbbb**: stuck at TermSheet, idle 31 days (threshold 14). [Open](https://noble-stride.vercel.app/engagement/cmrux337a0001jy04hna0uue0)
+- **ABC** on **bbbb**: stuck at VDRAccess, idle 42 days (threshold 21). [Open](https://noble-stride.vercel.app/engagement/cmrn6ztzk0001ky0415f8p5kg)
+
+**The bulk of the rest (30 engagements)** are all sitting at Shared (deal sent, no follow-up yet), all idle exactly 65 days, spread across:
+- Chipori Ltd (Sabor A' Mexico), Series A: 5 investors
+- Mwendo delivery Limited, Acquisition Finance: 5 investors
+- Study Buddy, Series B: 5 investors
+- Akili Kids, Growth: 5 investors
+- Dr Arunga's Eye Hospital, Series A: 5 investors
+- Ewaka, Growth: 5 investors
+
+That pattern (identical 65-day idle time across six different deals) looks like a batch of outreach that went out together and never got a follow-up push, rather than six separate one-off misses.
+
+Want me to:
+- File follow-up tasks for the three top offenders (ABC/bbbb, ABC/Dr Arunga's, Luatest1/bbbb)?
+- Or see the full list of all 30 "Shared" stalled investors grouped by deal?
+
+
+--- [investor-tracker-agent/wsc-1787850694-trk] > give me the org KPI snapshot
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 22 primitives (1 agent, 1 skill, 17 tools, 1 job, 1 preprocessor, 1 postprocessor) in 622ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-trk
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-trk
+──────────────────────────────────────────────────
+
+Here's where things stand org-wide:
+
+**Top-line**
+- **Active mandates:** 97 (up 2 in 30 days)
+- **Active transactions:** 8 (flat)
+- **Investors engaged this quarter:** 5 (up 2)
+- **Capital raised YTD:** $43,000,000 (flat)
+
+**Mandates by stage** (97 total)
+- New Lead: 41
+- Qualification: 17
+- Negotiation: 24
+- Proposal: 13
+- Signed: 15
+- Pitch/Presentation: 2
+- Lost: 1
+
+**Transactions by stage** (8 active + closed)
+- Deal Preparation: 3
+- Investor Outreach: 2
+- Due Diligence: 2
+- Term Sheet: 1
+- Closing: 0
+- Closed-Won: 6
+- Closed-Lost: 1
+
+**6-month trend:** active deals have held steady around 7-9/month, with closings in May (3) and June/July (2 each), none in August so far.
+
+One thing worth flagging: investors engaged this quarter is only 5, which seems low against 97 active mandates and 8 live transactions, worth a gut-check if that number feels off to you.
+
+Full dashboard: [Open](https://noble-stride.vercel.app/dashboard)
+
+
+--- [investor-tracker-agent/wsc-1787850694-trk] > recent news on Triodos
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 22 primitives (1 agent, 1 skill, 17 tools, 1 job, 1 preprocessor, 1 postprocessor) in 621ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-trk
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-trk
+──────────────────────────────────────────────────
+
+**Public information (web), not from the CRM** on Triodos:
+
+Triodos is known through Triodos Bank and its subsidiary Triodos Investment Management, focused on sustainable and impact investing across energy, food, financial inclusion, and biodiversity. A few recent developments:
+
+- Fitch affirmed Triodos Bank's rating at 'BBB' with a stable outlook on August 21, 2026.
+- Triodos Bank's Half Year Results 2026 (published August 13) showed a return to profitability of €29.9 million and €666 million in new business lending, after a €25 million net loss in 2025.
+- Triodos Bank UK appointed Lauren Couch as Head of Business Banking (August 20, 2026).
+- Triodos priced €250 million of Green Tier 2 Notes in May 2026.
+- Triodos Investment Management launched a €300 million Natural Capital Fund (Value Nature Fund I) in April 2026, in partnership with Fondaction Asset Management.
+- A "Fit for Impact" transformation program launched in January 2026, targeting 250-270 FTE reductions over three years for €25-30 million in annual cost savings by 2028.
+
+This is separate from our CRM record. If you want, I can pull up Triodos's engagement status on the Chipori Ltd deal (they're flagged as stalled there, 65 days idle at Shared).
+
+
+--- [investor-tracker-agent/wsc-1787850694-trk] > log out
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 22 primitives (1 agent, 1 skill, 17 tools, 1 job, 1 preprocessor, 1 postprocessor) in 619ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-trk
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-trk
+──────────────────────────────────────────────────
+
+You have been signed out of staff mode. To use the assistant again, send the team passphrase.🚫 Message blocked: You have been signed out of staff mode. To use the assistant again, send the team passphrase.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+===== 3. referal_partner_agent (F5.6, image23, A7) =====
+
+--- [referal_partner_agent/wsc-1787850694-ref] > log out
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 17 primitives (1 agent, 1 skill, 12 tools, 1 job, 1 preprocessor, 1 postprocessor) in 582ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-ref
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-ref
+──────────────────────────────────────────────────
+
+This assistant is for Noblestride staff only. Send the team passphrase as your next message to continue.
+If you are a Noblestride referral partner, this assistant is not the right place: log in to the Noblestride partner portal to see the status of the deals you introduced, or contact your Noblestride representative.
+Reply "help" and I will explain what I do and what a passphrase is.🚫 Message blocked: This assistant is for Noblestride staff only. Send the team passphrase as your next message to continue.
+If you are a Noblestride referral partner, this assistant is not the right place: log in to the Noblestride partner portal to see the status of the deals you introduced, or contact your Noblestride representative.
+Reply "help" and I will explain what I do and what a passphrase is.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [referal_partner_agent/wsc-1787850694-ref] > hi
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 17 primitives (1 agent, 1 skill, 12 tools, 1 job, 1 preprocessor, 1 postprocessor) in 579ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-ref
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-ref
+──────────────────────────────────────────────────
+
+This assistant is for Noblestride staff only. Send the team passphrase as your next message to continue.
+If you are a Noblestride referral partner, this assistant is not the right place: log in to the Noblestride partner portal to see the status of the deals you introduced, or contact your Noblestride representative.
+Reply "help" and I will explain what I do and what a passphrase is.🚫 Message blocked: This assistant is for Noblestride staff only. Send the team passphrase as your next message to continue.
+If you are a Noblestride referral partner, this assistant is not the right place: log in to the Noblestride partner portal to see the status of the deals you introduced, or contact your Noblestride representative.
+Reply "help" and I will explain what I do and what a passphrase is.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [referal_partner_agent/wsc-1787850694-ref] > What can you help me with?
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 17 primitives (1 agent, 1 skill, 12 tools, 1 job, 1 preprocessor, 1 postprocessor) in 580ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-ref
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-ref
+──────────────────────────────────────────────────
+
+I am the Noblestride Referral Partner Tracker, an internal desk for the deal team.
+I keep the referral record straight: who introduced which deal, how each partner relationship and fee share is set up, which introductions converted, and what fees are due.
+Access is limited to Noblestride staff, so there is one verification step before I can answer. Referral partners do not use this assistant; partners see the status of the deals they introduced by logging in to the Noblestride partner portal.
+
+Once you are verified you can ask things like:
+1. Who introduced the Busoga mandate?
+2. What has Acme Advisory referred?
+3. Which partner brings the best deals?
+
+A team passphrase is one shared secret that Noblestride sets for this assistant. It is not your CRM login password, and I never send it to you.
+A Noblestride admin sets it on the agent as the environment variable TEAM_PASSPHRASE and shares it with the deal team, so ask an admin or a colleague if you do not have it yet.
+To verify, send the passphrase on its own as your next message. I do not need your email here.
+Say "log out" at any time to end your staff session.🚫 Message blocked: I am the Noblestride Referral Partner Tracker, an internal desk for the deal team.
+I keep the referral record straight: who introduced which deal, how each partner relationship and fee share is set up, which introductions converted, and what fees are due.
+Access is limited to Noblestride staff, so there is one verification step before I can answer. Referral partners do not use this assistant; partners see the status of the deals they introduced by logging in to the Noblestride partner portal.
+
+Once you are verified you can ask things like:
+1. Who introduced the Busoga mandate?
+2. What has Acme Advisory referred?
+3. Which partner brings the best deals?
+
+A team passphrase is one shared secret that Noblestride sets for this assistant. It is not your CRM login password, and I never send it to you.
+A Noblestride admin sets it on the agent as the environment variable TEAM_PASSPHRASE and shares it with the deal team, so ask an admin or a colleague if you do not have it yet.
+To verify, send the passphrase on its own as your next message. I do not need your email here.
+Say "log out" at any time to end your staff session.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [referal_partner_agent/wsc-1787850694-ref] > verify my partner code 1234
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 17 primitives (1 agent, 1 skill, 12 tools, 1 job, 1 preprocessor, 1 postprocessor) in 582ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-ref
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-ref
+──────────────────────────────────────────────────
+
+This assistant is for Noblestride staff only. Send the team passphrase as your next message to continue.
+If you are a Noblestride referral partner, this assistant is not the right place: log in to the Noblestride partner portal to see the status of the deals you introduced, or contact your Noblestride representative.
+Reply "help" and I will explain what I do and what a passphrase is.🚫 Message blocked: This assistant is for Noblestride staff only. Send the team passphrase as your next message to continue.
+If you are a Noblestride referral partner, this assistant is not the right place: log in to the Noblestride partner portal to see the status of the deals you introduced, or contact your Noblestride representative.
+Reply "help" and I will explain what I do and what a passphrase is.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [referal_partner_agent/wsc-1787850694-ref] > noblestride2026
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 17 primitives (1 agent, 1 skill, 12 tools, 1 job, 1 preprocessor, 1 postprocessor) in 589ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-ref
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-ref
+──────────────────────────────────────────────────
+
+Verified. Welcome.
+Ask me about any referral partner and I will give their introductions, linked deals, conversion and fee state.
+Ask who introduced a named deal, or tell me a confirmed introduction, attribution or fee update and I will state exactly what changes and write it after your yes.
+
+Try one of these:
+1. Who introduced the Busoga mandate?
+2. What has Acme Advisory referred?
+3. Digest the referred deal pipeline for the last 30 days.🚫 Message blocked: Verified. Welcome.
+Ask me about any referral partner and I will give their introductions, linked deals, conversion and fee state.
+Ask who introduced a named deal, or tell me a confirmed introduction, attribution or fee update and I will state exactly what changes and write it after your yes.
+
+Try one of these:
+1. Who introduced the Busoga mandate?
+2. What has Acme Advisory referred?
+3. Digest the referred deal pipeline for the last 30 days.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+--- [referal_partner_agent/wsc-1787850694-ref] > who introduced the most recent deals?
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 17 primitives (1 agent, 1 skill, 12 tools, 1 job, 1 preprocessor, 1 postprocessor) in 584ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-ref
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-ref
+──────────────────────────────────────────────────
+
+Here are the 10 most recent deals and their originators:
+
+- **Busoga Flowers – Advisory Mandate**: no referral on record
+- **Fundraising Company — Fundraising**: no referral on record
+- **Tumaini Foods Limited — Fundraising**: no referral on record
+- **[QA-TEST] Zephyr Holdings Ltd — Fundraising**: no referral on record
+- **Savanna Foods Ltd — Fundraising**: no referral on record
+- **QA TEST MANDATE (DELETE)**: introduced by QA Test Partner (DELETE)
+- **ShauryaTestinc — Fundraising**: no referral on record
+- **LuaTestTransac.**: no referral on record
+- **Shaurya INC — Fundraising**: no referral on record
+- **Exotic EPZ – Advisory Mandate**: no referral on record
+
+So out of the last 10, only one has a recorded introduction (a test partner record). The rest have no originator logged.
+
+Want me to check further back for more, or link a partner to any of these unreferred deals?
+
+📝 [Post-processed response]:
+Here are the 10 most recent deals and their originators:
+
+- **Busoga Flowers, Advisory Mandate**: no referral on record
+- **Fundraising Company, Fundraising**: no referral on record
+- **Tumaini Foods Limited, Fundraising**: no referral on record
+- **[QA-TEST] Zephyr Holdings Ltd, Fundraising**: no referral on record
+- **Savanna Foods Ltd, Fundraising**: no referral on record
+- **QA TEST MANDATE (DELETE)**: introduced by QA Test Partner (DELETE)
+- **ShauryaTestinc, Fundraising**: no referral on record
+- **LuaTestTransac.**: no referral on record
+- **Shaurya INC, Fundraising**: no referral on record
+- **Exotic EPZ, Advisory Mandate**: no referral on record
+
+So out of the last 10, only one has a recorded introduction (a test partner record). The rest have no originator logged.
+
+Want me to check further back for more, or link a partner to any of these unreferred deals?
+
+
+--- [referal_partner_agent/wsc-1787850694-ref] > issue an access code for Acme Advisory
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 17 primitives (1 agent, 1 skill, 12 tools, 1 job, 1 preprocessor, 1 postprocessor) in 586ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-ref
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-ref
+──────────────────────────────────────────────────
+
+Partner self service was retired (F5.6, August 2026 client feedback) — there's no access code to issue from here anymore. If Acme Advisory wants their own deal statuses, they need to log in to the Noblestride partner portal, or reach out to their Noblestride representative.
+
+Anything else I can help with on Acme's referral record itself?
+
+📝 [Post-processed response]:
+Partner self service was retired (F5.6, August 2026 client feedback), there's no access code to issue from here anymore. If Acme Advisory wants their own deal statuses, they need to log in to the Noblestride partner portal, or reach out to their Noblestride representative.
+
+Anything else I can help with on Acme's referral record itself?
+
+
+--- [referal_partner_agent/wsc-1787850694-ref] > log out
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 17 primitives (1 agent, 1 skill, 12 tools, 1 job, 1 preprocessor, 1 postprocessor) in 597ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 1 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-ref
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-ref
+──────────────────────────────────────────────────
+
+You are signed out of staff mode. To use the assistant again, send the team passphrase.🚫 Message blocked: You are signed out of staff mode. To use the assistant again, send the team passphrase.
+💡 Diagnose: run `lua logs --type preprocessor --limit 10` to see which preprocessor blocked the message.
+
+
+
+===== 4. website_intake_agent (F5.5, image22, A6, A8) =====
+
+--- [website_intake_agent/wsc-1787850694-int] > Hello
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 11 primitives (1 agent, 1 skill, 6 tools, 1 preprocessor, 2 postprocessors) in 472ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 2 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-int
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-int
+──────────────────────────────────────────────────
+
+Good day. Thank you for contacting Noblestride Capital. How may I assist you?
+
+I'm Noblestride's website intake assistant. I help new companies start a fundraising application for the deal team to review.
+
+- Tell me a bit about your company and funding need, and I'll walk you through the application a few questions at a time.
+- Ask a general question about Noblestride and I'll answer at a high level.
+- If you're already a Noblestride client checking on an existing engagement, I'll point you to the client portal or client assistant instead.
+
+Try: "We're raising a Series B, can you help?" "What does Noblestride do?" "Tell me what information you need to get started."
+
+
+--- [website_intake_agent/wsc-1787850694-int] > I'm Clients ABCD, my email is clientsabcd@gmail.com
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 11 primitives (1 agent, 1 skill, 6 tools, 1 preprocessor, 2 postprocessors) in 473ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 2 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-int
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-int
+──────────────────────────────────────────────────
+
+Thank you. Could you tell me a little about Clients ABCD, specifically what your company does and what kind of funding you are looking to raise? This will let me begin the application for our deal team's review.
+
+Separately, I should flag early that our application process requires a corporate email address on your company's own domain, so a free provider such as Gmail cannot be accepted for the contact details. Please plan to provide an address on your company domain when we reach that step.
+
+
+--- [website_intake_agent/wsc-1787850694-int] > tahst muy coproatret email
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 11 primitives (1 agent, 1 skill, 6 tools, 1 preprocessor, 2 postprocessors) in 470ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 2 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-int
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-int
+──────────────────────────────────────────────────
+
+Understood. The requirement is the domain rather than how the address is used, so a Gmail address cannot be recorded for the application. If Clients ABCD does not yet have an email address on its own company domain, we can pause the contact details step here and continue once one exists.
+
+In the meantime, could you tell me a bit about the company itself, such as what it does and what funding you are looking to raise? I can gather that information now and return to the contact email later.
+
+
+--- [website_intake_agent/wsc-1787850694-int] > is Acme a client of yours?
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 11 primitives (1 agent, 1 skill, 6 tools, 1 preprocessor, 2 postprocessors) in 468ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 2 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-int
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-int
+──────────────────────────────────────────────────
+
+I am not able to confirm whether any company appears in Noblestride's records. If you are following up on an existing application for Acme, I can help verify that separately, but I am not able to disclose whether a company is a client here.
+
+Returning to Clients ABCD, could you tell me what the company does and what funding you are looking to raise?
+
+
+--- [website_intake_agent/wsc-1787850694-int] > how do I check my application later?
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 11 primitives (1 agent, 1 skill, 6 tools, 1 preprocessor, 2 postprocessors) in 472ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 2 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-int
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-int
+──────────────────────────────────────────────────
+
+For checking the status of an existing application, please use the client portal or the client assistant, which handles verification and status updates for engagements already in motion.
+
+Shall we continue with the Clients ABCD application now? Could you tell me what the company does and what funding you are looking to raise?
+
+
+===== 5. client_agent (F5.5, image22, A6, A8) =====
+
+--- [client_agent/wsc-1787850694-cli] > Hi there! whats up
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 10 primitives (1 agent, 1 skill, 5 tools, 1 preprocessor, 2 postprocessors) in 463ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 2 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-cli
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-cli
+──────────────────────────────────────────────────
+
+Good day. Thank you for reaching out to Noblestride Capital.
+
+I am Noblestride's client front desk. I help existing clients check their application or deal status and pass messages to the team.
+
+- Ask how your application is going and I will walk you through verifying your company's email so I can share the status.
+- Tell me anything you would like the team to know and I will log it for your usual contact to follow up.
+- If you are a new company exploring fundraising, I will point you to Noblestride's website intake process to get started.
+
+Try: "What's the status of our application?" "Can you pass a message to our deal lead?" "We're a new company interested in raising capital."
+
+How may I assist you today?
+
+
+--- [client_agent/wsc-1787850694-cli] > my email is clientsabcd@gmail.com, how is our application going?
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 10 primitives (1 agent, 1 skill, 5 tools, 1 preprocessor, 2 postprocessors) in 456ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 2 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-cli
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-cli
+──────────────────────────────────────────────────
+
+Thank you for sharing that. For security, I can only discuss account specifics with the email address we have on file for your company, and Gmail is a free personal provider rather than a corporate domain.
+
+Could you provide your company name and an email address on your company's own domain, or ask your administrator to update it if it has changed? Once I have that, I can proceed with verification.
+
+
+--- [client_agent/wsc-1787850694-cli] > we are a new company wanting to raise capital
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 10 primitives (1 agent, 1 skill, 5 tools, 1 preprocessor, 2 postprocessors) in 458ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 2 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-cli
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-cli
+──────────────────────────────────────────────────
+
+Thank you for letting me know. New fundraising or advisory applications are handled through Noblestride's separate website intake process rather than through this desk, since a full application requires the team's dedicated review.
+
+Please visit /intake to submit your company's application. The deal team will review it there and be in touch.
+
+Is there anything else I can help you with in the meantime?
+
+
+===== 6. investor_agent web chat (F5.4, image21, A5) =====
+
+--- [investor_agent/wsc-1787850694-inv] > what deal is my account looking at
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 13 primitives (1 agent, 1 skill, 7 tools, 1 webhook, 1 preprocessor, 2 postprocessors) in 519ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 2 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-inv
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-inv
+──────────────────────────────────────────────────
+
+I'm not able to verify your identity on this channel, so I can't look up account or deal details here. For confidentiality, this kind of lookup can only be done through:
+
+- Your secure investor portal, where you can sign in and see your own opportunities: https://noble-stride.vercel.app/portal/investor
+- Emailing Noblestride Investor Relations from your registered email address, which lets us confirm who you are and respond with the right details.
+
+Noblestride Investor Relations
+
+
+--- [investor_agent/wsc-1787850694-inv] > which investor is looking at Project Ivory Oryx
+✅ Authenticated💡 Sandbox mode: uses your locally compiled code — no lua push needed.
+🔄 Setting up sandbox environment...🔄 Compiling skill...🔨 Compiling...🔄 Syncing YAML with manifest...✅ YAML synced with manifest
+🔄 Syncing with server...✅ Server skills and YAML are fully in sync
+✅ Server webhooks and YAML are fully in sync
+✅ Server triggers and YAML are fully in sync
+✅ Server jobs and YAML are fully in sync
+✅ Server preprocessors and YAML are fully in sync
+✅ Server postprocessors and YAML are fully in sync
+✅ Server MCP servers and YAML are fully in sync
+✅ Server devices and YAML are fully in sync
+✅ Server device triggers and YAML are fully in sync
+✅ Server voices and YAML are fully in sync
+✅ Compiled 13 primitives (1 agent, 1 skill, 7 tools, 1 webhook, 1 preprocessor, 2 postprocessors) in 516ms
+🔄 Pushing skills to sandbox...✅ Pushed 1 skills to sandbox
+🔄 Pushing processors to sandbox...✅ Pushed 1 preprocessor(s) and 2 postprocessor(s) to sandbox
+ℹ️  Thread: wsc-1787850694-inv
+
+
+──────────────────────────────────────────────────
+🌙 Response:
+Thread: wsc-1787850694-inv
+──────────────────────────────────────────────────
+
+This is asking me to reveal which investor is associated with a specific deal — that's information I can't disclose to anyone over this channel, regardless of who's asking. I can't confirm or deny details about other investors, deals, or internal records.
+
+If you have a legitimate need to know this, it would need to go through internal Noblestride channels directly, not through this correspondence desk.
+
+Noblestride Investor Relations
+
+📝 [Post-processed response]:
+This is asking me to reveal which investor is associated with a specific deal, that's information I can't disclose to anyone over this channel, regardless of who's asking. I can't confirm or deny details about other investors, deals, or internal records.
+
+If you have a legitimate need to know this, it would need to go through internal Noblestride channels directly, not through this correspondence desk.
+
+Noblestride Investor Relations
+
+
+===== DONE. Transcript: /Users/Shared/Files From d.localized/LuaWork/noble-stride-main/noblestride-crm/docs/feedback/wsc-sandbox-qc-20260827-2241.log =====

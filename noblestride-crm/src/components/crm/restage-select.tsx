@@ -1,7 +1,9 @@
 "use client";
 
 // restage-select.tsx — Small client component: a Select that fires a restage mutation.
-// Used on mandate and transaction detail pages.
+// Used on mandate, transaction and advisory detail pages. Relabelled "Pipeline
+// status" (Aug-2026 feedback image13): the enum stage is a short status list,
+// distinct from the Deal Workflow steps that track progress.
 // Fires updateMandateStage or updateTransactionStage via urql on change, then router.refresh().
 
 import { useState } from "react";
@@ -94,12 +96,19 @@ export function RestageSelect({ kind, id, currentStage, stageOptions }: RestageS
   return (
     <div className="space-y-1">
       <Select
-        label="Stage"
+        // Explicit id: Select otherwise derives one from the label
+        // ("pipeline-status"), which would collide with the #pipeline-status
+        // section anchor the Deal Workflow step links point at.
+        id="pipeline-status-select"
+        label="Pipeline status"
         options={stageOptions}
         value={stage}
         onChange={handleChange}
         disabled={pending}
       />
+      <p className="text-xs text-[var(--text-tertiary)]" data-testid="pipeline-status-help">
+        Where this record sits in the sales/execution pipeline (a short status list). Progress through the deal itself is tracked in the Deal Workflow above.
+      </p>
       {error && <p className="text-xs text-rose-600">{error}</p>}
     </div>
   );

@@ -14,6 +14,18 @@ import { StageHistory } from "@/components/crm/stage-history";
 import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { getOrgLens } from "@/server/rbac/context";
 import { canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
+import { getCurrentAuth } from "@/server/auth/current";
+import { listPartnerAccounts, listInvitablePartnerContacts } from "@/server/auth/partner-invites";
+import {
+  PartnerAccessPanel,
+  type PartnerAccountRow,
+  type PartnerInvitableContact,
+} from "./partner-access-panel";
+
+function formatAccountDate(d: Date | null): string {
+  if (!d) return "—";
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+}
 
 // Next 16: params is a Promise
 interface PageProps {
@@ -26,6 +38,29 @@ export default async function PartnerDetailPage({ params }: PageProps) {
   const partner = await getPartner(id);
 
   if (!partner) notFound();
+
+  // F5.6 partner portal access. Re-check the REAL role server-side (never the
+  // impersonation lens), and only query the accounts for a real admin — login
+  // email and last-login are PII non-admins must not see.
+  const auth = await getCurrentAuth();
+  const isRealAdmin =
+    !!auth && auth.account.kind === "INTERNAL" && auth.user?.role === "Admin" && !!auth.user?.isActive;
+  const [partnerAccounts, invitableContacts]: [PartnerAccountRow[], PartnerInvitableContact[]] = isRealAdmin
+    ? await Promise.all([
+        listPartnerAccounts(id).then((rows) =>
+          rows.map((r) => ({
+            accountId: r.accountId,
+            email: r.email,
+            contactName: r.contactName,
+            status: r.status,
+            lastLogin: formatAccountDate(r.lastLoginAt),
+            personId: r.personId,
+            signedIn: r.lastLoginAt !== null,
+          })),
+        ),
+        listInvitablePartnerContacts(id),
+      ])
+    : [[], []];
 
   const initial = {
     id: partner.id,
@@ -227,6 +262,14 @@ export default async function PartnerDetailPage({ params }: PageProps) {
           )}
         </CardBody>
       </Card>
+
+      {isRealAdmin && (
+        <PartnerAccessPanel
+          partnerId={partner.id}
+          accounts={partnerAccounts}
+          invitableContacts={invitableContacts}
+        />
+      )}
 
       <StageHistory title="Change History" items={changeHistoryItems} />
     </div>

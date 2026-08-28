@@ -71,7 +71,11 @@ export async function getMandate(id: string) {
   return prisma.mandate.findUnique({
     where: { id },
     include: {
-      client: true,
+      // F2.3: the intake applicant lives on the client's contacts; the panel
+      // could not show them because they were never loaded.
+      client: {
+        include: { contacts: { orderBy: [{ isPrimaryContact: "desc" }, { createdAt: "asc" }] } },
+      },
       lead: true,
       assists: true,
       referredBy: true,

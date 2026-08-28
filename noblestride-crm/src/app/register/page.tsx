@@ -14,11 +14,14 @@ import { registerError } from "./messages";
 import RegisterWizard from "./register-wizard";
 import InternalForm from "./internal-form";
 import ContactForm from "./contact-form";
+import PartnerClaimForm from "./partner-claim-form";
+import CriteriaUploadStep from "./criteria-upload-step";
+import { RolePicker } from "./role-picker";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: Promise<{ path?: string; step?: string; error?: string }>;
+  searchParams: Promise<{ path?: string; step?: string; error?: string; uploaded?: string }>;
 }
 
 const inputClass =
@@ -39,16 +42,25 @@ export default async function RegisterPage({ searchParams }: PageProps) {
   const email = (await cookies()).get("reg_email")?.value ?? "";
   const errorText = registerError(sp.error);
 
-  const view: "email" | "internal" | "contact" | "fund" | "pending" =
+  // F1.1: bare /register now opens with the four role cards (image1). The
+  // email-first classifier it used to show still lives at ?path=email, so
+  // routeEmailAction and its tests are untouched.
+  const view: "picker" | "email" | "internal" | "contact" | "fund" | "partner" | "upload" | "pending" =
     sp.step === "pending"
       ? "pending"
+      : sp.step === "upload"
+        ? "upload"
       : sp.path === "internal"
         ? "internal"
         : sp.path === "contact"
           ? "contact"
           : sp.path === "fund"
             ? "fund"
-            : "email";
+            : sp.path === "partner"
+              ? "partner"
+              : sp.path === "email"
+                ? "email"
+                : "picker";
 
   return (
     <div className="flex min-h-screen items-start justify-center bg-[var(--bg-secondary)] px-4 py-12">
@@ -56,11 +68,24 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         {view !== "fund" && (
           <div className="text-center">
             <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+              {view === "picker" && "Create an account"}
+              {view === "upload" && "One last thing"}
               {view === "email" && "Register"}
               {view === "internal" && "Staff account request"}
               {view === "contact" && "Create your account"}
+              {view === "partner" && "Partner access"}
               {view === "pending" && "Registration received"}
             </h1>
+            {view === "picker" && (
+              <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+                Tell us who you are, and we&apos;ll take you to the right place.
+              </p>
+            )}
+            {view === "internal" && (
+              <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+                Noblestride team accounts are approved by an administrator before first sign-in.
+              </p>
+            )}
           </div>
         )}
 
@@ -69,6 +94,12 @@ export default async function RegisterPage({ searchParams }: PageProps) {
             {errorText}
           </div>
         )}
+
+        {view === "picker" && <RolePicker />}
+
+        {view === "upload" && <CriteriaUploadStep />}
+
+        {view === "partner" && <PartnerClaimForm />}
 
         {view === "email" && (
           <section className="mx-auto w-full max-w-md rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
@@ -119,6 +150,11 @@ export default async function RegisterPage({ searchParams }: PageProps) {
               Thanks — your account request is in. The Noblestride team reviews every account; you&apos;ll
               be able to sign in once approved.
             </p>
+            {sp.uploaded === "1" && (
+              <p className="mt-2 text-xs text-[var(--t-tag-text-emerald)]" data-testid="criteria-uploaded">
+                Your investment criteria was received and is with the team.
+              </p>
+            )}
             <div className="mt-6 flex items-center justify-center gap-4 text-sm font-medium">
               <a href="/" className="text-[var(--text-secondary)] hover:text-[var(--accent)]">
                 ← Back to home

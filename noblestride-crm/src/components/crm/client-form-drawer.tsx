@@ -16,7 +16,7 @@ const UPDATE = `mutation UpdateClient($id: ID!, $input: ClientInput!) { updateCl
 // API stays lenient because imported legacy rows and agent-created records may
 // lack one.
 const clientCreateUiSchema = clientCreateSchema.extend({
-  codename: z.string().trim().min(1, "Project codename is required"),
+  projectCodename: z.string().trim().min(1, "Project codename is required"),
 });
 
 const EMPTY: Record<string, unknown> = {
@@ -25,7 +25,7 @@ const EMPTY: Record<string, unknown> = {
   revenueLastYear: undefined, revenueForecast: undefined, currency: "",
   profitability: "", existingInvestors: "", source: "", pitchDeckUrl: "",
   // Spec-gap: company profile fields (spec §3.1/§3.2)
-  codename: "", status: "", registrationNo: "", hqCountry: "", businessModel: "",
+  codename: "", projectCodename: "", womenLed: false, youthLed: false, status: "", registrationNo: "", hqCountry: "", businessModel: "",
   foundersNationality: "", ownershipStructure: "", directorsManagement: "", targetClients: "",
   staffCount: undefined, branchCount: undefined, ebitda: undefined, netProfit: undefined,
   existingDebt: undefined, loanBook: undefined, totalAssets: undefined, impactFlags: [],
@@ -68,7 +68,9 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
       >
         <div className="space-y-4">
           <TextField label="Name" required value={v.name as string} onChange={(x) => f.setValue("name", x)} error={f.errors.name} />
-          <TextField label="Project Codename" required={mode === "create"} value={v.codename as string} onChange={(x) => f.setValue("codename", x)} error={f.errors.codename} />
+          {/* Aug-2026 feedback: bound to projectCodename; the service mirrors
+              it onto the legacy `codename` field. */}
+          <TextField label="Project Codename" required={mode === "create"} value={v.projectCodename as string} onChange={(x) => f.setValue("projectCodename", x)} error={f.errors.projectCodename} />
           <div className="grid grid-cols-2 gap-3">
             <NumberField label="Year Founded" value={v.yearFounded as number} onChange={(x) => f.setValue("yearFounded", x)} />
             <TextField label="HQ City" value={v.hqCity as string} onChange={(x) => f.setValue("hqCity", x)} />
@@ -91,7 +93,12 @@ export function ClientFormDrawer({ mode, initial, triggerLabel }: {
             <TextField label="HQ Country" value={v.hqCountry as string} onChange={(x) => f.setValue("hqCountry", x)} />
           </div>
           <TextField label="Founders' Nationality" value={v.foundersNationality as string} onChange={(x) => f.setValue("foundersNationality", x)} />
-          <MultiSelectField label="Impact Flags" value={v.impactFlags as string[]} onChange={(x) => f.setValue("impactFlags", x)} options={options("ImpactFlag")} />
+          {/* Aug-2026 feedback: the Impact Flags multiselect became two plain
+              checkboxes; the service keeps `impactFlags` in sync. */}
+          <div className="grid grid-cols-2 gap-3">
+            <CheckboxField label="Women-led" value={v.womenLed as boolean} onChange={(x) => f.setValue("womenLed", x)} />
+            <CheckboxField label="Youth-led" value={v.youthLed as boolean} onChange={(x) => f.setValue("youthLed", x)} />
+          </div>
 
           <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide pt-1">Financials</p>
           <div className="grid grid-cols-2 gap-3">

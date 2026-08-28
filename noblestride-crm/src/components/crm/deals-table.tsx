@@ -73,6 +73,16 @@ function cell(r: DealRow, key: string, users: SelectOption[], canEdit: boolean):
     case "nextAction": return r.nextAction ?? "—";
     case "daysInStage": return String(r.daysInStage);
     case "priority": return r.priorityValue ? <Badge tone={priorityTone(r.priorityValue)}>{r.priorityLabel}</Badge> : "—";
+    // Aug-2026 feedback F4.2.1/F4.3.1
+    case "classification": return r.classificationLabel || "—";
+    case "paid": return r.paidAmount != null ? `$${r.paidAmount.toLocaleString()}` : "—";
+    case "balance":
+      if (r.balance == null) return "—";
+      return (
+        <span className={r.balance > 0 ? "font-semibold text-rose-600" : undefined} data-testid="deal-balance">
+          ${r.balance.toLocaleString()}
+        </span>
+      );
     default: return "—";
   }
 }

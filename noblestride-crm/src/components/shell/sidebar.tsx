@@ -19,6 +19,9 @@ import {
   Send,
   UserCheck,
   Bot,
+  Settings2,
+  GitBranch,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { SidebarProfile } from "./sidebar-profile";
@@ -29,6 +32,8 @@ const MAIN_NAV = [
   { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard, iconColor: "text-[var(--t-tag-text-emerald)]" },
   { href: "/deals", label: "Deals", Icon: Briefcase, iconColor: "text-[var(--t-tag-text-amber)]" },
   { href: "/clients", label: "Clients", Icon: Building, iconColor: "text-[var(--t-tag-text-blue)]" },
+  // F2.1/image2: website applications used to be reachable only via the bell.
+  { href: "/applications", label: "Applications", Icon: Globe, iconColor: "text-[var(--t-tag-text-amber)]" },
   { href: "/investors", label: "Investors", Icon: Users, iconColor: "text-[var(--t-tag-text-sky)]" },
   { href: "/engagement", label: "Engagements", Icon: MessageSquare, iconColor: "text-[var(--t-tag-text-violet)]" },
   { href: "/documents", label: "Documents", Icon: FileText, iconColor: "text-[var(--t-tag-text-orange)]" },
@@ -48,14 +53,13 @@ const AGENT_NAV = [
   { href: "/outreach", label: "Outreach", Icon: Send, iconColor: "text-[var(--t-tag-text-rose)]" },
 ];
 
-// Admin-only — rendered only when Sidebar receives isAdmin (real role, never
-// the impersonation lens; see requireRealAdmin in settings/users/actions.ts).
-const ADMIN_NAV_ITEM = {
-  href: "/settings/users",
-  label: "Users",
-  Icon: UserCog,
-  iconColor: "text-[var(--t-tag-text-gray)]",
-};
+// Admin-only group — rendered only when Sidebar receives isAdmin (real role,
+// never the impersonation lens; see src/server/auth/require-real-admin.ts).
+const ADMIN_NAV = [
+  { href: "/settings/users", label: "Users", Icon: UserCog, iconColor: "text-[var(--t-tag-text-gray)]" },
+  { href: "/settings/app", label: "App settings", Icon: Settings2, iconColor: "text-[var(--t-tag-text-gray)]" },
+  { href: "/settings/workflows", label: "Workflows", Icon: GitBranch, iconColor: "text-[var(--t-tag-text-gray)]" },
+];
 
 // ─── Brand mark ───────────────────────────────────────────────────────────────
 
@@ -243,6 +247,7 @@ function AgentsNav({ pendingChanges }: { pendingChanges: number }) {
 export function Sidebar({
   pendingReview = 0,
   pendingChanges = 0,
+  pendingApplications = 0,
   isAdmin = false,
   userName = "",
   userEmail = "",
@@ -251,12 +256,14 @@ export function Sidebar({
   pendingReview?: number;
   /** Agent-captured profile updates awaiting confirmation — Investor Updates card badge. */
   pendingChanges?: number;
+  /** Website applications with no deal lead yet — Applications row badge (F2.1). */
+  pendingApplications?: number;
   isAdmin?: boolean;
   userName?: string;
   userEmail?: string;
 }) {
   const pathname = usePathname();
-  const navItems = isAdmin ? [...MAIN_NAV, ADMIN_NAV_ITEM] : MAIN_NAV;
+  const navItems = MAIN_NAV;
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + "/");
@@ -286,11 +293,30 @@ export function Sidebar({
                 Icon={Icon}
                 active={isActive(href)}
                 iconColor={iconColor}
-                badge={href === "/investors" ? pendingReview : undefined}
+                badge={
+                  href === "/investors"
+                    ? pendingReview
+                    : href === "/applications"
+                      ? pendingApplications
+                      : undefined
+                }
               />
             ),
           )}
         </nav>
+
+        {isAdmin && (
+          <>
+            <p className="mb-2 mt-5 px-1 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
+              Admin
+            </p>
+            <nav className="flex flex-col gap-0.5" data-testid="admin-nav">
+              {ADMIN_NAV.map(({ href, label, Icon, iconColor }) => (
+                <NavItem key={href} href={href} label={label} Icon={Icon} active={isActive(href)} iconColor={iconColor} />
+              ))}
+            </nav>
+          </>
+        )}
       </div>
 
       {/* Agents — pinned quick-link grid to the staff Lua webchat agents. */}

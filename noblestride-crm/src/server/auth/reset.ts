@@ -8,8 +8,10 @@ import { hashPassword } from "./password";
 import { validatePassword } from "./policy";
 import { hashToken, invalidateAllSessions } from "./session";
 import { createAuthToken, consumeAuthToken } from "./tokens";
+import { sendResetEmail } from "./auth-mail";
 import { sendMail } from "./mailer";
 import { logAuthEvent } from "./audit";
+import { AuthFlowError } from "./accounts";
 
 export async function requestPasswordReset(emailRaw: string, baseUrl: string): Promise<void> {
   const email = normalizeEmail(emailRaw);
@@ -29,6 +31,31 @@ export async function requestPasswordReset(emailRaw: string, baseUrl: string): P
     return;
   }
   await logAuthEvent(`Auth: password reset requested for ${email}`);
+}
+
+/**
+ * Staff-initiated reset link (F3.5: "does the reset link email the member?").
+ * Unlike `requestPasswordReset` this one is called by an authenticated admin
+ * about a named account, so there is no enumeration concern: an unknown id is
+ * an error, and the link is returned so the admin can pass it on when mail
+ * could not be delivered.
+ */
+export async function issueStaffResetLink(
+  accountId: string,
+  baseUrl: string,
+): Promise<{ url: string; emailSent: boolean; email: string }> {
+  const account = await prisma.authAccount.findUnique({
+    where: { id: accountId },
+    select: { id: true, email: true },
+  });
+  if (!account) throw new AuthFlowError("Account not found.");
+  const raw = await createAuthToken(account.id, "RESET_PASSWORD");
+  const url = `${baseUrl}/reset-password/${raw}`;
+  const { sent } = await sendResetEmail({ to: account.email, resetUrl: url });
+  await logAuthEvent(
+    `Auth: staff-issued reset link for ${account.email} (email ${sent ? "sent" : "not sent"})`,
+  );
+  return { url, emailSent: sent, email: account.email };
 }
 
 export async function performPasswordReset(

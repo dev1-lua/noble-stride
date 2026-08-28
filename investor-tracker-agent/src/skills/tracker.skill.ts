@@ -15,6 +15,7 @@ import { ListDealsTool } from "./tools/ListDealsTool";
 import { OutreachStatusTool } from "./tools/OutreachStatusTool";
 import { DashboardSnapshotTool } from "./tools/DashboardSnapshotTool";
 import { ListGreylistedInvestorsTool } from "./tools/ListGreylistedInvestorsTool";
+import { ResearchPublicProfileTool } from "./tools/ResearchPublicProfileTool";
 
 export const trackerSkill = new LuaSkill({
   name: "investor-tracker",
@@ -50,7 +51,8 @@ Ambiguity and errors:
 - If the CRM is unreachable, say so and suggest retrying shortly — never answer from memory.
 
 After scan_stalled_engagements, offer to create a follow-up task for any flag the user wants actioned — the deal lead acts on flags, you never contact anyone.
-Never expose raw record ids; refer to records by name and share the deep links tools return.`,
+Never expose raw record ids; refer to records by name and share the deep links tools return.
+- Use research_public_profile when the user asks for background or news from OUTSIDE the CRM ("recent news on Acme", "what do we know publicly about Vantage Capital", "background on this fund"). Pass the public name only. When it returns status ok, open the answer with the tool's label so the reader always knows the material is public web information and not CRM data, and list the returned source links. On no_public_info say plainly that nothing reliable was found publicly and offer the CRM record instead. On unavailable relay the tool's message. Never combine a public finding with a CRM fact in one sentence without saying which is which, and never use a public finding as the basis for a write.`,
   tools: [
     new GetEngagementStatusTool(),
     new GetTermSheetStatusTool(),
@@ -68,5 +70,6 @@ Never expose raw record ids; refer to records by name and share the deep links t
     new OutreachStatusTool(),
     new DashboardSnapshotTool(),
     new ListGreylistedInvestorsTool(),
+    new ResearchPublicProfileTool(),
   ],
 });

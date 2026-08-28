@@ -20,6 +20,7 @@ import {
   RegulatoryStatusEnum, DDTrackEnum, DDStatusEnum,
   PriorityEnum, PartnerFeeStatusEnum,
   MandateStageEnum, TransactionStageEnum, AdvisoryStageEnum,
+  AdvisoryClassificationEnum,
 } from "./builder";
 
 // One ticket-size range (action points 2026-07 item 4); max omitted = open-ended.
@@ -101,6 +102,10 @@ export const ClientInput = builder.inputType("ClientInput", {
     pitchDeckUrl: t.string({ required: false }),
     // Spec-gap: company profile fields (spec §3.1/§3.2)
     codename: t.string({ required: false }),
+    // Aug-2026 feedback: project codename + women/youth-led booleans
+    projectCodename: t.string({ required: false }),
+    womenLed: t.boolean({ required: false }),
+    youthLed: t.boolean({ required: false }),
     registrationNo: t.string({ required: false }),
     hqCountry: t.string({ required: false }),
     businessModel: t.string({ required: false }),
@@ -160,8 +165,12 @@ export const MandateInput = builder.inputType("MandateInput", {
     retainerAmount: t.float({ required: false }),
     retainerInvoicedDate: t.field({ type: "DateTime", required: false }),
     retainerPaidDate: t.field({ type: "DateTime", required: false }),
+    // Aug-2026 feedback F4.3.1
+    retainerPaidAmount: t.float({ required: false }),
     priority: t.field({ type: PriorityEnum, required: false }),
     referralQualified: t.boolean({ required: false }),
+    // Aug-2026 feedback: per-deal workflow template (null → org default)
+    workflowTemplateId: t.id({ required: false }),
   }),
 });
 
@@ -206,6 +215,8 @@ export const TransactionInput = builder.inputType("TransactionInput", {
     priority: t.field({ type: PriorityEnum, required: false }),
     partnerFeeStatus: t.field({ type: PartnerFeeStatusEnum, required: false }),
     partnerFeeAmount: t.float({ required: false }),
+    // Aug-2026 feedback: per-deal workflow template (null → org default)
+    workflowTemplateId: t.id({ required: false }),
   }),
 });
 
@@ -218,6 +229,9 @@ export const AdvisoryInput = builder.inputType("AdvisoryInput", {
     stage: t.field({ type: AdvisoryStageEnum, required: false }),
     dealStatus: t.field({ type: DealStatusEnum, required: false }),
     feeAmount: t.float({ required: false }),
+    // Aug-2026 feedback F4.2.1
+    classification: t.field({ type: AdvisoryClassificationEnum, required: false }),
+    feePaidAmount: t.float({ required: false }),
     currency: t.string({ required: false }),
     sector: t.field({ type: [SectorEnum], required: false }),
     country: t.string({ required: false }),
@@ -226,6 +240,8 @@ export const AdvisoryInput = builder.inputType("AdvisoryInput", {
     nextAction: t.string({ required: false }),
     notes: t.string({ required: false }),
     priority: t.field({ type: PriorityEnum, required: false }),
+    // Aug-2026 feedback: per-deal workflow template (null → org default)
+    workflowTemplateId: t.id({ required: false }),
   }),
 });
 

@@ -50,8 +50,25 @@ export function buildInvestorWhere(filter: InvestorFilter): Prisma.InvestorWhere
     where.onboardingStatus = filter.onboardingStatus;
   }
 
+  // F3.3: "date onboarded" range. Either bound may stand alone.
+  if (filter.approvedFrom != null || filter.approvedTo != null) {
+    where.approvedAt = {
+      ...(filter.approvedFrom != null ? { gte: filter.approvedFrom } : {}),
+      ...(filter.approvedTo != null ? { lte: filter.approvedTo } : {}),
+    };
+  }
+
+  // F3.4 (image9): one search box has to find a fund by its own name OR by any
+  // of its contacts — the client searches for the person they spoke to, not the
+  // legal entity. Kept on `where.OR`, deliberately separate from the ticket
+  // overlap below, which builds `where.AND`.
   if (filter.search != null) {
-    where.name = { contains: filter.search, mode: "insensitive" };
+    where.OR = [
+      { name: { contains: filter.search, mode: "insensitive" } },
+      { contacts: { some: { firstName: { contains: filter.search, mode: "insensitive" } } } },
+      { contacts: { some: { lastName: { contains: filter.search, mode: "insensitive" } } } },
+      { contacts: { some: { email: { contains: filter.search, mode: "insensitive" } } } },
+    ];
   }
 
   // Ticket overlap: investor range overlaps deal raise when:

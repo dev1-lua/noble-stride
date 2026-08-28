@@ -9,18 +9,11 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { getCurrentAuth } from "@/server/auth/current";
+import { requireRealAdmin } from "@/server/auth/require-real-admin";
 import { suspendAccount, reactivateAccount, AuthFlowError } from "@/server/auth/accounts";
-import { createAuthToken } from "@/server/auth/tokens";
+import { issueStaffResetLink } from "@/server/auth/reset";
+import { changeAccountEmailByStaff, EmailChangeError } from "@/server/auth/change-email";
 import { prisma } from "@/lib/db";
-
-async function requireRealAdmin() {
-  const auth = await getCurrentAuth();
-  if (!auth || auth.account.kind !== "INTERNAL" || auth.user?.role !== "Admin" || !auth.user?.isActive) {
-    throw new Error("Not authorized");
-  }
-  return auth;
-}
 
 // Confirms the posted accountId actually belongs to the investor this action
 // is scoped to — without this, any admin viewing investor A's page could post
@@ -39,15 +32,22 @@ async function requireAccountBelongsToInvestor(accountId: string, investorId: st
 export interface UserActionState {
   error?: string;
   resetLink?: string;
+  /** F3.5: whether the reset link was also emailed to the member. */
+  emailSent?: boolean;
+  /** F3.6: confirmation line after a staff email change. */
+  notice?: string;
 }
 
-async function run(investorId: string, fn: (adminUserId: string) => Promise<void | string>): Promise<UserActionState> {
+type RunResult = void | { resetLink: string; emailSent: boolean } | { notice: string };
+
+async function run(investorId: string, fn: (adminUserId: string) => Promise<RunResult>): Promise<UserActionState> {
   try {
     const admin = await requireRealAdmin();
     const result = await fn(admin.user!.id);
     revalidatePath(`/investors/${investorId}`);
-    return typeof result === "string" ? { resetLink: result } : {};
+    return result ?? {};
   } catch (err) {
+    if (err instanceof EmailChangeError) return { error: err.message };
     if (err instanceof AuthFlowError) return { error: err.message };
     if (err instanceof Error && err.message === "Not authorized") return { error: "Not authorized." };
     throw err;
@@ -77,10 +77,34 @@ export async function generateInvestorResetLinkAction(_p: UserActionState, formD
   const accountId = String(formData.get("accountId"));
   return run(investorId, async () => {
     await requireAccountBelongsToInvestor(accountId, investorId);
-    const raw = await createAuthToken(accountId, "RESET_PASSWORD");
     const hdrs = await headers();
     const host = hdrs.get("host") ?? "localhost:3000";
     const proto = hdrs.get("x-forwarded-proto") ?? "http";
-    return `${proto}://${host}/reset-password/${raw}`;
+    const { url, emailSent } = await issueStaffResetLink(accountId, `${proto}://${host}`);
+    return { resetLink: url, emailSent };
+  });
+}
+
+/** F3.6: move the sign-in email on an investor-portal account. */
+export async function changeInvestorAccountEmailAction(
+  _p: UserActionState,
+  formData: FormData,
+): Promise<UserActionState> {
+  const investorId = String(formData.get("investorId"));
+  const accountId = String(formData.get("accountId"));
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { error: "Enter the new email address." };
+  return run(investorId, async (adminId) => {
+    await requireAccountBelongsToInvestor(accountId, investorId);
+    const res = await changeAccountEmailByStaff(accountId, email, {
+      type: "HUMAN",
+      authenticated: true,
+      userId: adminId,
+    });
+    return {
+      notice:
+        `Sign-in email changed to ${res.newEmail}. Sessions were signed out` +
+        `${res.noticeSent.new ? " and both addresses were notified." : "; we couldn't email the notices."}`,
+    };
   });
 }

@@ -23,6 +23,16 @@ export const MILESTONE_ORDER: MilestoneKey[] = [
   "SuccessFeePaid",
 ];
 
+/**
+ * F6b.3 / image29: "the investor doesn't need to see the success fee status."
+ * Derived from MILESTONE_ORDER rather than hand-listed, so a future
+ * MilestoneKey flows through automatically instead of silently going missing
+ * from the investor's view.
+ */
+export const INVESTOR_VISIBLE_MILESTONES: MilestoneKey[] = MILESTONE_ORDER.filter(
+  (k) => k !== "SuccessFeePaid",
+);
+
 export const MILESTONE_LABELS: Record<MilestoneKey, string> = {
   TeaserReview: "Teaser received & reviewed",
   NdaExecuted: "NDA executed",

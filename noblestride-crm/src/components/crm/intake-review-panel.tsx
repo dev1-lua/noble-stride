@@ -9,26 +9,9 @@
 // gated visibility (source + leadId + lens + RBAC) — see mandates/[id]/page.tsx.
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useMutation } from "urql";
 import { Card, CardHeader, CardBody, Badge, Button, Select } from "@/components/ui";
 import { formatDate } from "@/lib/format";
-
-const ACCEPT_INTAKE_MANDATE = `
-  mutation AcceptIntakeMandate($id: ID!, $leadId: ID!) {
-    acceptIntakeMandate(id: $id, leadId: $leadId) { id leadId }
-  }
-`;
-const DEPRIORITIZE_INTAKE_MANDATE = `
-  mutation DeprioritizeIntakeMandate($id: ID!, $reason: String!) {
-    deprioritizeIntakeMandate(id: $id, reason: $reason) { id dealStatus notes }
-  }
-`;
-const RERUN_QUALIFICATION = `
-  mutation RerunQualification($id: ID!) {
-    rerunQualification(id: $id) { id qualificationVerdict qualificationReasons qualifiedAt }
-  }
-`;
+import { useIntakeReview } from "./use-intake-review";
 
 const VERDICT_TONE: Record<string, "success" | "warning" | "danger"> = {
   Qualified: "success",
@@ -42,6 +25,13 @@ const VERDICT_LABEL: Record<string, string> = {
   Deprioritized: "Deprioritized",
 };
 
+export interface IntakeApplicantContact {
+  name: string;
+  jobTitle: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
 export interface IntakeReviewPanelProps {
   mandateId: string;
   verdict: string | null;
@@ -51,27 +41,35 @@ export interface IntakeReviewPanelProps {
   users: { value: string; label: string }[];
   /** Admin/DealLead lens + can(orgRole, "Mandates", "U") — decided by the page. */
   canReview: boolean;
+  /** F2.3: the applicant from intake step 2 — stored all along, shown nowhere. */
+  contact?: IntakeApplicantContact | null;
+  submittedAt?: string | null;
 }
 
-export function IntakeReviewPanel({ mandateId, verdict, reasons, qualifiedAt, users, canReview }: IntakeReviewPanelProps) {
-  const router = useRouter();
-  const [, acceptIntake] = useMutation(ACCEPT_INTAKE_MANDATE);
-  const [, deprioritizeIntake] = useMutation(DEPRIORITIZE_INTAKE_MANDATE);
-  const [, rerun] = useMutation(RERUN_QUALIFICATION);
+function ApplicantRow({ label: rowLabel, value }: { label: string; value: string | null }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]">{rowLabel}</dt>
+      <dd className="mt-0.5 text-sm text-[var(--text-primary)]">{value || "—"}</dd>
+    </div>
+  );
+}
+
+export function IntakeReviewPanel({
+  mandateId,
+  verdict,
+  reasons,
+  qualifiedAt,
+  users,
+  canReview,
+  contact,
+  submittedAt,
+}: IntakeReviewPanelProps) {
+  const review = useIntakeReview();
+  const { pending, error } = review;
 
   const [leadId, setLeadId] = useState("");
   const [reason, setReason] = useState("");
-  const [pending, setPending] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function run(action: string, fn: () => Promise<{ error?: { message: string } }>) {
-    setPending(action);
-    setError(null);
-    const res = await fn();
-    setPending(null);
-    if (res.error) setError(res.error.message);
-    else router.refresh();
-  }
 
   return (
     <Card>
@@ -80,6 +78,21 @@ export function IntakeReviewPanel({ mandateId, verdict, reasons, qualifiedAt, us
         <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Submitted via the public intake wizard — awaiting a deal-lead decision.</p>
       </CardHeader>
       <CardBody className="space-y-4">
+        {/* F2.3 (image4): who actually applied. Without this the reviewer had to
+            open the client record to find the person to reply to. */}
+        {(contact || submittedAt) && (
+          <dl
+            className="grid grid-cols-1 gap-x-8 gap-y-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-3 sm:grid-cols-2"
+            data-testid="intake-applicant"
+          >
+            <ApplicantRow label="Contact person" value={contact?.name ?? null} />
+            <ApplicantRow label="Role" value={contact?.jobTitle ?? null} />
+            <ApplicantRow label="Corporate email" value={contact?.email ?? null} />
+            <ApplicantRow label="Phone" value={contact?.phone ?? null} />
+            <ApplicantRow label="Submitted" value={submittedAt ? formatDate(submittedAt) : null} />
+          </dl>
+        )}
+
         <div className="flex flex-wrap items-center gap-2">
           {verdict && <Badge tone={VERDICT_TONE[verdict] ?? "neutral"}>{VERDICT_LABEL[verdict] ?? verdict}</Badge>}
           {qualifiedAt && (
@@ -109,7 +122,7 @@ export function IntakeReviewPanel({ mandateId, verdict, reasons, qualifiedAt, us
                 <Button
                   size="sm"
                   disabled={!leadId || pending !== null}
-                  onClick={() => run("accept", () => acceptIntake({ id: mandateId, leadId }))}
+                  onClick={() => review.accept(mandateId, leadId)}
                 >
                   {pending === "accept" ? "Assigning…" : "Accept & assign"}
                 </Button>
@@ -131,7 +144,7 @@ export function IntakeReviewPanel({ mandateId, verdict, reasons, qualifiedAt, us
                 variant="secondary"
                 size="sm"
                 disabled={!reason.trim() || pending !== null}
-                onClick={() => run("deprioritize", () => deprioritizeIntake({ id: mandateId, reason: reason.trim() }))}
+                onClick={() => review.deprioritize(mandateId, reason.trim())}
               >
                 {pending === "deprioritize" ? "Deprioritizing…" : "Deprioritize"}
               </Button>
@@ -143,7 +156,7 @@ export function IntakeReviewPanel({ mandateId, verdict, reasons, qualifiedAt, us
                 variant="secondary"
                 size="sm"
                 disabled={pending !== null}
-                onClick={() => run("rerun", () => rerun({ id: mandateId }))}
+                onClick={() => review.rerun(mandateId)}
               >
                 {pending === "rerun" ? "Re-running…" : "Re-run qualification"}
               </Button>

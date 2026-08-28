@@ -11,6 +11,12 @@ import { classifyEmailForSignup, normalizeEmail } from "@/server/auth/guardrails
 import { AuthFlowError, signupExistingContact, signupInternal } from "@/server/auth/accounts";
 import { registerInvestorWithAccount, RegistrationError } from "@/server/onboarding/register-investor";
 import { rateLimit } from "@/server/auth/rate-limit";
+import { notify, adminUserIds } from "@/server/services/notifications";
+import {
+  issueCriteriaUploadToken,
+  REG_UPLOAD_COOKIE,
+  REG_UPLOAD_TTL_S,
+} from "@/server/onboarding/criteria-upload-token";
 
 export interface WizardActionState {
   error?: string;
@@ -150,12 +156,92 @@ export async function registerWizardAction(_prev: WizardActionState, formData: F
     confirmPassword: String(formData.get("confirmPassword") ?? ""),
     members: safeParseMembers(String(formData.get("membersJson") ?? "[]")),
   };
+  let investor: { id: string };
   try {
-    await registerInvestorWithAccount(raw);
+    investor = await registerInvestorWithAccount(raw);
   } catch (err) {
     if (err instanceof ZodError) return { error: err.issues[0]?.message ?? "Check the form and try again" };
     if (err instanceof RegistrationError) return { error: err.message };
     throw err;
   }
+
+  // F3.1: offer the optional investment-criteria upload straight away, while the
+  // fund is still on the page. There is no session yet (the account is PENDING),
+  // so the hand-off is a 15-minute token naming this one investor.
+  (await cookies()).set(REG_UPLOAD_COOKIE, await issueCriteriaUploadToken(investor.id), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: REG_UPLOAD_TTL_S,
+  });
+  redirect("/register?step=upload");
+}
+
+/**
+ * F1.1 partner card, pane (a): the visitor pastes the invitation link or token
+ * they were emailed. This only normalises it into /invite/<token> — the existing
+ * landing gate does every real check (validity, expiry, email match), so nothing
+ * here can be used to probe whether a token exists.
+ */
+export async function claimPartnerInviteAction(formData: FormData): Promise<void> {
+  const raw = String(formData.get("token") ?? "").trim();
+  // Accept either a bare token or a full invite URL.
+  const candidate = raw.split(/[?#]/)[0]?.replace(/\/+$/, "").split("/").pop() ?? "";
+  if (!/^[A-Za-z0-9_-]{10,200}$/.test(candidate)) {
+    redirect("/register?path=partner&error=invalid-token");
+  }
+  redirect(`/invite/${candidate}`);
+}
+
+/**
+ * F1.1 partner card, pane (b): no invitation yet. Raises a Task and notifies
+ * admins, then always shows the same confirmation — it must never reveal
+ * whether this email or firm is already a partner.
+ */
+export async function requestPartnerAccessAction(formData: FormData): Promise<void> {
+  const name = String(formData.get("name") ?? "").trim();
+  const organisation = String(formData.get("organisation") ?? "").trim();
+  const email = normalizeEmail(String(formData.get("email") ?? ""));
+  const phone = String(formData.get("phone") ?? "").trim();
+  if (!name || !organisation || !email) redirect("/register?path=partner&error=missing-fields");
+
+  if (!(await checkRate("partner-access"))) {
+    redirect("/register?path=partner&error=rate-limited");
+  }
+
+  const cls = await classifyEmailForSignup(email);
+  if (cls.kind === "blocked") {
+    const errorSlug =
+      cls.reason === "free-provider"
+        ? "free-provider"
+        : cls.reason === "greylisted"
+          ? "greylisted"
+          : "invalid-email";
+    redirect(`/register?path=partner&error=${errorSlug}`);
+  }
+
+  await prisma.task.create({
+    data: {
+      title: `Partner access requested: ${organisation}`,
+      body: `${name} <${email}>${phone ? ` · ${phone}` : ""}\n\nRequested partner-portal access from /register.`,
+      source: "Other",
+      createdSource: "API",
+    },
+  });
+
+  // Best-effort: the request is already recorded, so a notification failure
+  // must not turn into an error for the visitor.
+  try {
+    await notify(await adminUserIds(), {
+      kind: "partner_access_requested",
+      title: `Partner access requested — ${organisation}`,
+      body: `${name} <${email}>`,
+      href: "/tasks",
+    });
+  } catch (err) {
+    console.error("requestPartnerAccess: admin notification failed", err);
+  }
+
   redirect("/register?step=pending");
 }

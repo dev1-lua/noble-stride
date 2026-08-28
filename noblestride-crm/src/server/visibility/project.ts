@@ -8,6 +8,7 @@ import type {
   DocumentStatus,
   DocumentType,
   EngagementStage,
+  EngagementStatus,
   Geography,
   ImpactFlag,
   Instrument,
@@ -22,7 +23,7 @@ import type {
   Sector,
   TransactionStage,
 } from "@prisma/client";
-import { effectiveMilestones, MILESTONE_ORDER } from "@/lib/milestones";
+import { effectiveMilestones, INVESTOR_VISIBLE_MILESTONES } from "@/lib/milestones";
 import type { Tier } from "./tiers";
 import { isBlockedClassification, isOnboardingBlocked } from "./tiers";
 import { fieldAccess, isFieldVisible } from "./matrix";
@@ -107,6 +108,14 @@ export interface DealClientInput {
   profitability?: Profitability | null;
   /** §3.1 impact flags — projected as booleans in companyProfile, visible at all tiers. */
   impactFlags?: ImpactFlag[];
+  /**
+   * Aug-2026 feedback: the client's own project codename is preferred over the
+   * derived `dealCodename(id)` when masking, and women/youth-led are now real
+   * columns (still OR-ed with the legacy impactFlags list).
+   */
+  projectCodename?: string | null;
+  womenLed?: boolean | null;
+  youthLed?: boolean | null;
   contacts?: PersonInput[];
   // Present on loaded records but NEVER projected at any tier (they belong to
   // the fullFinancials group, which stays internal for now):
@@ -193,6 +202,13 @@ export interface ProjectedDeal {
     profitability: Profitability | null;
   };
   matchingMandateStatus: MandateStage | null;
+  /**
+   * F6b.1: true when this deal is one the investor's own mandate (sector /
+   * geography / ticket focus) matches. Every live deal is now browsable, so
+   * this is what distinguishes "for you" from "everything else". Defaults to
+   * false — a quiet default, never a claim we have not checked.
+   */
+  matchesMandate: boolean;
   documents: ProjectedDocument[];
   /** Client-side contacts — DD tier only, otherwise null. */
   advisorClientContacts: ProjectedContact[] | null;
@@ -258,6 +274,8 @@ function projectDocuments(
 export interface ProjectDealOptions {
   /** Open NDA on the investor, or a Closed NDA on THIS deal's engagement. */
   ndaSatisfied?: boolean;
+  /** F6b.1: does this deal match the investor's mandate? Purely a label. */
+  matchesMandate?: boolean;
 }
 
 /**
@@ -288,7 +306,10 @@ export function projectDealForInvestor(
   const revenueForecast = client?.revenueForecast ?? null;
 
   const masked = tier === "PRE_INTEREST";
-  const displayName = masked ? dealCodename(deal.id) : deal.name;
+  // Prefer the client's own project codename when masking (a blank/whitespace
+  // one falls back to the deterministic per-deal codename).
+  const ownCodename = client?.projectCodename?.trim();
+  const displayName = masked ? (ownCodename || dealCodename(deal.id)) : deal.name;
 
   return {
     id: deal.id,
@@ -302,8 +323,8 @@ export function projectDealForInvestor(
       hqCity: client?.hqCity ?? null,
       countries: client?.countries ?? [],
       yearFounded: client?.yearFounded ?? null,
-      womenLed: (client?.impactFlags ?? []).includes("WomenLed"),
-      youthLed: (client?.impactFlags ?? []).includes("YouthLed"),
+      womenLed: Boolean(client?.womenLed) || (client?.impactFlags ?? []).includes("WomenLed"),
+      youthLed: Boolean(client?.youthLed) || (client?.impactFlags ?? []).includes("YouthLed"),
     },
     dealTypeTicket: {
       dealType: deal.dealType ?? null,
@@ -325,6 +346,7 @@ export function projectDealForInvestor(
           profitability: client?.profitability ?? null,
         },
     matchingMandateStatus: deal.mandate?.stage ?? null,
+    matchesMandate: opts.matchesMandate ?? false,
     documents: projectDocuments(deal.documents ?? [], tier, ndaSatisfied, displayName),
     advisorClientContacts: isFieldVisible("advisorClientContacts", tier)
       ? (client?.contacts ?? []).map((c) => ({
@@ -350,6 +372,8 @@ export function projectDealForInvestor(
 export interface OwnEngagementInput {
   transactionId: string;
   engagementStage: EngagementStage;
+  /** The investor's OWN relationship status — see ProjectedOwnEngagement.status. */
+  status: EngagementStatus;
   lastContact?: Date | null;
   termSheetIssued?: boolean;
   termSheetDate?: Date | null;
@@ -372,16 +396,25 @@ export interface OwnMilestoneInput {
 export interface ProjectedOwnEngagement {
   dealId: string;
   stage: EngagementStage;
+  /**
+   * F6b.2: the investor's own relationship status on this deal
+   * (NotContacted | Contacted | InConversation | Interested | Passed |
+   * Committed). Needed to distinguish "we sent you this" from "you asked for
+   * access and we are reviewing it" — the stage alone cannot say which.
+   * It is the fund's own position, not internal feedback, probability, notes,
+   * amounts or another investor's data, so the hard rules are untouched.
+   */
+  status: EngagementStatus;
   lastContact: Date | null;
   termSheetIssued: boolean;
   termSheetDate: Date | null;
-  /** Completed milestones (stage-implied ∪ recorded), in MILESTONE_ORDER. */
+  /** Completed milestones (stage-implied ∪ recorded), in INVESTOR_VISIBLE_MILESTONES order. */
   milestoneKeys: MilestoneKey[];
 }
 
 /**
  * Project an investor's OWN engagement on a deal (their own journey only).
- * Output contains ONLY: dealId, stage, lastContact, termSheetIssued,
+ * Output contains ONLY: dealId, stage, status, lastContact, termSheetIssued,
  * termSheetDate, milestoneKeys. Never feedback/probability/notes/amounts/
  * owner or other-investor data.
  */
@@ -396,10 +429,15 @@ export function projectOwnEngagement(
   return {
     dealId: engagement.transactionId,
     stage: engagement.engagementStage,
+    status: engagement.status,
     lastContact: engagement.lastContact ?? null,
     termSheetIssued: engagement.termSheetIssued ?? false,
     termSheetDate: engagement.termSheetDate ?? null,
-    milestoneKeys: MILESTONE_ORDER.filter((k) => done.has(k)),
+    // F6b.3 / image29: the success fee is between Noblestride and its client,
+    // so the key never crosses the projection boundary — even when the
+    // milestone checklist setting is switched on. Defence in depth: the UI
+    // gate is the second layer, not the only one.
+    milestoneKeys: INVESTOR_VISIBLE_MILESTONES.filter((k) => done.has(k)),
   };
 }
 
@@ -484,6 +522,8 @@ export interface PartnerInput {
 }
 
 export interface ReferredMandateInput {
+  /** Needed only to de-duplicate transaction referrals against this mandate. */
+  id?: string;
   name: string;
   stage: MandateStage;
   dealSize?: DecimalLike | null;
@@ -492,6 +532,22 @@ export interface ReferredMandateInput {
   // Task 8: the mandate's linked transaction(s) carry the fee-execution status —
   // only the first is used (mirrors deals-queue's linkedCounterpartId convention).
   transactions?: { partnerFeeStatus?: PartnerFeeStatus | null }[];
+}
+
+/**
+ * A Transaction credited directly to the partner (Transaction.referredById),
+ * as opposed to one reached through a referred Mandate (F5.6).
+ */
+export interface ReferredTransactionInput {
+  id?: string;
+  name: string;
+  stage: TransactionStage;
+  dealSize?: DecimalLike | null;
+  currency?: string;
+  client?: { name: string } | null;
+  /** When this mandate was also referred by the partner, the row is dropped. */
+  mandateId?: string | null;
+  partnerFeeStatus?: PartnerFeeStatus | null;
 }
 
 export interface ProjectedPartnerView {
@@ -515,6 +571,22 @@ export interface ProjectedPartnerView {
     // feedbackNotes — that field is internal-only and never projected here).
     partnerFeeStatusValue: PartnerFeeStatus | null;
   }[];
+  /**
+   * F5.6: transactions credited to the partner directly. Kept as its own list
+   * rather than merged into referredDeals, because a Transaction carries
+   * TransactionStage while referredDeals is MandateStage-typed and drives the
+   * mandate-stage funnel — merging the two would mean mislabelling one of them.
+   */
+  referredTransactions: {
+    transactionName: string;
+    clientName: string | null;
+    stage: TransactionStage;
+    dealSize: number | null;
+    currency: string;
+    converted: boolean;
+    feeSharingStatus: string;
+    partnerFeeStatusValue: PartnerFeeStatus | null;
+  }[];
 }
 
 /**
@@ -526,10 +598,17 @@ export interface ProjectedPartnerView {
 export function projectForPartner(
   partner: PartnerInput,
   referredMandates: ReferredMandateInput[],
+  referredTransactions: ReferredTransactionInput[] = [],
 ): ProjectedPartnerView {
   const feeSharingStatus = partner.feeSharingAgreement
     ? (partner.feeSharingTerms ?? "Agreed")
     : "None";
+
+  // A transaction under a mandate this partner already sees would otherwise be
+  // reported twice — once as the mandate, once as the transaction.
+  const reportedMandateIds = new Set(
+    referredMandates.map((m) => m.id).filter((id): id is string => Boolean(id)),
+  );
 
   return {
     profile: {
@@ -550,5 +629,17 @@ export function projectForPartner(
       feeSharingStatus,
       partnerFeeStatusValue: mandate.transactions?.[0]?.partnerFeeStatus ?? null,
     })),
+    referredTransactions: referredTransactions
+      .filter((txn) => !(txn.mandateId && reportedMandateIds.has(txn.mandateId)))
+      .map((txn) => ({
+        transactionName: txn.name,
+        clientName: txn.client?.name ?? null,
+        stage: txn.stage,
+        dealSize: toNum(txn.dealSize),
+        currency: txn.currency ?? "USD",
+        converted: txn.stage === "ClosedWon",
+        feeSharingStatus,
+        partnerFeeStatusValue: txn.partnerFeeStatus ?? null,
+      })),
   };
 }

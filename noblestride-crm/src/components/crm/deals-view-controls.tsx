@@ -4,15 +4,16 @@
 // queue header, mirroring deals-filter-bar.tsx (client island mutating URL
 // searchParams so the RSC page re-queries; no client-side fetch for the
 // list/board state itself).
-//   1. Columns chooser — popover of checkboxes from DEAL_COLUMNS -> ?cols=
-//   2. Saved views — Select of views (passed as a prop) + save/rename/delete
-//      via the createSavedView/renameSavedView/deleteSavedView mutations.
+//   1. Columns chooser — Popover of checkboxes from DEAL_COLUMNS -> ?cols=
+//   2. Saved views — tucked inside a "Views" Popover (Aug-2026 feedback
+//      F4.1.4: the header was crowded) + save/rename/delete via the
+//      createSavedView/renameSavedView/deleteSavedView mutations.
 //   3. List | Board toggle -> ?view=list|board
 
 import { useCallback, useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useMutation } from "urql";
-import { Button, Select } from "@/components/ui";
+import { Button, Select, Popover } from "@/components/ui";
 import { DEAL_COLUMNS, parseColumns } from "@/server/domain/deals-queue";
 import type { SavedViewConfig } from "@/server/services/saved-views";
 
@@ -52,7 +53,6 @@ export function DealsViewControls({ views }: { views: SavedViewOption[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
-  const [colsOpen, setColsOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Last view picked from the dropdown in *this* session — scopes the
@@ -176,55 +176,51 @@ export function DealsViewControls({ views }: { views: SavedViewOption[] }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {/* Columns chooser */}
-      <div className="relative">
-        <Button variant="secondary" size="sm" onClick={() => setColsOpen((o) => !o)}>
-          Columns
-        </Button>
-        {colsOpen && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setColsOpen(false)} />
-            {/* left-0 (open rightward): the Columns button is the leftmost view
-                control, sitting at the sidebar edge — a right-0 popover would
-                extend left *under* the sidebar, making its checkboxes unclickable. */}
-            <div className="absolute left-0 top-full z-50 mt-2 max-h-96 w-64 overflow-y-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-2 shadow-lg">
-              {DEAL_COLUMNS.map((c) => (
-                <label
-                  key={c.key}
-                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
-                >
-                  <input type="checkbox" checked={activeCols.includes(c.key)} onChange={() => toggleColumn(c.key)} />
-                  {c.label}
-                </label>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+      {/* Columns chooser — align left: this sits at the sidebar edge, so a
+          right-aligned panel would extend under the sidebar. */}
+      <Popover label="Columns" panelClassName="w-64" data-testid="deals-columns">
+        {DEAL_COLUMNS.map((c) => (
+          <label
+            key={c.key}
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
+          >
+            <input
+              type="checkbox"
+              checked={activeCols.includes(c.key)}
+              onChange={() => toggleColumn(c.key)}
+              data-testid={`deals-col-${c.key}`}
+            />
+            {c.label}
+          </label>
+        ))}
+      </Popover>
 
       {/* Saved views */}
-      <div className="flex items-center gap-1">
-        <div className="w-48">
+      <Popover label="Views" panelClassName="w-72" data-testid="deals-views">
+        <div className="flex flex-col gap-2">
           <Select
+            label="Saved views"
             options={[{ value: "", label: "Saved views…" }, ...views.map((v) => ({ value: v.id, label: v.name }))]}
             value={selectedId}
             onChange={(id) => id && applySavedView(id)}
           />
+          <div className="flex flex-wrap gap-1.5">
+            <Button variant="secondary" size="sm" disabled={pending} onClick={saveCurrentAs} data-testid="deals-save-view">
+              Save current as…
+            </Button>
+            {selectedView && !selectedView.isDefault && (
+              <>
+                <Button variant="secondary" size="sm" disabled={pending} onClick={() => renameView(selectedView)}>
+                  Rename
+                </Button>
+                <Button variant="secondary" size="sm" disabled={pending} onClick={() => deleteView(selectedView)}>
+                  Delete
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-        {selectedView && !selectedView.isDefault && (
-          <>
-            <Button variant="secondary" size="sm" disabled={pending} onClick={() => renameView(selectedView)}>
-              Rename
-            </Button>
-            <Button variant="secondary" size="sm" disabled={pending} onClick={() => deleteView(selectedView)}>
-              Delete
-            </Button>
-          </>
-        )}
-        <Button variant="secondary" size="sm" disabled={pending} onClick={saveCurrentAs}>
-          Save current as…
-        </Button>
-      </div>
+      </Popover>
 
       {/* List | Board toggle */}
       <div className="flex items-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-0.5 text-xs font-medium">

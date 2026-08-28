@@ -12,6 +12,10 @@ import { StageHistory } from "@/components/crm/stage-history";
 import type { StageHistoryItem } from "@/components/crm/stage-history";
 import { formatDate, daysAgoLabel } from "@/lib/format";
 import { RecordClosedNdaButton } from "@/components/crm/nda-actions";
+import { GrantDealAccessButton } from "@/components/crm/grant-deal-access-button";
+import { accessState } from "@/server/domain/access-state";
+import { ParticipantsCard } from "@/components/crm/participants-card";
+import { listParticipants } from "@/server/services/engagement-participants";
 import { SendEsignButton } from "@/components/crm/send-esign-button";
 import { ScheduleTeamsButton } from "@/components/crm/schedule-teams-button";
 import { isConfigured } from "@/server/integrations/config";
@@ -51,6 +55,14 @@ export default async function EngagementDetailPage({ params }: PageProps) {
     engagement.investor.contacts.find((c) => c.isPrimaryContact && c.email) ??
     engagement.investor.contacts.find((c) => c.email);
   const esignSignerEmail = esignContact?.email ?? null;
+  // F6b.2: derived from the STAGE, never from accessGrantedAt — see
+  // domain/access-state.ts on why the timestamp is audit only.
+  const dealAccessState = accessState({
+    engagementStage: engagement.engagementStage,
+    status: engagement.status,
+  });
+  // F6b.4: the fund's own roster on this deal, read-only for staff.
+  const participants = await listParticipants(engagement.id);
   const esignSignerName = esignContact ? [esignContact.firstName, esignContact.lastName].filter(Boolean).join(" ") : "";
 
   // Teams call attendees (Task 15): every investor contact with an email on
@@ -273,7 +285,42 @@ export default async function EngagementDetailPage({ params }: PageProps) {
                 <Chip value={engagement.investor.ndaStatus} group="InvestorNdaStatus" />
               </dd>
             </div>
+
+            <div>
+              <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Deal access</dt>
+              <dd className="mt-1 text-sm text-[var(--text-primary)]">
+                {dealAccessState === "granted" ? (
+                  <>
+                    Granted
+                    {engagement.accessGrantedAt && (
+                      <span className="ml-2 text-xs text-[var(--text-tertiary)]">
+                        {formatDate(engagement.accessGrantedAt)}
+                      </span>
+                    )}
+                  </>
+                ) : dealAccessState === "interest_received" ? (
+                  <span className="rounded-full bg-[var(--t-tag-bg-amber)] px-2 py-0.5 text-xs font-medium text-[var(--t-tag-text-amber)]">
+                    Awaiting access grant
+                  </span>
+                ) : (
+                  <span className="text-[var(--text-tertiary)]">No interest registered yet</span>
+                )}
+              </dd>
+            </div>
           </dl>
+
+          {/* F6b.2: the investor asked for access; this is where staff give it.
+              Hidden once they have withdrawn: accessState maps Declined to
+              "none", so the button would otherwise sit there enabled next to
+              "No interest registered yet" and one click would un-decline them. */}
+          {engagement.engagementStage === "Declined" ? (
+            <p className="text-xs text-[var(--text-tertiary)]" data-testid="deal-access-declined">
+              This investor withdrew from the deal. Move the engagement off Declined first if they have
+              changed their mind.
+            </p>
+          ) : (
+            <GrantDealAccessButton engagementId={engagement.id} granted={dealAccessState === "granted"} />
+          )}
 
           {engagement.ndaType == null && <RecordClosedNdaButton engagementId={engagement.id} />}
           {isConfigured("docusign") && esignSignerEmail && (
@@ -291,6 +338,8 @@ export default async function EngagementDetailPage({ params }: PageProps) {
           </p>
         </CardBody>
       </Card>
+
+      <ParticipantsCard participants={participants} />
 
       <MilestoneChecklist engagementId={engagement.id} items={milestoneItems} />
 

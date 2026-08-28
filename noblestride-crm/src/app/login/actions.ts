@@ -8,7 +8,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { loginWithPassword } from "@/server/auth/login";
-import { rateLimit } from "@/server/auth/rate-limit";
+import { rateLimit, refundRateLimit } from "@/server/auth/rate-limit";
 import { setSessionCookie } from "@/server/auth/session-cookie";
 import { PENDING_COOKIE, PENDING_TTL_S, TRUST_COOKIE } from "@/server/auth/two-factor";
 import { safeNext } from "./safe-next";
@@ -41,7 +41,11 @@ export async function loginAction(_prev: LoginFormState, formData: FormData): Pr
 
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  if (!rateLimit(`login:${ip}`)) return { error: MESSAGES.locked, email };
+  // Charged up front, refunded on success: the gate exists to slow password
+  // guessing, and Noblestride's own staff share an office IP — 20 successful
+  // sign-ins in ten minutes would otherwise lock the whole office out.
+  const limitKey = `login:${ip}`;
+  if (!rateLimit(limitKey)) return { error: MESSAGES.locked, email };
 
   const cookieStore = await cookies();
   const trustedDeviceToken = cookieStore.get(TRUST_COOKIE)?.value;
@@ -51,6 +55,9 @@ export async function loginAction(_prev: LoginFormState, formData: FormData): Pr
     { ip, userAgent: hdrs.get("user-agent") ?? undefined },
     { trustedDeviceToken },
   );
+
+  // A second factor still to come is not a failed attempt.
+  if (res.ok || (!res.ok && res.reason === "otp_required")) refundRateLimit(limitKey);
 
   if (!res.ok && res.reason === "otp_required") {
     cookieStore.set(PENDING_COOKIE, res.pendingToken, {

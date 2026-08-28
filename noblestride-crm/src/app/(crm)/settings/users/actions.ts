@@ -5,35 +5,35 @@
 
 import { revalidatePath } from "next/cache";
 import type { OrgRole } from "@prisma/client";
-import { getCurrentAuth } from "@/server/auth/current";
+import { requireRealAdmin } from "@/server/auth/require-real-admin";
 import {
   approveInternalAccount, rejectPendingAccount, suspendAccount,
   reactivateAccount, changeInternalRole, activateAccountsForInvestor, AuthFlowError,
 } from "@/server/auth/accounts";
-import { createAuthToken } from "@/server/auth/tokens";
+import { issueStaffResetLink } from "@/server/auth/reset";
+import { changeAccountEmailByStaff, EmailChangeError } from "@/server/auth/change-email";
 import { prisma } from "@/lib/db";
 import { headers } from "next/headers";
-
-async function requireRealAdmin() {
-  const auth = await getCurrentAuth();
-  if (!auth || auth.account.kind !== "INTERNAL" || auth.user?.role !== "Admin" || !auth.user?.isActive) {
-    throw new Error("Not authorized");
-  }
-  return auth;
-}
 
 export interface UserActionState {
   error?: string;
   resetLink?: string;
+  /** F3.5: whether the reset link was also emailed to the member. */
+  emailSent?: boolean;
+  /** F3.6: confirmation line after a staff email change. */
+  notice?: string;
 }
 
-async function run(fn: (adminUserId: string) => Promise<void | string>): Promise<UserActionState> {
+type RunResult = void | { resetLink: string; emailSent: boolean } | { notice: string };
+
+async function run(fn: (adminUserId: string) => Promise<RunResult>): Promise<UserActionState> {
   try {
     const admin = await requireRealAdmin();
     const result = await fn(admin.user!.id);
     revalidatePath("/settings/users");
-    return typeof result === "string" ? { resetLink: result } : {};
+    return result ?? {};
   } catch (err) {
+    if (err instanceof EmailChangeError) return { error: err.message };
     if (err instanceof AuthFlowError) return { error: err.message };
     if (err instanceof Error && err.message === "Not authorized") return { error: "Not authorized." };
     throw err;
@@ -75,10 +75,38 @@ export async function changeRoleAction(_p: UserActionState, formData: FormData):
 
 export async function generateResetLinkAction(_p: UserActionState, formData: FormData): Promise<UserActionState> {
   return run(async () => {
-    const raw = await createAuthToken(String(formData.get("accountId")), "RESET_PASSWORD");
     const hdrs = await headers();
     const host = hdrs.get("host") ?? "localhost:3000";
     const proto = hdrs.get("x-forwarded-proto") ?? "http";
-    return `${proto}://${host}/reset-password/${raw}`;
+    const { url, emailSent } = await issueStaffResetLink(
+      String(formData.get("accountId")),
+      `${proto}://${host}`,
+    );
+    return { resetLink: url, emailSent };
+  });
+}
+
+/**
+ * F3.6: move the sign-in email on an account. Staff-initiated, so it applies
+ * immediately — an admin has already established who they are talking to, and a
+ * confirmation step here would only risk locking the person out.
+ */
+export async function changeUserEmailAction(
+  _p: UserActionState,
+  formData: FormData,
+): Promise<UserActionState> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { error: "Enter the new email address." };
+  return run(async (adminId) => {
+    const res = await changeAccountEmailByStaff(
+      String(formData.get("accountId")),
+      email,
+      { type: "HUMAN", authenticated: true, userId: adminId },
+    );
+    return {
+      notice:
+        `Sign-in email changed to ${res.newEmail}. Sessions were signed out` +
+        `${res.noticeSent.new ? " and both addresses were notified." : "; we couldn't email the notices."}`,
+    };
   });
 }

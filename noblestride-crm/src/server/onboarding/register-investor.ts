@@ -15,6 +15,7 @@ import { replaceBands } from "@/server/services/ticket-bands";
 import { hashPassword } from "@/server/auth/password";
 import { unusablePasswordHash } from "@/server/auth/team-invites";
 import { isUniqueViolation } from "@/server/auth/accounts";
+import { sendMemberHeadsUpEmail } from "@/server/auth/auth-mail";
 
 export class RegistrationError extends Error {}
 
@@ -198,6 +199,39 @@ export async function registerInvestorWithAccount(raw: unknown): Promise<Investo
     });
   } catch (err) {
     console.error("registerInvestor: post-commit notification failed", err);
+  }
+
+  // F3.5: tell the listed team members they were listed. Link-free on purpose —
+  // the org is PendingReview, so an invite link would be dead until approval;
+  // sendPendingMemberInvites sends the real link at approval time. Best-effort
+  // and post-commit, like the admin notification above.
+  if (memberInputs.length > 0) {
+    try {
+      const results = await Promise.all(
+        memberInputs.map((m) =>
+          sendMemberHeadsUpEmail({
+            to: m.email,
+            memberName: m.name,
+            orgName: investor.name,
+            registrantName: input.contactPerson,
+          }),
+        ),
+      );
+      const sentCount = results.filter((r) => r.sent).length;
+      await prisma.activity.create({
+        data: {
+          type: "Note",
+          subject: "Team member heads-up emails sent",
+          body:
+            `${memberInputs.map((m) => m.email).join(", ")} ` +
+            `(${sentCount} sent, ${results.length - sentCount} failed).`,
+          investorId: investor.id,
+          createdSource: "API",
+        },
+      });
+    } catch (err) {
+      console.error("registerInvestor: member heads-up email failed", err);
+    }
   }
 
   return investor;

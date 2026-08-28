@@ -127,6 +127,7 @@ export default async function DashboardPage() {
           registeredAt: p.registeredAt ? p.registeredAt.toISOString() : null,
           contactName: p.contactName,
           contactEmail: p.contactEmail,
+          hasCriteria: p.hasCriteria,
         }))}
       />
 

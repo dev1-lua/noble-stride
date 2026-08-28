@@ -8,7 +8,10 @@ import { formatNormalizer } from "./processors/format-normalizer";
 import { CRM_PERSONA } from "./persona";
 
 const agent = new LuaAgent({
-  name: "crmAgent",
+  // Matches the deployed agent's own name ("CRMagent"). Kept in step with the
+  // server rather than pushed the other way: renaming a live agent is a
+  // user-visible change, and `lua sync --check` reported this as drift.
+  name: "CRMagent",
   persona: CRM_PERSONA,
   model: "anthropic/claude-sonnet-5",
   skills: [summarySkill, writeSkill, analysisSkill],

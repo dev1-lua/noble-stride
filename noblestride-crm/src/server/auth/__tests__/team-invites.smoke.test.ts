@@ -18,6 +18,8 @@ const EMAILS = {
   pendingOrg: `zz-pending-${UNIQ}@zzexample-fund.com`,
 };
 
+const BASE_URL = "http://localhost:3000";
+
 let approvedInvestorId: string;
 let pendingInvestorId: string;
 let primaryPersonId: string;
@@ -56,7 +58,7 @@ d("team invites (DB)", () => {
     const { prisma } = await import("@/lib/db");
     const { createTeamInvite, redeemInvite } = await import("../team-invites");
     const { rawToken } = await createTeamInvite({
-      investorId: approvedInvestorId, name: "Priya Patel", email: EMAILS.member, invitedByLabel: "Prime",
+      investorId: approvedInvestorId, name: "Priya Patel", email: EMAILS.member, invitedByLabel: "Prime", baseUrl: BASE_URL,
     });
     const account = await prisma.authAccount.findUnique({
       where: { email: EMAILS.member }, include: { person: true },
@@ -86,14 +88,14 @@ d("team invites (DB)", () => {
   it("rejects free-provider and already-taken emails with TeamInviteError", async () => {
     const { TeamInviteError, createTeamInvite } = await import("../team-invites");
     await expect(createTeamInvite({
-      investorId: approvedInvestorId, name: "X", email: EMAILS.freemail, invitedByLabel: "Prime",
+      investorId: approvedInvestorId, name: "X", email: EMAILS.freemail, invitedByLabel: "Prime", baseUrl: BASE_URL,
     })).rejects.toBeInstanceOf(TeamInviteError);
     await expect(createTeamInvite({
-      investorId: approvedInvestorId, name: "X", email: EMAILS.taken, invitedByLabel: "Prime",
+      investorId: approvedInvestorId, name: "X", email: EMAILS.taken, invitedByLabel: "Prime", baseUrl: BASE_URL,
     })).rejects.toBeInstanceOf(TeamInviteError);
     // Own-team duplicate points at resend instead of creating a second Person.
     await expect(createTeamInvite({
-      investorId: approvedInvestorId, name: "X", email: EMAILS.prime, invitedByLabel: "Prime",
+      investorId: approvedInvestorId, name: "X", email: EMAILS.prime, invitedByLabel: "Prime", baseUrl: BASE_URL,
     })).rejects.toThrow(/already on your team/);
   });
 
@@ -101,7 +103,7 @@ d("team invites (DB)", () => {
     const { prisma } = await import("@/lib/db");
     const { createTeamInvite, redeemInvite } = await import("../team-invites");
     const { rawToken } = await createTeamInvite({
-      investorId: pendingInvestorId, name: "Waiting One", email: EMAILS.pendingOrg, invitedByLabel: "Founder",
+      investorId: pendingInvestorId, name: "Waiting One", email: EMAILS.pendingOrg, invitedByLabel: "Founder", baseUrl: BASE_URL,
     });
     const account = await prisma.authAccount.findUnique({ where: { email: EMAILS.pendingOrg } });
     expect(account?.status).toBe("PENDING");
@@ -118,9 +120,9 @@ d("team invites (DB)", () => {
     const { createTeamInvite, resendTeamInvite, revokeTeamInvite, redeemInvite, inviteExistingContact } =
       await import("../team-invites");
     const { personId, rawToken: first } = await createTeamInvite({
-      investorId: approvedInvestorId, name: "Rene Vue", email: EMAILS.member2, invitedByLabel: "Prime",
+      investorId: approvedInvestorId, name: "Rene Vue", email: EMAILS.member2, invitedByLabel: "Prime", baseUrl: BASE_URL,
     });
-    const second = await resendTeamInvite(personId, approvedInvestorId);
+    const { rawToken: second } = await resendTeamInvite(personId, approvedInvestorId, BASE_URL);
     expect(await redeemInvite(first, EMAILS.member2, "brand-new-pass-10")).toMatchObject({ ok: false, reason: "invalid" });
     await revokeTeamInvite(personId, approvedInvestorId);
     expect(await redeemInvite(second, EMAILS.member2, "brand-new-pass-10")).toMatchObject({ ok: false, reason: "invalid" });
@@ -130,9 +132,11 @@ d("team invites (DB)", () => {
     expect(account).toBeNull();
     // Re-inviting the now account-less Person goes through inviteExistingContact
     // and yields a fresh redeemable link — the Team page's "Invite" affordance.
-    const third = await inviteExistingContact(personId, approvedInvestorId, "Prime");
-    expect(typeof third).toBe("string");
-    expect(await redeemInvite(third, EMAILS.member2, "brand-new-pass-12")).toMatchObject({ ok: true });
+    const third = await inviteExistingContact(personId, approvedInvestorId, "Prime", BASE_URL);
+    expect(typeof third.rawToken).toBe("string");
+    expect(typeof third.emailSent).toBe("boolean");
+    expect(third.email).toBe(EMAILS.member2);
+    expect(await redeemInvite(third.rawToken, EMAILS.member2, "brand-new-pass-12")).toMatchObject({ ok: true });
   });
 
   it("removeTeamMember deletes the account + keeps the Person; self-removal is refused", async () => {

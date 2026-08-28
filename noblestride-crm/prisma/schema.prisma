@@ -172,6 +172,9 @@ enum Source {
   SocialMedia
   InternalBusinessDev
   Other
+  /// §2b G4 — the sources named in the client's step-1 diagram (image32).
+  DeskResearch
+  ExistingNetwork
 }
 
 enum DocStatus {
@@ -350,6 +353,7 @@ enum DocumentType {
   SHA
   BusinessPlan
   Other
+  InvestmentCriteria
 }
 
 enum DocumentAccessLevel {
@@ -526,6 +530,33 @@ enum Profitability {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Configurable deal workflow (Aug-2026 feedback) — replaces the hard-coded
+// 17-step journey. A WorkflowTemplate is a named, ordered list of steps grouped
+// into three phases; each step declares which deal kinds it applies to.
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum WorkflowPhase {
+  Qualify
+  Prepare
+  Execute
+}
+
+enum DealKind {
+  Mandate
+  Transaction
+  Advisory
+}
+
+enum AdvisoryClassification {
+  Valuation
+  DueDiligence
+  BusinessPlanPitchDeck
+  FinancialModel
+  AdvisorySupport
+  Other
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Team & contacts
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -564,6 +595,9 @@ model User {
   reviewedProposedChanges InvestorProposedChange[]  @relation("ProposedChangeReviewer")
   reviewedPartnerProposedChanges PartnerProposedChange[] @relation("PartnerProposedChangeReviewer")
   conversationMessages    ConversationMessage[]     @relation("MessageSenderUser")
+  completedStageStates        DealStageState[]        @relation("DealStageStateCompletedBy")
+  addedEngagementParticipants EngagementParticipant[] @relation("EngagementParticipantAddedBy")
+  accessGrantedEngagements    Engagement[]            @relation("EngagementAccessGrantedBy")
 }
 
 model Person {
@@ -598,6 +632,8 @@ model Person {
   outreachDrafts  OutreachDraft[]
   proposedChanges InvestorProposedChange[]
   conversationMessages ConversationMessage[] @relation("MessageSenderPerson")
+  engagementParticipations EngagementParticipant[]
+  uploadedDocuments        Document[]            @relation("DocumentUploadedByPerson")
 
   @@index([investorId])
   @@index([clientId])
@@ -635,6 +671,8 @@ model Investor {
   emailVerifiedAt          DateTime?
   phoneVerifiedAt          DateTime?
   registeredAt             DateTime?
+  /// F3.3 — when Noblestride approved this investor's onboarding ("date onboarded").
+  approvedAt               DateTime?
   openNdaSignedAt          DateTime?
   shareholdingPreference   String?
   minRevenue               Decimal?  @db.Decimal(20, 2)
@@ -685,6 +723,7 @@ model Investor {
   @@index([status])
   @@index([engagementClassification])
   @@index([onboardingStatus])
+  @@index([approvedAt])
 }
 
 // BlockedRegistration — email domains/addresses barred from self-registration.
@@ -757,6 +796,10 @@ model Client {
   repaymentAbilityNotes  String?
   pricingExpectations    String?
   proposedTimeline       String?
+  // Task 1 (Aug-2026 feedback): project codename + women/youth-led flags
+  projectCodename        String?
+  womenLed               Boolean  @default(false)
+  youthLed               Boolean  @default(false)
   createdSource     ActorSource    @default(HUMAN)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
@@ -816,6 +859,8 @@ model Mandate {
   raisedToDateRound    Decimal?  @db.Decimal(20, 2)
   intakeNdaAccepted    Boolean   @default(false)
   intakeNdaAcceptedAt  DateTime?
+  // Task 1 (Aug-2026 feedback): retainer payment tracking
+  retainerPaidAmount   Decimal?  @db.Decimal(20, 2)
   createdSource  ActorSource  @default(HUMAN)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -827,6 +872,8 @@ model Mandate {
   assists      User[]        @relation("MandateAssists")
   referredById String?
   referredBy   Partner?      @relation("PartnerReferral", fields: [referredById], references: [id], onDelete: SetNull)
+  workflowTemplateId String?
+  workflowTemplate   WorkflowTemplate? @relation(fields: [workflowTemplateId], references: [id], onDelete: SetNull)
   transactions Transaction[]
   activities   Activity[]
   tasks        Task[]
@@ -896,6 +943,8 @@ model Transaction {
   assists     User[]       @relation("TransactionAssists")
   referredById String?
   referredBy   Partner?    @relation("PartnerTransactionReferral", fields: [referredById], references: [id], onDelete: SetNull)
+  workflowTemplateId String?
+  workflowTemplate   WorkflowTemplate? @relation(fields: [workflowTemplateId], references: [id], onDelete: SetNull)
   engagements      Engagement[]
   activities       Activity[]
   tasks            Task[]
@@ -926,7 +975,10 @@ model AdvisoryEngagement {
   stage          AdvisoryStage @default(Scoping)
   stageEnteredAt DateTime      @default(now()) // drives "days in stage"
   dealStatus     DealStatus    @default(Open)
+  // Task 1 (Aug-2026 feedback): advisory work type + fee payment tracking
+  classification AdvisoryClassification?
   feeAmount      Decimal?      @db.Decimal(20, 2)
+  feePaidAmount  Decimal?      @db.Decimal(20, 2)
   currency       String        @default("USD")
   sector         Sector[]      @default([])
   country        String?       // free text; defaulted from Client.hqCountry on create
@@ -944,6 +996,8 @@ model AdvisoryEngagement {
   leadId       String?
   lead         User?         @relation("AdvisoryLead", fields: [leadId], references: [id], onDelete: SetNull)
   assists      User[]        @relation("AdvisoryAssists")
+  workflowTemplateId String?
+  workflowTemplate   WorkflowTemplate? @relation(fields: [workflowTemplateId], references: [id], onDelete: SetNull)
   activities   Activity[]
   tasks        Task[]
   documents    Document[]
@@ -973,6 +1027,12 @@ model Engagement {
   interestLevel      InterestLevel?
   ndaType            NdaType?
   ndaSignedAt        DateTime?
+  /// F6b.2 — when staff granted this investor access to the deal detail. Set by
+  /// grantDealAccess, which rides updateEngagement -> NDASigned so the NDA guard
+  /// in src/server/domain/nda-guard.ts is never bypassed.
+  accessGrantedAt    DateTime?
+  accessGrantedById  String?
+  accessGrantedBy    User?               @relation("EngagementAccessGrantedBy", fields: [accessGrantedById], references: [id], onDelete: SetNull)
   termSheetIssued    Boolean             @default(false)
   termSheetDate      DateTime?
   totalAmount        Decimal?            @db.Decimal(20, 2)
@@ -998,11 +1058,13 @@ model Engagement {
   meetings       Meeting[]
   emailMessages  EmailMessage[]
   conversation   Conversation?
+  participants   EngagementParticipant[]
 
   @@unique([transactionId, investorId])
   @@index([status])
   @@index([investorId])
   @@index([engagementStage])
+  @@index([accessGrantedById])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1236,6 +1298,10 @@ model Document {
   uploadedById  String?
   uploadedBy    User?               @relation("DocumentUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
   uploadedAt    DateTime            @default(now())
+  /// F3.1/F2.4: uploads that came from an external portal/applicant Person
+  /// (staff uploads keep using uploadedById -> User).
+  uploadedByPersonId String?
+  uploadedByPerson   Person?         @relation("DocumentUploadedByPerson", fields: [uploadedByPersonId], references: [id], onDelete: SetNull)
   // Review chain (workflow doc Stage 2): peer review -> MD approval -> client review
   reviewerId       String?
   reviewer         User?     @relation("DocumentReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
@@ -1266,8 +1332,10 @@ model Document {
   @@index([accessLevel])
   @@index([transactionId])
   @@index([mandateId])
+  @@index([investorId])
   @@index([folderId])
   @@index([isCurrent])
+  @@index([uploadedByPersonId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1330,7 +1398,10 @@ model DocumentAccessLog {
 
 model StageChange {
   id            String       @id @default(cuid())
-  field         String       // "stage" | "dealStatus" | "engagementStage" | "dealMilestone" | "name" | "registrationNo" | "primaryContact"
+  /// See StageChangeField in src/server/services/stage-history.ts:
+  /// "stage" | "dealStatus" | "engagementStage" | "dealMilestone" | "name"
+  /// | "registrationNo" | "primaryContact" | "workflowStep" | "email"
+  field         String
   fromValue     String?
   toValue       String
   changedAt     DateTime     @default(now())
@@ -1468,6 +1539,7 @@ model InvestorTicketBand {
 enum AccountKind {
   INTERNAL
   INVESTOR
+  PARTNER
 }
 
 enum AccountStatus {
@@ -1502,6 +1574,9 @@ model AuthAccount {
   failedLogins Int           @default(0)
   lockedUntil  DateTime?
   lastLoginAt  DateTime?
+  /// F3.6 self-service email change: the address awaiting VERIFY_EMAIL confirmation.
+  pendingEmail            String?
+  pendingEmailRequestedAt DateTime?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -1556,6 +1631,23 @@ model AuthOtpChallenge {
 }
 
 /// Public web-chat status OTP (spec 2026-07-14). Mirrors AuthOtpChallenge but keyed to a matched Person, not an AuthAccount.
+/// Public application-status OTP (F2.4 / §2b G1). Keyed to a raw email — the
+/// caller is anonymous and no Client/Person match is required to issue a code,
+/// so nothing here may leak whether an application exists.
+model ApplicantOtpChallenge {
+  id          String    @id @default(cuid())
+  email       String // normalized lowercase
+  codeHash    String // sha256 hex of the 6-digit code; raw code never stored
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+  @@index([email, createdAt])
+}
+
 model ClientOtpChallenge {
   id          String    @id @default(cuid())
   clientId    String
@@ -1618,6 +1710,11 @@ model ESignEnvelope {
   status        String   @default("sent") // sent | delivered | completed | declined | voided
   signerEmail   String
   signerName    String
+  /// F3.2 click-wrap: NDA template version, signer IP, and the drawn/typed/uploaded
+  /// signature as a PNG data URL. All null for DocuSign-provider envelopes.
+  templateVersion String?
+  signedIp        String?
+  signatureImage  String?
   investorId    String?
   investor      Investor?    @relation(fields: [investorId], references: [id], onDelete: SetNull)
   engagementId  String?
@@ -1784,4 +1881,89 @@ model PartnerProposedChange {
 
   @@index([status])
   @@index([partnerId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WorkflowTemplate / WorkflowStep / DealStageState — the configurable deal
+// workflow engine. Step completion is derived from evidence rules OR from a
+// manual override recorded in DealStageState (manualStatus is exactly
+// "complete" | "incomplete").
+// NOTE: a raw-SQL partial unique index `WorkflowTemplate_single_default`
+// (`ON "WorkflowTemplate" ("isDefault") WHERE "isDefault"`) also exists in the
+// database — Prisma cannot express partial indexes, so it lives only in
+// migration 20260822140000_workflow_default_unique.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model WorkflowTemplate {
+  id                  String               @id @default(cuid())
+  name                String
+  isDefault           Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  steps               WorkflowStep[]
+  mandates            Mandate[]
+  transactions        Transaction[]
+  advisoryEngagements AdvisoryEngagement[]
+
+  @@index([isDefault])
+}
+
+model WorkflowStep {
+  id          String           @id @default(cuid())
+  templateId  String
+  template    WorkflowTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  key         String
+  title       String
+  phase       WorkflowPhase
+  description String?
+  order       Int
+  appliesTo   DealKind[]       @default([])
+
+  @@unique([templateId, key])
+  @@index([templateId])
+}
+
+model DealStageState {
+  id            String    @id @default(cuid())
+  dealKind      DealKind
+  dealId        String
+  stepKey       String
+  manualStatus  String // "complete" | "incomplete"
+  note          String?
+  completedAt   DateTime?
+  completedById String?
+  completedBy   User?     @relation("DealStageStateCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([dealKind, dealId, stepKey])
+  @@index([dealKind, dealId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EngagementParticipant — the people looped into one investor engagement
+// (Aug-2026 feedback).
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EngagementParticipant {
+  id           String     @id @default(cuid())
+  engagementId String
+  engagement   Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  personId     String
+  person       Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
+  addedById    String?
+  addedBy      User?      @relation("EngagementParticipantAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime   @default(now())
+
+  @@unique([engagementId, personId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AppSetting — key/value store for admin-editable global settings.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

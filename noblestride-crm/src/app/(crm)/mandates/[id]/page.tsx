@@ -5,9 +5,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getMandate } from "@/server/services/mandates";
 import { listDocuments } from "@/server/services/documents";
-import { journeyForMandate } from "@/server/services/journey";
+import { resolveDealWorkflow } from "@/server/services/workflow";
 import { relationOptions } from "@/server/services/relation-options";
-import { DealJourney } from "@/components/crm/deal-journey";
+import { DealWorkflowCard } from "@/components/crm/deal-workflow";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { label, options } from "@/lib/vocab";
@@ -39,10 +39,10 @@ export default async function MandateDetailPage({ params }: PageProps) {
 
   if (!mandate) notFound();
 
-  const [rel, documents, journeySteps] = await Promise.all([
+  const [rel, documents, workflow] = await Promise.all([
     relationOptions(),
     listDocuments({ mandateId: id }),
-    journeyForMandate(id),
+    resolveDealWorkflow("Mandate", id),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,10 +76,12 @@ export default async function MandateDetailPage({ params }: PageProps) {
     qualificationVerdict: m.qualificationVerdict ?? "",
     // Task 8: retainer tracking + priority + referral-qualification (Task 6 migration)
     retainerAmount: m.retainerAmount == null ? undefined : Number(m.retainerAmount),
+    retainerPaidAmount: m.retainerPaidAmount == null ? undefined : Number(m.retainerPaidAmount),
     retainerInvoicedDate: toDate(m.retainerInvoicedDate),
     retainerPaidDate: toDate(m.retainerPaidDate),
     priority: m.priority ?? "",
     referralQualified: m.referralQualified ?? undefined,
+    workflowTemplateId: m.workflowTemplateId ?? "",
   };
   const DELETE_MANDATE = `mutation DeleteMandate($id: ID!) { deleteMandate(id: $id) { id } }`;
 
@@ -124,6 +126,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
     referrer: referredBy,
     priorityValue: m.priority ?? null,
     retainerAmount: m.retainerAmount != null ? Number(m.retainerAmount) : null,
+    retainerPaidAmount: m.retainerPaidAmount != null ? Number(m.retainerPaidAmount) : null,
     retainerInvoicedDate: m.retainerInvoicedDate ? m.retainerInvoicedDate.toISOString() : null,
     retainerPaidDate: m.retainerPaidDate ? m.retainerPaidDate.toISOString() : null,
   };
@@ -178,7 +181,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
             Export
           </Button>
           {mayEdit && (
-            <MandateFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} partners={rel.partners} />
+            <MandateFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} partners={rel.partners} workflowTemplates={rel.workflowTemplates} />
           )}
           {mayDelete && (
             <DeleteConfirm mutation={DELETE_MANDATE} recordId={m.id} entityLabel="mandate" redirectTo="/mandates" />
@@ -186,14 +189,11 @@ export default async function MandateDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Deal journey spine (Task 16) — under the header, above everything else. */}
-      {journeySteps && (
-        <Card>
-          <CardHeader>
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Deal Journey</h2>
-          </CardHeader>
+      {/* Deal workflow (Aug-2026 feedback F4.1.x) — under the header, above everything else. */}
+      {workflow && (
+        <Card id="deal-workflow">
           <CardBody>
-            <DealJourney steps={journeySteps} />
+            <DealWorkflowCard workflow={workflow} canEdit={mayEdit} />
           </CardBody>
         </Card>
       )}
@@ -208,6 +208,17 @@ export default async function MandateDetailPage({ params }: PageProps) {
           qualifiedAt={m.qualifiedAt ? m.qualifiedAt.toISOString() : null}
           users={rel.users}
           canReview={mayReviewIntake}
+          contact={
+            m.client.contacts[0]
+              ? {
+                  name: `${m.client.contacts[0].firstName} ${m.client.contacts[0].lastName ?? ""}`.trim(),
+                  jobTitle: m.client.contacts[0].jobTitle,
+                  email: m.client.contacts[0].email,
+                  phone: m.client.contacts[0].phone,
+                }
+              : null
+          }
+          submittedAt={m.createdAt.toISOString()}
         />
       )}
 
@@ -215,12 +226,14 @@ export default async function MandateDetailPage({ params }: PageProps) {
       <DealSummaryPanel {...dealSummary} />
 
       {/* Documents-by-stage panel (Task 14) */}
-      <DocumentsByStage {...docsByStage} />
+      <div id="documents-by-stage" className="scroll-mt-24">
+        <DocumentsByStage {...docsByStage} />
+      </div>
 
       {/* Restage control + key facts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Key facts */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 scroll-mt-24" id="key-facts">
           <CardHeader>
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">Key Facts</h2>
           </CardHeader>
@@ -290,10 +303,10 @@ export default async function MandateDetailPage({ params }: PageProps) {
           </CardBody>
         </Card>
 
-        {/* Restage panel */}
-        <Card>
+        {/* Pipeline-status panel (the enum stage; the Deal Workflow above tracks progress) */}
+        <Card id="pipeline-status" className="scroll-mt-24">
           <CardHeader>
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Stage</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Pipeline status</h2>
           </CardHeader>
           <CardBody>
             {mayEdit ? (
@@ -305,7 +318,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
                   stageOptions={stageOptions}
                 />
                 <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-                  Changing stage immediately persists to the database and resets the stage timer.
+                  Changing the pipeline status persists immediately and resets the stage timer.
                 </p>
               </>
             ) : (
@@ -350,7 +363,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
       </Card>
 
       {/* Documents linked to this deal (spec §3.9 linked record = Deal) */}
-      <Card>
+      <Card id="documents" className="scroll-mt-24">
         <CardHeader>
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Documents
@@ -403,6 +416,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
         }))}
       />
 
+      <div id="activity" className="scroll-mt-24">
       <ActivityTimeline
         activities={(m.activities ?? []).map((a: { id: string; type: string; subject?: string | null; body?: string | null; occurredAt: Date; channel?: string | null; direction?: string | null }): ActivityTimelineItem => ({
           id: a.id,
@@ -414,6 +428,7 @@ export default async function MandateDetailPage({ params }: PageProps) {
           direction: a.direction,
         }))}
       />
+      </div>
     </div>
   );
 }

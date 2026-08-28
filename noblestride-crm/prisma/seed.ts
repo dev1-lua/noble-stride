@@ -1,3 +1,5 @@
+// ⚠ WIPES the database. Never run against the restored production data — use
+// `npm run seed:workflow` there.
 import { PrismaClient } from "@prisma/client";
 import type {
   InvestorType,
@@ -32,6 +34,7 @@ import type {
 import { amountPending, deriveYearQuarter } from "../src/server/domain/disbursement";
 import { stageRequiresNda } from "../src/server/domain/nda-guard";
 import { hashPassword } from "../src/server/auth/password";
+import { seedWorkflowDefaults } from "../scripts/seed-workflow-defaults";
 import seedData from "./seed-data.json";
 
 const prisma = new PrismaClient();
@@ -167,6 +170,10 @@ async function main() {
   await prisma.serviceProvider.deleteMany();
   // Folders may be entity-anchored (cascade) or free-standing — clear all.
   await prisma.folder.deleteMany();
+  // DealStageState.dealId points at transaction/mandate/advisory rows by a
+  // loose string FK (dealKind + dealId, not a real foreign key) — clear it
+  // before those tables so no orphaned stage-state rows are left behind.
+  await prisma.dealStageState.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.mandate.deleteMany();
   // AdvisoryEngagement.clientId is onDelete: Restrict — must go before clients.
@@ -176,6 +183,12 @@ async function main() {
   await prisma.investor.deleteMany();
   await prisma.partner.deleteMany();
   await prisma.user.deleteMany();
+
+  // WorkflowTemplate/WorkflowStep/AppSetting are NEVER wiped here — they are
+  // config, not seed data. seedWorkflowDefaults() upserts them idempotently
+  // (create-only for AppSetting) so they exist after a fresh `prisma migrate
+  // reset` without ever clobbering an admin's changes.
+  await seedWorkflowDefaults(prisma);
 
   // ─────────────────────────────────────────────────────────────────────────
   // §3  INSERT REAL ENTITIES

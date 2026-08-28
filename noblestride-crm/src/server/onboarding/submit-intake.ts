@@ -13,6 +13,7 @@ import { prisma } from "@/lib/db";
 import { intakeSubmitSchema } from "@/lib/schemas/intake";
 import { qualifyIntake, type IntakeQualInput } from "@/server/domain/qualification";
 import { notify, adminUserIds } from "@/server/services/notifications";
+import { splitFullName } from "@/lib/name-split";
 
 export interface IntakeExtras {
   /** "wizard" (default) preserves today's behavior exactly; "webchat" is the Client Agent (SOW §8.1). */
@@ -66,7 +67,9 @@ export async function submitIntake(raw: unknown, extras: IntakeExtras = {}): Pro
         createdSource: via === "webchat" ? "AGENT" : "API",
         contacts: {
           create: {
-            firstName: input.contactName,
+            // F2.3: split the one free-text name field into first/last, instead
+            // of storing "Solomon Oulula" as a first name with no surname.
+            ...splitFullName(input.contactName),
             jobTitle: input.role,
             email: input.email,
             phone: input.phone,
@@ -156,7 +159,7 @@ export async function submitIntake(raw: unknown, extras: IntakeExtras = {}): Pro
     await notify(await adminUserIds(), {
       kind: "new_intake",
       title: `New website application: ${input.legalName}`,
-      href: "/deals?type=mandate&stage=NewLead&source=Website",
+      href: "/applications",
     });
   } catch (err) {
     console.error("submitIntake: post-commit notification failed", err);

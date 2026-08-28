@@ -4,28 +4,32 @@ agent:
 skills:
   - name: crm-summary
     skillId: 2905b0cd-9979-4de3-a9f4-5c0cc49f5e40
-    version: 1.0.8
+    version: 1.0.10
   - name: crm-write
     skillId: 48594923-1371-4bd8-b4bb-8cf4b16193be
-    version: 1.0.7
+    version: 1.0.9
   - name: crm-analysis
     skillId: 2c4ef681-9976-43f5-b2b7-cf8d261d5222
-    version: 1.0.6
+    version: 1.0.8
 webhooks: []
 jobs:
   - jobId: 2c3786e7-c097-4d03-80de-a30db5110a65
     name: weekly-digest
-    version: 1.0.8
+    version: 1.0.10
 preprocessors:
   - name: passphrase-gate
     preprocessorId: preprocessor_53a7ab8a-c46b-44ec-a4ae-d9d2aa6ad70f
-    version: 1.0.9
+    version: 1.0.11
 postprocessors:
   - name: format-normalizer
     postprocessorId: postprocessor_d7bd961d-c901-481b-a571-ca73ece4e461
-    version: 1.0.1
+    version: 1.0.3
 mcpServers: []
 backup:
-  activeVersion: 9
-  lastHash: bc3a12018fab1491c5ce520078535a97e605fadde11d0a93105417ad43721605
-  lastPushedAt: '2026-07-21T22:10:24.892Z'
+  activeVersion: 13
+  lastHash: cfd72d0e3923c27ac249974189bf4d9925dc927b72871a9827b0784054b9502c
+  lastPushedAt: '2026-08-27T16:47:39.279Z'
+triggers:
+  - name: QC-Live-Audit
+    triggerId: 3de8b40a-aa34-4b90-ab9a-639c0e9368ab
+    version: 1.0.0

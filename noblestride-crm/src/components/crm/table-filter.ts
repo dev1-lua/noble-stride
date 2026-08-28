@@ -6,6 +6,12 @@ export interface TableFilter<T> {
   label: string;
   options: { value: string; label: string }[];
   get: (row: T) => string;
+  /**
+   * Multi-valued rows (Aug-2026 feedback F6.1: a client's country can come
+   * from hqCountry OR its Geography list). When present it wins over `get`,
+   * and the row matches when ANY of its values is selected.
+   */
+  getAll?: (row: T) => string[];
 }
 
 /**
@@ -26,7 +32,9 @@ export function applyTableFilters<T>(
     if (q && !searchText(row).some((s) => (s ?? "").toLowerCase().includes(q))) return false;
     for (const f of filters) {
       const values = active[f.key];
-      if (values && values.length > 0 && !values.includes(f.get(row))) return false;
+      if (!values || values.length === 0) continue;
+      const rowValues = f.getAll ? f.getAll(row) : [f.get(row)];
+      if (!rowValues.some((v) => values.includes(v))) return false;
     }
     return true;
   });

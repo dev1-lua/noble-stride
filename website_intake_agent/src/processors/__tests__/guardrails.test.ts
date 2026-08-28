@@ -147,3 +147,14 @@ describe("classifyInboundProbe", () => {
     expect(classifyInboundProbe("Hello, I'd like to apply for funding.").isProbe).toBe(false);
   });
 });
+
+// F5.5 / image22: SAFE_ACK is what a visitor actually reads when the leak guard
+// replaces a reply, so it has to match the firm's register too.
+describe("SAFE_ACK register", () => {
+  it("is formal: no exclamation mark, no emoji, no long dash", () => {
+    expect(SAFE_ACK).not.toContain("!");
+    expect(SAFE_ACK).not.toMatch(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u);
+    expect(SAFE_ACK).not.toMatch(/[\u2012-\u2015]/);
+    expect(SAFE_ACK.toLowerCase()).toContain("thank you for your message");
+  });
+});

@@ -15,9 +15,19 @@
     "migrate": "prisma migrate dev",
     "generate": "prisma generate",
     "seed": "tsx prisma/seed.ts",
+    "seed:workflow": "tsx scripts/seed-workflow-defaults.ts",
+    "db:fix-checksums": "tsx scripts/fix-prisma-migration-checksums.ts",
+    "db:backfill-approved-at": "tsx scripts/backfill-investor-approved-at.ts",
+    "db:verify-parity": "tsx scripts/verify-migration-parity.ts",
+    "db:cleanup-prefixed": "tsx scripts/cleanup-prefixed-test-data.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "e2e:seed": "tsx e2e/fixtures/seed.ts",
+    "e2e:cleanup": "tsx e2e/fixtures/cleanup.ts",
     "import:real": "python3 scripts/parse-real-data.py && tsx scripts/import-real-data.ts",
     "codegen": "graphql-codegen --config codegen.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test:e2e:watch": "E2E_HEADED=1 playwright test --project=chromium"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -57,7 +67,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "jsdom": "^29.1.1",
-    "playwright": "^1.61.1",
+    "@playwright/test": "^1.61.1",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "tsx": "^4.22.4",

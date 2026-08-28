@@ -70,6 +70,11 @@ export interface InvestorFilter {
   ticketMax?: number | null;
   search?: string | null;
   onboardingStatus?: OnboardingStatus;
+  /** F3.3 "date onboarded" range — inclusive bounds on Investor.approvedAt. */
+  approvedFrom?: Date | null;
+  approvedTo?: Date | null;
+  sort?: "name" | "approvedAt" | "registeredAt";
+  dir?: "asc" | "desc";
 }
 
 export interface Pagination {

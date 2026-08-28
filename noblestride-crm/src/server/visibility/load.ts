@@ -7,6 +7,7 @@ import type {
   InvestorEngagementClassification,
   MilestoneKey,
   PrismaClient,
+  DealStatus,
   TransactionStage,
 } from "@prisma/client";
 import { ndaSatisfied } from "@/server/domain/nda-guard";
@@ -72,13 +73,19 @@ export async function loadInvestorPortalData(
   const projected: ProjectedDeal[] = [];
   for (const deal of deals) {
     const engagement = engagementByTxn.get(deal.id) ?? null;
-    // Engaged deals are always candidates (tier gates them); otherwise the
-    // deal must match the investor's discovery filters.
-    if (!engagement && !discoverableIds.has(deal.id)) continue;
+    // F6b.1 (image27): every LIVE deal is a candidate now — the client asked
+    // that investors see all deals and register interest anywhere, not only on
+    // the ones discovery matched. Discovery still decides the "matches your
+    // mandate" label. What gates access is unchanged: investorTier returns NONE
+    // for a blocked or unapproved investor and projectDealForInvestor returns
+    // null, so those investors still see nothing at all.
     // §11.1 interactive filters narrow the candidate set, never widen it.
     if (!filteredIds.has(deal.id)) continue;
+    const matchesMandate = discoverableIds.has(deal.id);
+    if (filters.match && !matchesMandate) continue;
     const projection = projectDealForInvestor(deal, investorTier(investor, engagement), {
       ndaSatisfied: ndaSatisfied(investor, engagement),
+      matchesMandate,
     });
     if (projection) projected.push(projection);
   }
@@ -103,6 +110,19 @@ export interface InvestorPipelineItem {
   /** completedAt for individually recorded milestone rows (own journey);
    *  stage-implied milestones have no date. Never includes milestone notes. */
   milestoneDates: Partial<Record<MilestoneKey, Date>>;
+  /**
+   * F6b.3 / G3: the two raw fields `portalDealStatus` needs to derive the
+   * one-word Open / In progress / Closed chip. Kept HERE rather than on
+   * `ProjectedDeal`, which is the external contract shared with the browse
+   * grid and the agent — a deal's internal status has no business there.
+   */
+  dealStatus: DealStatus;
+  transactionStage: TransactionStage;
+  /**
+   * F6b.4: the signed-in person is a participant on this engagement. False when
+   * no personId was supplied — the flag is a UI hint, never an access decision.
+   */
+  isParticipant: boolean;
 }
 
 /**
@@ -114,13 +134,42 @@ export interface InvestorPipelineItem {
  * Never contains: feedback, probability, notes, disbursement amounts,
  * owner/team identities, or other investors' data.
  */
+export interface InvestorPipelineOptions {
+  /** The signed-in Person, for participation-aware views (F6b.4). */
+  personId?: string;
+  /** Keep only deals this person follows — as a participant, or as the fund's primary contact. */
+  onlyMine?: boolean;
+}
+
 export async function loadInvestorPipeline(
   prisma: PrismaClient,
   investorId: string,
+  opts: InvestorPipelineOptions = {},
 ): Promise<InvestorPipelineItem[]> {
   const investor = await prisma.investor.findUniqueOrThrow({ where: { id: investorId } });
   if (isOnboardingBlocked(investor.onboardingStatus)) return [];
   if (isBlockedClassification(investor.engagementClassification)) return [];
+
+  // F6b.4: which of this fund's deals the signed-in person follows. The primary
+  // contact follows everything by definition — they are the fund's point of
+  // contact, so "only deals I follow" must not hide the fund's own pipeline
+  // from them.
+  let followedIds: Set<string> | null = null;
+  let isPrimaryContact = false;
+  if (opts.personId) {
+    const [rows, person] = await Promise.all([
+      prisma.engagementParticipant.findMany({
+        where: { personId: opts.personId },
+        select: { engagementId: true },
+      }),
+      prisma.person.findUnique({
+        where: { id: opts.personId },
+        select: { isPrimaryContact: true },
+      }),
+    ]);
+    followedIds = new Set(rows.map((r) => r.engagementId));
+    isPrimaryContact = Boolean(person?.isPrimaryContact);
+  }
 
   const engagements = await prisma.engagement.findMany({
     where: { investorId },
@@ -135,6 +184,7 @@ export async function loadInvestorPipeline(
 
   const items: InvestorPipelineItem[] = [];
   for (const engagement of engagements) {
+    if (opts.onlyMine && !isPrimaryContact && !followedIds?.has(engagement.id)) continue;
     const tier = investorTier(investor, engagement);
     const dealTier: Tier = tier === "NONE" ? "PRE_INTEREST" : tier;
     const deal = projectDealForInvestor(engagement.transaction, dealTier, {
@@ -147,6 +197,9 @@ export async function loadInvestorPipeline(
       deal,
       own: projectOwnEngagement(engagement, engagement.milestones),
       milestoneDates,
+      dealStatus: engagement.transaction.dealStatus,
+      transactionStage: engagement.transaction.stage,
+      isParticipant: followedIds?.has(engagement.id) ?? false,
     });
   }
 
@@ -165,8 +218,9 @@ export async function loadOwnEngagementForDeal(
   prisma: PrismaClient,
   investorId: string,
   dealId: string,
+  opts: InvestorPipelineOptions = {},
 ): Promise<InvestorPipelineItem | null> {
-  const items = await loadInvestorPipeline(prisma, investorId);
+  const items = await loadInvestorPipeline(prisma, investorId, { ...opts, onlyMine: false });
   return items.find((item) => item.deal.id === dealId) ?? null;
 }
 
@@ -268,7 +322,10 @@ export async function loadPartnerPortalData(
           transactions: { select: { partnerFeeStatus: true }, take: 1 },
         },
       },
+      // F5.6: a partner can also be credited on a Transaction directly. Without
+      // this those referrals never reached the portal at all.
+      referredTransactions: { include: { client: true } },
     },
   });
-  return projectForPartner(partner, partner.referredMandates);
+  return projectForPartner(partner, partner.referredMandates, partner.referredTransactions);
 }

@@ -1,16 +1,18 @@
 // advisory/[id]/page.tsx — Advisory engagement detail page.
 // Server Component: fetches the engagement with relations, renders detail +
-// restage control. Simplified sibling of mandates/[id] (no journey spine,
-// NDA/EA docs panels, or intake review — those are mandate-specific).
+// restage control + the Deal Workflow card (Aug-2026 feedback F4.1.x).
+// Simplified sibling of mandates/[id] (no NDA/EA docs panels or intake review).
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getAdvisory } from "@/server/services/advisory";
 import { listDocuments } from "@/server/services/documents";
 import { relationOptions } from "@/server/services/relation-options";
+import { resolveDealWorkflow } from "@/server/services/workflow";
+import { DealWorkflowCard } from "@/components/crm/deal-workflow";
 import { Avatar, Chip, Card, CardHeader, CardBody, Badge } from "@/components/ui";
 import { formatDate } from "@/lib/format";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, balanceDue } from "@/lib/money";
 import { label, options } from "@/lib/vocab";
 import { RestageSelect } from "@/components/crm/restage-select";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
@@ -33,9 +35,10 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
 
   if (!advisory) notFound();
 
-  const [rel, documents] = await Promise.all([
+  const [rel, documents, workflow] = await Promise.all([
     relationOptions(),
     listDocuments({ advisoryId: id }),
+    resolveDealWorkflow("Advisory", id),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,6 +54,8 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
     stage: a.stage ?? "",
     dealStatus: a.dealStatus ?? "",
     feeAmount: a.feeAmount == null ? undefined : Number(a.feeAmount),
+    feePaidAmount: a.feePaidAmount == null ? undefined : Number(a.feePaidAmount),
+    classification: a.classification ?? "",
     sector: (a.sector ?? []) as string[],
     country: a.country ?? "",
     source: a.source ?? "",
@@ -58,6 +63,7 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
     nextAction: a.nextAction ?? "",
     notes: a.notes ?? "",
     priority: a.priority ?? "",
+    workflowTemplateId: a.workflowTemplateId ?? "",
   };
   const DELETE_ADVISORY = `mutation DeleteAdvisory($id: ID!) { deleteAdvisory(id: $id) { id } }`;
 
@@ -93,6 +99,7 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
             <h1 className="text-2xl font-bold text-[var(--text-primary)] leading-tight">{clientName}</h1>
             <Chip value={a.stage} group="AdvisoryStage" />
             {a.dealStatus && <Chip value={a.dealStatus} group="DealStatus" />}
+            {a.classification && <Chip value={a.classification} group="AdvisoryClassification" />}
           </div>
           {a.name && a.name !== clientName && (
             <p className="mt-1 text-sm text-[var(--text-tertiary)]">{a.name}</p>
@@ -100,7 +107,7 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
         </div>
         <div className="flex shrink-0 gap-2">
           {mayEdit && (
-            <AdvisoryFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} />
+            <AdvisoryFormDrawer mode="edit" initial={initial} clients={rel.clients} users={rel.users} workflowTemplates={rel.workflowTemplates} />
           )}
           {mayDelete && (
             <DeleteConfirm mutation={DELETE_ADVISORY} recordId={a.id} entityLabel="advisory engagement" redirectTo="/deals?type=advisory" />
@@ -108,9 +115,18 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Key facts + restage */}
+      {/* Deal workflow (Aug-2026 feedback F4.1.x) */}
+      {workflow && (
+        <Card id="deal-workflow">
+          <CardBody>
+            <DealWorkflowCard workflow={workflow} canEdit={mayEdit} />
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Key facts + pipeline status */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 scroll-mt-24" id="key-facts">
           <CardHeader>
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">Key Facts</h2>
           </CardHeader>
@@ -160,10 +176,39 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
                 <dd className="mt-1 text-sm text-[var(--text-primary)]">{a.country ?? "—"}</dd>
               </div>
 
+              {/* F4.2.1: classification + fee paid / balance due (image17/18). */}
+              <div>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Classification</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">
+                  {a.classification ? label("AdvisoryClassification", a.classification) : "—"}
+                </dd>
+              </div>
+
               <div>
                 <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Fee</dt>
-                <dd className="mt-1 text-sm text-[var(--text-primary)]">
+                <dd className="mt-1 text-sm text-[var(--text-primary)]" data-testid="advisory-fee">
                   {a.feeAmount != null ? `${formatMoney(Number(a.feeAmount))} ${a.currency}` : "—"}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Fee Paid</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]" data-testid="advisory-fee-paid">
+                  {a.feePaidAmount != null ? formatMoney(Number(a.feePaidAmount)) : "—"}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wide">Balance Due</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]" data-testid="advisory-fee-balance">
+                  {(() => {
+                    const b = balanceDue(
+                      a.feeAmount == null ? null : Number(a.feeAmount),
+                      a.feePaidAmount == null ? null : Number(a.feePaidAmount),
+                    );
+                    if (b == null) return "—";
+                    return <span className={b > 0 ? "font-semibold text-rose-600" : "font-semibold"}>{formatMoney(b)}</span>;
+                  })()}
                 </dd>
               </div>
 
@@ -199,9 +244,9 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
           </CardBody>
         </Card>
 
-        <Card>
+        <Card id="pipeline-status" className="scroll-mt-24">
           <CardHeader>
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Stage</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Pipeline status</h2>
           </CardHeader>
           <CardBody>
             {mayEdit ? (
@@ -213,7 +258,7 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
                   stageOptions={stageOptions}
                 />
                 <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-                  Changing stage immediately persists to the database and resets the stage timer.
+                  Changing the pipeline status persists immediately and resets the stage timer.
                 </p>
               </>
             ) : (
@@ -227,7 +272,7 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
       </div>
 
       {/* Documents linked to this engagement */}
-      <Card>
+      <Card id="documents" className="scroll-mt-24">
         <CardHeader>
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Documents
@@ -280,6 +325,7 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
         }))}
       />
 
+      <div id="activity" className="scroll-mt-24">
       <ActivityTimeline
         activities={(a.activities ?? []).map((act: { id: string; type: string; subject?: string | null; body?: string | null; occurredAt: Date; channel?: string | null; direction?: string | null }): ActivityTimelineItem => ({
           id: act.id,
@@ -291,6 +337,7 @@ export default async function AdvisoryDetailPage({ params }: PageProps) {
           direction: act.direction,
         }))}
       />
+      </div>
     </div>
   );
 }

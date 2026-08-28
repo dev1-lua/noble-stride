@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { Avatar, Chip, Table, THead, TBody, Tr, Th, Td } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
+import { formatDate } from "@/lib/format";
 import type { Prisma } from "@prisma/client";
 
 // The shape returned by listInvestors (no contacts on list page).
@@ -18,18 +19,35 @@ type InvestorRow = {
   ticketMin: Prisma.Decimal | null;
   ticketMax: Prisma.Decimal | null;
   onboardingStatus: string;
+  /** F3.3 "date onboarded" — null until the registration is approved. */
+  approvedAt: Date | null;
 };
 
 interface RecordTableProps {
   investors: InvestorRow[];
+  /** Current sort, so the Onboarded header can toggle direction. */
+  sort?: string;
+  dir?: "asc" | "desc";
+  /** The rest of the query string, preserved when the sort link is followed. */
+  query?: string;
 }
 
 /**
  * RecordTable — renders the investor list as a styled table.
- * Columns: Investor (avatar+name link), Type, Ticket Size, Sectors, Geography, Status, Onboarding.
+ * Columns: Investor (avatar+name link), Type, Sectors, Geography, Status,
+ * Onboarding, Onboarded (F3.3), Ticket Size.
  * (No Contact column on the list page — listInvestors omits contacts to avoid an N+1.)
  */
-export function RecordTable({ investors }: RecordTableProps) {
+export function RecordTable({ investors, sort, dir, query }: RecordTableProps) {
+  // Clicking Onboarded sorts by it; clicking again flips direction. Newest first
+  // on the first click, since "who did we onboard recently" is the question.
+  const nextDir = sort === "approvedAt" && dir === "desc" ? "asc" : "desc";
+  const sortParams = new URLSearchParams(query ?? "");
+  sortParams.set("sort", "approvedAt");
+  sortParams.set("dir", nextDir);
+  const sortHref = `/investors?${sortParams.toString()}`;
+  const sortArrow = sort === "approvedAt" ? (dir === "asc" ? " ↑" : " ↓") : "";
+
   if (investors.length === 0) {
     return (
       <div className="rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] px-5 py-12 text-center text-[var(--text-tertiary)]">
@@ -44,13 +62,14 @@ export function RecordTable({ investors }: RecordTableProps) {
         {/* Fixed column proportions so the table always fits its card (no
             horizontal scroll); the Investor name truncates to absorb the slack. */}
         <colgroup>
-          <col className="w-[22%]" />
-          <col className="w-[10%]" />
-          <col className="w-[10%]" />
-          <col className="w-[15%]" />
-          <col className="w-[15%]" />
-          <col className="w-[14%]" />
-          <col className="w-[14%]" />
+          <col className="w-[20%]" />
+          <col className="w-[9%]" />
+          <col className="w-[13%]" />
+          <col className="w-[13%]" />
+          <col className="w-[11%]" />
+          <col className="w-[12%]" />
+          <col className="w-[11%]" />
+          <col className="w-[11%]" />
         </colgroup>
         <THead>
           <Tr className="hover:bg-transparent">
@@ -60,6 +79,15 @@ export function RecordTable({ investors }: RecordTableProps) {
             <Th>Geography</Th>
             <Th>Status</Th>
             <Th>Onboarding</Th>
+            <Th>
+              <Link
+                href={sortHref}
+                data-testid="sort-approvedAt"
+                className="hover:text-[var(--accent)]"
+              >
+                Onboarded{sortArrow}
+              </Link>
+            </Th>
             <Th>Ticket Size</Th>
           </Tr>
         </THead>
@@ -138,6 +166,11 @@ export function RecordTable({ investors }: RecordTableProps) {
                 {/* Onboarding dot + label */}
                 <Td>
                   <Chip value={inv.onboardingStatus} group="OnboardingStatus" />
+                </Td>
+
+                {/* F3.3: when Noblestride approved them. */}
+                <Td className="text-[var(--text-secondary)]">
+                  {inv.approvedAt ? formatDate(inv.approvedAt) : <span className="text-[var(--text-tertiary)]">—</span>}
                 </Td>
 
                 {/* Ticket size range — moved to the end: sparse for many

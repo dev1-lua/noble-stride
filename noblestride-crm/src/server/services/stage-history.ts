@@ -9,7 +9,11 @@ import type { Actor } from "@/graphql/context";
 
 export type StageChangeField =
   | "stage" | "dealStatus" | "engagementStage" | "dealMilestone"
-  | "name" | "registrationNo" | "primaryContact";
+  | "name" | "registrationNo" | "primaryContact"
+  // Aug-2026 feedback: manual workflow step done/reopen ("<stepKey>:<complete|incomplete>")
+  | "workflowStep"
+  // Aug-2026 feedback F3.6: the sign-in email on the AuthAccount changed.
+  | "email";
 
 interface StageChangeTargets {
   mandateId?: string;

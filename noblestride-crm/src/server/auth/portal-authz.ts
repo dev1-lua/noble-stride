@@ -17,6 +17,13 @@ export interface PortalMembership {
   canPostInThreads: boolean;
 }
 
+export interface PartnerMembership {
+  partnerId: string;
+  personId: string;
+  /** "First Last" display label for the signed-in contact. */
+  label: string;
+}
+
 export interface PortalCapabilities {
   canEdit: boolean;
   canPostInThreads: boolean;
@@ -58,6 +65,30 @@ export async function requirePortalMember(): Promise<PortalMembership> {
 export async function requirePortalEditor(fallbackPath = "/portal/investor"): Promise<PortalMembership> {
   const m = await requirePortalMember();
   if (m.portalRole !== "Editor") redirect(`${fallbackPath}?denied=edit`);
+  return m;
+}
+
+/**
+ * The signed-in PARTNER-portal member, or null when the session isn't a partner
+ * seat (F5.6). Partners have no Editor/Viewer split — the partner portal is
+ * read-only status tracking for the deals they referred — so there is
+ * deliberately no requirePartnerEditor.
+ */
+export async function getPartnerMembership(): Promise<PartnerMembership | null> {
+  const auth = await getCurrentAuth();
+  const person = auth?.person;
+  if (!person?.partnerId || auth?.account.kind !== "PARTNER") return null;
+  return {
+    partnerId: person.partnerId,
+    personId: person.id,
+    label: `${person.firstName} ${person.lastName ?? ""}`.trim(),
+  };
+}
+
+/** Signed-in partner contact; redirects when not a partner session. */
+export async function requirePartnerMember(): Promise<PartnerMembership> {
+  const m = await getPartnerMembership();
+  if (!m) redirect("/login");
   return m;
 }
 

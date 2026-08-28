@@ -65,9 +65,11 @@ export function NumberField({ label, value, onChange, error, required, placehold
 
 export const MoneyField = NumberField;
 
-export function SelectField({ label, value, onChange, options, error, required, placeholder, disabled }: {
+export function SelectField({ label, value, onChange, options, error, required, placeholder, disabled, clearable }: {
   label: string; value?: string; onChange: (v: string) => void; options: SelectOption[];
   error?: string; required?: boolean; placeholder?: string; disabled?: boolean;
+  /** Let the user pick the placeholder again to clear the value (pairs with the drawer's `clearableFields`). */
+  clearable?: boolean;
 }) {
   return (
     <Select
@@ -78,6 +80,7 @@ export function SelectField({ label, value, onChange, options, error, required, 
       placeholder={placeholder ?? "Select…"}
       error={error}
       disabled={disabled}
+      clearable={clearable}
     />
   );
 }

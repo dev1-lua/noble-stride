@@ -41,6 +41,26 @@ describe("projectDealForInvestor — tier gating (§5.2)", () => {
     }
   });
 
+  // F6b.1: the flag is a LABEL, not a gate. It must default off and must never
+  // change which fields the projector emits.
+  describe("matchesMandate flag", () => {
+    it("defaults to false when the caller says nothing", () => {
+      expect(projectDealForInvestor(makeDealFixture(), "PRE_INTEREST")?.matchesMandate).toBe(false);
+    });
+
+    it("carries the caller's answer through", () => {
+      expect(
+        projectDealForInvestor(makeDealFixture(), "PRE_INTEREST", { matchesMandate: true })?.matchesMandate,
+      ).toBe(true);
+    });
+
+    it("changes nothing else about the projection", () => {
+      const off = projectDealForInvestor(makeDealFixture(), "AFTER_NDA", { matchesMandate: false });
+      const on = projectDealForInvestor(makeDealFixture(), "AFTER_NDA", { matchesMandate: true });
+      expect({ ...on, matchesMandate: false }).toEqual(off);
+    });
+  });
+
   describe("teaser masking (PRE_INTEREST only)", () => {
     it("masks the deal name with a deterministic codename", () => {
       const p = projectDealForInvestor(makeDealFixture(), "PRE_INTEREST");
@@ -160,6 +180,35 @@ describe("projectDealForInvestor — tier gating (§5.2)", () => {
     }
   });
 
+  describe("project codename preference (Aug-2026 feedback)", () => {
+    it("prefers the client's own projectCodename over the derived deal codename when masked", () => {
+      const deal = makeDealFixture();
+      deal.client!.projectCodename = "Project Falcon";
+      const p = projectDealForInvestor(deal, "PRE_INTEREST");
+      expect(p?.name).toBe("Project Falcon");
+      expect(p?.companyProfile.clientName).toBe("Project Falcon");
+      // never the real client name at this tier
+      expect(JSON.stringify(p)).not.toContain("Acme Agri Ltd");
+    });
+
+    it("falls back to the deterministic codename when projectCodename is blank or whitespace", () => {
+      for (const value of ["", "   ", null, undefined]) {
+        const deal = makeDealFixture();
+        deal.client!.projectCodename = value as string | null | undefined;
+        const p = projectDealForInvestor(deal, "PRE_INTEREST");
+        expect(p?.name).toBe(dealCodename("txn-1"));
+      }
+    });
+
+    it("never applies the codename once unmasked", () => {
+      const deal = makeDealFixture();
+      deal.client!.projectCodename = "Project Falcon";
+      const p = projectDealForInvestor(deal, "AFTER_NDA", { ndaSatisfied: true });
+      expect(p?.name).toBe("Project Baobab");
+      expect(p?.companyProfile.clientName).toBe("Acme Agri Ltd");
+    });
+  });
+
   describe("impact flags surface at every tier (§3.1, companyProfile group)", () => {
     for (const tier of VISIBLE_TIERS) {
       it(`womenLed/youthLed visible @ ${tier}`, () => {
@@ -168,6 +217,27 @@ describe("projectDealForInvestor — tier gating (§5.2)", () => {
         expect(p?.companyProfile.youthLed).toBe(false);
       });
     }
+
+    it("ORs the new boolean columns with the legacy impactFlags list", () => {
+      // youthLed only on the new column
+      const a = makeDealFixture();
+      a.client!.youthLed = true;
+      expect(projectDealForInvestor(a, "PRE_INTEREST")?.companyProfile.youthLed).toBe(true);
+
+      // womenLed only in the legacy list (column false)
+      const b = makeDealFixture();
+      b.client!.womenLed = false;
+      expect(projectDealForInvestor(b, "PRE_INTEREST")?.companyProfile.womenLed).toBe(true);
+
+      // neither → false
+      const c = makeDealFixture();
+      c.client!.impactFlags = [];
+      c.client!.womenLed = false;
+      c.client!.youthLed = false;
+      const p = projectDealForInvestor(c, "PRE_INTEREST");
+      expect(p?.companyProfile.womenLed).toBe(false);
+      expect(p?.companyProfile.youthLed).toBe(false);
+    });
   });
 });
 

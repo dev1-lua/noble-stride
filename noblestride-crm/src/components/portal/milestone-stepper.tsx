@@ -1,21 +1,27 @@
-// Horizontal mini-stepper: 15 segments over the fixed investor milestone
-// cycle. Filled = complete, the next upcoming step is highlighted. Pure
-// server-renderable component (no interactivity).
+// Horizontal mini-stepper over the investor milestone cycle. Filled =
+// complete, the next upcoming step is highlighted. Pure server-renderable
+// component (no interactivity).
+//
+// The key list is a prop (defaulting to the 14 investor-visible milestones, so
+// "Success fee paid" is never a segment — F6b.3 / image29) rather than a
+// hard-coded import, which is what lets the caller decide what a fund sees.
 import type { MilestoneKey } from "@prisma/client";
-import { MILESTONE_ORDER, MILESTONE_LABELS } from "@/lib/milestones";
+import { INVESTOR_VISIBLE_MILESTONES, MILESTONE_LABELS } from "@/lib/milestones";
 
 export function MilestoneStepper({
   completedKeys,
   muted = false,
+  keys = INVESTOR_VISIBLE_MILESTONES,
 }: {
   completedKeys: MilestoneKey[];
   muted?: boolean;
+  keys?: MilestoneKey[];
 }) {
   const done = new Set(completedKeys);
-  const currentIndex = MILESTONE_ORDER.findIndex((k) => !done.has(k));
+  const currentIndex = keys.findIndex((k) => !done.has(k));
   return (
     <div className="flex items-center gap-0.5" aria-label="Milestone progress">
-      {MILESTONE_ORDER.map((key, i) => {
+      {keys.map((key, i) => {
         const complete = done.has(key);
         const isCurrent = !muted && i === currentIndex;
         const cls = complete

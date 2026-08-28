@@ -41,28 +41,64 @@ const BADGE_STYLES: Record<MemberBadge, string> = {
   "No account": "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",
 };
 
-function ShareLinkPanel({ url, email }: { url: string; email?: string }) {
+/**
+ * F3.5: the invitation is emailed now, so the link is no longer the primary
+ * affordance. When mail went out we say so and tuck the link into a details
+ * disclosure (useful if it lands in spam); when it did not, the copy-link
+ * panel stays exactly as prominent as it was, because it is the only way the
+ * member gets in.
+ */
+function ShareLinkPanel({ url, email, emailSent }: { url: string; email?: string; emailSent?: boolean }) {
   const [copied, setCopied] = useState(false);
+  const copyRow = (
+    <div className="mt-2 flex items-center gap-2">
+      <input
+        readOnly
+        value={url}
+        data-testid="invite-link"
+        className={`${inputClass} font-mono text-xs`}
+        onFocus={(e) => e.target.select()}
+      />
+      <button
+        type="button"
+        onClick={async () => {
+          await navigator.clipboard.writeText(url);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }}
+        className="shrink-0 rounded bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
+      >
+        {copied ? "Copied ✓" : "Copy link"}
+      </button>
+    </div>
+  );
+
+  if (emailSent) {
+    return (
+      <div className="rounded-lg border border-[var(--accent)] bg-[var(--t-tag-bg-emerald)] p-4">
+        <p className="text-sm font-medium text-[var(--t-tag-text-emerald)]" data-testid="invite-emailed">
+          Invitation emailed{email ? ` to ${email}` : ""} — they&apos;ll set their own password. The
+          link expires in 7 days.
+        </p>
+        <details className="mt-2">
+          <summary className="cursor-pointer text-xs text-[var(--t-tag-text-emerald)]">
+            Didn&apos;t arrive? Copy the link instead
+          </summary>
+          {copyRow}
+        </details>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg border border-[var(--accent)] bg-[var(--t-tag-bg-emerald)] p-4">
       <p className="text-sm font-medium text-[var(--t-tag-text-emerald)]">
-        Share this link{email ? ` with ${email}` : ""}. It&apos;s personal to their email and
-        expires in 7 days.
+        {emailSent === false
+          ? "We couldn't email this invitation — send the link yourself."
+          : `Share this link${email ? ` with ${email}` : ""}.`}{" "}
+        It&apos;s personal to their email and expires in 7 days.
       </p>
-      <div className="mt-2 flex items-center gap-2">
-        <input readOnly value={url} className={`${inputClass} font-mono text-xs`} onFocus={(e) => e.target.select()} />
-        <button
-          type="button"
-          onClick={async () => {
-            await navigator.clipboard.writeText(url);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          }}
-          className="shrink-0 rounded bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
-        >
-          {copied ? "Copied ✓" : "Copy link"}
-        </button>
-      </div>
+      {copyRow}
     </div>
   );
 }
@@ -103,7 +139,11 @@ export default function TeamManager({ rows, canManage }: { rows: TeamRow[]; canM
           )}
           {inviteState.inviteUrl && (
             <div className="mb-3">
-              <ShareLinkPanel url={inviteState.inviteUrl} email={inviteState.invitedEmail} />
+              <ShareLinkPanel
+                url={inviteState.inviteUrl}
+                email={inviteState.invitedEmail}
+                emailSent={inviteState.emailSent}
+              />
             </div>
           )}
           <form action={inviteAction} className="grid gap-4 sm:grid-cols-2">
@@ -166,7 +206,11 @@ export default function TeamManager({ rows, canManage }: { rows: TeamRow[]; canM
           )}
           {linkState.inviteUrl && (
             <div className="mb-3">
-              <ShareLinkPanel url={linkState.inviteUrl} />
+              <ShareLinkPanel
+                url={linkState.inviteUrl}
+                email={linkState.invitedEmail}
+                emailSent={linkState.emailSent}
+              />
             </div>
           )}
           <ul className="divide-y divide-[var(--border-subtle)]">

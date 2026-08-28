@@ -39,4 +39,10 @@ describe("deriveInvestorPageMeta", () => {
   it("maps the Team route", () => {
     expect(deriveInvestorPageMeta("/portal/investor/team").title).toBe("Team");
   });
+
+  // F3.2: the NDA is its own portal surface, so a fund can sign without
+  // hunting through the profile page.
+  it("maps the NDA route", () => {
+    expect(deriveInvestorPageMeta("/portal/investor/nda").title).toBe("NDA");
+  });
 });
