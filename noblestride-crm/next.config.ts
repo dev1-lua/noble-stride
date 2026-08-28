@@ -9,9 +9,9 @@ const nextConfig: NextConfig = {
     // src/app/apply/status/upload/route.ts), so the platform ceiling is raised
     // just past it and each route still enforces its own real limit.
     //
-    // NOTE: the staff upload route (src/app/api/documents/upload/route.ts) still
-    // advertises the shared 50 MB MAX_FILE_BYTES, which this does not make true —
-    // anything over 16 MB will still fail there. Flagged for the branch review.
+    // Must stay equal to MAX_FILE_BYTES in src/server/storage/validation.ts.
+    // Past this ceiling Next truncates the request body and the multipart parse
+    // throws, so a mismatch shows up as an opaque 500 rather than a size error.
     proxyClientMaxBodySize: 16 * 1024 * 1024,
   },
 };

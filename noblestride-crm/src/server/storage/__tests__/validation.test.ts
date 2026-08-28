@@ -47,3 +47,28 @@ describe("validateUpload", () => {
     expect(r).toEqual({ ok: false, reason: expect.stringContaining("empty") });
   });
 });
+
+// The ceiling is not an arbitrary number: past
+// next.config.ts::experimental.proxyClientMaxBodySize, Next truncates the request
+// body and the multipart parse throws, which surfaces as an opaque 500 instead of
+// a size error. This file advertised 50 MB while the proxy allowed 16, so a 20 MB
+// staff upload was promised and then failed without a usable message.
+describe("MAX_FILE_BYTES matches the proxy ceiling", () => {
+  it("is 16 MB", () => {
+    expect(MAX_FILE_BYTES).toBe(16 * 1024 * 1024);
+  });
+
+  it("is the number next.config.ts allows through the proxy", async () => {
+    const { readFileSync } = await import("node:fs");
+    const config = readFileSync(new URL("../../../../next.config.ts", import.meta.url), "utf8");
+    const match = config.match(/proxyClientMaxBodySize:\s*(\d+)\s*\*\s*1024\s*\*\s*1024/);
+    expect(match, "proxyClientMaxBodySize not found in next.config.ts").not.toBeNull();
+    expect(Number(match![1]) * 1024 * 1024).toBe(MAX_FILE_BYTES);
+  });
+
+  it("reports the real limit in its refusal", () => {
+    const result = validateUpload("big.pdf", "application/pdf", Buffer.alloc(MAX_FILE_BYTES + 1));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toContain("16 MB");
+  });
+});

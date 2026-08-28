@@ -1,6 +1,16 @@
 import { createHash } from "node:crypto";
 
-export const MAX_FILE_BYTES = 50 * 1024 * 1024;
+/**
+ * Upload ceiling, shared by every upload route.
+ *
+ * It is 16 MB and not larger because that is what
+ * `next.config.ts::experimental.proxyClientMaxBodySize` allows: Next truncates a
+ * bigger request body and then fails to parse the multipart payload, which
+ * surfaces as an opaque 500 rather than a size error. Advertising 50 MB here, as
+ * this did, meant a 20 MB staff upload was promised and then died without a
+ * usable message. Keep the two numbers equal.
+ */
+export const MAX_FILE_BYTES = 16 * 1024 * 1024;
 
 // Office formats (docx/xlsx/pptx) are ZIP containers; we accept them when the
 // declared type is an office type and the bytes are a ZIP container.

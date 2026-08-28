@@ -81,7 +81,7 @@ triggerLabel?: string;
           <RelationSelect label="Referred By (Consultant/Partner)" value={v.referredById as string} onChange={(x) => f.setValue("referredById", x)} options={partners} placeholder="Select partner…" />
           {Boolean(v.referredById) && (
             <div className="grid grid-cols-2 gap-3">
-              <SelectField label="Partner Fee Status" value={v.partnerFeeStatus as string} onChange={(x) => f.setValue("partnerFeeStatus", x)} options={options("PartnerFeeStatus")} />
+              <SelectField label="Partner Fee Status" value={v.partnerFeeStatus as string} onChange={(x) => f.setValue("partnerFeeStatus", x)} options={options("PartnerFeeStatus")} placeholder="Unset" clearable />
               <MoneyField label="Partner Fee Amount" value={v.partnerFeeAmount as number} onChange={(x) => f.setValue("partnerFeeAmount", x)} />
             </div>
           )}
@@ -105,7 +105,7 @@ triggerLabel?: string;
             <SelectField label="Deal Status" value={v.dealStatus as string} onChange={(x) => f.setValue("dealStatus", x)} options={options("DealStatus")} />
             <SelectField label="Deal Milestone" value={v.dealMilestone as string} onChange={(x) => f.setValue("dealMilestone", x)} options={options("DealMilestone")} />
           </div>
-          <SelectField label="Priority" value={v.priority as string} onChange={(x) => f.setValue("priority", x)} options={options("Priority")} />
+          <SelectField label="Priority" value={v.priority as string} onChange={(x) => f.setValue("priority", x)} options={options("Priority")} placeholder="Unset" clearable />
           <div className="grid grid-cols-2 gap-3">
             <SelectField label="Deal Type" value={v.financingType as string} onChange={(x) => f.setValue("financingType", x)} options={options("DealFinancingType")} />
             <SelectField label="Max Selling Stake" value={v.maxSellingStake as string} onChange={(x) => f.setValue("maxSellingStake", x)} options={options("MaxSellingStake")} />

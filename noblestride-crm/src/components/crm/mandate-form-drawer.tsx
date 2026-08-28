@@ -91,6 +91,7 @@ triggerLabel?: string;
               onChange={(x) => f.setValue("referralQualified", x === "" ? "" : x === "true")}
               options={REFERRAL_QUALIFIED_OPTIONS}
               placeholder="Unset"
+              clearable
             />
           )}
           <MultiSelectField label="Sector" value={v.sector as string[]} onChange={(x) => f.setValue("sector", x)} options={options("Sector")} />
@@ -101,7 +102,7 @@ triggerLabel?: string;
           <TextField label="Country" value={v.country as string} onChange={(x) => f.setValue("country", x)} />
           <div className="grid grid-cols-2 gap-3">
             <SelectField label="Deal Status" value={v.dealStatus as string} onChange={(x) => f.setValue("dealStatus", x)} options={options("DealStatus")} />
-            <SelectField label="Priority" value={v.priority as string} onChange={(x) => f.setValue("priority", x)} options={options("Priority")} />
+            <SelectField label="Priority" value={v.priority as string} onChange={(x) => f.setValue("priority", x)} options={options("Priority")} placeholder="Unset" clearable />
           </div>
           <DateField label="Date Opened" value={v.dateOpened as string} onChange={(x) => f.setValue("dateOpened", x)} disabled={lockDateOpened} />
           {(lockDateOpened || lockSource) && (

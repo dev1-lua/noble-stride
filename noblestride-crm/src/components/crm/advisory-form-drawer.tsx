@@ -88,7 +88,7 @@ triggerLabel?: string;
           </p>
           <div className="grid grid-cols-2 gap-3">
             <SelectField label="Deal Status" value={v.dealStatus as string} onChange={(x) => f.setValue("dealStatus", x)} options={options("DealStatus")} />
-            <SelectField label="Priority" value={v.priority as string} onChange={(x) => f.setValue("priority", x)} options={options("Priority")} />
+            <SelectField label="Priority" value={v.priority as string} onChange={(x) => f.setValue("priority", x)} options={options("Priority")} placeholder="Unset" clearable />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <SelectField label="Source" value={v.source as string} onChange={(x) => f.setValue("source", x)} options={options("Source")} disabled={lockSource} />

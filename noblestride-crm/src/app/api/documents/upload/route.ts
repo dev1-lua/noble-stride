@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getViewpoint } from "@/server/viewpoint";
-import { validateUpload } from "@/server/storage/validation";
+import { validateUpload, MAX_FILE_BYTES } from "@/server/storage/validation";
 import { getStorageProvider, StorageError } from "@/server/storage/provider";
 import { buildObjectKey } from "@/server/storage/keys";
 import { createDocumentWithFile, logDocumentAccess } from "@/server/services/documents";
@@ -22,7 +22,20 @@ export async function POST(request: Request): Promise<Response> {
   if (!vp) return Response.json({ error: "Not authenticated" }, { status: 401 });
   if (vp.role !== "admin") return Response.json({ error: "Upload is staff-only" }, { status: 403 });
 
-  const fd = await request.formData();
+  // Content-Length first: past the proxy ceiling Next truncates the body and the
+  // multipart parse throws, so without this an oversized upload is an opaque 500
+  // instead of a size error. Same guard as the portal upload route.
+  const TOO_LARGE = `That file is too large. The limit is ${MAX_FILE_BYTES / (1024 * 1024)} MB.`;
+  if (Number(request.headers.get("content-length") ?? "0") > MAX_FILE_BYTES) {
+    return Response.json({ error: TOO_LARGE }, { status: 413 });
+  }
+
+  let fd: FormData;
+  try {
+    fd = await request.formData();
+  } catch {
+    return Response.json({ error: TOO_LARGE }, { status: 413 });
+  }
   const file = fd.get("file");
   if (!(file instanceof File)) return Response.json({ error: "Missing file" }, { status: 400 });
 
