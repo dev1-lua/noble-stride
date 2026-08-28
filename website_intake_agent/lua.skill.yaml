@@ -17,6 +17,6 @@ postprocessors:
     postprocessorId: postprocessor_89894e18-a421-4e6f-858a-16f3e65b26fe
     version: 1.0.2
 backup:
-  activeVersion: 5
-  lastHash: af874cf27efff5c576d32163e3973a4c7dccf53d7c8f0a3242a2ef57fe5a7d80
-  lastPushedAt: '2026-08-27T13:48:50.768Z'
+  activeVersion: 6
+  lastHash: 7688c0c90dd5733f25562bf589f33b57428e0964e83d727bc4d1f69db60b4c8b
+  lastPushedAt: '2026-08-27T16:49:10.356Z'
