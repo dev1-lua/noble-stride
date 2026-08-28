@@ -111,6 +111,22 @@ export async function cleanupE2E(): Promise<void> {
   // name the zz- fixture in their title, which is what makes them removable
   // without touching anything belonging to the real data.
   await prisma.notification.deleteMany({ where: { title: { contains: "zz-" } } });
+  // `logAuthEvent` writes an Activity for every invite, reset and email change,
+  // and nothing else here targets those: they hang off no entity, so deleting a
+  // zz- account leaves its audit trail behind. 342 had accumulated in one
+  // session before this was noticed. Matched on the address inside the subject,
+  // which is the only thing that identifies them.
+  await prisma.activity.deleteMany({
+    where: {
+      type: "Note",
+      OR: [
+        { subject: { startsWith: "Auth:", mode: "insensitive" } },
+        { subject: { startsWith: "Team invite", mode: "insensitive" } },
+      ],
+      AND: [{ OR: [{ subject: { contains: "zz-" } }, { subject: { contains: "zztest", mode: "insensitive" } }] }],
+    },
+  });
+
   // G1: OTP challenges the /apply/status spec raises, including the ones for the
   // deliberately-unknown address it uses to prove the page is no existence oracle.
   await prisma.applicantOtpChallenge.deleteMany({
