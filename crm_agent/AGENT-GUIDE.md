@@ -47,6 +47,26 @@ before versioning existed a rotated phrase left everyone who had already verifie
 rotation protected nobody. Everyone verified against the previous version is re-challenged on their next
 message. Unset or empty is treated as `1`, so introducing the variable signs nobody out.
 
+### Important: `lua env sandbox` does not reach `lua chat -e sandbox`
+
+Verified on 2026-08-27, and it changes how you must test a rotation.
+
+`lua env sandbox -k TEAM_PASSPHRASE -v "..."` reports success, and `lua env sandbox --list` shows the new
+value, but a `lua chat -e sandbox` session keeps using the **production** environment. The proof: sandbox
+`CRM_API_URL` was set to `https://sandbox-env-must-be-used.invalid/api/graphql` and the agent still
+answered with live CRM data. Re-setting the value, `lua push all --force` and `lua push agent --force` all
+failed to change it.
+
+Two consequences:
+
+1. **A rotation is not in force until you prove it is.** After the two `lua env` commands, send the OLD
+   phrase in a fresh chat. If it still verifies, the rotation has not taken effect and the team must not be
+   told the new one yet. Do that check before every announcement.
+2. **A "sandbox" chat is not isolated from production.** It runs your locally compiled code against the
+   production CRM with the production write-scoped key, so a write tool exercised in a sandbox chat writes
+   to real records. Treat sandbox chats as read-only against live data until the platform fixes this, and
+   test write paths with `lua test skill` (local, no LLM, no network) or against a local CRM you control.
+
 ## 4. Verifying, and signing out
 
 - **Verify:** send the passphrase **and your CRM login email in one message**, for example

@@ -1,14 +1,18 @@
 {
-  "lastHash": "974717b22fe5b38a7377b7b65de9104f0457363050fa795df819f630f13f121c",
-  "lastPushedAt": "2026-08-27T13:43:30.113Z",
+  "lastHash": "2f77708d27862409cb578a900e1339234528f3685a151d6c03ff7505c7c5cad0",
+  "lastPushedAt": "2026-08-27T16:48:05.945Z",
   "files": [
     {
+      "relativePath": "AGENT-GUIDE.md",
+      "hash": "a5f4370823dc1916"
+    },
+    {
       "relativePath": "env.example",
-      "hash": "7b6f11d43c3db2b7"
+      "hash": "c21cbbf7d9d5c7b6"
     },
     {
       "relativePath": "lua.skill.yaml",
-      "hash": "0d5082fe3cf94ec4"
+      "hash": "fdabc4d66fcb0d10"
     },
     {
       "relativePath": "package.json",
@@ -47,12 +51,20 @@
       "hash": "5e8f5e923ded8c10"
     },
     {
+      "relativePath": "src/lib/onboarding.ts",
+      "hash": "3bf0627541c33f81"
+    },
+    {
       "relativePath": "src/lib/queries.ts",
       "hash": "70f83cd941aa345f"
     },
     {
       "relativePath": "src/lib/record-lookup.ts",
       "hash": "291c46ad10a1dd21"
+    },
+    {
+      "relativePath": "src/lib/research.ts",
+      "hash": "a487f7d8f2ab852c"
     },
     {
       "relativePath": "src/lib/resolve.ts",
@@ -68,7 +80,7 @@
     },
     {
       "relativePath": "src/persona.ts",
-      "hash": "ba4a0d733a32eba1"
+      "hash": "8fa3dbc20d646b5e"
     },
     {
       "relativePath": "src/processors/format-normalizer.ts",
@@ -76,7 +88,7 @@
     },
     {
       "relativePath": "src/processors/passphrase-gate.ts",
-      "hash": "ff0255382b52694e"
+      "hash": "972d2f07321db318"
     },
     {
       "relativePath": "src/skills/tools/CreateFollowupTaskTool.ts",
@@ -127,6 +139,10 @@
       "hash": "4ef4aa63e354250c"
     },
     {
+      "relativePath": "src/skills/tools/ResearchPublicProfileTool.ts",
+      "hash": "9527ed4388c5e840"
+    },
+    {
       "relativePath": "src/skills/tools/ScanStalledEngagementsTool.ts",
       "hash": "8ef74df7ba83826d"
     },
@@ -144,7 +160,7 @@
     },
     {
       "relativePath": "src/skills/tracker.skill.ts",
-      "hash": "d9f399157ffd366f"
+      "hash": "744693d124ed80be"
     },
     {
       "relativePath": "tsconfig.json",
