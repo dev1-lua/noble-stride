@@ -22,6 +22,10 @@ describe("SummarizeRecordTool", () => {
   it("summarizes a uniquely-resolved record, embeds document metadata, returns the deep link", async () => {
     let seenPrompt = "";
     const tool = new SummarizeRecordTool({
+      // isStaff explicitly, like every other case in this file: without it the
+      // tool falls through to currentUserIsStaff(), which calls the live SDK and
+      // fails closed to "staff_only" outside a runtime.
+      isStaff: STAFF,
       crm: crmStub([HIT], { id: "c1", name: "Acme Ltd", status: "Active" }, [
         { name: "NDA.pdf", type: "NDA", status: "APPROVED" },
       ]),
@@ -48,6 +52,7 @@ describe("SummarizeRecordTool", () => {
 
   it("falls back to raw facts when AI generation fails", async () => {
     const tool = new SummarizeRecordTool({
+      isStaff: STAFF,
       crm: crmStub([HIT], { id: "c1", name: "Acme Ltd", status: "Active" }),
       generate: async () => { throw new Error("model overloaded"); },
     });
