@@ -11,7 +11,7 @@
 
 import { prisma } from "@/lib/db";
 import { updateEngagement } from "./engagements-crud";
-import { actorSource } from "./crud";
+import { actorSource, CrudError } from "./crud";
 import { ndaSatisfied, stageRequiresNda, NdaGuardError } from "@/server/domain/nda-guard";
 import { notifyInvestors } from "./notifications";
 import { dealCodename } from "@/server/visibility/codename";
@@ -19,6 +19,9 @@ import type { Actor } from "@/graphql/context";
 
 export { accessState, portalStatusLabel } from "@/server/domain/access-state";
 export type { AccessState, PortalDealStatusLabel } from "@/server/domain/access-state";
+
+export const DECLINED_MESSAGE =
+  "This investor withdrew from the deal, so access cannot be granted. If they have changed their mind, move the engagement off Declined first so the change is recorded as a decision rather than an accident.";
 
 export const NO_NDA_MESSAGE =
   "This investor has no signed NDA yet, so deal details can't be unlocked. " +
@@ -44,6 +47,11 @@ export async function grantDealAccess(
     investorId: engagement.investorId,
     dealId: engagement.transactionId,
   };
+
+  // The investor withdrew. `stageRequiresNda("Declined")` is false, so without
+  // this the idempotency check below would not fire and updateEngagement would
+  // silently un-decline them, notify them, and stamp accessGrantedAt.
+  if (engagement.engagementStage === "Declined") throw new CrudError(DECLINED_MESSAGE);
 
   // Already unlocked — pressing the button twice must not re-stage, re-stamp or
   // re-notify.

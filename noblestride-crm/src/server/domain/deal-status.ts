@@ -14,7 +14,13 @@ import { stageRequiresNda } from "./nda-guard";
 export type PortalDealStatus = "Open" | "In progress" | "Closed";
 
 const CLOSED_TRANSACTION_STAGES: TransactionStage[] = ["ClosedWon", "ClosedLost"];
-const CLOSED_DEAL_STATUSES: DealStatus[] = ["Closed", "ClosedReopened", "ClosedOnHold", "Dropped"];
+
+// `ClosedReopened` is deliberately NOT here. Despite the name it is an ACTIVE
+// status everywhere else in the app — dashboard.ts counts it in
+// ACTIVE_DEAL_STATUSES and the dashboard tile links to
+// `?status=Open,ClosedReopened` — so listing it made a deal the firm had just
+// reopened tell the investor "This opportunity is closed."
+const CLOSED_DEAL_STATUSES: DealStatus[] = ["Closed", "ClosedOnHold", "Dropped"];
 
 export function portalDealStatus(input: {
   dealStatus: DealStatus;

@@ -29,7 +29,7 @@ const STATUS_TONE: Record<PortalDealStatusLabel, string> = {
   "Shared with you": "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",
   "Awaiting access": "bg-[var(--t-tag-bg-amber)] text-[var(--t-tag-text-amber)]",
   "Access granted": "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]",
-  "NDA signed": "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]",
+  "Information shared": "bg-[var(--t-tag-bg-emerald)] text-[var(--t-tag-text-emerald)]",
   "In discussion": "bg-[var(--t-tag-bg-sky)] text-[var(--t-tag-text-sky)]",
   Closed: "bg-[var(--t-tag-bg-violet)] text-[var(--t-tag-text-violet)]",
   Declined: "bg-[var(--t-tag-bg-gray)] text-[var(--t-tag-text-gray)]",

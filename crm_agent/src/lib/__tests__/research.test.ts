@@ -42,6 +42,34 @@ describe("isConfidentialLeak", () => {
     expect(isConfidentialLeak("Vantage Mezzanine")).toBe(false);
     expect(isConfidentialLeak("leadership")).toBe(false);
   });
+
+  // Reviewer findings. The codename check was case-INsensitive, so ordinary
+  // business language tripped it; and the amount check matched any digits before
+  // a scale suffix, so "3M" was refused and a real company became unresearchable
+  // with no way to phrase around it.
+  it("does not mistake ordinary business language for a codename", () => {
+    expect(isConfidentialLeak("Project Finance Advisors")).toBe(false);
+    expect(isConfidentialLeak("project finance track record")).toBe(false);
+    expect(isConfidentialLeak("Project Management Institute")).toBe(false);
+  });
+
+  it("still refuses a real codename shape", () => {
+    for (const q of ["Project Ivory Oryx", "Project Amber", "Project Tamarind"]) {
+      expect(isConfidentialLeak(q), q).toBe(true);
+    }
+  });
+
+  it("does not mistake a company name that contains a number for an amount", () => {
+    expect(isConfidentialLeak("3M")).toBe(false);
+    expect(isConfidentialLeak("3M Company")).toBe(false);
+    expect(isConfidentialLeak("Safaricom PLC")).toBe(false);
+  });
+
+  it("still refuses a real amount", () => {
+    for (const q of ["USD 4,500,000", "$4.5m target raise", "12 million", "raising 250bn", "a 45m raise"]) {
+      expect(isConfidentialLeak(q), q).toBe(true);
+    }
+  });
 });
 
 describe("shapeResearch", () => {

@@ -4,7 +4,7 @@
 // projects at PRE_INTEREST, so confidential fields are unreachable by construction.
 import { prisma } from "@/lib/db";
 import { CrudError } from "./crud";
-import { investorTier } from "@/server/visibility/tiers";
+import { investorTier, isBlockedClassification, isOnboardingBlocked } from "@/server/visibility/tiers";
 import {
   projectDealForInvestor,
   bandCurrency,
@@ -663,6 +663,20 @@ export async function investorEngagedDealsByEmail(email: string): Promise<AgentE
     select: { investorId: true },
   });
   if (!person?.investorId) return [];
+
+  // The same two gates every other investor read path applies (visibility/load.ts
+  // via investorTier). Without them an investor who is still PendingReview, or
+  // who has been Greylisted or Excluded, could email the agent and get their
+  // engaged deals back — codename, stage, sector, target raise and a portal deep
+  // link. Returns [] rather than an error, for the same reason an unknown address
+  // does: the caller must not be able to tell the two apart.
+  const investor = await prisma.investor.findUnique({
+    where: { id: person.investorId },
+    select: { onboardingStatus: true, engagementClassification: true },
+  });
+  if (!investor) return [];
+  if (isOnboardingBlocked(investor.onboardingStatus)) return [];
+  if (isBlockedClassification(investor.engagementClassification)) return [];
 
   const engagements = await prisma.engagement.findMany({
     where: {

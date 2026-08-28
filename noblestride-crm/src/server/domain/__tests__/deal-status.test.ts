@@ -10,7 +10,6 @@ describe("portalDealStatus", () => {
     expect(portalDealStatus({ dealStatus: "Open", transactionStage: "ClosedLost", engagementStage: "TermSheet" })).toBe("Closed");
     expect(portalDealStatus({ dealStatus: "Closed", transactionStage: "TermSheet", engagementStage: "TermSheet" })).toBe("Closed");
     expect(portalDealStatus({ dealStatus: "Dropped", transactionStage: "InvestorOutreach", engagementStage: null })).toBe("Closed");
-    expect(portalDealStatus({ dealStatus: "ClosedReopened", transactionStage: "TermSheet", engagementStage: null })).toBe("Closed");
     expect(portalDealStatus({ dealStatus: "ClosedOnHold", transactionStage: "TermSheet", engagementStage: null })).toBe("Closed");
   });
 
@@ -23,6 +22,15 @@ describe("portalDealStatus", () => {
     expect(portalDealStatus({ dealStatus: "Open", transactionStage: "DealPreparation", engagementStage: "Shared" })).toBe("Open");
     expect(portalDealStatus({ dealStatus: "Open", transactionStage: "InvestorOutreach", engagementStage: null })).toBe("Open");
     expect(portalDealStatus({ dealStatus: "OnHold", transactionStage: "InvestorOutreach", engagementStage: "TeaserSent" })).toBe("Open");
+  });
+
+  // Reviewer finding: despite the name, ClosedReopened is an ACTIVE status
+  // everywhere else in the app (dashboard.ts::ACTIVE_DEAL_STATUSES, and the
+  // dashboard tile links to ?status=Open,ClosedReopened). Calling it Closed told
+  // the investor a deal the firm had just reopened was closed.
+  it("a reopened deal is not closed", () => {
+    expect(portalDealStatus({ dealStatus: "ClosedReopened", transactionStage: "TermSheet", engagementStage: null })).toBe("Open");
+    expect(portalDealStatus({ dealStatus: "ClosedReopened", transactionStage: "DueDiligence", engagementStage: "DueDiligence" })).toBe("In progress");
   });
 
   // An internal pause is not the investor's business — see the module header.

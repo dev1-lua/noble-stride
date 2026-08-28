@@ -33,18 +33,23 @@ export type PortalDealStatusLabel =
   | "Shared with you"
   | "Awaiting access"
   | "Access granted"
-  | "NDA signed"
+  | "Information shared"
   | "In discussion"
   | "Closed"
   | "Declined";
 
 // Keyed by the enum on purpose: adding an EngagementStage forces a decision
 // here rather than silently falling through to a default.
+//
+// The labels must only ever move FORWARD as the stage advances. `IMShared` used
+// to read "NDA signed", which sent a fund's chip backwards from "Access granted"
+// to "NDA signed" the moment staff shared the information memorandum — it read
+// as losing access. Each label now says something new and later than the last.
 const STAGE_LABEL: Record<EngagementStage, PortalDealStatusLabel> = {
   Shared: "Shared with you",
   TeaserSent: "Shared with you",
   NDASigned: "Access granted",
-  IMShared: "NDA signed",
+  IMShared: "Information shared",
   VDRAccess: "In discussion",
   Meeting: "In discussion",
   InfoRequest: "In discussion",

@@ -5,6 +5,7 @@
 import { describe, it, expect } from "vitest";
 import { accessState, portalStatusLabel } from "@/server/domain/access-state";
 import { EngagementStage } from "@prisma/client";
+import type { PortalDealStatusLabel } from "@/server/domain/access-state";
 
 describe("accessState", () => {
   it("interest_received while pre-NDA and interested", () => {
@@ -46,9 +47,42 @@ describe("portalStatusLabel", () => {
     expect(portalStatusLabel({ stage: "Shared", status: "Interested" })).toBe("Awaiting access");
     expect(portalStatusLabel({ stage: "TeaserSent", status: "Interested" })).toBe("Awaiting access");
     expect(portalStatusLabel({ stage: "NDASigned", status: "Interested" })).toBe("Access granted");
-    expect(portalStatusLabel({ stage: "IMShared", status: "Interested" })).toBe("NDA signed");
+    expect(portalStatusLabel({ stage: "IMShared", status: "Interested" })).toBe("Information shared");
     expect(portalStatusLabel({ stage: "Meeting", status: "Interested" })).toBe("In discussion");
     expect(portalStatusLabel({ stage: "TermSheet", status: "Interested" })).toBe("In discussion");
+  });
+
+  // Reviewer finding: IMShared used to read "NDA signed", which sent the chip
+  // BACKWARDS from "Access granted" the moment staff shared the IM — it read as
+  // losing access. The labels must only ever move forward.
+  it("never moves backwards as the stage advances", () => {
+    const order: PortalDealStatusLabel[] = [
+      "Shared with you",
+      "Awaiting access",
+      "Access granted",
+      "Information shared",
+      "In discussion",
+      "Closed",
+    ];
+    const progression: EngagementStage[] = [
+      "Shared",
+      "TeaserSent",
+      "NDASigned",
+      "IMShared",
+      "VDRAccess",
+      "Meeting",
+      "DueDiligence",
+      "TermSheet",
+      "Offer",
+      "Invested",
+    ];
+    let seen = -1;
+    for (const stage of progression) {
+      const at = order.indexOf(portalStatusLabel({ stage, status: "Interested" }));
+      expect(at, `${stage} produced an unranked label`).toBeGreaterThanOrEqual(0);
+      expect(at, `${stage} went backwards`).toBeGreaterThanOrEqual(seen);
+      seen = at;
+    }
   });
 
   it("has a label for every stage, so a new one cannot fall through", () => {

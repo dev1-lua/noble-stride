@@ -120,6 +120,36 @@ d("investorEngagedDealsByEmail (DB)", () => {
     expect(await investorEngagedDealsByEmail("")).toEqual([]);
   });
 
+  // Reviewer finding: this read path had no onboarding or classification gate,
+  // while every other investor read funnels through investorTier. An investor
+  // still awaiting review, or one who has been greylisted or excluded, could
+  // email the agent and get codenames, stages, sectors, target raises and portal
+  // links back.
+  it("returns nothing for an investor who is not approved, or is blocked", async () => {
+    const { prisma } = await import("@/lib/db");
+    const { investorEngagedDealsByEmail } = await import("../investor-agent");
+
+    // Sanity: approved and Active, so the deal IS returned.
+    expect(await investorEngagedDealsByEmail(EMAIL)).toHaveLength(1);
+
+    for (const patch of [
+      { onboardingStatus: "PendingReview" as const },
+      { onboardingStatus: "Rejected" as const },
+      { engagementClassification: "Greylisted" as const },
+      { engagementClassification: "Excluded" as const },
+    ]) {
+      await prisma.investor.update({ where: { id: investorId }, data: patch });
+      expect(await investorEngagedDealsByEmail(EMAIL), JSON.stringify(patch)).toEqual([]);
+      await prisma.investor.update({
+        where: { id: investorId },
+        data: { onboardingStatus: "Approved", engagementClassification: "Active" },
+      });
+    }
+
+    // Back to normal for the tests that follow.
+    expect(await investorEngagedDealsByEmail(EMAIL)).toHaveLength(1);
+  });
+
   it("returns an empty list for a person with no investor", async () => {
     const { prisma } = await import("@/lib/db");
     const { investorEngagedDealsByEmail } = await import("../investor-agent");

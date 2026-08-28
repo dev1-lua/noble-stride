@@ -53,11 +53,19 @@ export default async function InvestorPortalPage({
   );
 
   // Switching tabs keeps whatever filters are applied; only ?match changes.
+  //
+  // Booleans must be re-serialized as "1": parseOpportunityFilters accepts only
+  // that literal, so String(true) === "true" was silently DROPPING womenLed and
+  // youthLed on a tab switch. The grid widened while the filter control still
+  // read as applied, which breaks the "filters only narrow" invariant.
   const tabHref = (match: boolean): string => {
     const next = new URLSearchParams();
     for (const [key, value] of Object.entries(filters)) {
       if (key === "match" || value == null) continue;
-      next.set(key, Array.isArray(value) ? value.join(",") : String(value));
+      if (Array.isArray(value)) next.set(key, value.join(","));
+      else if (typeof value === "boolean") {
+        if (value) next.set(key, "1");
+      } else next.set(key, String(value));
     }
     if (match) next.set("match", "1");
     const qs = next.toString();

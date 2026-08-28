@@ -309,8 +309,18 @@ export default async function EngagementDetailPage({ params }: PageProps) {
             </div>
           </dl>
 
-          {/* F6b.2: the investor asked for access; this is where staff give it. */}
-          <GrantDealAccessButton engagementId={engagement.id} granted={dealAccessState === "granted"} />
+          {/* F6b.2: the investor asked for access; this is where staff give it.
+              Hidden once they have withdrawn: accessState maps Declined to
+              "none", so the button would otherwise sit there enabled next to
+              "No interest registered yet" and one click would un-decline them. */}
+          {engagement.engagementStage === "Declined" ? (
+            <p className="text-xs text-[var(--text-tertiary)]" data-testid="deal-access-declined">
+              This investor withdrew from the deal. Move the engagement off Declined first if they have
+              changed their mind.
+            </p>
+          ) : (
+            <GrantDealAccessButton engagementId={engagement.id} granted={dealAccessState === "granted"} />
+          )}
 
           {engagement.ndaType == null && <RecordClosedNdaButton engagementId={engagement.id} />}
           {isConfigured("docusign") && esignSignerEmail && (

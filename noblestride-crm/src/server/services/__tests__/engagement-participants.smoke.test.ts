@@ -212,7 +212,11 @@ d("engagement participants (DB)", () => {
 
     const before = await eligibleParticipants(engagementId, investorId);
     const ids = before.map((p) => p.personId);
-    expect(ids).toContain(primaryPersonId);
+    // Reviewer finding: the primary contact used to be offered FIRST, and so was
+    // pre-selected in the dropdown — but removeParticipant refuses to remove
+    // them, so submitting the default created a row that could never be deleted.
+    // They already follow every deal, so they are not offered at all.
+    expect(ids).not.toContain(primaryPersonId);
     expect(ids).toContain(onboardedPersonId);
     expect(ids).not.toContain(noAccountPersonId);
     expect(ids).not.toContain(strangerPersonId);
@@ -233,6 +237,8 @@ d("engagement participants (DB)", () => {
     const { prisma } = await import("@/lib/db");
     const { addParticipant, removeParticipant } = await import("../engagement-participants");
 
+    // The service still refuses if a primary-contact row exists from before this
+    // rule (the UI no longer offers one).
     await addParticipant({
       engagementId,
       personId: primaryPersonId,

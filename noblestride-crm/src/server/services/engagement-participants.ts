@@ -91,8 +91,14 @@ export async function eligibleParticipants(
       investorId,
       authAccount: { status: "ACTIVE" },
       engagementParticipations: { none: { engagementId } },
+      // The primary contact follows every deal already (loadInvestorPipeline
+      // treats them as following all of them), and removeParticipant refuses to
+      // remove them. Offering them here — as the FIRST and therefore
+      // pre-selected option — let an editor create a row whose Remove button
+      // then failed permanently.
+      isPrimaryContact: false,
     },
-    orderBy: [{ isPrimaryContact: "desc" }, { firstName: "asc" }],
+    orderBy: [{ firstName: "asc" }, { id: "asc" }],
     select: { id: true, firstName: true, lastName: true, email: true },
   });
   return people.map((p) => ({ personId: p.id, name: personName(p), email: p.email }));

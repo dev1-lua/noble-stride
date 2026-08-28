@@ -151,6 +151,29 @@ d("grantDealAccess (DB)", () => {
     await prisma.notification.deleteMany({ where: { investorId } });
   });
 
+  // Reviewer finding: stageRequiresNda("Declined") is false, so the idempotency
+  // check did not fire and updateEngagement silently un-declined the investor,
+  // notified them, and stamped accessGrantedAt.
+  it("refuses to grant access to an investor who withdrew", async () => {
+    const { prisma } = await import("@/lib/db");
+    const { grantDealAccess } = await import("../deal-access");
+    const { recordOpenNda } = await import("../nda");
+
+    await recordOpenNda(investorId, ACTOR);
+    await prisma.engagement.update({
+      where: { id: engagementId },
+      data: { engagementStage: "Declined", status: "Passed" },
+    });
+
+    await expect(grantDealAccess(engagementId, ACTOR)).rejects.toThrow(/withdrew from the deal/i);
+
+    // Nothing moved: still declined, never stamped, never notified.
+    const engagement = await prisma.engagement.findUniqueOrThrow({ where: { id: engagementId } });
+    expect(engagement.engagementStage).toBe("Declined");
+    expect(engagement.accessGrantedAt).toBeNull();
+    expect(await prisma.notification.count({ where: { investorId, kind: "deal_access_granted" } })).toBe(0);
+  });
+
   it("a Closed NDA on this engagement is enough on its own", async () => {
     const { prisma } = await import("@/lib/db");
     const { grantDealAccess } = await import("../deal-access");

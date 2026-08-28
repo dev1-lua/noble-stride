@@ -65,13 +65,51 @@ export function buildResearchPrompt(input: ResearchInput): string {
   return lines.join("\n");
 }
 
-// Codename shape ("Project Ivory Oryx") and any money amount. Both are things a
-// staff member has on screen and would paste in without thinking.
-const CODENAME = /\bproject\s+[A-Z][a-z]+/i;
-const AMOUNT = /(\$|USD|KES|EUR|GBP)\s?[\d,.]+|[\d,.]+\s?(m|bn|million|billion)\b/i;
+// Codename shape and money amounts: both are things a staff member has on screen
+// and would paste in without thinking.
+//
+// The codename check is deliberately CASE-SENSITIVE. With an `i` flag it matched
+// ordinary business language — "Project Finance Advisors" is a real firm and
+// "project finance track record" is a reasonable focus, and both were refused.
+// A Noblestride codename is "Project <Capitalised>", so the capitals are the
+// signal, and requiring two capitalised words after "Project" would miss
+// "Project Amber". Case alone is the discriminator.
+const CODENAME = /\bProject\s+([A-Z][a-z]+)/;
+
+/**
+ * Words that make "Project <Word>" ordinary business language rather than a
+ * codename, so "Project Finance Advisors" can be researched. Everything else
+ * after "Project" is treated as a codename and refused: a false refusal costs a
+ * user one clarifying message, a false pass sends a codename to a search engine.
+ */
+const NOT_A_CODENAME = new Set([
+  "Finance",
+  "Financing",
+  "Management",
+  "Manager",
+  "Development",
+  "Delivery",
+  "Director",
+  "Officer",
+  "Team",
+  "Plan",
+  "Planning",
+  "Portfolio",
+  "Pipeline",
+  "Update",
+  "Status",
+]);
+
+// An amount needs a currency, or a number of at least two digits before a scale
+// suffix. `[\d,.]+\s?(m|bn|...)` alone matched "3M", which made a real company
+// unresearchable.
+const AMOUNT =
+  /(\$|USD|KES|EUR|GBP)\s?[\d,.]+|\b\d[\d,.]*\s?(?:million|billion|bn)\b|\b\d{2,}[\d,.]*\s?m\b/i;
 
 export function isConfidentialLeak(text: string): boolean {
-  return CODENAME.test(text) || AMOUNT.test(text);
+  const codename = text.match(CODENAME);
+  if (codename && !NOT_A_CODENAME.has(codename[1]!)) return true;
+  return AMOUNT.test(text);
 }
 
 /**
