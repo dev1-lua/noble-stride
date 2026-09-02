@@ -14,6 +14,7 @@ import { recordOpenNda, recordClosedNda, countersignUploadedNda, requestNdaSigna
 import { grantDealAccess } from "@/server/services/deal-access";
 import { createClient, updateClient, deleteClient } from "@/server/services/clients";
 import { createMandate, updateMandate, deleteMandate, acceptIntakeMandate, deprioritizeIntakeMandate, rerunQualification } from "@/server/services/mandates";
+import { recordRetainerPayment, deleteRetainerPayment } from "@/server/services/retainer-payments";
 import { setAdvisoryStage, createAdvisory, updateAdvisory, deleteAdvisory } from "@/server/services/advisory";
 import { createTransaction, updateTransaction, deleteTransaction } from "@/server/services/transactions";
 import { createPartner, updatePartner, deletePartner } from "@/server/services/partners";
@@ -408,6 +409,41 @@ builder.mutationFields((t) => ({
     resolve: async (_q, _r, args, ctx) => {
       assertCanDelete(ctx.actor, "Mandates");
       return deleteMandate(args.id);
+    },
+  }),
+
+  // F4.3.1 third clause — retainer payment ledger. Both writes reuse the
+  // mandate's own update permission (Admin, or the lead who owns the record),
+  // exactly what updateMandate enforces.
+  recordRetainerPayment: t.prismaField({
+    type: "RetainerPayment", nullable: false,
+    args: {
+      mandateId: t.arg.id({ required: true }),
+      amount: t.arg.float({ required: true }),
+      paidOn: t.arg({ type: "DateTime", required: false }),
+      reference: t.arg.string({ required: false }),
+    },
+    resolve: async (_q, _r, args, ctx) => {
+      await assertCanUpdateOwnScoped(ctx.actor, "Mandates", () =>
+        prisma.mandate.findUnique({ where: { id: String(args.mandateId) }, select: { leadId: true } }),
+      );
+      return recordRetainerPayment(
+        { mandateId: String(args.mandateId), amount: args.amount, paidOn: args.paidOn ?? undefined, reference: args.reference ?? undefined },
+        ctx.actor,
+      );
+    },
+  }),
+  deleteRetainerPayment: t.boolean({
+    nullable: false,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: async (_r, args, ctx) => {
+      const payment = await prisma.retainerPayment.findUnique({
+        where: { id: String(args.id) },
+        select: { mandate: { select: { leadId: true } } },
+      });
+      if (!payment) return false;
+      await assertCanUpdateOwnScoped(ctx.actor, "Mandates", async () => payment.mandate);
+      return deleteRetainerPayment(String(args.id));
     },
   }),
 

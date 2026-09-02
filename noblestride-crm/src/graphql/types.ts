@@ -338,6 +338,26 @@ export const MandateRef = builder.prismaObject("Mandate", {
     activities: t.relation("activities"),
     stageChanges: t.relation("stageChanges", { query: { orderBy: { changedAt: "desc" } } }),
     tasks: t.relation("tasks"),
+    // F4.3.1 third clause: the individual payments behind retainerPaidAmount
+    retainerPayments: t.relation("retainerPayments", { query: { orderBy: [{ paidOn: "desc" }, { createdAt: "desc" }] } }),
+  }),
+});
+
+// ─── RetainerPayment ─────────────────────────────────────────────────────────
+// F4.3.1's third clause: one row per individual retainer payment. Written only
+// through recordRetainerPayment/deleteRetainerPayment, which keep the parent
+// mandate's retainerPaidAmount in step.
+
+export const RetainerPaymentRef = builder.prismaObject("RetainerPayment", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    mandateId: t.exposeString("mandateId"),
+    amount: t.float({ resolve: (p) => Number(p.amount) }),
+    paidOn: t.field({ type: "DateTime", resolve: (p) => p.paidOn }),
+    reference: t.exposeString("reference", { nullable: true }),
+    createdSource: t.field({ type: ActorSourceEnum, resolve: (p) => p.createdSource }),
+    createdAt: t.field({ type: "DateTime", resolve: (p) => p.createdAt }),
+    recordedBy: t.relation("recordedBy", { nullable: true }),
   }),
 });
 

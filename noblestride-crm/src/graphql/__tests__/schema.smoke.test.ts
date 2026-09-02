@@ -44,7 +44,7 @@ describe("graphql schema", () => {
     const mutationType = schema.getMutationType();
     expect(mutationType).toBeTruthy();
     const mutationFields = Object.keys(mutationType?.getFields() ?? {});
-    expect(mutationFields).toHaveLength(87);
+    expect(mutationFields).toHaveLength(89);
 
     // Spot-check that key query fields exist
     expect(queryFields).toContain("dashboardStats");

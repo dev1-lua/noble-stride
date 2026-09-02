@@ -224,8 +224,10 @@ Items 2 and 3 below were the two open items carried INTO the review and are fixe
    people. Harmless, but worth a targeted sweep before any production restore.
 6. `Notification.personId` was dropped from migration 7 as a deliberate de-scope: participants are
    notified through `notifyInvestors(investorId, …)`, matching the existing per-org model.
-7. A retainer **payment log** (F4.3.1's third clause) remains unbuilt in both plans; WS-A shipped
-   paid amount + balance only.
+7. ~~A retainer **payment log** (F4.3.1's third clause) remains unbuilt in both plans; WS-A shipped
+   paid amount + balance only.~~ — **built 2026-09-01** (after this report): `RetainerPayment` table
+   (migration 43), ledger card on the mandate page, `recordRetainerPayment`/`deleteRetainerPayment`
+   mutations keeping `retainerPaidAmount` in step, plus a DB smoke test and two e2e checks.
 
 ## Commits
 

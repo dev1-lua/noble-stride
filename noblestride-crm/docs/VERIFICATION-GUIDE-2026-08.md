@@ -44,12 +44,12 @@ fine on a shallow count and was not.
 | **People (contacts)** | **788** |
 | **Engagements** | **63** |
 | Login accounts | 22 (14 staff, 6 investor, 2 partner) |
-| Migrations | 42, "up to date" |
+| Migrations | 43, "up to date" |
 
 People and Engagements are the canaries: they are large, and nothing in normal use should move them.
 
 ```bash
-npx prisma migrate status        # expect: 42 migrations, "Database schema is up to date!"
+npx prisma migrate status        # expect: 43 migrations, "Database schema is up to date!"
 npm run db:verify-parity         # expect: both checks pass
 ```
 
@@ -78,7 +78,7 @@ docker cp /tmp/slice.sql noblestride-postgres:/tmp/slice.sql
 docker exec noblestride-postgres psql -U noblestride -d noblestride_fresh -f /tmp/slice.sql
 
 # 3. Point .env at it, then:
-npx prisma migrate deploy                        # applies migration 42
+npx prisma migrate deploy                        # applies migrations 42 and 43
 npm run db:fix-checksums -- --execute            # 24 rows re-stamped; deploy must come first
 npm run seed:workflow                            # 1 template, 13 steps, 3 AppSettings
 npm run db:cleanup-prefixed -- --prefix ZZTest --execute
@@ -119,8 +119,8 @@ npm run e2e:cleanup     # removes them again — do this when you are done
 ### Watch the whole thing verify itself
 
 ```bash
-npm run test:e2e          # headless, ~1 minute, 65 checks
-npm run test:e2e:watch    # the same 65 in a visible browser, slowed down so you can follow
+npm run test:e2e          # headless, ~1.3 minutes, 67 checks
+npm run test:e2e:watch    # the same 67 in a visible browser, slowed down so you can follow
 ```
 
 Every check is named after the feedback item it proves (F1.1, F2.1 … G3), and each narrates its own steps.
@@ -266,6 +266,8 @@ The person is also signed out everywhere, and both addresses are notified.
 | Filters were crowded (image16) | Open `/deals` | A small bar: type, stage, search, and **More filters** for the rest. Applied filters show as removable chips |
 | Advisory classification (§4.2, image17) | Open an advisory engagement | A **Classification** field (Valuation, Due Diligence, Business Plan / Pitch Deck, Financial Model, Advisory Support, Other), plus fee paid and balance |
 | Retainer (§4.3, image18) | Open a mandate | Retainer **amount**, **paid** and **balance due**; paying in full takes the balance to zero |
+| Retainer payment log (§4.3) | On a mandate with a retainer, find the **Retainer Payments** card | Log a payment with an amount, date and reference: a ledger row appears, and the Deal Summary's Paid and Balance move by exactly that amount. Deleting the row moves them back |
+| Payment log honesty | Look at a mandate whose paid amount predates the ledger | The card says the Paid amount can carry pre-ledger history — the ledger never overwrites it, and the footer totals only what was actually logged |
 
 ---
 
@@ -489,7 +491,5 @@ contact per run (52 copies had accumulated), and fixture teardown left the authe
 3. **Per-user access codes for staff.** A single shared passphrase cannot tell two colleagues apart, so the
    audit trail says "a verified staff member" rather than who. Both halves of the better answer already
    exist in the CRM. Not built — do not consider it delivered.
-4. **A retainer payment log.** Retainer amount, paid and balance are in place; a log of individual payments
-   is not.
-5. **Nothing is deployed.** The CRM changes are on the `feedback/2026-08` branch, not on Vercel. All six
+4. **Nothing is deployed.** The CRM changes are on the `feedback/2026-08` branch, not on Vercel. All six
    agents are staged one version ahead of what is live — no version was promoted. Both await your go-ahead.
