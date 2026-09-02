@@ -598,6 +598,7 @@ model User {
   completedStageStates        DealStageState[]        @relation("DealStageStateCompletedBy")
   addedEngagementParticipants EngagementParticipant[] @relation("EngagementParticipantAddedBy")
   accessGrantedEngagements    Engagement[]            @relation("EngagementAccessGrantedBy")
+  recordedRetainerPayments    RetainerPayment[]       @relation("RetainerPaymentRecordedBy")
 }
 
 model Person {
@@ -880,10 +881,35 @@ model Mandate {
   documents    Document[]
   stageChanges StageChange[]
   folders      Folder[]
+  retainerPayments RetainerPayment[]
 
   @@index([stage])
   @@index([clientId])
   @@index([leadId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RetainerPayment — F4.3.1's third clause (Aug-2026 feedback): a ledger of the
+// individual retainer payments behind Mandate.retainerPaidAmount. Recording a
+// payment increments the mandate's paid amount in the same transaction;
+// deleting one decrements it (never below zero). The scalar stays directly
+// editable for pre-ledger history, so the ledger total and the paid amount may
+// legitimately differ on old mandates.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model RetainerPayment {
+  id        String   @id @default(cuid())
+  mandateId String
+  mandate   Mandate  @relation(fields: [mandateId], references: [id], onDelete: Cascade)
+  amount    Decimal  @db.Decimal(20, 2)
+  paidOn    DateTime
+  reference String? // invoice number, payment method or free-text note
+  recordedById String?
+  recordedBy   User?  @relation("RetainerPaymentRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  createdSource ActorSource @default(HUMAN)
+  createdAt DateTime @default(now())
+
+  @@index([mandateId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

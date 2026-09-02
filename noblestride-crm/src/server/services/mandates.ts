@@ -82,6 +82,8 @@ export async function getMandate(id: string) {
       transactions: true,
       activities: { orderBy: { occurredAt: "desc" } },
       stageChanges: { orderBy: { changedAt: "desc" }, include: { changedBy: true } },
+      // F4.3.1 third clause: the individual payments behind retainerPaidAmount
+      retainerPayments: { orderBy: [{ paidOn: "desc" }, { createdAt: "desc" }], include: { recordedBy: true } },
     },
   });
 }

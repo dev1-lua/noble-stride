@@ -38,4 +38,35 @@ test.describe("F4.3.1 — retainer amount, amount paid and the pending balance",
     await expect(row).toBeVisible();
     await expect(row.getByTestId("deal-balance")).toContainText("$30,000");
   });
+
+  // F4.3.1 third clause: the ledger of individual payments behind the paid amount.
+  test("logging an individual payment adds a ledger row and moves the balance", async ({ page }) => {
+    await page.goto(MANDATE);
+    const card = page.getByTestId("retainer-payments");
+    await expect(card).toBeVisible();
+    await expect(card).toContainText("No individual payments recorded yet");
+
+    await card.getByLabel("Amount").fill("10000");
+    await card.getByLabel("Reference (optional)").fill("INV-042 · bank transfer");
+    await card.getByRole("button", { name: "Log payment" }).click();
+
+    const paymentRow = card.getByTestId("retainer-payment-row");
+    await expect(paymentRow).toHaveCount(1, { timeout: 30_000 });
+    await expect(paymentRow).toContainText("$10K");
+    await expect(paymentRow).toContainText("INV-042");
+    await expect(card.getByTestId("retainer-payments-total")).toContainText("1 payment · $10K recorded");
+    // The Deal Summary's paid/balance re-derive from the incremented paid amount.
+    await expect(page.getByTestId("retainer-balance")).toContainText("Paid $30K");
+    await expect(page.getByTestId("retainer-balance")).toContainText("Balance $20K");
+  });
+
+  test("deleting the payment restores the paid amount and the balance", async ({ page }) => {
+    await page.goto(MANDATE);
+    const card = page.getByTestId("retainer-payments");
+    await card.getByRole("button", { name: /^Delete payment of/ }).click();
+
+    await expect(card.getByTestId("retainer-payment-row")).toHaveCount(0, { timeout: 30_000 });
+    await expect(page.getByTestId("retainer-balance")).toContainText("Paid $20K");
+    await expect(page.getByTestId("retainer-balance")).toContainText("Balance $30K");
+  });
 });

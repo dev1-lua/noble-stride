@@ -25,6 +25,8 @@ import { FindProspectsButton } from "@/components/crm/find-prospects-button";
 import { MandateFormDrawer } from "@/components/crm/mandate-form-drawer";
 import { DeleteConfirm } from "@/components/crm/delete-confirm";
 import { IntakeReviewPanel } from "@/components/crm/intake-review-panel";
+import { RetainerPaymentsCard } from "@/components/crm/retainer-payments-card";
+import type { RetainerPaymentItem } from "@/components/crm/retainer-payments-card";
 import { getOrgLens } from "@/server/rbac/context";
 import { can, canDeleteRecord, canUpdateRecord } from "@/server/rbac/matrix";
 
@@ -131,6 +133,17 @@ export default async function MandateDetailPage({ params }: PageProps) {
     retainerPaidDate: m.retainerPaidDate ? m.retainerPaidDate.toISOString() : null,
   };
 
+  // F4.3.1 third clause: retainer payment ledger — plain DTO for the client card.
+  const retainerPayments: RetainerPaymentItem[] = ((m.retainerPayments ?? []) as {
+    id: string; amount: unknown; paidOn: Date; reference: string | null; recordedBy?: { name: string } | null;
+  }[]).map((p) => ({
+    id: p.id,
+    amount: Number(p.amount),
+    paidOn: p.paidOn.toISOString(),
+    reference: p.reference ?? null,
+    recordedByName: p.recordedBy?.name ?? null,
+  }));
+
   // Task 14: Documents-by-stage panel — plain DTO from the already-loaded
   // `documents` array (no second fetch) + the mandate's NDA/EA date-pair
   // status. Mandates have no `vdrLink` (Transaction-only), so Data Room
@@ -229,6 +242,12 @@ export default async function MandateDetailPage({ params }: PageProps) {
       <div id="documents-by-stage" className="scroll-mt-24">
         <DocumentsByStage {...docsByStage} />
       </div>
+
+      {/* Retainer payment ledger (F4.3.1 third clause) — only for mandates
+          with a retainer, or with ledger history to show. */}
+      {(m.retainerAmount != null || retainerPayments.length > 0) && (
+        <RetainerPaymentsCard mandateId={m.id} payments={retainerPayments} canEdit={mayEdit} />
+      )}
 
       {/* Restage control + key facts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
